@@ -46,11 +46,11 @@ export function CampusLabelTag({
 
   return (
     <div
-      className={`rounded-lg bg-[var(--campus-surface)]/95 backdrop-blur-xs border px-3 py-1.5 shadow-sm transition-all ${
+      className={`rounded-lg bg-[var(--campus-surface)]/95 backdrop-blur-xs border px-2.5 py-1 lg:px-3 lg:py-1.5 shadow-sm transition-all ${
         disabled
           ? 'border-[var(--campus-border)] opacity-65'
           : selected
-            ? 'border-[var(--seljuk-teal)] ring-2 ring-[var(--seljuk-teal)]/25 shadow-md'
+            ? 'border-[var(--seljuk-teal)] ring-2 ring-[var(--seljuk-teal)]/30 shadow-md'
             : `${accentColors.border} group-hover:border-[var(--seljuk-teal)] group-hover:shadow-md`
       } ${className}`}
     >
@@ -59,12 +59,12 @@ export function CampusLabelTag({
           aria-hidden="true"
           className={`w-2 h-2 rounded-xs shrink-0 ${disabled ? 'bg-[var(--stone-dark)]' : accentColors.dot}`}
         />
-        <span className="text-xs sm:text-sm font-bold text-[var(--seljuk-navy)] leading-tight whitespace-nowrap">
+        <span className="text-[11px] lg:text-sm font-bold text-[var(--seljuk-navy)] leading-tight whitespace-nowrap">
           {title}
         </span>
       </div>
       {subtitle && (
-        <p className={`text-[10px] font-semibold mt-0.5 pl-3.5 ${disabled ? 'text-[var(--campus-ink-muted)]' : accentColors.subtitle}`}>
+        <p className={`text-[10px] font-semibold mt-0.5 pl-3.5 whitespace-nowrap ${disabled ? 'text-[var(--campus-ink-muted)]' : accentColors.subtitle}`}>
           {disabled ? 'Yakında' : subtitle}
         </p>
       )}

@@ -23,7 +23,7 @@
 - **`npm run test:e2e` (`playwright test`)**: Geçti — `e2e/campus.spec.ts` **2 / 2** geçti (17.6 s):
   - `[chromium]` (Masaüstü Chrome, 8.0 s): İlk ziyaret kapı → karşılama metni → 5. sınıf → rehberli tur → harita → Kapıların Anlattığı Hikâye → PNG/Kayıt → Yolculuğum → iki adımlı Verilerimi Sil.
   - `[mobile-chrome]` (`Pixel 5`, 6.7 s): Aynı uçtan uca senaryo mobil görünümde geçti.
-- **Çoklu Ekran Boyutu Denetimi (`1280×840`, `768×1024`, `390×844`)**: Geçti — Giriş kapısı, karşılama avlusu ve harita sayfalarında yatay taşma yok, masaüstü/tablet haritada `0` düğüm çakışması ve `0` kırpılma.
+- **Çoklu Ekran Boyutu Denetimi (`360×740`, `390×844`, `768×1024`, `1280×840`)**: Geçti — Giriş kapısı, karşılama avlusu, kampüs haritası, öğrenme alanı (`/alan/gezi-ve-kesif`) ve yolculuğum (`/yolculugum`) görünümlerinde yatay taşma (`0`), SVG `<text>` çakışması/kırpılması (`0`), `44×44 px` altı etkileşimli hedef (`0`) ve tablet/masaüstü harita bina düğüm çakışması (`0` / `5` düğüm) görülmedi. Giriş kapısı her 4 ekranda tek viewport içinde tam sığdı.
 
 ## 2. Çalıştırılamayan Testler
 - Yok. Birim/entegrasyon (`vitest`) ve uçtan uca tarayıcı (`playwright`) testlerinin tamamı çalıştırıldı ve geçti.
@@ -41,6 +41,6 @@
 
 ## 5. Paket Boyutu Ölçümü (Vite Derleme Çıktısı)
 - `dist/index.html`: `0.90 kB` (`gzip: 0.43 kB`)
-- `dist/assets/index-CbUrLnID.css`: `48.10 kB` (`gzip: 7.94 kB`)
-- `dist/assets/index-9WBQJDbA.js`: `909.33 kB` (`gzip: 251.46 kB`)
+- `dist/assets/index-B6JIotO-.css`: `50.81 kB` (`gzip: 8.19 kB`)
+- `dist/assets/index-C7OV5FIJ.js`: `912.42 kB` (`gzip: 252.01 kB`)
 - Harici yazı tipi, CDN, izleyici ve üçüncü taraf görsel isteği sıfırdır. Gerçek 4 yıllık Android cihazda açılış hızı henüz ölçülmemiştir.

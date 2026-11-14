@@ -17,7 +17,7 @@ export function CampusPortalGateSvg({ isOpen, compact = false }: CampusPortalGat
   return (
     <svg
       viewBox="0 0 720 450"
-      className={compact ? 'w-full h-auto max-w-md mx-auto' : 'w-full h-auto max-w-3xl mx-auto'}
+      className={compact ? 'w-full h-auto max-w-md mx-auto' : 'w-full h-auto max-w-[660px] mx-auto'}
       role="img"
       aria-label="Hafif izometrik perspektife sahip Anadolu-Selçuklu taç kapısı, ön meydan basamakları ve ardında açılan aydınlık kampüs avlusu"
     >

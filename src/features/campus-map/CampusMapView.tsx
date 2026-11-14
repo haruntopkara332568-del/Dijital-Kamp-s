@@ -17,7 +17,7 @@ import { CampusLabelTag } from '@/src/components/CampusLabelTag';
 import type { CampusAreaRecord } from '@/src/types/campus';
 
 const ISO_VIEW_W = 1000;
-const ISO_VIEW_H = 562.5;
+const ISO_VIEW_H = 625;
 
 function getAreaAccent(
   id: string,
@@ -32,15 +32,15 @@ function getAreaAccent(
 function getIsometricSlot(area: CampusAreaRecord): { xPercent: number; yPercent: number } {
   switch (area.id) {
     case 'gezi-ve-kesif':
-      return { xPercent: 20, yPercent: 32 };
+      return { xPercent: 19, yPercent: 30 };
     case 'ingilizce-dunyasi':
-      return { xPercent: 50, yPercent: 21 };
+      return { xPercent: 50, yPercent: 18 };
     case 'kitap-ve-hikaye-dunyasi':
-      return { xPercent: 80, yPercent: 32 };
+      return { xPercent: 81, yPercent: 30 };
     case 'gorev-panosu':
-      return { xPercent: 30, yPercent: 74 };
+      return { xPercent: 28, yPercent: 76 };
     case 'kampus-yolculugum':
-      return { xPercent: 70, yPercent: 74 };
+      return { xPercent: 72, yPercent: 76 };
     default:
       return area.mapPosition;
   }
@@ -89,7 +89,7 @@ export function CampusMapView() {
   const activeMissions = getActiveMissions();
   const primaryMission = activeMissions[0];
 
-  // Devam eden göreve veya önerilen ilk adıma göre seçili bina vurgusu
+  // Devam eden göreve veya önerilen ilk başlangıca göre seçili bina vurgusu
   const highlightedAreaId = unfinished
     ? unfinished.currentStage === 'kesfet'
       ? 'gezi-ve-kesif'
@@ -102,12 +102,12 @@ export function CampusMapView() {
   const pathSegments: IsometricPathSegment[] = [];
   const seenPairs = new Set<string>();
   const plazaX = 500;
-  const plazaY = 298;
+  const plazaY = 326;
 
   for (const area of CAMPUS_AREAS) {
     const slot = getIsometricSlot(area);
     const sx = (slot.xPercent / 100) * ISO_VIEW_W;
-    const sy = (slot.yPercent / 100) * ISO_VIEW_H + 18;
+    const sy = (slot.yPercent / 100) * ISO_VIEW_H + 14;
     pathSegments.push({
       id: `plaza-${area.id}`,
       x1: plazaX,
@@ -130,24 +130,24 @@ export function CampusMapView() {
         x1: sx,
         y1: sy,
         x2: (targetSlot.xPercent / 100) * ISO_VIEW_W,
-        y2: (targetSlot.yPercent / 100) * ISO_VIEW_H + 18,
+        y2: (targetSlot.yPercent / 100) * ISO_VIEW_H + 14,
         width: 18,
       });
     }
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+    <main className="max-w-6xl mx-auto px-3.5 sm:px-6 py-5 sm:py-8 space-y-7">
       {/* Üst Karşılama & Kaldığım Yerden Devam Et Alanı */}
       <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] shadow-sm overflow-hidden">
         <div
           aria-hidden="true"
           className="h-1.5 w-full bg-gradient-to-r from-[var(--seljuk-navy)] via-[var(--seljuk-teal)] to-[var(--terracotta)]"
         />
-        <div className="p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="flex items-start gap-4">
+        <div className="p-4 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          <div className="flex items-start gap-3.5 sm:gap-4">
             <PeerGuideSvg size="sm" mood="welcoming" />
-            <div className="space-y-1">
+            <div className="space-y-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--campus-ink-muted)]">
                 <span className="font-semibold text-[var(--seljuk-teal)] tabular-nums">
                   {activeGradeProfile.label}
@@ -157,7 +157,7 @@ export function CampusMapView() {
                   {activeGradeProfile.tier === 'ilkokul' ? 'İlkokul Kampüsü' : 'Ortaokul Kampüsü'}
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--seljuk-navy)]">
+              <h1 className="text-xl sm:text-3xl font-bold text-[var(--seljuk-navy)]">
                 Kampüs Haritası ve Keşif Alanları
               </h1>
               <p className="text-sm sm:text-base text-[var(--campus-ink-muted)] max-w-2xl">
@@ -173,7 +173,7 @@ export function CampusMapView() {
                 to={`/gorev/${unfinished.missionId}`}
                 className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-all active:scale-[0.99]"
               >
-                <Play className="w-4 h-4" aria-hidden="true" />
+                <Play className="w-4 h-4 shrink-0" aria-hidden="true" />
                 <span>Kaldığım Yerden Devam Et</span>
               </Link>
             ) : (
@@ -182,7 +182,7 @@ export function CampusMapView() {
                   to={`/gorev/${primaryMission.id}`}
                   className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-all active:scale-[0.99]"
                 >
-                  <Play className="w-4 h-4" aria-hidden="true" />
+                  <Play className="w-4 h-4 shrink-0" aria-hidden="true" />
                   <span>{primaryMission.title} Görevine Başla</span>
                 </Link>
               )
@@ -193,7 +193,7 @@ export function CampusMapView() {
               onClick={replayGuidedTour}
               className="min-h-[44px] px-4 py-2.5 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-sm font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-2 cursor-pointer transition-colors"
             >
-              <RotateCcw className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
+              <RotateCcw className="w-4 h-4 text-[var(--seljuk-teal)] shrink-0" aria-hidden="true" />
               <span>Rehberli Tur</span>
             </button>
           </div>
@@ -211,9 +211,9 @@ export function CampusMapView() {
           </p>
         </div>
 
-        {/* Masaüstü ve Tablet: 2,5B İzometrik Tıklanabilir Binalar Sahnesi */}
-        <div className="hidden md:block relative rounded-2xl border border-[var(--campus-border)] bg-gradient-to-b from-[var(--sky-warm-top)]/40 via-[var(--iso-ground-base)] to-[var(--stone-light)]/55 overflow-hidden aspect-[16/9] shadow-sm">
-          {/* Sabit 16:9 Oranlı İzometrik Zemin, Taş Yollar, Peyzaj ve Sahne İçi Rehber */}
+        {/* Masaüstü ve Tablet: 16:10 Oranlı 2,5B İzometrik Tıklanabilir Binalar Sahnesi */}
+        <div className="hidden md:block relative rounded-2xl border border-[var(--campus-border)] bg-gradient-to-b from-[var(--sky-warm-top)]/40 via-[var(--iso-ground-base)] to-[var(--stone-light)]/55 overflow-hidden aspect-[16/10] shadow-sm">
+          {/* Dekoratif İzometrik Zemin, Taş Yollar, Peyzaj ve Sahne İçi Rehber */}
           <svg
             viewBox={`0 0 ${ISO_VIEW_W} ${ISO_VIEW_H}`}
             className="w-full h-auto block pointer-events-none"
@@ -221,7 +221,7 @@ export function CampusMapView() {
           >
             {/* Uzak Anadolu Tepeleri */}
             <path
-              d="M 0 180 Q 240 120 500 164 Q 760 116 1000 176 L 1000 562.5 L 0 562.5 Z"
+              d="M 0 200 Q 240 132 500 182 Q 760 128 1000 194 L 1000 625 L 0 625 Z"
               fill="var(--courtyard-sage-soft)"
               opacity="0.45"
             />
@@ -236,29 +236,41 @@ export function CampusMapView() {
             <IsometricPathSvg segments={pathSegments} />
 
             {/* Çevre Ağaçları ve Peyzaj */}
-            <IsometricCypressTree x={84} y={302} scale={1.08} />
-            <IsometricRoundTree x={118} y={334} scale={0.95} />
-            <IsometricCypressTree x={916} y={302} scale={1.08} />
-            <IsometricRoundTree x={882} y={334} scale={0.95} />
-            <IsometricRoundTree x={346} y={136} scale={0.85} />
-            <IsometricRoundTree x={654} y={136} scale={0.85} />
-            <IsometricCypressTree x={500} y={482} scale={0.92} />
+            <IsometricCypressTree x={80} y={340} scale={1.08} />
+            <IsometricRoundTree x={116} y={376} scale={0.95} />
+            <IsometricCypressTree x={920} y={340} scale={1.08} />
+            <IsometricRoundTree x={884} y={376} scale={0.95} />
+            <IsometricRoundTree x={344} y={142} scale={0.85} />
+            <IsometricRoundTree x={656} y={142} scale={0.85} />
+            <IsometricCypressTree x={500} y={536} scale={0.92} />
 
-            {/* Yönlendirme Levhası */}
-            <IsometricSignpost x={596} y={326} />
+            {/* Yönlendirme Levhası (Binalardan ve Etiketlerden Uzak) */}
+            <g transform="translate(592, 314) scale(0.9)">
+              <IsometricSignpost x={0} y={0} />
+            </g>
 
             {/* Sahne İçi Kampüs Arkadaşı */}
-            <g transform="translate(414, 240) scale(0.56)">
+            <g transform="translate(414, 266) scale(0.62)">
               <PeerGuideInSceneGraphic mood="welcoming" />
             </g>
           </svg>
 
-          {/* Tıklanabilir 2,5B İzometrik Binalar ve Kompakt Mimari Tabelalar */}
+          {/* Etkileşimli 2,5B İzometrik Binalar (Dekoratif Katmandan Ayrılmış Link Öğeleri) */}
           {CAMPUS_AREAS.map((area) => {
             const slot = getIsometricSlot(area);
             const accent = getAreaAccent(area.id, area.accentToken);
             const isSelected = area.id === highlightedAreaId;
             const isDisabled = area.status !== 'active';
+
+            const statusLabel = isDisabled
+              ? 'Yakında'
+              : isSelected
+                ? unfinished
+                  ? 'Devam Eden Görev'
+                  : 'Önerilen Başlangıç'
+                : area.type === 'learning-area'
+                  ? 'Öğrenme Alanı'
+                  : 'Kampüs İşlevi';
 
             return (
               <BuildingInteractiveShell
@@ -266,7 +278,7 @@ export function CampusMapView() {
                 buildingId={area.id}
                 to={area.route}
                 title={area.title}
-                subtitle={area.type === 'learning-area' ? 'Öğrenme Alanı' : 'Kampüs İşlevi'}
+                subtitle={statusLabel}
                 accent={accent}
                 selected={isSelected}
                 disabled={isDisabled}
@@ -278,20 +290,27 @@ export function CampusMapView() {
           })}
         </div>
 
-        {/* Mobil Görünüm: Taşmasız Kompakt İzometrik Yerleşke Kartları */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 md:hidden">
+        {/* Mobil Görünüm (360-767px): Taşmasız, Okunabilir ve 44x44+ Dokunmatik Hedefli Bina Kartları */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:hidden">
           {CAMPUS_AREAS.map((area) => {
             const accent = getAreaAccent(area.id, area.accentToken);
             const theme = areaCardClasses(accent);
             const isSelected = area.id === highlightedAreaId;
+            const statusLabel = isSelected
+              ? unfinished
+                ? 'Devam Eden Görev'
+                : 'Önerilen Başlangıç'
+              : area.type === 'learning-area'
+                ? 'Öğrenme Alanı'
+                : 'Kampüs İşlevi';
 
             return (
               <Link
                 key={area.id}
                 to={area.route}
-                className={`rounded-xl bg-[var(--campus-surface)] border p-3.5 flex items-center gap-3.5 transition-colors min-h-[78px] shadow-xs ${
+                className={`rounded-xl bg-[var(--campus-surface)] border p-3.5 flex items-center gap-3 transition-colors min-h-[84px] shadow-xs focus-visible:outline-3 focus-visible:outline-[var(--seljuk-navy)] ${
                   isSelected
-                    ? 'border-[var(--seljuk-teal)] ring-2 ring-[var(--seljuk-teal)]/20'
+                    ? 'border-[var(--seljuk-teal)] ring-2 ring-[var(--seljuk-teal)]/25'
                     : theme.border
                 }`}
               >
@@ -303,7 +322,7 @@ export function CampusMapView() {
                 <div className="flex-1 min-w-0">
                   <CampusLabelTag
                     title={area.title}
-                    subtitle={area.type === 'learning-area' ? 'Öğrenme Alanı' : 'Kampüs İşlevi'}
+                    subtitle={statusLabel}
                     accent={accent}
                     selected={isSelected}
                     className="border-0 shadow-none p-0 bg-transparent"
@@ -391,13 +410,16 @@ export function CampusMapView() {
       </section>
 
       {/* Gizlilik ve Cihaz İçi Saklama Bildirimi */}
-      <footer className="rounded-xl bg-[var(--stone-cream)] border border-[var(--campus-border)] px-4 py-3 text-xs text-[var(--campus-ink-muted)] flex flex-wrap items-center justify-between gap-2">
+      <footer className="rounded-xl bg-[var(--stone-cream)] border border-[var(--campus-border)] px-4 py-2 text-xs text-[var(--campus-ink-muted)] flex flex-wrap items-center justify-between gap-2">
         <span>
           Bilgilerin yalnızca kullandığın bu cihaz ve tarayıcıda tutulur; tarayıcı verileri silindiğinde
           çalışmaların kaybolabilir.
         </span>
         {state.selectedGrade && (
-          <Link to="/yolculugum" className="font-semibold text-[var(--seljuk-teal)] hover:underline">
+          <Link
+            to="/yolculugum"
+            className="min-h-[44px] inline-flex items-center font-semibold text-[var(--seljuk-teal)] hover:underline"
+          >
             Çalışmalarımı ve veri ayarlarını gör
           </Link>
         )}

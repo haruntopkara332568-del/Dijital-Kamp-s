@@ -41,42 +41,42 @@ export function IsometricSignpost({ x, y }: { x: number; y: number }) {
         stroke="var(--stone-deep)"
         strokeWidth="1.2"
       />
-      <rect x="-2.5" y="-52" width="5" height="52" rx="1" fill="var(--wood-deep)" />
+      <rect x="-2.5" y="-74" width="5" height="74" rx="1" fill="var(--wood-deep)" />
 
       {/* Sol Üst Ok: Gezi ve Keşif */}
       <path
-        d="M -62 -46 L 2 -46 L 2 -33 L -62 -33 L -69 -39.5 Z"
+        d="M -68 -68 L -1 -68 L -1 -53 L -68 -53 L -75 -60.5 Z"
         fill="var(--campus-surface)"
         stroke="var(--terracotta)"
         strokeWidth="1.4"
       />
-      <text x="-32" y="-36.5" textAnchor="middle" fontSize="8.2" fontWeight="700" fill="var(--seljuk-navy)">
+      <text x="-36" y="-57.5" textAnchor="middle" fontSize="8.2" fontWeight="700" fill="var(--seljuk-navy)">
         ← Gezi ve Keşif
       </text>
 
       {/* Sağ Orta Ok: Kitap ve Hikâye */}
       <path
-        d="M -2 -30 L 66 -30 L 73 -23.5 L 66 -17 L -2 -17 Z"
+        d="M 1 -44 L 70 -44 L 77 -36.5 L 70 -29 L 1 -29 Z"
         fill="var(--seljuk-teal-soft)"
         stroke="var(--seljuk-teal)"
         strokeWidth="1.4"
       />
-      <text x="34" y="-20.5" textAnchor="middle" fontSize="8.2" fontWeight="700" fill="var(--seljuk-navy)">
+      <text x="37" y="-33.5" textAnchor="middle" fontSize="8.2" fontWeight="700" fill="var(--seljuk-navy)">
         Kitap ve Hikâye →
       </text>
 
-      {/* Alt Plaka: Yıldızlı Meydan */}
+      {/* Alt Plaka: Merkez Meydan */}
       <rect
-        x="-30"
-        y="-14"
-        width="60"
-        height="13"
-        rx="2"
+        x="-34"
+        y="-20"
+        width="68"
+        height="15"
+        rx="2.5"
         fill="var(--sandstone-gold-soft)"
         stroke="var(--sandstone-gold)"
         strokeWidth="1.2"
       />
-      <text x="0" y="-4.8" textAnchor="middle" fontSize="7.4" fontWeight="700" fill="var(--terracotta-deep)">
+      <text x="0" y="-9.5" textAnchor="middle" fontSize="7.6" fontWeight="700" fill="var(--terracotta-deep)">
         Merkez Meydan
       </text>
     </g>

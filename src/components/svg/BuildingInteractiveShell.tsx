@@ -18,7 +18,7 @@ interface BuildingInteractiveShellProps {
 /**
  * 2,5B kampüs haritasında tıklanabilir izometrik bina kabuğu:
  * Normal, hover/focus (hafif yükselme + gölge artışı), seçili ve yakında (disabled) durumlarını destekler.
- * Büyük kutu kartlar yerine doğrudan binayı ve altındaki kompakt mimari tabelayı sunar.
+ * Dekoratif SVG gölge katmanları ekran okuyucudan gizlenir; erişilebilir etiket Link üzerinde yer alır.
  */
 export function BuildingInteractiveShell({
   buildingId,
@@ -32,27 +32,34 @@ export function BuildingInteractiveShell({
   topPercent,
   size = 'lg',
 }: BuildingInteractiveShellProps) {
-  const buildingDimensions = size === 'lg' ? 'w-36 h-28' : 'w-32 h-24';
+  const buildingDimensions =
+    size === 'lg'
+      ? 'w-28 h-22 lg:w-36 lg:h-28'
+      : 'w-24 h-20 lg:w-32 lg:h-24';
+
+  const accessibleLabel = disabled
+    ? `${title} — Yakında açılacak`
+    : `${title}${subtitle ? ` (${subtitle})` : ''}${selected ? ' — Sıradaki önerilen alan' : ''}`;
 
   const content = (
     <div className="relative flex flex-col items-center">
-      {/* Seçili veya Vurgulu Yapı Taban Halesi */}
+      {/* Seçili veya Aktif Görev Yapısı Taban Halesi (Dekoratif) */}
       {selected && !disabled && (
         <span
           aria-hidden="true"
-          className="absolute top-12 w-28 h-12 rounded-full bg-[var(--seljuk-teal)]/20 ring-2 ring-[var(--seljuk-teal)]/50 blur-[1px] pointer-events-none"
+          className="absolute top-10 lg:top-12 w-24 lg:w-28 h-10 lg:h-12 rounded-full bg-[var(--seljuk-teal)]/22 ring-2 ring-[var(--seljuk-teal)]/55 blur-[1px] pointer-events-none"
         />
       )}
 
-      {/* Hover'da Tabanda Genişleyen Yumuşak Gölge */}
+      {/* Hover ve Focus'ta Genişleyen Yumuşak Zemin Gölgesi (Dekoratif) */}
       <span
         aria-hidden="true"
-        className="w-24 h-5 rounded-full bg-[var(--iso-shadow)]/15 blur-[2px] translate-y-22 transition-all duration-200 group-hover:w-28 group-hover:bg-[var(--iso-shadow)]/22 pointer-events-none"
+        className="w-20 lg:w-24 h-4 lg:h-5 rounded-full bg-[var(--iso-shadow)]/15 blur-[2px] translate-y-18 lg:translate-y-22 transition-all duration-200 group-hover:w-24 lg:group-hover:w-28 group-hover:bg-[var(--iso-shadow)]/22 pointer-events-none"
       />
 
       <CampusBuildingSvg
         buildingId={buildingId}
-        className={`${buildingDimensions} -mt-4 drop-shadow-xs transition-transform duration-200 ${
+        className={`${buildingDimensions} -mt-3 drop-shadow-xs transition-transform duration-200 ${
           disabled ? 'opacity-60 grayscale-[35%]' : 'group-hover:scale-[1.03]'
         }`}
       />
@@ -63,7 +70,7 @@ export function BuildingInteractiveShell({
         accent={accent}
         selected={selected}
         disabled={disabled}
-        className="-mt-1.5"
+        className="-mt-1"
       />
     </div>
   );
@@ -78,7 +85,8 @@ export function BuildingInteractiveShell({
       <div
         style={positionStyle}
         aria-disabled="true"
-        className="absolute -translate-x-1/2 -translate-y-1/2 select-none cursor-not-allowed"
+        aria-label={accessibleLabel}
+        className="absolute -translate-x-1/2 -translate-y-1/2 select-none cursor-not-allowed min-w-[44px] min-h-[44px]"
       >
         {content}
       </div>
@@ -89,7 +97,8 @@ export function BuildingInteractiveShell({
     <Link
       to={to}
       style={positionStyle}
-      className="absolute -translate-x-1/2 -translate-y-1/2 iso-building-trigger group rounded-xl p-1 focus-visible:outline-3 focus-visible:outline-[var(--seljuk-teal)]"
+      aria-label={accessibleLabel}
+      className="absolute -translate-x-1/2 -translate-y-1/2 iso-building-trigger group rounded-xl p-1 min-w-[44px] min-h-[44px] focus-visible:outline-3 focus-visible:outline-[var(--seljuk-navy)] focus-visible:ring-4 focus-visible:ring-[var(--seljuk-teal)]/35"
     >
       {content}
     </Link>

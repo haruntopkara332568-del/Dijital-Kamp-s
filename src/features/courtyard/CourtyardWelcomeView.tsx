@@ -61,8 +61,8 @@ export function CourtyardWelcomeView({
     : null;
 
   return (
-    <main className="min-h-dvh bg-gradient-to-b from-[var(--sky-warm-top)]/35 via-[var(--campus-canvas)] to-[var(--stone-light)]/45 px-4 py-6 sm:py-8">
-      <div className="max-w-5xl mx-auto space-y-5">
+    <main className="min-h-dvh bg-gradient-to-b from-[var(--sky-warm-top)]/35 via-[var(--campus-canvas)] to-[var(--stone-light)]/45 px-3 sm:px-6 py-4 sm:py-6">
+      <div className="max-w-5xl mx-auto space-y-4">
         {/* Avlu Sahnesi + Alt Bilgi Kartını Bütünleştiren Kampüs Çerçevesi */}
         <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] shadow-sm overflow-hidden">
           <div

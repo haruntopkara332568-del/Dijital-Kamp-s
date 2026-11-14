@@ -66,7 +66,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
           <Link
             to="/harita"
             onClick={(e) => handleNavClick(e, '/harita')}
-            className="text-base sm:text-lg font-bold tracking-tight text-[var(--seljuk-navy)] whitespace-nowrap shrink-0 hover:text-[var(--seljuk-teal)] transition-colors"
+            className="min-h-[44px] inline-flex items-center text-base sm:text-lg font-bold tracking-tight text-[var(--seljuk-navy)] whitespace-nowrap shrink-0 hover:text-[var(--seljuk-teal)] transition-colors"
           >
             Dijital Eğitim Kampüsü
           </Link>
@@ -83,7 +83,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
                   key={item.href}
                   to={item.href}
                   onClick={(e) => handleNavClick(e, item.href)}
-                  className={`whitespace-nowrap shrink-0 py-1 border-b-2 transition-colors ${
+                  className={`min-h-[44px] inline-flex items-center whitespace-nowrap shrink-0 border-b-2 transition-colors ${
                     active
                       ? 'text-[var(--seljuk-teal)] border-[var(--seljuk-teal)] font-semibold'
                       : 'border-transparent hover:text-[var(--seljuk-navy)] hover:border-[var(--campus-border)]'
