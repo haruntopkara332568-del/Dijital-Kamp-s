@@ -12,30 +12,40 @@
   /* Anadolu–Selçuklu Mimari Renk Belirteçleri */
   --seljuk-navy: #1b3152;
   --seljuk-navy-deep: #112138;
+  --seljuk-navy-shade: #14253e;
   --seljuk-navy-soft: #e3e9f2;
 
   --seljuk-teal: #0e768a;
   --seljuk-teal-hover: #0b5d6d;
+  --seljuk-teal-shade: #09505e;
   --seljuk-teal-soft: #dcf0f3;
   --seljuk-turquoise-bright: #249ab0;
 
   --terracotta: #b25938;
+  --terracotta-shade: #8d4227;
   --terracotta-soft: #f5e3d9;
   --terracotta-deep: #853e24;
 
   --sandstone-gold: #a66414;
+  --sandstone-gold-shade: #87500e;
   --sandstone-gold-soft: #fbf0d9;
 
   --courtyard-sage: #2d7350;
+  --courtyard-sage-shade: #21573c;
   --courtyard-sage-mid: #639c7b;
   --courtyard-sage-soft: #dfeee3;
 
-  /* Taş İşçiliği, Gökyüzü, Ahşap ve Karakter Belirteçleri */
+  /* 2,5B İzometrik Işık (Sol-Üst) ve Gölge (Sağ-Alt) Taş Belirteçleri */
   --stone-cream: #f5efe2;
   --stone-light: #e8dec9;
   --stone-mid: #d1c2a7;
+  --stone-shade: #beb094;
   --stone-dark: #948165;
   --stone-deep: #6b5a44;
+
+  --iso-ground-base: #efe7d6;
+  --iso-ground-plaza: #f7f2e7;
+  --iso-shadow: #172b47;
 
   --sky-warm-top: #dceef2;
   --sky-warm-bottom: #f7f1e3;
@@ -82,6 +92,20 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 2,5B İzometrik Yapı Mikro-Etkileşimi (150-300ms, hafif yükselme ve gölge derinleşmesi) */
+.iso-building-trigger {
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), filter 220ms ease;
+}
+
+.iso-building-trigger:hover,
+.iso-building-trigger:focus-visible {
+  transform: translateY(-5px);
+}
+
+.iso-building-trigger:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -93,5 +117,11 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .iso-building-trigger:hover,
+  .iso-building-trigger:focus-visible,
+  .iso-building-trigger:active {
+    transform: none;
   }
 }

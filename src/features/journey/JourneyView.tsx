@@ -14,6 +14,7 @@ import { listArtifacts } from '@/src/services/storage';
 import type { SavedArtifact } from '@/src/types/campus';
 import { CampusTopBar } from '@/src/components/CampusTopBar';
 import { DeleteDataModal } from '@/src/components/DeleteDataModal';
+import { CampusBuildingSvg } from '@/src/components/svg/CampusBuildingSvg';
 
 export function JourneyView() {
   const { state, activeGradeProfile } = useCampus();
@@ -58,7 +59,7 @@ export function JourneyView() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             to="/harita"
-            className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--campus-ink)] inline-flex items-center gap-2"
+            className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-2 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" aria-hidden="true" />
             <span>Kampüs Haritasına Dön</span>
@@ -67,36 +68,47 @@ export function JourneyView() {
           <button
             type="button"
             onClick={() => setDeleteModalOpen(true)}
-            className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--alert-rose)]/40 bg-[var(--campus-surface)] hover:bg-[var(--alert-rose-soft)] text-xs font-semibold text-[var(--alert-rose)] inline-flex items-center gap-2 cursor-pointer"
+            className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--alert-rose)]/40 bg-[var(--campus-surface)] hover:bg-[var(--alert-rose-soft)] text-xs font-semibold text-[var(--alert-rose)] inline-flex items-center gap-2 cursor-pointer transition-colors"
           >
             <Trash2 className="w-4 h-4" aria-hidden="true" />
             <span>Verilerimi Sil</span>
           </button>
         </div>
 
-        {/* Başlık ve Veri Saklama Açıklaması */}
-        <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 space-y-2 shadow-xs">
-          <p className="text-xs font-semibold text-[var(--seljuk-teal)] tabular-nums">
-            {activeGradeProfile.label} · Kişisel Öğrenme Kayıtların
-          </p>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--campus-ink)]">
-            Kampüs Yolculuğum
-          </h1>
-          <p className="text-sm text-[var(--campus-ink-muted)]">
-            Buradaki görev durumların ve kaydettiğin çizimler yalnızca bu cihazdaki tarayıcıda tutulur.
-            Tarayıcı verileri temizlendiğinde bu kayıtlar silinebilir; önemli çalışmalarını PNG olarak
-            indirebilirsin.
-          </p>
+        {/* Başlık ve Arşiv Pavilyonu Kimliği */}
+        <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] shadow-sm overflow-hidden">
+          <div
+            aria-hidden="true"
+            className="h-1.5 w-full bg-gradient-to-r from-[var(--seljuk-navy)] via-[var(--seljuk-teal)] to-[var(--courtyard-sage)]"
+          />
+          <div className="p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            <div className="w-28 h-24 rounded-xl border border-[var(--campus-border)] bg-[var(--stone-cream)] flex items-center justify-center shrink-0">
+              <CampusBuildingSvg buildingId="kampus-yolculugum" className="w-24 h-20" />
+            </div>
+            <div className="space-y-1.5 min-w-0">
+              <p className="text-xs font-semibold text-[var(--seljuk-teal)] tabular-nums">
+                {activeGradeProfile.label} · Kişisel Öğrenme Kayıtların
+              </p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--seljuk-navy)]">
+                Kampüs Yolculuğum
+              </h1>
+              <p className="text-sm text-[var(--campus-ink-muted)]">
+                Buradaki görev durumların ve kaydettiğin çizimler yalnızca bu cihazdaki tarayıcıda tutulur.
+                Tarayıcı verileri temizlendiğinde bu kayıtlar silinebilir; önemli çalışmalarını PNG olarak
+                indirebilirsin.
+              </p>
+            </div>
+          </div>
         </section>
 
         {/* Görev Durumları */}
         <section className="space-y-4">
-          <h2 className="text-lg font-bold text-[var(--campus-ink)]">Görevlerin</h2>
+          <h2 className="text-lg font-bold text-[var(--seljuk-navy)]">Görevlerin</h2>
 
           {progressEntries.length === 0 ? (
             <div className="rounded-xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-6 text-center space-y-3">
               <FolderOpen className="w-8 h-8 text-[var(--seljuk-teal)] mx-auto" aria-hidden="true" />
-              <h3 className="text-base font-bold text-[var(--campus-ink)]">
+              <h3 className="text-base font-bold text-[var(--seljuk-navy)]">
                 Henüz Başladığın Bir Görev Yok
               </h3>
               <p className="text-sm text-[var(--campus-ink-muted)] max-w-md mx-auto">
@@ -105,7 +117,7 @@ export function JourneyView() {
               </p>
               <Link
                 to="/gorev/kapilarin-anlattigi-hikaye"
-                className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] text-white text-sm font-semibold inline-flex items-center gap-2"
+                className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors"
               >
                 <Play className="w-4 h-4" aria-hidden="true" />
                 <span>İlk Göreve Başla</span>
@@ -123,17 +135,17 @@ export function JourneyView() {
                     className="rounded-xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-[var(--sandstone-gold)]">Devam Ediyor</span>
+                      <span className="font-semibold text-[var(--terracotta)]">Devam Ediyor</span>
                       <span className="text-[var(--campus-ink-muted)] tabular-nums">
                         {entry.grade}. Sınıf · Geçilen aşama: %{stagePercent}
                       </span>
                     </div>
-                    <h3 className="text-base font-bold text-[var(--campus-ink)]">
+                    <h3 className="text-base font-bold text-[var(--seljuk-navy)]">
                       {mission?.title ?? entry.missionId}
                     </h3>
                     <Link
                       to={`/gorev/${entry.missionId}`}
-                      className="min-h-[44px] px-4 py-2 rounded-lg bg-[var(--seljuk-teal)] text-white text-xs font-semibold inline-flex items-center gap-2"
+                      className="min-h-[44px] px-4 py-2 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-xs font-semibold inline-flex items-center gap-2 transition-colors"
                     >
                       <Play className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>Kaldığım Yerden Devam Et</span>
@@ -158,7 +170,7 @@ export function JourneyView() {
                         {entry.grade}. Sınıf
                       </span>
                     </div>
-                    <h3 className="text-base font-bold text-[var(--campus-ink)]">
+                    <h3 className="text-base font-bold text-[var(--seljuk-navy)]">
                       {mission?.title ?? entry.missionId}
                     </h3>
                     {entry.selfEvaluation?.selectedOptionId && (
@@ -169,7 +181,7 @@ export function JourneyView() {
                     )}
                     <Link
                       to={`/gorev/${entry.missionId}`}
-                      className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-canvas)] text-xs font-semibold text-[var(--campus-ink)] inline-flex items-center gap-2"
+                      className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-2 transition-colors"
                     >
                       <span>Çalışmaya Yeniden Bak</span>
                     </Link>
@@ -182,7 +194,7 @@ export function JourneyView() {
 
         {/* Cihazda Kayıtlı Ürünler (IndexedDB) */}
         <section className="space-y-4">
-          <h2 className="text-lg font-bold text-[var(--campus-ink)]">Cihazda Kayıtlı Çalışmalarım</h2>
+          <h2 className="text-lg font-bold text-[var(--seljuk-navy)]">Cihazda Kayıtlı Çalışmalarım</h2>
 
           {loadingArtifacts ? (
             <p className="text-sm text-[var(--campus-ink-muted)]">Kayıtlı çalışmalar yükleniyor...</p>
@@ -205,7 +217,7 @@ export function JourneyView() {
                     <span>{art.title}</span>
                   </div>
 
-                  <h3 className="text-base font-bold text-[var(--campus-ink)]">{art.doorName}</h3>
+                  <h3 className="text-base font-bold text-[var(--seljuk-navy)]">{art.doorName}</h3>
 
                   {art.pngDataUrl && (
                     <img
@@ -225,7 +237,7 @@ export function JourneyView() {
                     <button
                       type="button"
                       onClick={() => handleDownloadArtifact(art)}
-                      className="min-h-[44px] px-4 py-2 rounded-lg bg-[var(--seljuk-teal)] text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                      className="min-h-[44px] px-4 py-2 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
                     >
                       <Download className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>PNG İndir</span>
@@ -233,7 +245,7 @@ export function JourneyView() {
 
                     <Link
                       to={`/gorev/${art.missionId}`}
-                      className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-canvas)] text-xs font-semibold text-[var(--campus-ink)] inline-flex items-center"
+                      className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--seljuk-navy)] inline-flex items-center transition-colors"
                     >
                       <span>Göreve Git</span>
                     </Link>

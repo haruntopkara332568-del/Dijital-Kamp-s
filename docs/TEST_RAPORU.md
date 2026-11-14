@@ -4,7 +4,7 @@
 - **`npm ci`**: Geçti — `package-lock.json` ile 265 paket temiz kuruldu.
 - **`npm run typecheck` (`tsc --noEmit`)**: Geçti — 0 hata (strict TypeScript).
 - **`npm run lint` (`eslint .`)**: Geçti — 0 hata, 0 uyarı.
-- **`npm run test` (`vitest run`)**: Geçti — `src/test/campus.test.tsx` (14 / 14 test, 807 ms):
+- **`npm run test` (`vitest run`)**: Geçti — `src/test/campus.test.tsx` (14 / 14 test, 711 ms):
   - 2–7. sınıf başlangıç parametrelerinin (`gradeProfiles.ts`) doğrulaması
   - Onaylı karşılama metni, karma dil seslendirme segmentleri (`tr-TR` / `en-US` / `tr-TR`) ve rehber sorularının harfiyen korunması
   - Görev aşamalarının (`Keşfet → Öğren → Üret → Paylaş`) doğrulanması
@@ -20,9 +20,10 @@
   - İki adımlı "Verilerimi Sil" penceresi ve "Vazgeç" davranışı
   - Üst gezinme çubuğunun React Router bağlantılarını (`/harita`, `/alan/gorev-panosu`, `/yolculugum`) doğru üretmesi
 - **`npm run build` (`vite build`)**: Geçti — Vite 8.3.8 ile derlendi.
-- **`npm run test:e2e` (`playwright test`)**: Geçti — `e2e/campus.spec.ts` **2 / 2** geçti (20.9 s):
-  - `[chromium]` (Masaüstü Chrome, 8.1 s): İlk ziyaret kapı → karşılama metni → 5. sınıf → rehberli tur → harita → Kapıların Anlattığı Hikâye → PNG/Kayıt → Yolculuğum → iki adımlı Verilerimi Sil.
-  - `[mobile-chrome]` (`Pixel 5`, 8.9 s): Aynı uçtan uca senaryo mobil görünümde geçti.
+- **`npm run test:e2e` (`playwright test`)**: Geçti — `e2e/campus.spec.ts` **2 / 2** geçti (17.6 s):
+  - `[chromium]` (Masaüstü Chrome, 8.0 s): İlk ziyaret kapı → karşılama metni → 5. sınıf → rehberli tur → harita → Kapıların Anlattığı Hikâye → PNG/Kayıt → Yolculuğum → iki adımlı Verilerimi Sil.
+  - `[mobile-chrome]` (`Pixel 5`, 6.7 s): Aynı uçtan uca senaryo mobil görünümde geçti.
+- **Çoklu Ekran Boyutu Denetimi (`1280×840`, `768×1024`, `390×844`)**: Geçti — Giriş kapısı, karşılama avlusu ve harita sayfalarında yatay taşma yok, masaüstü/tablet haritada `0` düğüm çakışması ve `0` kırpılma.
 
 ## 2. Çalıştırılamayan Testler
 - Yok. Birim/entegrasyon (`vitest`) ve uçtan uca tarayıcı (`playwright`) testlerinin tamamı çalıştırıldı ve geçti.
@@ -40,6 +41,6 @@
 
 ## 5. Paket Boyutu Ölçümü (Vite Derleme Çıktısı)
 - `dist/index.html`: `0.90 kB` (`gzip: 0.43 kB`)
-- `dist/assets/index-DV2fLlG1.css`: `38.87 kB` (`gzip: 6.88 kB`)
-- `dist/assets/index-C30s0On1.js`: `894.98 kB` (`gzip: 247.93 kB`)
+- `dist/assets/index-CbUrLnID.css`: `48.10 kB` (`gzip: 7.94 kB`)
+- `dist/assets/index-9WBQJDbA.js`: `909.33 kB` (`gzip: 251.46 kB`)
 - Harici yazı tipi, CDN, izleyici ve üçüncü taraf görsel isteği sıfırdır. Gerçek 4 yıllık Android cihazda açılış hızı henüz ölçülmemiştir.

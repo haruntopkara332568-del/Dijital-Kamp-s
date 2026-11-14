@@ -22,45 +22,45 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
   }, [isOpening, onEnterCourtyard]);
 
   return (
-    <main className="min-h-dvh flex flex-col items-center justify-center px-4 py-8 bg-gradient-to-b from-[var(--sky-warm-top)]/45 via-[var(--campus-canvas)] to-[var(--stone-light)]/55">
-      <div className="w-full max-w-3xl space-y-6 text-center">
-        <header className="space-y-2.5">
-          <p className="text-xs font-semibold text-[var(--seljuk-teal)] tracking-wide">
-            Anadolu Taç Kapısı Esintili Öğrenme Yerleşkesi
-          </p>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--seljuk-navy)]">
-            Dijital Eğitim Kampüsü
-          </h1>
-          <p className="text-sm sm:text-base text-[var(--campus-ink-muted)] max-w-xl mx-auto">
-            Taş işçiliği ve geometrik yıldızlarla çerçevelenen kampüs kapısına dokunarak aydınlık
-            keşif avlusuna adım atabilirsin.
-          </p>
-        </header>
-
+    <main className="min-h-dvh flex flex-col items-center justify-center px-4 py-6 sm:py-10 bg-gradient-to-b from-[var(--sky-warm-top)]/50 via-[var(--campus-canvas)] to-[var(--stone-light)]/55">
+      <div className="w-full max-w-4xl space-y-5 text-center">
+        {/* Taç Kapı Ana Sahne Kartı: Başlık, sahne ve eylemler tek bütüncül kampüs girişinde */}
         <div className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] shadow-sm overflow-hidden">
-          {/* İnce Selçuklu Lacivert–Turkuaz–Toprak Mimari Taç Çizgisi */}
           <div
             aria-hidden="true"
             className="h-1.5 w-full bg-gradient-to-r from-[var(--seljuk-navy)] via-[var(--seljuk-teal)] to-[var(--terracotta)]"
           />
 
-          <div className="p-4 sm:p-6">
+          <div className="px-4 pt-5 pb-6 sm:px-8 sm:pt-6 sm:pb-7 space-y-4">
+            <header className="space-y-1.5 max-w-2xl mx-auto">
+              <p className="text-xs font-semibold text-[var(--seljuk-teal)] tracking-wide">
+                Anadolu–Selçuklu Mimarisinden Esinlenen Dijital Yerleşke
+              </p>
+              <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-[var(--seljuk-navy)]">
+                Dijital Eğitim Kampüsü
+              </h1>
+              <p className="text-sm text-[var(--campus-ink-muted)]">
+                Taş işçiliği ve geometrik yıldızlarla çerçevelenen kampüs kapısına dokunarak keşif
+                avlusuna adım atabilirsin.
+              </p>
+            </header>
+
             <button
               type="button"
               onClick={() => setIsOpening(true)}
               disabled={isOpening}
               aria-label="Kampüs kapısını aç ve içeri gir"
-              className="w-full rounded-xl focus-visible:outline-3 focus-visible:outline-[var(--seljuk-teal)] cursor-pointer group"
+              className="w-full rounded-xl focus-visible:outline-3 focus-visible:outline-[var(--seljuk-teal)] cursor-pointer group block"
             >
               <CampusPortalGateSvg isOpen={isOpening} />
             </button>
 
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+            <div className="pt-1 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={() => setIsOpening(true)}
                 disabled={isOpening}
-                className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-70"
+                className="w-full sm:w-auto min-h-[46px] px-7 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer disabled:opacity-70"
               >
                 <span>{isOpening ? 'Kapı Açılıyor...' : 'Kapıyı Aç ve İçeri Gir'}</span>
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
@@ -69,7 +69,7 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
               <button
                 type="button"
                 onClick={onEnterCourtyard}
-                className="min-h-[44px] px-4 py-2.5 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-sm font-medium text-[var(--seljuk-navy)] inline-flex items-center gap-2 transition-colors cursor-pointer"
+                className="w-full sm:w-auto min-h-[46px] px-5 py-2.5 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-sm font-semibold text-[var(--seljuk-navy)] inline-flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
                 <SkipForward className="w-4 h-4 text-[var(--campus-ink-muted)]" aria-hidden="true" />
                 <span>Animasyonu Atla</span>
@@ -78,7 +78,7 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
           </div>
         </div>
 
-        <p className="text-xs text-[var(--campus-ink-muted)] max-w-lg mx-auto">
+        <p className="text-xs text-[var(--campus-ink-muted)] max-w-lg mx-auto pb-1">
           Bu kampüste ad, soyad, numara veya konum gibi kişisel bilgiler istenmez. Çalışmaların yalnızca
           kullandığın bu cihaz ve tarayıcıda saklanır.
         </p>

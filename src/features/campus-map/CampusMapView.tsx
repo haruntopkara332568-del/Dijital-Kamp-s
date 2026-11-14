@@ -1,44 +1,78 @@
 import { Link } from 'react-router';
-import {
-  ArrowRight,
-  Play,
-  RotateCcw,
-} from 'lucide-react';
+import { ArrowRight, Play, RotateCcw } from 'lucide-react';
 import { CAMPUS_AREAS, getLearningAreas, getUtilityAreas } from '@/src/data/campusAreas';
 import { getActiveMissions } from '@/src/data/missions';
 import { useCampus } from '@/src/app/CampusProviders';
-import { PeerGuideSvg } from '@/src/components/svg/PeerGuideSvg';
+import { PeerGuideSvg, PeerGuideInSceneGraphic } from '@/src/components/svg/PeerGuideSvg';
 import { CampusBuildingSvg } from '@/src/components/svg/CampusBuildingSvg';
-import { SeljukStarMotif } from '@/src/components/svg/SeljukStarMotif';
+import { IsometricGroundSvg } from '@/src/components/svg/IsometricGroundSvg';
+import { IsometricPathSvg, type IsometricPathSegment } from '@/src/components/svg/IsometricPathSvg';
+import {
+  IsometricCypressTree,
+  IsometricRoundTree,
+  IsometricSignpost,
+} from '@/src/components/svg/LandscapeElementsSvg';
+import { BuildingInteractiveShell } from '@/src/components/svg/BuildingInteractiveShell';
+import { CampusLabelTag } from '@/src/components/CampusLabelTag';
 import type { CampusAreaRecord } from '@/src/types/campus';
 
-function areaCardTheme(id: string, accentToken: CampusAreaRecord['accentToken']) {
-  if (id === 'gezi-ve-kesif' || accentToken === 'gold') {
-    return {
-      border: 'border-[var(--terracotta)]/30 hover:border-[var(--terracotta)]',
-      tagText: 'text-[var(--terracotta)]',
-      iconFrame: 'bg-[var(--terracotta-soft)] border-[var(--terracotta)]/25',
-    };
+const ISO_VIEW_W = 1000;
+const ISO_VIEW_H = 562.5;
+
+function getAreaAccent(
+  id: string,
+  accentToken: CampusAreaRecord['accentToken'],
+): 'terracotta' | 'teal' | 'sage' | 'navy' {
+  if (id === 'gezi-ve-kesif' || accentToken === 'gold') return 'terracotta';
+  if (id === 'kitap-ve-hikaye-dunyasi' || accentToken === 'sage') return 'sage';
+  if (id === 'kampus-yolculugum' || accentToken === 'slate') return 'navy';
+  return 'teal';
+}
+
+function getIsometricSlot(area: CampusAreaRecord): { xPercent: number; yPercent: number } {
+  switch (area.id) {
+    case 'gezi-ve-kesif':
+      return { xPercent: 20, yPercent: 32 };
+    case 'ingilizce-dunyasi':
+      return { xPercent: 50, yPercent: 21 };
+    case 'kitap-ve-hikaye-dunyasi':
+      return { xPercent: 80, yPercent: 32 };
+    case 'gorev-panosu':
+      return { xPercent: 30, yPercent: 74 };
+    case 'kampus-yolculugum':
+      return { xPercent: 70, yPercent: 74 };
+    default:
+      return area.mapPosition;
   }
-  if (id === 'kitap-ve-hikaye-dunyasi' || accentToken === 'sage') {
-    return {
-      border: 'border-[var(--courtyard-sage)]/30 hover:border-[var(--courtyard-sage)]',
-      tagText: 'text-[var(--courtyard-sage)]',
-      iconFrame: 'bg-[var(--courtyard-sage-soft)] border-[var(--courtyard-sage)]/25',
-    };
+}
+
+function areaCardClasses(accent: 'terracotta' | 'teal' | 'sage' | 'navy') {
+  switch (accent) {
+    case 'terracotta':
+      return {
+        border: 'border-[var(--terracotta)]/30 hover:border-[var(--terracotta)]',
+        tag: 'text-[var(--terracotta)]',
+        frame: 'bg-[var(--terracotta-soft)]/70 border-[var(--terracotta)]/25',
+      };
+    case 'sage':
+      return {
+        border: 'border-[var(--courtyard-sage)]/30 hover:border-[var(--courtyard-sage)]',
+        tag: 'text-[var(--courtyard-sage)]',
+        frame: 'bg-[var(--courtyard-sage-soft)]/70 border-[var(--courtyard-sage)]/25',
+      };
+    case 'navy':
+      return {
+        border: 'border-[var(--seljuk-navy)]/25 hover:border-[var(--seljuk-navy)]',
+        tag: 'text-[var(--seljuk-navy)]',
+        frame: 'bg-[var(--seljuk-navy-soft)]/70 border-[var(--seljuk-navy)]/20',
+      };
+    default:
+      return {
+        border: 'border-[var(--seljuk-teal)]/30 hover:border-[var(--seljuk-teal)]',
+        tag: 'text-[var(--seljuk-teal)]',
+        frame: 'bg-[var(--seljuk-teal-soft)]/70 border-[var(--seljuk-teal)]/25',
+      };
   }
-  if (id === 'kampus-yolculugum' || accentToken === 'slate') {
-    return {
-      border: 'border-[var(--seljuk-navy)]/25 hover:border-[var(--seljuk-navy)]',
-      tagText: 'text-[var(--seljuk-navy)]',
-      iconFrame: 'bg-[var(--seljuk-navy-soft)] border-[var(--seljuk-navy)]/20',
-    };
-  }
-  return {
-    border: 'border-[var(--seljuk-teal)]/30 hover:border-[var(--seljuk-teal)]',
-    tagText: 'text-[var(--seljuk-teal)]',
-    iconFrame: 'bg-[var(--seljuk-teal-soft)] border-[var(--seljuk-teal)]/25',
-  };
 }
 
 export function CampusMapView() {
@@ -55,17 +89,50 @@ export function CampusMapView() {
   const activeMissions = getActiveMissions();
   const primaryMission = activeMissions[0];
 
-  // Bağlantı yolları veri modelinden otomatik çizilir
-  const connectionSegments: Array<{ from: CampusAreaRecord; to: CampusAreaRecord; key: string }> = [];
+  // Devam eden göreve veya önerilen ilk adıma göre seçili bina vurgusu
+  const highlightedAreaId = unfinished
+    ? unfinished.currentStage === 'kesfet'
+      ? 'gezi-ve-kesif'
+      : unfinished.currentStage === 'ogren'
+        ? 'ingilizce-dunyasi'
+        : 'kitap-ve-hikaye-dunyasi'
+    : 'gorev-panosu';
+
+  // Veri temelli bağlantı yolları + merkez yıldız meydanına çıkan taş yollar
+  const pathSegments: IsometricPathSegment[] = [];
   const seenPairs = new Set<string>();
+  const plazaX = 500;
+  const plazaY = 298;
+
   for (const area of CAMPUS_AREAS) {
+    const slot = getIsometricSlot(area);
+    const sx = (slot.xPercent / 100) * ISO_VIEW_W;
+    const sy = (slot.yPercent / 100) * ISO_VIEW_H + 18;
+    pathSegments.push({
+      id: `plaza-${area.id}`,
+      x1: plazaX,
+      y1: plazaY,
+      x2: sx,
+      y2: sy,
+      width: 22,
+    });
+
     for (const targetId of area.connectedToIds) {
       const target = CAMPUS_AREAS.find((a) => a.id === targetId);
       if (!target) continue;
       const pairKey = [area.id, target.id].sort().join('--');
       if (seenPairs.has(pairKey)) continue;
       seenPairs.add(pairKey);
-      connectionSegments.push({ from: area, to: target, key: pairKey });
+
+      const targetSlot = getIsometricSlot(target);
+      pathSegments.push({
+        id: pairKey,
+        x1: sx,
+        y1: sy,
+        x2: (targetSlot.xPercent / 100) * ISO_VIEW_W,
+        y2: (targetSlot.yPercent / 100) * ISO_VIEW_H + 18,
+        width: 18,
+      });
     }
   }
 
@@ -94,8 +161,8 @@ export function CampusMapView() {
                 Kampüs Haritası ve Keşif Alanları
               </h1>
               <p className="text-sm sm:text-base text-[var(--campus-ink-muted)] max-w-2xl">
-                İstersen üç öğrenme alanını birleştiren örnek görevle yola çık, istersen tek tek
-                binaları ziyaret ederek serbestçe keşfet.
+                İstersen üç öğrenme alanını birleştiren örnek görevle yola çık, istersen izometrik
+                yerleşkedeki binalara dokunarak serbestçe keşfet.
               </p>
             </div>
           </div>
@@ -104,7 +171,7 @@ export function CampusMapView() {
             {unfinished ? (
               <Link
                 to={`/gorev/${unfinished.missionId}`}
-                className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors"
+                className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-all active:scale-[0.99]"
               >
                 <Play className="w-4 h-4" aria-hidden="true" />
                 <span>Kaldığım Yerden Devam Et</span>
@@ -113,7 +180,7 @@ export function CampusMapView() {
               primaryMission && (
                 <Link
                   to={`/gorev/${primaryMission.id}`}
-                  className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors"
+                  className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-all active:scale-[0.99]"
                 >
                   <Play className="w-4 h-4" aria-hidden="true" />
                   <span>{primaryMission.title} Görevine Başla</span>
@@ -124,7 +191,7 @@ export function CampusMapView() {
             <button
               type="button"
               onClick={replayGuidedTour}
-              className="min-h-[44px] px-4 py-2.5 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-sm font-medium text-[var(--seljuk-navy)] inline-flex items-center gap-2 cursor-pointer transition-colors"
+              className="min-h-[44px] px-4 py-2.5 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-sm font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-2 cursor-pointer transition-colors"
             >
               <RotateCcw className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
               <span>Rehberli Tur</span>
@@ -133,179 +200,117 @@ export function CampusMapView() {
         </div>
       </section>
 
-      {/* Etkileşimli Yerleşke Haritası (Masaüstü ve Mobilde Okunaklı Veri Temelli Görünüm) */}
+      {/* Etkileşimli 2,5B İzometrik Kampüs Yerleşkesi */}
       <section aria-labelledby="interactive-map-title" className="space-y-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="interactive-map-title" className="text-lg sm:text-xl font-bold text-[var(--seljuk-navy)]">
             Etkileşimli Kampüs Yerleşkesi
           </h2>
           <p className="text-xs text-[var(--campus-ink-muted)]">
-            3 Öğrenme Alanı · 2 Kampüs İşlevi · Her yapıya dokunarak veya klavyeyle seçerek gidebilirsin
+            3 Öğrenme Alanı · 2 Kampüs İşlevi · İstediğin binaya tıklayarak veya klavyeyle seçerek girebilirsin
           </p>
         </div>
 
-        {/* Masaüstü ve Tablet Etkileşimli Avlu Haritası Tuvali */}
-        <div className="hidden md:block relative rounded-2xl border border-[var(--campus-border)] bg-[var(--stone-cream)] overflow-hidden min-h-[510px] shadow-sm">
-          {/* Arka Plan Anadolu-Selçuklu Avlu Planı ve Taş Yürüyüş Yolları */}
+        {/* Masaüstü ve Tablet: 2,5B İzometrik Tıklanabilir Binalar Sahnesi */}
+        <div className="hidden md:block relative rounded-2xl border border-[var(--campus-border)] bg-gradient-to-b from-[var(--sky-warm-top)]/40 via-[var(--iso-ground-base)] to-[var(--stone-light)]/55 overflow-hidden aspect-[16/9] shadow-sm">
+          {/* Sabit 16:9 Oranlı İzometrik Zemin, Taş Yollar, Peyzaj ve Sahne İçi Rehber */}
           <svg
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            className="absolute inset-0 w-full h-full pointer-events-none"
+            viewBox={`0 0 ${ISO_VIEW_W} ${ISO_VIEW_H}`}
+            className="w-full h-auto block pointer-events-none"
             aria-hidden="true"
           >
-            {/* Dış Çevre Bahçe Yeşilliği ve Taş Avlu Zemini */}
-            <rect x="0" y="0" width="100" height="100" fill="var(--courtyard-sage-soft)" opacity="0.55" />
-            <rect
-              x="4"
-              y="5"
-              width="92"
-              height="90"
-              rx="4"
-              fill="var(--stone-cream)"
-              stroke="var(--stone-mid)"
-              strokeWidth="0.6"
+            {/* Uzak Anadolu Tepeleri */}
+            <path
+              d="M 0 180 Q 240 120 500 164 Q 760 116 1000 176 L 1000 562.5 L 0 562.5 Z"
+              fill="var(--courtyard-sage-soft)"
+              opacity="0.45"
             />
-            {/* Yumuşak Yeşil Bahçe Adaları */}
-            <ellipse cx="14" cy="56" rx="8" ry="18" fill="var(--courtyard-sage-soft)" />
-            <ellipse cx="86" cy="56" rx="8" ry="18" fill="var(--courtyard-sage-soft)" />
-            <ellipse cx="50" cy="49" rx="34" ry="28" fill="var(--courtyard-sage-soft)" opacity="0.45" />
 
-            {/* Veri Temelli Taş Döşeli Yürüyüş Yolları */}
-            {connectionSegments.map((seg) => (
-              <line
-                key={seg.key}
-                x1={seg.from.mapPosition.xPercent}
-                y1={seg.from.mapPosition.yPercent}
-                x2={seg.to.mapPosition.xPercent}
-                y2={seg.to.mapPosition.yPercent}
-                stroke="var(--stone-dark)"
-                strokeWidth="3.6"
-                strokeLinecap="round"
-              />
-            ))}
-            {connectionSegments.map((seg) => (
-              <line
-                key={`${seg.key}-surface`}
-                x1={seg.from.mapPosition.xPercent}
-                y1={seg.from.mapPosition.yPercent}
-                x2={seg.to.mapPosition.xPercent}
-                y2={seg.to.mapPosition.yPercent}
-                stroke="var(--stone-light)"
-                strokeWidth="2.8"
-                strokeLinecap="round"
-              />
-            ))}
-            {connectionSegments.map((seg) => (
-              <line
-                key={`${seg.key}-joint`}
-                x1={seg.from.mapPosition.xPercent}
-                y1={seg.from.mapPosition.yPercent}
-                x2={seg.to.mapPosition.xPercent}
-                y2={seg.to.mapPosition.yPercent}
-                stroke="var(--stone-mid)"
-                strokeWidth="0.45"
-                strokeDasharray="1.4 1.4"
-                strokeLinecap="round"
-              />
-            ))}
+            <IsometricGroundSvg
+              plazaCx={plazaX}
+              plazaCy={plazaY}
+              width={ISO_VIEW_W}
+              height={ISO_VIEW_H}
+            />
 
-            {/* Avlu Ağaçları */}
-            <circle cx="11" cy="52" r="2.2" fill="var(--courtyard-sage)" opacity="0.7" />
-            <circle cx="13" cy="60" r="1.8" fill="var(--courtyard-sage-mid)" opacity="0.8" />
-            <circle cx="89" cy="52" r="2.2" fill="var(--courtyard-sage)" opacity="0.7" />
-            <circle cx="87" cy="60" r="1.8" fill="var(--courtyard-sage-mid)" opacity="0.8" />
-            <circle cx="50" cy="87" r="2" fill="var(--courtyard-sage)" opacity="0.65" />
+            <IsometricPathSvg segments={pathSegments} />
+
+            {/* Çevre Ağaçları ve Peyzaj */}
+            <IsometricCypressTree x={84} y={302} scale={1.08} />
+            <IsometricRoundTree x={118} y={334} scale={0.95} />
+            <IsometricCypressTree x={916} y={302} scale={1.08} />
+            <IsometricRoundTree x={882} y={334} scale={0.95} />
+            <IsometricRoundTree x={346} y={136} scale={0.85} />
+            <IsometricRoundTree x={654} y={136} scale={0.85} />
+            <IsometricCypressTree x={500} y={482} scale={0.92} />
+
+            {/* Yönlendirme Levhası */}
+            <IsometricSignpost x={596} y={326} />
+
+            {/* Sahne İçi Kampüs Arkadaşı */}
+            <g transform="translate(414, 240) scale(0.56)">
+              <PeerGuideInSceneGraphic mood="welcoming" />
+            </g>
           </svg>
 
-          {/* Merkez Selçuklu Yıldızı Taş Meydan Madalyonu (Bozulmayan Kare Oran) */}
-          <div
-            aria-hidden="true"
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex flex-col items-center justify-center"
-          >
-            <svg viewBox="0 0 80 80" className="w-20 h-20">
-              <circle
-                cx="40"
-                cy="40"
-                r="36"
-                fill="var(--stone-light)"
-                stroke="var(--stone-dark)"
-                strokeWidth="2"
-              />
-              <circle
-                cx="40"
-                cy="40"
-                r="29"
-                fill="var(--stone-cream)"
-                stroke="var(--stone-mid)"
-                strokeWidth="1.2"
-                strokeDasharray="4 3"
-              />
-              <SeljukStarMotif
-                cx={40}
-                cy={40}
-                radius={17}
-                fill="var(--seljuk-teal)"
-                stroke="var(--seljuk-navy)"
-                innerFill="var(--sandstone-gold-soft)"
-                accentFill="var(--terracotta)"
-              />
-            </svg>
-          </div>
-
-          {/* Etkileşimli Harita Bina ve Alan Erişim Noktaları */}
+          {/* Tıklanabilir 2,5B İzometrik Binalar ve Kompakt Mimari Tabelalar */}
           {CAMPUS_AREAS.map((area) => {
-            const theme = areaCardTheme(area.id, area.accentToken);
+            const slot = getIsometricSlot(area);
+            const accent = getAreaAccent(area.id, area.accentToken);
+            const isSelected = area.id === highlightedAreaId;
+            const isDisabled = area.status !== 'active';
+
             return (
-              <Link
+              <BuildingInteractiveShell
                 key={area.id}
+                buildingId={area.id}
                 to={area.route}
-                style={{
-                  left: `${area.mapPosition.xPercent}%`,
-                  top: `${area.mapPosition.yPercent}%`,
-                }}
-                className={`absolute -translate-x-1/2 -translate-y-1/2 w-60 rounded-xl bg-[var(--campus-surface)] border ${theme.border} p-3 shadow-sm hover:shadow-md hover:-translate-y-[53%] transition-all focus-visible:outline-3 focus-visible:outline-[var(--seljuk-teal)] group`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-16 h-14 rounded-lg border flex items-center justify-center shrink-0 overflow-hidden ${theme.iconFrame}`}
-                  >
-                    <CampusBuildingSvg buildingId={area.id} className="w-16 h-13" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className={`text-[11px] font-semibold ${theme.tagText}`}>
-                      {area.type === 'learning-area' ? 'Öğrenme Alanı' : 'Kampüs İşlevi'}
-                    </p>
-                    <p className="text-sm font-bold text-[var(--seljuk-navy)] group-hover:text-[var(--seljuk-teal)] transition-colors leading-snug">
-                      {area.title}
-                    </p>
-                  </div>
-                </div>
-              </Link>
+                title={area.title}
+                subtitle={area.type === 'learning-area' ? 'Öğrenme Alanı' : 'Kampüs İşlevi'}
+                accent={accent}
+                selected={isSelected}
+                disabled={isDisabled}
+                leftPercent={slot.xPercent}
+                topPercent={slot.yPercent}
+                size={area.type === 'learning-area' ? 'lg' : 'md'}
+              />
             );
           })}
         </div>
 
-        {/* Mobil ve Ekran Okuyucu Dostu Liste / Kart Yerleşimi */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:hidden">
+        {/* Mobil Görünüm: Taşmasız Kompakt İzometrik Yerleşke Kartları */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 md:hidden">
           {CAMPUS_AREAS.map((area) => {
-            const theme = areaCardTheme(area.id, area.accentToken);
+            const accent = getAreaAccent(area.id, area.accentToken);
+            const theme = areaCardClasses(accent);
+            const isSelected = area.id === highlightedAreaId;
+
             return (
               <Link
                 key={area.id}
                 to={area.route}
-                className={`rounded-xl bg-[var(--campus-surface)] border ${theme.border} p-4 flex items-center gap-3.5 transition-colors min-h-[76px] shadow-xs`}
+                className={`rounded-xl bg-[var(--campus-surface)] border p-3.5 flex items-center gap-3.5 transition-colors min-h-[78px] shadow-xs ${
+                  isSelected
+                    ? 'border-[var(--seljuk-teal)] ring-2 ring-[var(--seljuk-teal)]/20'
+                    : theme.border
+                }`}
               >
                 <div
-                  className={`w-16 h-14 rounded-lg border flex items-center justify-center shrink-0 ${theme.iconFrame}`}
+                  className={`w-20 h-16 rounded-lg border flex items-center justify-center shrink-0 ${theme.frame}`}
                 >
-                  <CampusBuildingSvg buildingId={area.id} className="w-16 h-13" />
+                  <CampusBuildingSvg buildingId={area.id} className="w-18 h-14" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-xs font-semibold ${theme.tagText}`}>
-                    {area.type === 'learning-area' ? 'Öğrenme Alanı' : 'Kampüs İşlevi'}
+                  <CampusLabelTag
+                    title={area.title}
+                    subtitle={area.type === 'learning-area' ? 'Öğrenme Alanı' : 'Kampüs İşlevi'}
+                    accent={accent}
+                    selected={isSelected}
+                    className="border-0 shadow-none p-0 bg-transparent"
+                  />
+                  <p className="text-xs text-[var(--campus-ink-muted)] mt-1 line-clamp-2">
+                    {area.summary}
                   </p>
-                  <p className="text-base font-bold text-[var(--seljuk-navy)]">{area.title}</p>
-                  <p className="text-xs text-[var(--campus-ink-muted)] mt-1">{area.summary}</p>
                 </div>
               </Link>
             );
@@ -319,16 +324,17 @@ export function CampusMapView() {
           <h2 className="text-lg font-bold text-[var(--seljuk-navy)]">Üç Temel Öğrenme Alanı</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {learningAreas.map((area) => {
-              const theme = areaCardTheme(area.id, area.accentToken);
+              const accent = getAreaAccent(area.id, area.accentToken);
+              const theme = areaCardClasses(accent);
               return (
                 <Link
                   key={area.id}
                   to={area.route}
-                  className={`rounded-xl bg-[var(--campus-surface)] border ${theme.border} p-4 transition-all hover:shadow-sm flex flex-col justify-between gap-3 group`}
+                  className={`rounded-xl bg-[var(--campus-surface)] border ${theme.border} p-4 transition-all hover:shadow-sm hover:-translate-y-0.5 flex flex-col justify-between gap-3 group`}
                 >
                   <div className="space-y-3">
                     <div
-                      className={`w-full h-24 rounded-lg border flex items-center justify-center ${theme.iconFrame}`}
+                      className={`w-full h-24 rounded-lg border flex items-center justify-center ${theme.frame}`}
                     >
                       <CampusBuildingSvg buildingId={area.id} className="w-24 h-20" />
                     </div>
@@ -341,7 +347,7 @@ export function CampusMapView() {
                       </p>
                     </div>
                   </div>
-                  <span className={`text-xs font-semibold ${theme.tagText} inline-flex items-center gap-1`}>
+                  <span className={`text-xs font-semibold ${theme.tag} inline-flex items-center gap-1`}>
                     <span>Alanı İncele</span>
                     <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
                   </span>
@@ -355,16 +361,17 @@ export function CampusMapView() {
           <h2 className="text-lg font-bold text-[var(--seljuk-navy)]">Kampüs İşlevleri</h2>
           <div className="space-y-3">
             {utilityAreas.map((area) => {
-              const theme = areaCardTheme(area.id, area.accentToken);
+              const accent = getAreaAccent(area.id, area.accentToken);
+              const theme = areaCardClasses(accent);
               return (
                 <Link
                   key={area.id}
                   to={area.route}
-                  className={`rounded-xl bg-[var(--campus-surface)] border ${theme.border} p-4 transition-all hover:shadow-sm flex items-center justify-between gap-3 group`}
+                  className={`rounded-xl bg-[var(--campus-surface)] border ${theme.border} p-4 transition-all hover:shadow-sm hover:-translate-y-0.5 flex items-center justify-between gap-3 group`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`w-16 h-14 rounded-lg border flex items-center justify-center shrink-0 ${theme.iconFrame}`}
+                      className={`w-18 h-14 rounded-lg border flex items-center justify-center shrink-0 ${theme.frame}`}
                     >
                       <CampusBuildingSvg buildingId={area.id} className="w-16 h-13" />
                     </div>

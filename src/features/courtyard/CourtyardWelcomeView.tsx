@@ -61,16 +61,16 @@ export function CourtyardWelcomeView({
     : null;
 
   return (
-    <main className="min-h-dvh bg-gradient-to-b from-[var(--sky-warm-top)]/30 via-[var(--campus-canvas)] to-[var(--stone-light)]/40 px-4 py-6 sm:py-10">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Avlu Sahnesi Üst Şeridi */}
+    <main className="min-h-dvh bg-gradient-to-b from-[var(--sky-warm-top)]/35 via-[var(--campus-canvas)] to-[var(--stone-light)]/45 px-4 py-6 sm:py-8">
+      <div className="max-w-5xl mx-auto space-y-5">
+        {/* Avlu Sahnesi + Alt Bilgi Kartını Bütünleştiren Kampüs Çerçevesi */}
         <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] shadow-sm overflow-hidden">
           <div
             aria-hidden="true"
             className="h-1.5 w-full bg-gradient-to-r from-[var(--seljuk-navy)] via-[var(--seljuk-teal)] to-[var(--courtyard-sage)]"
           />
-          <div className="p-4 sm:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="p-4 sm:p-6 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold text-[var(--courtyard-sage)]">
                   Karşılama Avlusu
@@ -91,166 +91,166 @@ export function CourtyardWelcomeView({
             </div>
 
             <CourtyardSceneSvg />
-          </div>
-        </section>
 
-        {/* Aşama 1: Onaylı Karşılama ve Keşif Tercihi */}
-        {phase === 'welcome-choice' && (
-          <GuideDialogueCard dialogue={WELCOME_DIALOGUE} mood="welcoming">
-            <div className="pt-2 flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                onClick={() => handleChooseDiscovery('guided')}
-                className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-pointer transition-colors"
-              >
-                <Compass className="w-4 h-4" aria-hidden="true" />
-                <span>Birlikte gezelim</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleChooseDiscovery('independent')}
-                className="min-h-[44px] px-5 py-2.5 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-[var(--seljuk-navy)] text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-pointer transition-colors"
-              >
-                <MapIcon className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
-                <span>Kendim keşfedeceğim</span>
-              </button>
-            </div>
-          </GuideDialogueCard>
-        )}
-
-        {/* Aşama 2: Sınıf Seçimi (2–7. Sınıflar) */}
-        {phase === 'grade-select' && (
-          <section
-            aria-labelledby="grade-select-heading"
-            className="rounded-xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 shadow-sm space-y-5"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold text-[var(--seljuk-teal)]">
-                  Adım 2 · Sınıf Düzeyini Seç
-                </p>
-                <h2 id="grade-select-heading" className="text-xl font-bold text-[var(--seljuk-navy)]">
-                  Kaçıncı sınıfa gidiyorsun?
-                </h2>
-                <p className="text-sm text-[var(--campus-ink-muted)] mt-1">
-                  Görevlerin dili, ipuçları ve üretim seçenekleri sınıfına göre uyarlanır. İstediğin zaman
-                  üst menüden değiştirebilirsin.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPhase('welcome-choice')}
-                className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] text-xs font-semibold text-[var(--seljuk-navy)] hover:bg-[var(--campus-surface-muted)] inline-flex items-center gap-1.5 cursor-pointer shrink-0"
-              >
-                <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-                <span>Geri</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {GRADE_LIST.map((profile) => {
-                const isSelected = state.selectedGrade === profile.grade;
-                return (
+            {/* Aşama 1: Sahneyle Bütünleşik Onaylı Karşılama ve Keşif Tercihi */}
+            {phase === 'welcome-choice' && (
+              <GuideDialogueCard dialogue={WELCOME_DIALOGUE} mood="welcoming">
+                <div className="pt-2 flex flex-col sm:flex-row gap-3">
                   <button
-                    key={profile.grade}
                     type="button"
-                    onClick={() => handleSelectGrade(profile.grade)}
-                    className={`min-h-[78px] p-4 rounded-xl border text-left transition-colors cursor-pointer flex flex-col justify-between ${
-                      isSelected
-                        ? 'border-[var(--seljuk-teal)] bg-[var(--seljuk-teal-soft)]'
-                        : 'border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] hover:border-[var(--stone-dark)]'
-                    }`}
+                    onClick={() => handleChooseDiscovery('guided')}
+                    className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
                   >
-                    <span className="text-lg font-bold text-[var(--seljuk-navy)] tabular-nums">
-                      {profile.label}
-                    </span>
-                    <span className="text-xs font-medium text-[var(--campus-ink-muted)]">
-                      {profile.tier === 'ilkokul' ? 'İlkokul Kampüsü' : 'Ortaokul Kampüsü'}
-                    </span>
+                    <Compass className="w-4 h-4" aria-hidden="true" />
+                    <span>Birlikte gezelim</span>
                   </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
 
-        {/* Aşama 3 (Birlikte Gezelim seçildiyse): Rehberli Tur */}
-        {phase === 'guided-tour' && currentStop && currentTourDialogue && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between text-xs font-semibold text-[var(--campus-ink-muted)]">
-              <span className="tabular-nums">
-                Rehberli Tanıtım Turu · Durak {tourIndex + 1} / {GUIDED_TOUR_STOPS.length}
-              </span>
-              <span className="tabular-nums text-[var(--seljuk-navy)]">{activeGradeProfile.label}</span>
-            </div>
-
-            <GuideDialogueCard dialogue={currentTourDialogue} mood="welcoming">
-              {currentArea && (
-                <div className="mt-2 p-4 rounded-xl bg-[var(--stone-cream)] border border-[var(--campus-border)] flex items-center gap-4">
-                  <CampusBuildingSvg buildingId={currentArea.id} className="w-20 h-16 shrink-0" />
-                  <div className="space-y-1 min-w-0">
-                    <h3 className="text-base font-bold text-[var(--seljuk-navy)]">{currentStop.title}</h3>
-                    <p className="text-sm text-[var(--campus-ink-muted)]">{currentArea.summary}</p>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleChooseDiscovery('independent')}
+                    className="min-h-[44px] px-5 py-2.5 rounded-lg border border-[var(--seljuk-navy)]/30 bg-[var(--campus-surface)] hover:bg-[var(--campus-surface-muted)] text-[var(--seljuk-navy)] text-sm font-semibold inline-flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
+                  >
+                    <MapIcon className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
+                    <span>Kendim keşfedeceğim</span>
+                  </button>
                 </div>
-              )}
+              </GuideDialogueCard>
+            )}
 
-              <div className="pt-4 flex flex-wrap items-center justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (tourIndex > 0) {
-                      setTourIndex((i) => i - 1);
-                    } else {
-                      setPhase('grade-select');
-                    }
-                  }}
-                  className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] text-sm font-semibold text-[var(--seljuk-navy)] hover:bg-[var(--campus-surface-muted)] inline-flex items-center gap-2 cursor-pointer"
-                >
-                  <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-                  <span>Önceki</span>
-                </button>
-
-                <div className="flex items-center gap-3">
+            {/* Aşama 2: Sınıf Seçimi (2–7. Sınıflar) */}
+            {phase === 'grade-select' && (
+              <section
+                aria-labelledby="grade-select-heading"
+                className="rounded-xl bg-[var(--stone-cream)] border border-[var(--campus-border)] border-t-2 border-t-[var(--seljuk-teal)]/60 p-5 sm:p-6 shadow-xs space-y-5"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold text-[var(--seljuk-teal)]">
+                      Adım 2 · Sınıf Düzeyini Seç
+                    </p>
+                    <h2 id="grade-select-heading" className="text-xl font-bold text-[var(--seljuk-navy)]">
+                      Kaçıncı sınıfa gidiyorsun?
+                    </h2>
+                    <p className="text-sm text-[var(--campus-ink-muted)] mt-1">
+                      Görevlerin dili, ipuçları ve üretim seçenekleri sınıfına göre uyarlanır. İstediğin zaman
+                      üst menüden değiştirebilirsin.
+                    </p>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      completeGuidedTour();
-                      onFinishToMap();
-                    }}
-                    className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] text-sm font-medium text-[var(--campus-ink-muted)] hover:text-[var(--seljuk-navy)] cursor-pointer"
+                    onClick={() => setPhase('welcome-choice')}
+                    className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] text-xs font-semibold text-[var(--seljuk-navy)] hover:bg-[var(--campus-surface-muted)] inline-flex items-center gap-1.5 cursor-pointer shrink-0"
                   >
-                    Turu Bitir ve Haritaya Geç
+                    <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+                    <span>Geri</span>
                   </button>
+                </div>
 
-                  {tourIndex < GUIDED_TOUR_STOPS.length - 1 ? (
-                    <button
-                      type="button"
-                      onClick={() => setTourIndex((i) => i + 1)}
-                      className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
-                    >
-                      <span>Sonraki Durak</span>
-                      <ArrowRight className="w-4 h-4" aria-hidden="true" />
-                    </button>
-                  ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {GRADE_LIST.map((profile) => {
+                    const isSelected = state.selectedGrade === profile.grade;
+                    return (
+                      <button
+                        key={profile.grade}
+                        type="button"
+                        onClick={() => handleSelectGrade(profile.grade)}
+                        className={`min-h-[78px] p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? 'border-[var(--seljuk-teal)] bg-[var(--seljuk-teal-soft)] shadow-xs'
+                            : 'border-[var(--campus-border)] bg-[var(--campus-surface)] hover:bg-[var(--campus-surface-muted)] hover:border-[var(--stone-dark)]'
+                        }`}
+                      >
+                        <span className="text-lg font-bold text-[var(--seljuk-navy)] tabular-nums">
+                          {profile.label}
+                        </span>
+                        <span className="text-xs font-medium text-[var(--campus-ink-muted)]">
+                          {profile.tier === 'ilkokul' ? 'İlkokul Kampüsü' : 'Ortaokul Kampüsü'}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* Aşama 3 (Birlikte Gezelim seçildiyse): Rehberli Tur */}
+            {phase === 'guided-tour' && currentStop && currentTourDialogue && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs font-semibold text-[var(--campus-ink-muted)] px-1">
+                  <span className="tabular-nums">
+                    Rehberli Tanıtım Turu · Durak {tourIndex + 1} / {GUIDED_TOUR_STOPS.length}
+                  </span>
+                  <span className="tabular-nums text-[var(--seljuk-navy)]">{activeGradeProfile.label}</span>
+                </div>
+
+                <GuideDialogueCard dialogue={currentTourDialogue} mood="welcoming">
+                  {currentArea && (
+                    <div className="mt-2 p-4 rounded-xl bg-[var(--campus-surface)] border border-[var(--campus-border)] flex items-center gap-4">
+                      <CampusBuildingSvg buildingId={currentArea.id} className="w-24 h-20 shrink-0" />
+                      <div className="space-y-1 min-w-0">
+                        <h3 className="text-base font-bold text-[var(--seljuk-navy)]">{currentStop.title}</h3>
+                        <p className="text-sm text-[var(--campus-ink-muted)]">{currentArea.summary}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-4 flex flex-wrap items-center justify-between gap-3">
                     <button
                       type="button"
                       onClick={() => {
-                        completeGuidedTour();
-                        onFinishToMap();
+                        if (tourIndex > 0) {
+                          setTourIndex((i) => i - 1);
+                        } else {
+                          setPhase('grade-select');
+                        }
                       }}
-                      className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--courtyard-sage)] hover:opacity-90 text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
+                      className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] text-sm font-semibold text-[var(--seljuk-navy)] hover:bg-[var(--campus-surface-muted)] inline-flex items-center gap-2 cursor-pointer"
                     >
-                      <span>Kampüs Haritasına Geç</span>
-                      <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                      <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+                      <span>Önceki</span>
                     </button>
-                  )}
-                </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          completeGuidedTour();
+                          onFinishToMap();
+                        }}
+                        className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] text-sm font-medium text-[var(--campus-ink-muted)] hover:text-[var(--seljuk-navy)] cursor-pointer"
+                      >
+                        Turu Bitir ve Haritaya Geç
+                      </button>
+
+                      {tourIndex < GUIDED_TOUR_STOPS.length - 1 ? (
+                        <button
+                          type="button"
+                          onClick={() => setTourIndex((i) => i + 1)}
+                          className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
+                        >
+                          <span>Sonraki Durak</span>
+                          <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            completeGuidedTour();
+                            onFinishToMap();
+                          }}
+                          className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--courtyard-sage)] hover:opacity-90 text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
+                        >
+                          <span>Kampüs Haritasına Geç</span>
+                          <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </GuideDialogueCard>
               </div>
-            </GuideDialogueCard>
+            )}
           </div>
-        )}
+        </section>
       </div>
     </main>
   );
