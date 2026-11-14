@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
@@ -123,6 +124,7 @@ function MissionRunnerInner({
   const [vocabFeedback, setVocabFeedback] = useState<{ type: 'ok' | 'hint'; message: string } | null>(null);
   const [activeMatchWordId, setActiveMatchWordId] = useState<string | null>(null);
   const [hasUnsavedWork, setHasUnsavedWork] = useState(false);
+  const [saveFailedSessionOnly, setSaveFailedSessionOnly] = useState(false);
   const [statusBanner, setStatusBanner] = useState<{
     tone: 'success' | 'warning' | 'error';
     message: string;
@@ -142,6 +144,9 @@ function MissionRunnerInner({
       if (active && artifact) {
         setDrawing(artifact.drawingData);
         setSavedPngUrl(artifact.pngDataUrl);
+        if (artifact.storageLocation === 'session-only') {
+          setSaveFailedSessionOnly(true);
+        }
       }
     });
     return () => {
@@ -241,6 +246,7 @@ function MissionRunnerInner({
         setDraftArtifactId(artifactId);
         setArtifactSavedAt(savedAt);
         setHasUnsavedWork(false);
+        setSaveFailedSessionOnly(false);
 
         const nextCompletedStages: MissionStageId[] = Array.from(
           new Set<MissionStageId>([...completedStages, 'uret']),
@@ -263,18 +269,22 @@ function MissionRunnerInner({
       }
 
       // Cihaz depolamasına yazılamadıysa (session-only / IndexedDB hatası) dürüst uyarı ver
+      setSaveFailedSessionOnly(true);
       setStatusBanner({
         tone: 'warning',
-        message:
-          status.warningMessage ??
-          'Çalışman cihaz depolamasına kaydedilemedi; yalnızca bu oturumda geçici olarak tutuluyor. PNG olarak indirmeni öneririz.',
+        message: isEarlyPrimary
+          ? 'Çizimin ve yazın bu cihaza kaydedilemedi, şu an geçici olarak tutuluyor. Sayfayı kapattığında çalışman kaybolabilir; saklamak için PNG indir.'
+          : (status.warningMessage ??
+            'Çalışman cihaz depolamasına kaydedilemedi; yalnızca bu oturumda geçici olarak tutuluyor. Sayfayı kapattığında kaybolabileceği için PNG olarak indirmeni öneririz.'),
       });
       return { ok: false, persisted: false, pngDataUrl: built.pngDataUrl };
     } catch {
+      setSaveFailedSessionOnly(true);
       setStatusBanner({
         tone: 'error',
-        message:
-          'Kaydetme sırasında beklenmeyen bir hata oluştu; çalışman cihazına kaydedilemedi. Lütfen tekrar dene veya PNG olarak indir.',
+        message: isEarlyPrimary
+          ? 'Kaydetme sırasında hata oluştu ve çalışman cihaza kaydedilemedi. Sayfayı kapattığında kaybolmaması için PNG indir.'
+          : 'Kaydetme sırasında beklenmeyen bir hata oluştu; çalışman cihazına kaydedilemedi. Sayfayı kapattığında kaybolabilir; lütfen tekrar dene veya PNG olarak indir.',
       });
       return { ok: false, persisted: false, pngDataUrl: built.pngDataUrl };
     }
@@ -355,10 +365,12 @@ function MissionRunnerInner({
         message: 'Tebrikler! Çalışman cihaza kaydedildi ve görevin başarıyla tamamlandı.',
       });
     } else {
+      setSaveFailedSessionOnly(true);
       setStatusBanner({
         tone: 'warning',
-        message:
-          'Görevin tamamlandı ancak çalışman kalıcı cihaz depolamasına kaydedilemedi. Eserini korumak için PNG olarak indirmeni öneririz.',
+        message: isEarlyPrimary
+          ? 'Görev adımlarını bitirdin ama çalışman cihaza kaydedilemedi. Sayfayı kapattığında çizimin ve yazın kaybolabilir; saklamak için PNG olarak indir.'
+          : 'Görev adımlarını tamamladın ancak çalışman kalıcı cihaz depolamasına kaydedilemedi. Sayfayı kapattığında çalışman kaybolabilir; eserini korumak için PNG olarak indirmeni öneririz.',
       });
     }
   };
@@ -1373,9 +1385,14 @@ function MissionRunnerInner({
                 type="button"
                 onClick={async () => {
                   if (!hasValidProduction) {
-                    const msg = isEarlyPrimary
-                      ? 'Devam etmek için önce bir çizim yap, hazır şekil ekle ya da kısa bir kelime yaz.'
-                      : 'Paylaş adımına geçmeden önce serbest çizim yapabilir, hazır şekil ekleyebilir ya da tasarımını yazıyla anlatabilirsin.';
+                    const hasOnlySymbols = selections.writtenText.trim().length > 0;
+                    const msg = hasOnlySymbols
+                      ? isEarlyPrimary
+                        ? 'Yalnızca noktalama işareti yerine anlamlı bir kelime yazabilir, çizim yapabilir ya da şekil ekleyebilirsin.'
+                        : 'Yalnızca noktalama işaretleri yazılı anlatım sayılmaz; anlamlı en az bir kelime yazabilir, serbest çizim yapabilir veya şekil ekleyebilirsin.'
+                      : isEarlyPrimary
+                        ? 'Devam etmek için önce bir çizim yap, hazır şekil ekle ya da kısa bir kelime yaz.'
+                        : 'Paylaş adımına geçmeden önce serbest çizim yapabilir, hazır şekil ekleyebilir ya da tasarımını yazıyla anlatabilirsin.';
                     setProductionNotice(msg);
                     setStatusBanner({ tone: 'warning', message: msg });
                     return;
@@ -1387,6 +1404,13 @@ function MissionRunnerInner({
                       tone: 'success',
                       message:
                         'Çalışman taslak olarak cihaza kaydedildi. Şimdi çalışmanı gözden geçirip görevini tamamlayabilirsin.',
+                    });
+                  } else {
+                    setStatusBanner({
+                      tone: 'warning',
+                      message: isEarlyPrimary
+                        ? 'Çizimin ve yazın cihaza kaydedilemedi, şu an geçici olarak tutuluyor. Sayfayı kapattığında çalışman kaybolabilir; aşağıdan PNG olarak indirebilirsin.'
+                        : 'Çalışman cihaz depolamasına kaydedilemedi; yalnızca bu oturumda geçici olarak tutuluyor. Sayfayı kapattığında kaybolabileceği için PNG olarak indirmeni öneririz.',
                     });
                   }
                 }}
@@ -1435,7 +1459,13 @@ function MissionRunnerInner({
                         Gözden Geçir, Kaydet ve Tamamla
                       </p>
                       <h2 className="text-xl font-bold text-[var(--campus-ink)]">
-                        {completed ? 'Görevin Tamamlandı!' : 'Çalışman Hazır!'}
+                        {completed
+                          ? saveFailedSessionOnly
+                            ? isEarlyPrimary
+                              ? 'Görev Adımlarını Bitirdin — Çalışmanı PNG İle Sakla!'
+                              : 'Görev Tamamlandı (Çalışman Geçici Tutuluyor)'
+                            : 'Görevin Tamamlandı!'
+                          : 'Çalışman Hazır!'}
                       </h2>
                       <p className="text-sm text-[var(--campus-ink-muted)]">
                         Bu kampüste çalışmalar herkese açık paylaşılmaz; çalışmanı cihazına kaydedebilir,
@@ -1473,16 +1503,53 @@ function MissionRunnerInner({
                     </div>
                   </div>
 
+                  {/* Kalıcı kayıt başarısız olduğunda geçicilik uyarısı ve belirgin PNG indirme çağrısı */}
+                  {saveFailedSessionOnly && (
+                    <div
+                      role="alert"
+                      className="rounded-xl border border-[var(--sandstone-gold)] bg-[var(--sandstone-gold-soft)] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle
+                          className="w-5 h-5 text-[var(--terracotta)] shrink-0 mt-0.5"
+                          aria-hidden="true"
+                        />
+                        <div className="space-y-1 text-xs sm:text-sm text-[var(--campus-ink)]">
+                          <p className="font-bold">
+                            {isEarlyPrimary
+                              ? 'Dikkat: Çalışman bu cihaza kaydedilemedi!'
+                              : 'Dikkat: Çalışman kalıcı olarak kaydedilemedi (yalnızca geçici)!'}
+                          </p>
+                          <p className="text-[var(--campus-ink-muted)]">
+                            {isEarlyPrimary
+                              ? 'Görev adımlarını tamamlamış olsan bile çizimin ve yazın geçici olarak tutuluyor. Sayfayı kapattığında çalışman kaybolabilir. Saklamak için aşağıdaki PNG düğmesine dokun.'
+                              : 'Görev adımlarını tamamlamış olsan bile ürünün yalnızca bu oturumda geçici olarak tutuluyor. Sayfayı veya tarayıcıyı kapattığında çalışman kaybolabilir; hemen PNG olarak indirmeni öneririz.'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleDownloadPngOnly}
+                        className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                      >
+                        <Download className="w-4 h-4" aria-hidden="true" />
+                        <span>Çalışmamı Şimdi PNG Olarak İndir</span>
+                      </button>
+                    </div>
+                  )}
+
                   {/* Çalışmanı Gözden Geçir Özeti + PNG Ön İzleme */}
                   <div className="rounded-xl border border-[var(--campus-border)] bg-[var(--campus-canvas)] p-4 space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs font-semibold text-[var(--campus-ink)]">
                         Çalışmanı Gözden Geçir: {selections.doorName.trim() || (isPrimary ? 'Kapı Hikâyem' : 'Özgün Kapı Tasarımım')}
                       </p>
-                      <span className="text-xs text-[var(--campus-ink-muted)]">
-                        {draftArtifactId && !hasUnsavedWork
-                          ? 'Durum: Cihaza kaydedildi'
-                          : 'Durum: Henüz kalıcı kaydedilmedi'}
+                      <span className="text-xs font-medium text-[var(--campus-ink-muted)]">
+                        {saveFailedSessionOnly
+                          ? 'Durum: Cihaza kaydedilemedi (yalnızca bu oturumda geçici)'
+                          : draftArtifactId && !hasUnsavedWork
+                            ? 'Durum: Cihaza kaydedildi'
+                            : 'Durum: Henüz kalıcı kaydedilmedi'}
                       </span>
                     </div>
 

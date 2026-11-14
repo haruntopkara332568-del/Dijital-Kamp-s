@@ -24,8 +24,10 @@
 - **Kampüs Yolculuğum (`JourneyView.tsx`)**: Sayfa **Görevlerim**, **Öğrenme Yolculuğum** (`1. Keşfet → 2. Öğren → 3. Üret → 4. Paylaş`) ve **Çalışmalarım** (`Cihaza Kayıtlı` vs `Oturum Belleğinde (Geçici)`) bölümlerine ayrıldı; tamamlanan görev inceleme ve ayrıntılı eser ön izleme penceresi eklendi.
 - **Türkçe Yazım ve Geri Bildirim Denetimi**: Yönlendirici/yargılayıcı olmayan geri bildirimler ve TDK uyumlu soru/etiket ifadeleri (`"Door" kelimesinin Türkçe karşılığı hangisidir?`) düzeltildi.
 
+- **Üret / Paylaş ve Yazılı Ürün Doğrulaması**: Yalnızca noktalama işareti veya rakam içeren (`!!!`, `...`, `123`) metinler yazılı ürün sayılmayacak biçimde en az 2 harf şartı eklendi (`src/utils/missionValidation.ts`). Kalıcı kayıt başarısız olduğunda (`persisted: false`), 2–3. sınıflara özel sadeleştirilmiş geçicilik uyarısı, sayfa kapatıldığında çalışmanın kaybolabileceği uyarısı ve belirgin PNG indirme çağrısı (`Çalışmamı Şimdi PNG Olarak İndir`) eklendi.
+
 ## Doğrulama Durumu ve Sonraki Adım
-- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [22/22], `npm run build` ve `npm run test:e2e` [4/4 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
+- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [23/23], `npm run build` ve `npm run test:e2e` [4/4 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
 - Çoklu ekran boyutu denetiminde (`360×740`, `390×844`, `768×1024`, `1280×840`) yatay taşma (`0`) ve mobil `390×844` görünümünde `44×44 px` altı etkileşimli hedef (`0`) doğrulandı.
 - Aşama 1 tamamlanmış olup bu noktada durulmuştur; Aşama 2 / yeni modüllere geçilmemiştir.
 

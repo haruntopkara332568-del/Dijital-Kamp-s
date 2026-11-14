@@ -277,10 +277,16 @@ import { saveArtifact, listArtifacts } from '@/src/services/storage';
 import type { SavedArtifact } from '@/src/types/campus';
 
 describe('Özgün Üretim Doğrulama Kuralları (missionValidation)', () => {
-  it('boş tuval, noktasız çizim, boşluk metin veya yalnızca başlık üretim sayılmaz', () => {
+  it('boş tuval, noktasız çizim, boşluk veya yalnızca noktalama/rakam içeren metin üretim sayılmaz', () => {
     const empty = createEmptyDrawing();
     expect(evaluateOriginalProduction(empty, '').isValid).toBe(false);
     expect(evaluateOriginalProduction(empty, '   \n\t  ').isValid).toBe(false);
+    expect(evaluateOriginalProduction(empty, '!!!').isValid).toBe(false);
+    expect(evaluateOriginalProduction(empty, '... ??? ---').isValid).toBe(false);
+    expect(evaluateOriginalProduction(empty, '12345').isValid).toBe(false);
+    expect(evaluateOriginalProduction(empty, 'a').isValid).toBe(false);
+    expect(evaluateOriginalProduction(empty, 'Ev').isValid).toBe(true);
+    expect(evaluateOriginalProduction(empty, 'Kapı 1').isValid).toBe(true);
     expect(
       evaluateOriginalProduction({ ...empty, strokes: [{ id: 's1', color: '#000', size: 4, points: [] }] }, '').isValid,
     ).toBe(false);
@@ -489,7 +495,7 @@ describe('Görev Akışı, Sınıf Düzeyi Farkları ve Kampüs Yolculuğum', ()
       fireEvent.click(screen.getByRole('button', { name: /Görevi Tamamla/i }));
     });
 
-    expect(screen.getByText(/Görevin Tamamlandı!/i)).toBeInTheDocument();
+    expect(screen.getByText(/Görev Tamamlandı \(Çalışman Geçici Tutuluyor\)/i)).toBeInTheDocument();
     expect(loadStudentState().missionProgressByKey['kapilarin-anlattigi-hikaye::grade-6']?.completed).toBe(
       true,
     );
@@ -559,6 +565,55 @@ describe('Görev Akışı, Sınıf Düzeyi Farkları ve Kampüs Yolculuğum', ()
     expect(screen.getByRole('heading', { name: 'Çalışmalarım' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Tamamlanan Görevi İncele/i })).toBeInTheDocument();
     expect(await screen.findByText(/Henüz kaydedilmiş bir çizim/i)).toBeInTheDocument();
+  });
+
+  it('2. sınıfta yalnızca noktalama işareti engellenir ve IndexedDB başarısızlığında kaybolma uyarısı + belirgin PNG düğmesi gösterilir', async () => {
+    const originalIdb = window.indexedDB;
+    Object.defineProperty(window, 'indexedDB', {
+      configurable: true,
+      value: undefined,
+    });
+
+    try {
+      const st = createInitialStudentState();
+      st.selectedGrade = 2;
+      st.hasSeenGate = true;
+      st.hasCompletedOnboarding = true;
+      saveStudentState(st);
+
+      render(
+        <MemoryRouter>
+          <CampusProviders>
+            <MissionRunnerView missionId="kapilarin-anlattigi-hikaye" />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /3\. Üret/i }));
+      fireEvent.change(screen.getByLabelText(/İstersen Kısaca Yaz/i), {
+        target: { value: '!!!' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /Kaydet ve Paylaş Adımına Geç/i }));
+      expect(screen.getAllByText(/Yalnızca noktalama işareti yerine/i).length).toBeGreaterThan(0);
+
+      fireEvent.click(screen.getByRole('button', { name: /\+ Kemer/i }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /Kaydet ve Paylaş Adımına Geç/i }));
+      });
+
+      expect(screen.getByRole('alert')).toHaveTextContent(/Sayfayı kapattığında çalışman kaybolabilir/i);
+      expect(screen.getByRole('button', { name: /Çalışmamı Şimdi PNG Olarak İndir/i })).toBeInTheDocument();
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /Görevi Tamamla/i }));
+      });
+      expect(screen.getByText(/Görev Adımlarını Bitirdin — Çalışmanı PNG İle Sakla!/i)).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(window, 'indexedDB', {
+        configurable: true,
+        value: originalIdb,
+      });
+    }
   });
 });
 

@@ -55,12 +55,12 @@ test.describe('Dijital Eğitim Kampüsü Uçtan Uca Yolculuk', () => {
 
     await page.getByRole('button', { name: /Üret Aşamasına Geç/i }).click();
 
-    // 7. Boş üretim engeli: renk seçimi veya yalnızca başlık/boşluk ile Paylaş adımına geçilmemeli
+    // 7. Boş veya yalnızca noktalama işareti içeren üretim engeli
     await page.getByRole('button', { name: 'Selçuklu Turkuazı' }).click();
     await page.getByLabel(/Tasarladığın Kapının Adı/i).fill('Yalnızca İsim Denemesi');
-    await page.getByLabel(/Kapı Tasarımını ve Seçim Gerekçeni Açıkla/i).fill('   ');
+    await page.getByLabel(/Kapı Tasarımını ve Seçim Gerekçeni Açıkla/i).fill('!!!');
     await page.getByRole('button', { name: /Kaydet ve Paylaş Adımına Geç/i }).click();
-    await expect(page.getByText(/Paylaş adımına geçmeden önce/i).first()).toBeVisible();
+    await expect(page.getByText(/Yalnızca noktalama işaretleri yazılı anlatım sayılmaz/i).first()).toBeVisible();
     await expect(page.getByText(/Çalışman Hazır!/i)).not.toBeVisible();
 
     // 8. Alan gezintisi görev ilerlemesini silmemeli (Kaydedilmemiş değişiklik uyarısından çıkış)
