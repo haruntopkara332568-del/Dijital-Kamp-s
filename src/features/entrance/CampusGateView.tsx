@@ -22,50 +22,59 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
   }, [isOpening, onEnterCourtyard]);
 
   return (
-    <main className="min-h-dvh flex flex-col items-center justify-center px-4 py-8 bg-[var(--campus-canvas)]">
+    <main className="min-h-dvh flex flex-col items-center justify-center px-4 py-8 bg-gradient-to-b from-[var(--sky-warm-top)]/45 via-[var(--campus-canvas)] to-[var(--stone-light)]/55">
       <div className="w-full max-w-3xl space-y-6 text-center">
-        <div className="space-y-2">
+        <header className="space-y-2.5">
           <p className="text-xs font-semibold text-[var(--seljuk-teal)] tracking-wide">
-            Kültürel Mirastan Geleceğin Öğrenme Dünyasına
+            Anadolu Taç Kapısı Esintili Öğrenme Yerleşkesi
           </p>
-          <h1 className="text-2xl sm:text-4xl font-bold text-[var(--campus-ink)]">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[var(--seljuk-navy)]">
             Dijital Eğitim Kampüsü
           </h1>
           <p className="text-sm sm:text-base text-[var(--campus-ink-muted)] max-w-xl mx-auto">
-            Anadolu taş işçiliğinden esinlenen kampüs kapısına dokunarak avluya adım atabilirsin.
+            Taş işçiliği ve geometrik yıldızlarla çerçevelenen kampüs kapısına dokunarak aydınlık
+            keşif avlusuna adım atabilirsin.
           </p>
-        </div>
+        </header>
 
-        <div className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-4 sm:p-6 shadow-xs">
-          <button
-            type="button"
-            onClick={() => setIsOpening(true)}
-            disabled={isOpening}
-            aria-label="Kampüs kapısını aç ve içeri gir"
-            className="w-full rounded-xl focus-visible:outline-3 focus-visible:outline-[var(--seljuk-teal)] cursor-pointer group"
-          >
-            <CampusPortalGateSvg isOpen={isOpening} />
-          </button>
+        <div className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] shadow-sm overflow-hidden">
+          {/* İnce Selçuklu Lacivert–Turkuaz–Toprak Mimari Taç Çizgisi */}
+          <div
+            aria-hidden="true"
+            className="h-1.5 w-full bg-gradient-to-r from-[var(--seljuk-navy)] via-[var(--seljuk-teal)] to-[var(--terracotta)]"
+          />
 
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+          <div className="p-4 sm:p-6">
             <button
               type="button"
               onClick={() => setIsOpening(true)}
               disabled={isOpening}
-              className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-70"
+              aria-label="Kampüs kapısını aç ve içeri gir"
+              className="w-full rounded-xl focus-visible:outline-3 focus-visible:outline-[var(--seljuk-teal)] cursor-pointer group"
             >
-              <span>{isOpening ? 'Kapı Açılıyor...' : 'Kapıyı Aç ve İçeri Gir'}</span>
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              <CampusPortalGateSvg isOpen={isOpening} />
             </button>
 
-            <button
-              type="button"
-              onClick={onEnterCourtyard}
-              className="min-h-[44px] px-4 py-2.5 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] hover:bg-[var(--campus-surface-muted)] text-sm font-medium text-[var(--campus-ink)] inline-flex items-center gap-2 transition-colors cursor-pointer"
-            >
-              <SkipForward className="w-4 h-4 text-[var(--campus-ink-muted)]" aria-hidden="true" />
-              <span>Animasyonu Atla</span>
-            </button>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsOpening(true)}
+                disabled={isOpening}
+                className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-70"
+              >
+                <span>{isOpening ? 'Kapı Açılıyor...' : 'Kapıyı Aç ve İçeri Gir'}</span>
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </button>
+
+              <button
+                type="button"
+                onClick={onEnterCourtyard}
+                className="min-h-[44px] px-4 py-2.5 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-sm font-medium text-[var(--seljuk-navy)] inline-flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <SkipForward className="w-4 h-4 text-[var(--campus-ink-muted)]" aria-hidden="true" />
+                <span>Animasyonu Atla</span>
+              </button>
+            </div>
           </div>
         </div>
 

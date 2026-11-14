@@ -55,12 +55,18 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
   return (
     <>
       <header className="sticky top-0 z-30 bg-[var(--campus-surface)]/95 backdrop-blur-sm border-b border-[var(--campus-border)]">
+        {/* İnce Anadolu-Selçuklu Mimari Taç Çizgisi */}
+        <div
+          aria-hidden="true"
+          className="h-1 w-full bg-gradient-to-r from-[var(--seljuk-navy)] via-[var(--seljuk-teal)] to-[var(--terracotta)]"
+        />
+
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 sm:gap-8">
           {/* Bölge 1: Tek satırlık başlık */}
           <Link
             to="/harita"
             onClick={(e) => handleNavClick(e, '/harita')}
-            className="text-base sm:text-lg font-bold tracking-tight text-[var(--campus-ink)] whitespace-nowrap shrink-0 hover:text-[var(--seljuk-teal)] transition-colors"
+            className="text-base sm:text-lg font-bold tracking-tight text-[var(--seljuk-navy)] whitespace-nowrap shrink-0 hover:text-[var(--seljuk-teal)] transition-colors"
           >
             Dijital Eğitim Kampüsü
           </Link>
@@ -80,7 +86,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
                   className={`whitespace-nowrap shrink-0 py-1 border-b-2 transition-colors ${
                     active
                       ? 'text-[var(--seljuk-teal)] border-[var(--seljuk-teal)] font-semibold'
-                      : 'border-transparent hover:text-[var(--campus-ink)] hover:border-[var(--campus-border)]'
+                      : 'border-transparent hover:text-[var(--seljuk-navy)] hover:border-[var(--campus-border)]'
                   }`}
                 >
                   {item.label}
@@ -95,7 +101,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
               type="button"
               onClick={() => setDrawerOpen((prev) => !prev)}
               aria-expanded={drawerOpen}
-              className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-canvas)] hover:bg-[var(--campus-surface-muted)] text-sm font-semibold text-[var(--campus-ink)] inline-flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+              className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-sm font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
             >
               <SlidersHorizontal className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
               <span className="tabular-nums">
@@ -108,7 +114,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
         {/* Mobil alt gezinme satırı (yalnızca küçük ekranlarda) */}
         <nav
           aria-label="Mobil kampüs gezinmesi"
-          className="md:hidden border-t border-[var(--campus-border)] px-4 py-1.5 flex items-center justify-around gap-2 bg-[var(--campus-canvas)]"
+          className="md:hidden border-t border-[var(--campus-border)] px-4 py-1.5 flex items-center justify-around gap-2 bg-[var(--stone-cream)]"
         >
           {navItems.map((item) => {
             const active = pathname === item.href;
@@ -142,7 +148,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-[var(--campus-ink)]">
+                  <p className="text-sm font-semibold text-[var(--seljuk-navy)]">
                     Sınıf Düzeyin
                   </p>
                   <p className="text-xs text-[var(--campus-ink-muted)]">
@@ -161,7 +167,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
                         className={`min-h-[44px] min-w-[64px] px-3 py-1.5 rounded-lg text-sm font-semibold tabular-nums transition-colors cursor-pointer ${
                           selected
                             ? 'bg-[var(--seljuk-teal)] text-white'
-                            : 'bg-[var(--campus-surface-muted)] text-[var(--campus-ink)] hover:bg-[var(--campus-border)]'
+                            : 'bg-[var(--stone-cream)] text-[var(--seljuk-navy)] border border-[var(--campus-border)] hover:bg-[var(--campus-surface-muted)]'
                         }`}
                       >
                         {profile.grade}. Sınıf
@@ -176,7 +182,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
                   <button
                     type="button"
                     onClick={() => setSpeechEnabled(!state.speechEnabled)}
-                    className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] text-sm font-medium text-[var(--campus-ink)] hover:bg-[var(--campus-surface-muted)] inline-flex items-center gap-2 cursor-pointer"
+                    className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] text-sm font-medium text-[var(--seljuk-navy)] hover:bg-[var(--campus-surface-muted)] inline-flex items-center gap-2 cursor-pointer"
                   >
                     {state.speechEnabled ? (
                       <>
@@ -194,7 +200,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
                   <button
                     type="button"
                     onClick={handleReplayWelcome}
-                    className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] text-sm font-medium text-[var(--campus-ink)] hover:bg-[var(--campus-surface-muted)] inline-flex items-center gap-2 cursor-pointer"
+                    className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] text-sm font-medium text-[var(--seljuk-navy)] hover:bg-[var(--campus-surface-muted)] inline-flex items-center gap-2 cursor-pointer"
                   >
                     <Compass className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
                     <span>Kapı ve Karşılamayı Yeniden İzle</span>

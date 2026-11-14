@@ -40,7 +40,7 @@ export function GuideDialogueCard({
   return (
     <section
       aria-label={`${dialogue.speaker} mesajı`}
-      className="rounded-xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 shadow-xs"
+      className="rounded-xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 shadow-sm"
     >
       <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
         <PeerGuideSvg mood={mood} size="md" />
@@ -61,7 +61,7 @@ export function GuideDialogueCard({
                   void handlePlaySpeech();
                 }
               }}
-              className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-canvas)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--campus-ink)] inline-flex items-center gap-2 cursor-pointer"
+              className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-2 cursor-pointer transition-colors"
             >
               {isSpeaking ? (
                 <>
@@ -77,7 +77,7 @@ export function GuideDialogueCard({
             </button>
           </div>
 
-          <p className="text-base sm:text-lg font-medium text-[var(--campus-ink)] leading-relaxed">
+          <p className="text-base sm:text-lg font-medium text-[var(--seljuk-navy)] leading-relaxed">
             {fullText}
           </p>
 

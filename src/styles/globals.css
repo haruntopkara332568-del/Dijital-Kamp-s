@@ -1,26 +1,54 @@
 @import "tailwindcss";
 
 :root {
-  --campus-canvas: #f6f8fa;
-  --campus-surface: #ffffff;
-  --campus-surface-muted: #edf2f6;
-  --campus-border: #d5dee8;
-  --campus-ink: #162231;
-  --campus-ink-muted: #4b5b6e;
-  --seljuk-teal: #0e7490;
-  --seljuk-teal-hover: #0c5f76;
-  --seljuk-teal-soft: #e0f2f7;
-  --sandstone-gold: #b45309;
-  --sandstone-gold-soft: #fef3c7;
-  --courtyard-sage: #15803d;
-  --courtyard-sage-soft: #dcfce7;
-  --stone-light: #e7dfd1;
-  --stone-mid: #c8bba4;
-  --stone-dark: #8c7b62;
-  --wood-warm: #8a5634;
-  --wood-deep: #5c361d;
-  --alert-rose: #be123c;
-  --alert-rose-soft: #ffe4e6;
+  /* Temel Yüzey ve Taş-Krem Zemin Tonları */
+  --campus-canvas: #f6f1e6;
+  --campus-surface: #fffdf8;
+  --campus-surface-muted: #eee6d5;
+  --campus-border: #d7cab2;
+  --campus-ink: #172b47;
+  --campus-ink-muted: #4b5a6e;
+
+  /* Anadolu–Selçuklu Mimari Renk Belirteçleri */
+  --seljuk-navy: #1b3152;
+  --seljuk-navy-deep: #112138;
+  --seljuk-navy-soft: #e3e9f2;
+
+  --seljuk-teal: #0e768a;
+  --seljuk-teal-hover: #0b5d6d;
+  --seljuk-teal-soft: #dcf0f3;
+  --seljuk-turquoise-bright: #249ab0;
+
+  --terracotta: #b25938;
+  --terracotta-soft: #f5e3d9;
+  --terracotta-deep: #853e24;
+
+  --sandstone-gold: #a66414;
+  --sandstone-gold-soft: #fbf0d9;
+
+  --courtyard-sage: #2d7350;
+  --courtyard-sage-mid: #639c7b;
+  --courtyard-sage-soft: #dfeee3;
+
+  /* Taş İşçiliği, Gökyüzü, Ahşap ve Karakter Belirteçleri */
+  --stone-cream: #f5efe2;
+  --stone-light: #e8dec9;
+  --stone-mid: #d1c2a7;
+  --stone-dark: #948165;
+  --stone-deep: #6b5a44;
+
+  --sky-warm-top: #dceef2;
+  --sky-warm-bottom: #f7f1e3;
+
+  --wood-warm: #8a5533;
+  --wood-deep: #56311a;
+
+  --skin-warm: #efc4a0;
+  --skin-blush: #e2a58b;
+  --hair-navy: #243247;
+
+  --alert-rose: #b81d3b;
+  --alert-rose-soft: #fde8ec;
 }
 
 @layer base {
