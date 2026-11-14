@@ -7,7 +7,7 @@ import type { GradeLevel } from '@/src/types/campus';
 import { DeleteDataModal } from './DeleteDataModal';
 
 interface CampusTopBarProps {
-  onBeforeNavigate?: () => boolean;
+  onBeforeNavigate?: (targetHref: string) => boolean;
 }
 
 export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
@@ -25,7 +25,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (onBeforeNavigate && !onBeforeNavigate()) {
+    if (onBeforeNavigate && !onBeforeNavigate(href)) {
       e.preventDefault();
       return;
     }
@@ -35,7 +35,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
   };
 
   const handleReplayWelcome = () => {
-    if (onBeforeNavigate && !onBeforeNavigate()) return;
+    if (onBeforeNavigate && !onBeforeNavigate('/')) return;
     setDrawerOpen(false);
     replayWelcomeFlow();
     navigate('/');

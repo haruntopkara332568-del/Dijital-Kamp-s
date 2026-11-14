@@ -267,3 +267,298 @@ describe('Arayüz Akışları ve İki Adımlı Silme Onayı', () => {
     expect(screen.getAllByRole('link', { name: /Yolculuğum/i })[0]).toHaveAttribute('href', '/yolculugum');
   });
 });
+
+import { evaluateOriginalProduction } from '@/src/utils/missionValidation';
+import { createEmptyDrawing } from '@/src/features/drawing/DrawingCanvasStudio';
+import { MissionRunnerView } from '@/src/features/missions/MissionRunnerView';
+import { CampusMapView } from '@/src/features/campus-map/CampusMapView';
+import { JourneyView } from '@/src/features/journey/JourneyView';
+import { saveArtifact, listArtifacts } from '@/src/services/storage';
+import type { SavedArtifact } from '@/src/types/campus';
+
+describe('Özgün Üretim Doğrulama Kuralları (missionValidation)', () => {
+  it('boş tuval, noktasız çizim, boşluk metin veya yalnızca başlık üretim sayılmaz', () => {
+    const empty = createEmptyDrawing();
+    expect(evaluateOriginalProduction(empty, '').isValid).toBe(false);
+    expect(evaluateOriginalProduction(empty, '   \n\t  ').isValid).toBe(false);
+    expect(
+      evaluateOriginalProduction({ ...empty, strokes: [{ id: 's1', color: '#000', size: 4, points: [] }] }, '').isValid,
+    ).toBe(false);
+  });
+
+  it('serbest çizim, hazır şekil veya yazılı anlatımdan yalnız biri geçerli üretim için yeterlidir', () => {
+    const empty = createEmptyDrawing();
+
+    const freeDraw = {
+      ...empty,
+      strokes: [{ id: 's1', color: '#0e7490', size: 6, points: [{ x: 10, y: 10 }] }],
+    };
+    expect(evaluateOriginalProduction(freeDraw, '')).toEqual({
+      hasFreeDrawing: true,
+      hasShapeDesign: false,
+      hasWrittenNarrative: false,
+      isValid: true,
+      activeModeCount: 1,
+    });
+
+    const shapeOnly = {
+      ...empty,
+      shapes: [
+        {
+          id: 'sh1',
+          type: 'arch' as const,
+          x: 20,
+          y: 20,
+          width: 80,
+          height: 100,
+          color: '#0e7490',
+          label: 'Kemer',
+        },
+      ],
+    };
+    expect(evaluateOriginalProduction(shapeOnly, '')).toEqual({
+      hasFreeDrawing: false,
+      hasShapeDesign: true,
+      hasWrittenNarrative: false,
+      isValid: true,
+      activeModeCount: 1,
+    });
+
+    expect(evaluateOriginalProduction(empty, 'Taş kemerli bir avlu kapısı tasarladım.')).toEqual({
+      hasFreeDrawing: false,
+      hasShapeDesign: false,
+      hasWrittenNarrative: true,
+      isValid: true,
+      activeModeCount: 1,
+    });
+  });
+});
+
+describe('IndexedDB Hata / Yokluk Durumunda Dürüst Depolama Davranışı', () => {
+  beforeEach(async () => {
+    window.localStorage.clear();
+    await clearAllCampusData();
+  });
+
+  it('IndexedDB yoksa persisted=false döner ve eseri session-only işaretler', async () => {
+    const originalIdb = window.indexedDB;
+    Object.defineProperty(window, 'indexedDB', {
+      configurable: true,
+      value: undefined,
+    });
+
+    try {
+      const sample: SavedArtifact = {
+        id: 'art-test-no-idb',
+        missionId: 'kapilarin-anlattigi-hikaye',
+        missionVersion: '1.0.0',
+        grade: 5,
+        title: 'Kapıların Anlattığı Hikâye',
+        doorName: 'Deneme Kapısı',
+        writtenText: 'Ahşap ve taş bir arada.',
+        selectedDoorIds: [],
+        observations: {},
+        usedEnglishWords: [],
+        drawingData: createEmptyDrawing(),
+        pngDataUrl: 'data:image/png;base64,iVBORw0KGgo=',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const status = await saveArtifact(sample);
+      expect(status.persisted).toBe(false);
+      expect(status.mode).toBe('memory-fallback');
+      expect(status.warningMessage).toMatch(/kaydedilemedi/i);
+
+      const items = await listArtifacts();
+      expect(items[0]?.storageLocation).toBe('session-only');
+    } finally {
+      Object.defineProperty(window, 'indexedDB', {
+        configurable: true,
+        value: originalIdb,
+      });
+    }
+  });
+});
+
+describe('Görev Akışı, Sınıf Düzeyi Farkları ve Kampüs Yolculuğum', () => {
+  beforeEach(async () => {
+    window.localStorage.clear();
+    await clearAllCampusData();
+  });
+
+  it('Üret adımında boş bırakılan veya yalnızca isim girilen çalışmayla Paylaş adımına geçilmez', () => {
+    const st = createInitialStudentState();
+    st.selectedGrade = 5;
+    st.hasSeenGate = true;
+    st.hasCompletedOnboarding = true;
+    saveStudentState(st);
+
+    render(
+      <MemoryRouter>
+        <CampusProviders>
+          <MissionRunnerView missionId="kapilarin-anlattigi-hikaye" />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /3\. Üret/i }));
+    fireEvent.change(screen.getByLabelText(/Tasarladığın Kapının Adı/i), {
+      target: { value: 'Yalnızca İsim' },
+    });
+    fireEvent.change(screen.getByLabelText(/Kapı Tasarımını ve Seçim Gerekçeni Açıkla/i), {
+      target: { value: '   ' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Kaydet ve Paylaş Adımına Geç/i }));
+
+    expect(screen.getAllByText(/Paylaş adımına geçmeden önce/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Çalışman Hazır!/i)).not.toBeInTheDocument();
+  });
+
+  it('2. sınıf ile 7. sınıf arasında araçlar, cümle başlangıçları ve öz değerlendirme farklılaşır', () => {
+    const st2 = createInitialStudentState();
+    st2.selectedGrade = 2;
+    st2.hasSeenGate = true;
+    st2.hasCompletedOnboarding = true;
+    saveStudentState(st2);
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <CampusProviders>
+          <MissionRunnerView missionId="kapilarin-anlattigi-hikaye" />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /3\. Üret/i }));
+    expect(screen.getByRole('button', { name: /Daha Fazla Araç ve Şekil/i })).toBeInTheDocument();
+    expect(screen.getByText(/Çizim veya Şekil Yeterlidir/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /\+ Kapıdan geçince \.\.\. gördüm\./i })).toBeInTheDocument();
+    unmount();
+
+    const st7 = createInitialStudentState();
+    st7.selectedGrade = 7;
+    st7.hasSeenGate = true;
+    st7.hasCompletedOnboarding = true;
+    saveStudentState(st7);
+
+    render(
+      <MemoryRouter>
+        <CampusProviders>
+          <MissionRunnerView missionId="kapilarin-anlattigi-hikaye" />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /3\. Üret/i }));
+    expect(screen.queryByRole('button', { name: /Daha Fazla Araç ve Şekil/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Tasarım Malzemesi Seç/i)).toBeInTheDocument();
+    expect(screen.queryByText(/İstersen bir başlangıç cümlesine dokunarak ekle/i)).not.toBeInTheDocument();
+  });
+
+  it('Yalnızca yazılı anlatım ile Paylaş adımına geçilebilir ve Görevi Tamamla olmadan tamamlandı sayılmaz', async () => {
+    const st = createInitialStudentState();
+    st.selectedGrade = 6;
+    st.hasSeenGate = true;
+    st.hasCompletedOnboarding = true;
+    saveStudentState(st);
+
+    render(
+      <MemoryRouter>
+        <CampusProviders>
+          <MissionRunnerView missionId="kapilarin-anlattigi-hikaye" />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /3\. Üret/i }));
+    fireEvent.change(screen.getByLabelText(/Kapı Tasarımını ve Seçim Gerekçeni Açıkla/i), {
+      target: { value: 'Taş malzeme kullandım çünkü uzun yıllar dayanır ve avluyu korur.' },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Kaydet ve Paylaş Adımına Geç/i }));
+    });
+
+    expect(screen.getByText(/Çalışman Hazır!/i)).toBeInTheDocument();
+    expect(loadStudentState().missionProgressByKey['kapilarin-anlattigi-hikaye::grade-6']?.completed).toBe(
+      false,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Görevi Tamamla/i }));
+    });
+
+    expect(screen.getByText(/Görevin Tamamlandı!/i)).toBeInTheDocument();
+    expect(loadStudentState().missionProgressByKey['kapilarin-anlattigi-hikaye::grade-6']?.completed).toBe(
+      true,
+    );
+  });
+
+  it('Kampüs Haritası 5 yapıyı ve çapraz karmaşasız 5 merkez yolunu render eder', () => {
+    const st = createInitialStudentState();
+    st.selectedGrade = 4;
+    saveStudentState(st);
+
+    const { container } = render(
+      <MemoryRouter>
+        <CampusProviders>
+          <CampusMapView />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    const pathLines = container.querySelectorAll('line[data-path-id^="plaza-"]');
+    expect(pathLines).toHaveLength(5);
+    expect(CAMPUS_AREAS.find((a) => a.id === 'gezi-ve-kesif')?.connectedToIds).toEqual([
+      'ingilizce-dunyasi',
+      'gorev-panosu',
+    ]);
+  });
+
+  it('Kampüs Yolculuğum sayfası Görevlerim, Öğrenme Yolculuğum ve Çalışmalarım bölümlerini gösterir', async () => {
+    const st = createInitialStudentState();
+    st.selectedGrade = 5;
+    st.missionProgressByKey['kapilarin-anlattigi-hikaye::grade-5'] = {
+      missionId: 'kapilarin-anlattigi-hikaye',
+      missionVersion: '1.0.0',
+      grade: 5,
+      currentStage: 'paylas',
+      completedStages: ['kesfet', 'ogren', 'uret', 'paylas'],
+      selections: {
+        selectedDoorIds: [],
+        inspectedCampusGate: true,
+        observationNotes: {},
+        matchedVocabularyIds: [],
+        matchedExampleSentence: false,
+        doorName: 'Selçuklu Taç Kapısı',
+        writtenText: 'Geometrik yıldız desenli kapı.',
+        materialChoice: 'Taş',
+        usedEnglishWords: ['Stone'],
+      },
+      draftArtifactId: 'art-kapilarin-anlattigi-hikaye-g5',
+      savedArtifactId: 'art-kapilarin-anlattigi-hikaye-g5',
+      artifactSavedAt: new Date().toISOString(),
+      selfEvaluation: { selectedOptionId: 'learned', note: '' },
+      completed: true,
+      completedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    saveStudentState(st);
+
+    render(
+      <MemoryRouter>
+        <CampusProviders>
+          <JourneyView />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Görevlerim' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Öğrenme Yolculuğum' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Çalışmalarım' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Tamamlanan Görevi İncele/i })).toBeInTheDocument();
+    expect(await screen.findByText(/Henüz kaydedilmiş bir çizim/i)).toBeInTheDocument();
+  });
+});
+

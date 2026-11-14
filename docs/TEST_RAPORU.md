@@ -4,7 +4,7 @@
 - **`npm ci`**: Geçti — `package-lock.json` ile 265 paket temiz kuruldu.
 - **`npm run typecheck` (`tsc --noEmit`)**: Geçti — 0 hata (strict TypeScript).
 - **`npm run lint` (`eslint .`)**: Geçti — 0 hata, 0 uyarı.
-- **`npm run test` (`vitest run`)**: Geçti — `src/test/campus.test.tsx` (14 / 14 test, 711 ms):
+- **`npm run test` (`vitest run`)**: Geçti — `src/test/campus.test.tsx` (**22 / 22 test**, `1168 ms`, toplam `3.81 s`):
   - 2–7. sınıf başlangıç parametrelerinin (`gradeProfiles.ts`) doğrulaması
   - Onaylı karşılama metni, karma dil seslendirme segmentleri (`tr-TR` / `en-US` / `tr-TR`) ve rehber sorularının harfiyen korunması
   - Görev aşamalarının (`Keşfet → Öğren → Üret → Paylaş`) doğrulanması
@@ -13,17 +13,18 @@
   - Bozuk `localStorage` JSON verisinde çökmeme ve bellek yedeğine geçiş
   - Bilinmeyen/gelecek şema sürümünde mevcut veriyi silmeme
   - `clearAllCampusData()` işlevinin yalnızca `dek_` önekli anahtarları silmesi
+  - `IndexedDB` yokluğunda `saveArtifact()` çağrısının `persisted: false` ve `storageLocation: 'session-only'` dönmesi
+  - `evaluateOriginalProduction()` ile boş tuval / noktasız çizim / boşluk metin engelinin ve tek mod geçerliliğinin doğrulanması
+  - `MissionRunnerView` içinde boş/yalnızca isim girişiyle `Paylaş` adımının engellenmesi, 2. ve 7. sınıf araç/cümle başlangıcı farkı ve kaydetme ile tamamlamanın ayrılması
+  - `CampusMapView` içinde 5 merkez taş yolunun (`plaza-*`) render edilmesi ve `connectedToIds` verisinin korunması
+  - `JourneyView` içinde Görevlerim, Öğrenme Yolculuğum ve Çalışmalarım bölümlerinin render edilmesi
   - `speechSynthesis` olmayan ortamda seslendirme servisinin çökmeden metin yedeği dönmesi
   - `GuideDialogueCard` ekrandaki metinle aynı karma dil segmentlerini seslendirme servisine göndermesi
-  - Giriş kapısı "Animasyonu Atla" akışı
-  - Karşılama avlusunda onaylı metin + tercih + 5. sınıf seçimi
-  - İki adımlı "Verilerimi Sil" penceresi ve "Vazgeç" davranışı
-  - Üst gezinme çubuğunun React Router bağlantılarını (`/harita`, `/alan/gorev-panosu`, `/yolculugum`) doğru üretmesi
-- **`npm run build` (`vite build`)**: Geçti — Vite 8.3.8 ile derlendi.
-- **`npm run test:e2e` (`playwright test`)**: Geçti — `e2e/campus.spec.ts` **2 / 2** geçti (17.6 s):
-  - `[chromium]` (Masaüstü Chrome, 8.0 s): İlk ziyaret kapı → karşılama metni → 5. sınıf → rehberli tur → harita → Kapıların Anlattığı Hikâye → PNG/Kayıt → Yolculuğum → iki adımlı Verilerimi Sil.
-  - `[mobile-chrome]` (`Pixel 5`, 6.7 s): Aynı uçtan uca senaryo mobil görünümde geçti.
-- **Çoklu Ekran Boyutu Denetimi (`360×740`, `390×844`, `768×1024`, `1280×840`)**: Geçti — Giriş kapısı, karşılama avlusu, kampüs haritası, öğrenme alanı (`/alan/gezi-ve-kesif`) ve yolculuğum (`/yolculugum`) görünümlerinde yatay taşma (`0`), SVG `<text>` çakışması/kırpılması (`0`), `44×44 px` altı etkileşimli hedef (`0`) ve tablet/masaüstü harita bina düğüm çakışması (`0` / `5` düğüm) görülmedi. Giriş kapısı her 4 ekranda tek viewport içinde tam sığdı.
+  - Giriş kapısı, karşılama avlusu, iki adımlı "Verilerimi Sil" ve üst gezinme çubuğu testleri
+- **`npm run build` (`vite build`)**: Geçti — Vite 8.3.8 ile `1.18 s` içinde derlendi.
+- **`npm run test:e2e` (`playwright test`)**: Geçti — `e2e/campus.spec.ts` **4 / 4** geçti (`27.2 s`):
+  - `[chromium]` (Masaüstü Chrome, `8.5 s`) ve `[mobile-chrome]` (`Pixel 5`, `7.8 s`): Kapı → onaylı karşılama → 5. sınıf → rehberli tur → 5 yollu harita → keşfet → öğren (yönlendirici ve olumlu geri bildirim) → boş üretim engeli → alan gezintisinde ilerleme korunması → şekil/malzeme/gerekçeli anlatım üretimi → PNG indirmeden görevi tamamlama → Yolculuğum 3 bölüm ve eser inceleme penceresi → iki adımlı Verilerimi Sil ve boş durum doğrulaması.
+  - `[chromium]` (`4.3 s`) ve `[mobile-chrome]` (`4.1 s`): 2. sınıf akışı (basit çizim araçları + fareyle serbest çizim + isteğe bağlı yazı), `360×740`, `390×844`, `768×1024`, `1280×840` ekranlarında `0` yatay taşma, `390 px` ekranda `44×44 px` altı hedef olmaması ve klavye yön tuşlarıyla şekil taşıma.
 
 ## 2. Çalıştırılamayan Testler
 - Yok. Birim/entegrasyon (`vitest`) ve uçtan uca tarayıcı (`playwright`) testlerinin tamamı çalıştırıldı ve geçti.
@@ -41,6 +42,6 @@
 
 ## 5. Paket Boyutu Ölçümü (Vite Derleme Çıktısı)
 - `dist/index.html`: `0.90 kB` (`gzip: 0.43 kB`)
-- `dist/assets/index-B6JIotO-.css`: `50.81 kB` (`gzip: 8.19 kB`)
-- `dist/assets/index-C7OV5FIJ.js`: `912.42 kB` (`gzip: 252.01 kB`)
+- `dist/assets/index-E8p4JHmN.css`: `52.59 kB` (`gzip: 8.42 kB`)
+- `dist/assets/index-qsPLWjwI.js`: `937.19 kB` (`gzip: 256.33 kB`)
 - Harici yazı tipi, CDN, izleyici ve üçüncü taraf görsel isteği sıfırdır. Gerçek 4 yıllık Android cihazda açılış hızı henüz ölçülmemiştir.

@@ -14,6 +14,7 @@ export const ARTIFACTS_STORE = 'artifacts';
 
 export interface StorageStatus {
   mode: 'persistent' | 'memory-fallback';
+  persisted: boolean;
   warningMessage: string | null;
 }
 
@@ -34,7 +35,7 @@ export function createInitialStudentState(): CampusStudentState {
 
 let inMemoryState: CampusStudentState | null = null;
 let inMemoryArtifacts: Record<string, SavedArtifact> = {};
-let lastStorageStatus: StorageStatus = { mode: 'persistent', warningMessage: null };
+let lastStorageStatus: StorageStatus = { mode: 'persistent', persisted: true, warningMessage: null };
 
 export function getStorageStatus(): StorageStatus {
   return lastStorageStatus;
@@ -71,7 +72,40 @@ function migrateOrValidateState(raw: unknown): { ok: true; state: CampusStudentS
   if (candidate.missionProgressByKey && typeof candidate.missionProgressByKey === 'object') {
     for (const [k, v] of Object.entries(candidate.missionProgressByKey)) {
       if (v && typeof v === 'object' && typeof v.missionId === 'string' && isValidGrade(v.grade)) {
-        progressMap[k] = v;
+        const legacySavedId =
+          typeof v.savedArtifactId === 'string'
+            ? v.savedArtifactId
+            : typeof v.draftArtifactId === 'string'
+              ? v.draftArtifactId
+              : null;
+        progressMap[k] = {
+          ...v,
+          draftArtifactId: typeof v.draftArtifactId === 'string' ? v.draftArtifactId : null,
+          savedArtifactId: legacySavedId,
+          artifactSavedAt: typeof v.artifactSavedAt === 'string' ? v.artifactSavedAt : null,
+          completed: Boolean(v.completed),
+          completedAt: typeof v.completedAt === 'string' ? v.completedAt : null,
+          completedStages: Array.isArray(v.completedStages) ? v.completedStages : [],
+          selections: {
+            selectedDoorIds: Array.isArray(v.selections?.selectedDoorIds) ? v.selections.selectedDoorIds : [],
+            inspectedCampusGate: Boolean(v.selections?.inspectedCampusGate),
+            observationNotes:
+              v.selections?.observationNotes && typeof v.selections.observationNotes === 'object'
+                ? v.selections.observationNotes
+                : {},
+            matchedVocabularyIds: Array.isArray(v.selections?.matchedVocabularyIds)
+              ? v.selections.matchedVocabularyIds
+              : [],
+            matchedExampleSentence: Boolean(v.selections?.matchedExampleSentence),
+            doorName: typeof v.selections?.doorName === 'string' ? v.selections.doorName : '',
+            writtenText: typeof v.selections?.writtenText === 'string' ? v.selections.writtenText : '',
+            materialChoice:
+              typeof v.selections?.materialChoice === 'string' ? v.selections.materialChoice : '',
+            usedEnglishWords: Array.isArray(v.selections?.usedEnglishWords)
+              ? v.selections.usedEnglishWords
+              : [],
+          },
+        };
       }
     }
   }
@@ -113,6 +147,7 @@ export function loadStudentState(): CampusStudentState {
     if (!migrated.ok) {
       lastStorageStatus = {
         mode: 'memory-fallback',
+        persisted: false,
         warningMessage:
           'Önceki tarayıcı verisi okunamadı. Mevcut veriler silinmedi; bu oturum geçici bellekte sürdürülüyor.',
       };
@@ -121,11 +156,12 @@ export function loadStudentState(): CampusStudentState {
     }
 
     inMemoryState = migrated.state;
-    lastStorageStatus = { mode: 'persistent', warningMessage: null };
+    lastStorageStatus = { mode: 'persistent', persisted: true, warningMessage: null };
     return migrated.state;
   } catch {
     lastStorageStatus = {
       mode: 'memory-fallback',
+      persisted: false,
       warningMessage:
         'Tarayıcı depolamasına erişilemedi. Çalışmaların bu oturum boyunca geçici bellekte tutulacak.',
     };
@@ -148,10 +184,11 @@ export function saveStudentState(state: CampusStudentState): StorageStatus {
 
   try {
     window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(nextState));
-    lastStorageStatus = { mode: 'persistent', warningMessage: null };
+    lastStorageStatus = { mode: 'persistent', persisted: true, warningMessage: null };
   } catch {
     lastStorageStatus = {
       mode: 'memory-fallback',
+      persisted: false,
       warningMessage:
         'Depolama alanı dolu veya kapalı olduğu için ilerlemen yalnızca bu oturumda tutulabiliyor.',
     };
@@ -184,42 +221,51 @@ function openArtifactsDb(): Promise<IDBDatabase | null> {
 }
 
 export async function saveArtifact(artifact: SavedArtifact): Promise<StorageStatus> {
-  inMemoryArtifacts[artifact.id] = artifact;
   const db = await openArtifactsDb();
 
   if (!db) {
+    const sessionArtifact: SavedArtifact = { ...artifact, storageLocation: 'session-only' };
+    inMemoryArtifacts[artifact.id] = sessionArtifact;
     lastStorageStatus = {
       mode: 'memory-fallback',
+      persisted: false,
       warningMessage:
-        'IndexedDB kullanılamadığı için çizim bu oturum belleğinde saklandı. PNG olarak indirmeni öneririz.',
+        'Çalışman cihaz depolamasına kaydedilemedi; yalnızca bu oturum belleğinde geçici olarak tutuluyor. PNG olarak indirmeni öneririz.',
     };
     return lastStorageStatus;
   }
 
   return new Promise((resolve) => {
     try {
+      const deviceArtifact: SavedArtifact = { ...artifact, storageLocation: 'device' };
       const tx = db.transaction(ARTIFACTS_STORE, 'readwrite');
       const store = tx.objectStore(ARTIFACTS_STORE);
-      store.put(artifact);
+      store.put(deviceArtifact);
       tx.oncomplete = () => {
         db.close();
-        lastStorageStatus = { mode: 'persistent', warningMessage: null };
+        inMemoryArtifacts[artifact.id] = deviceArtifact;
+        lastStorageStatus = { mode: 'persistent', persisted: true, warningMessage: null };
         resolve(lastStorageStatus);
       };
       tx.onerror = () => {
         db.close();
+        inMemoryArtifacts[artifact.id] = { ...artifact, storageLocation: 'session-only' };
         lastStorageStatus = {
           mode: 'memory-fallback',
+          persisted: false,
           warningMessage:
-            'Çizim cihaz depolamasına yazılamadı; PNG olarak indirerek cihazına kaydedebilirsin.',
+            'Çalışman cihaz depolamasına yazılamadı; yalnızca bu oturumda geçici olarak tutuluyor. PNG olarak indirerek cihazına saklayabilirsin.',
         };
         resolve(lastStorageStatus);
       };
     } catch {
       db.close();
+      inMemoryArtifacts[artifact.id] = { ...artifact, storageLocation: 'session-only' };
       lastStorageStatus = {
         mode: 'memory-fallback',
-        warningMessage: 'Depolama hatası nedeniyle çalışma geçici bellekte tutuldu.',
+        persisted: false,
+        warningMessage:
+          'Depolama hatası nedeniyle çalışman cihazına kaydedilemedi; yalnızca bu oturumda geçici olarak tutuluyor.',
       };
       resolve(lastStorageStatus);
     }
@@ -242,10 +288,16 @@ export async function listArtifacts(): Promise<SavedArtifact[]> {
         const dbItems = Array.isArray(req.result) ? (req.result as SavedArtifact[]) : [];
         const mergedMap = new Map<string, SavedArtifact>();
         for (const item of Object.values(inMemoryArtifacts)) {
-          mergedMap.set(item.id, item);
+          mergedMap.set(item.id, {
+            ...item,
+            storageLocation: item.storageLocation ?? 'session-only',
+          });
         }
         for (const item of dbItems) {
-          mergedMap.set(item.id, item);
+          mergedMap.set(item.id, {
+            ...item,
+            storageLocation: 'device',
+          });
         }
         const sorted = Array.from(mergedMap.values()).sort((a, b) =>
           b.updatedAt.localeCompare(a.updatedAt),
@@ -303,5 +355,5 @@ export async function clearAllCampusData(): Promise<void> {
     });
   }
 
-  lastStorageStatus = { mode: 'persistent', warningMessage: null };
+  lastStorageStatus = { mode: 'persistent', persisted: true, warningMessage: null };
 }

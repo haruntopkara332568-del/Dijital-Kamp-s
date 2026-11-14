@@ -212,6 +212,7 @@ export function composeArtifactPngDataUrl(params: {
   grade: GradeLevel;
   doorName: string;
   writtenText: string;
+  materialChoice?: string;
   usedEnglishWords: string[];
   drawingData: DrawingDocument;
 }): string {
@@ -236,7 +237,8 @@ export function composeArtifactPngDataUrl(params: {
   const titleHeight = wrappedTitleLines.length * 40 + 16;
   const drawingScale = contentWidth / params.drawingData.width;
   const drawingDisplayHeight = Math.round(params.drawingData.height * drawingScale);
-  const wordsBlockHeight = params.usedEnglishWords.length > 0 ? 52 : 0;
+  const materialBlockHeight = params.materialChoice ? 34 : 0;
+  const wordsBlockHeight = params.usedEnglishWords.length > 0 ? 44 : 0;
   const textBoxPadding = 28;
   const textHeight = wrappedLines.length * 32 + textBoxPadding * 2;
   const footerHeight = 56;
@@ -247,6 +249,7 @@ export function composeArtifactPngDataUrl(params: {
     titleHeight +
     drawingDisplayHeight +
     28 +
+    materialBlockHeight +
     wordsBlockHeight +
     textHeight +
     footerHeight +
@@ -292,11 +295,19 @@ export function composeArtifactPngDataUrl(params: {
 
   cursorY += drawingDisplayHeight + 28;
 
+  // Seçilen malzeme varsa ekle
+  if (params.materialChoice) {
+    ctx.fillStyle = '#1b3152';
+    ctx.font = `600 18px ${FONT_STACK}`;
+    ctx.fillText(`Seçilen Malzeme: ${params.materialChoice}`, padding, cursorY + 14);
+    cursorY += materialBlockHeight;
+  }
+
   // Seçilen İngilizce kelimeler varsa ekle
   if (params.usedEnglishWords.length > 0) {
     ctx.fillStyle = '#0e7490';
     ctx.font = `600 18px ${FONT_STACK}`;
-    ctx.fillText(`Kullanılan İngilizce Kelimeler: ${params.usedEnglishWords.join(' · ')}`, padding, cursorY + 18);
+    ctx.fillText(`Kullanılan İngilizce Kelimeler: ${params.usedEnglishWords.join(' · ')}`, padding, cursorY + 14);
     cursorY += wordsBlockHeight;
   }
 

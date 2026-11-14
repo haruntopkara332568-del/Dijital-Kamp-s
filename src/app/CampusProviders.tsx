@@ -60,7 +60,7 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
   const [storageStatus, setStorageStatus] = useState<StorageStatus>(() =>
     typeof window !== 'undefined'
       ? getStorageStatus()
-      : { mode: 'persistent', warningMessage: null },
+      : { mode: 'persistent', persisted: true, warningMessage: null },
   );
 
   const updateAndPersist = useCallback(

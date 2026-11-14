@@ -14,9 +14,11 @@ interface LearningAreaViewProps {
 }
 
 export function LearningAreaView({ areaId }: LearningAreaViewProps) {
-  const { activeGradeProfile } = useCampus();
+  const { activeGradeProfile, getLatestUnfinishedMission } = useCampus();
   const area = getCampusAreaById(areaId);
   const sampleMission = getMissionById('kapilarin-anlattigi-hikaye');
+  const unfinished = getLatestUnfinishedMission();
+  const hasActiveSampleMission = unfinished?.missionId === sampleMission?.id;
   const [speechNotice, setSpeechNotice] = useState<string | null>(null);
 
   if (!area) {
@@ -84,7 +86,11 @@ export function LearningAreaView({ areaId }: LearningAreaViewProps) {
                   className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors"
                 >
                   <Play className="w-4 h-4" aria-hidden="true" />
-                  <span>{sampleMission.title} Görevine Başla</span>
+                  <span>
+                    {hasActiveSampleMission
+                      ? `${sampleMission.title} Görevine Devam Et`
+                      : `${sampleMission.title} Görevine Başla`}
+                  </span>
                 </Link>
               </div>
             )}

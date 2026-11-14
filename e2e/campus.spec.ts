@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Dijital Eğitim Kampüsü Uçtan Uca Yolculuk', () => {
-  test('İlk ziyaret: kapı → karşılama → 5. sınıf → rehberli tur → harita → örnek görev ve silme', async ({
+  test('İlk ziyaret: kapı → karşılama → 5. sınıf → rehberli tur → harita → boş üretim engeli → üretim/kaydet/tamamla → yolculuğum → silme', async ({
     page,
   }) => {
     await page.goto('/');
@@ -12,9 +12,11 @@ test.describe('Dijital Eğitim Kampüsü Uçtan Uca Yolculuk', () => {
 
     // 2. Karşılama Avlusu ve Onaylı Metin
     await expect(
-      page.getByText(
-        'Merhaba! Welcome! Kampüsümüze hoş geldin. Ben senin kampüs arkadaşınım. İstersen birlikte gezebiliriz, istersen sen kendin keşfedebilirsin.',
-      ).first(),
+      page
+        .getByText(
+          'Merhaba! Welcome! Kampüsümüze hoş geldin. Ben senin kampüs arkadaşınım. İstersen birlikte gezebiliriz, istersen sen kendin keşfedebilirsin.',
+        )
+        .first(),
     ).toBeVisible();
 
     await page.getByRole('button', { name: /Birlikte gezelim/i }).click();
@@ -27,11 +29,13 @@ test.describe('Dijital Eğitim Kampüsü Uçtan Uca Yolculuk', () => {
     await expect(page.getByText(/1\. Durak: Gezi ve Keşif/i)).toBeVisible();
     await page.getByRole('button', { name: /Turu Bitir ve Haritaya Geç/i }).click();
 
-    // 5. Kampüs Haritası ve Görev Başlangıcı
+    // 5. Kampüs Haritası: 5 yapı ve çapraz karmaşasız 5 ana taş yol
     await expect(page.getByRole('heading', { name: /Kampüs Haritası/i })).toBeVisible();
+    const pathCount = await page.locator('line[data-path-id^="plaza-"]').count();
+    expect(pathCount).toBe(5);
     await page.getByRole('link', { name: /Kapıların Anlattığı Hikâye/i }).first().click();
 
-    // 6. Ortaokul Keşfet → Öğren → Üret → Paylaş
+    // 6. Ortaokul Keşfet → Öğren
     await expect(
       page.getByText(
         /Sence geçmişte yapılan kapılarla bugün kullandığımız kapılar arasında hangi farklılıklar var/i,
@@ -40,9 +44,40 @@ test.describe('Dijital Eğitim Kampüsü Uçtan Uca Yolculuk', () => {
     await page.getByRole('button', { name: /Öğren Aşamasına Geç/i }).click();
 
     await expect(page.getByText(/This door is made of wood\./i)).toBeVisible();
+    // Önce sol sütun seçilmeden Türkçe karta basınca yönlendirici geri bildirim vermeli
+    await page.getByRole('button', { name: 'Ahşap', exact: true }).click();
+    await expect(page.getByText(/Önce sol sütundan bir İngilizce kelime seç/i)).toBeVisible();
+
+    // Doğru eşleştirme geri bildirimi
+    await page.getByRole('button', { name: 'Wood', exact: true }).click();
+    await page.getByRole('button', { name: 'Ahşap', exact: true }).click();
+    await expect(page.getByText(/Doğru eşleşme!/i)).toBeVisible();
+
     await page.getByRole('button', { name: /Üret Aşamasına Geç/i }).click();
 
+    // 7. Boş üretim engeli: renk seçimi veya yalnızca başlık/boşluk ile Paylaş adımına geçilmemeli
+    await page.getByRole('button', { name: 'Selçuklu Turkuazı' }).click();
+    await page.getByLabel(/Tasarladığın Kapının Adı/i).fill('Yalnızca İsim Denemesi');
+    await page.getByLabel(/Kapı Tasarımını ve Seçim Gerekçeni Açıkla/i).fill('   ');
+    await page.getByRole('button', { name: /Kaydet ve Paylaş Adımına Geç/i }).click();
+    await expect(page.getByText(/Paylaş adımına geçmeden önce/i).first()).toBeVisible();
+    await expect(page.getByText(/Çalışman Hazır!/i)).not.toBeVisible();
+
+    // 8. Alan gezintisi görev ilerlemesini silmemeli (Kaydedilmemiş değişiklik uyarısından çıkış)
+    await page.getByRole('link', { name: /Görev Panosu/i }).first().click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('button', { name: /Kaydetmeden Çık/i }).click();
+    await expect(page.getByRole('heading', { name: /Keşif Görevleri Panosu/i })).toBeVisible();
+    await page.getByRole('link', { name: /Göreve Başla/i }).first().click();
+    // Geri dönüldüğünde Üret adımı ve önceki Öğren eşleştirmesi korunmalı
+    await expect(page.getByLabel(/Tasarladığın Kapının Adı/i)).toBeVisible();
+    await page.getByRole('button', { name: /2\. Öğren/i }).click();
+    await expect(page.getByText(/Kelime Eşleştirme \(1 \/ 5\)/i)).toBeVisible();
+    await page.getByRole('button', { name: /3\. Üret/i }).click();
+
+    // 9. Geçerli özgün üretim (hazır şekil + malzeme + ad + gerekçeli anlatım)
     await page.getByRole('button', { name: /\+ Kemer/i }).click();
+    await page.getByRole('button', { name: 'Taş ve Ahşap', exact: true }).click();
     await page.getByLabel(/Tasarladığın Kapının Adı/i).fill('Yıldızlı Taş Kapı');
     await page.getByLabel(/Kapı Tasarımını ve Seçim Gerekçeni Açıkla/i).fill(
       'Bu kapıyı taş ve ahşap dokuyu birleştirmek için tasarladım.',
@@ -51,14 +86,101 @@ test.describe('Dijital Eğitim Kampüsü Uçtan Uca Yolculuk', () => {
     await page.getByRole('button', { name: /Kaydet ve Paylaş Adımına Geç/i }).click();
     await expect(page.getByText(/Çalışman Hazır!/i)).toBeVisible();
 
-    // 7. Yolculuğum sayfası ve İki Adımlı Verilerimi Sil
+    // Yalnızca kaydetmek görevi tamamlamaz; "Görevi Tamamla" ile tamamlanır (PNG indirmeden!)
+    await page.getByRole('button', { name: /Görevi Tamamla/i }).click();
+    await expect(page.getByText(/Görevin Tamamlandı!/i)).toBeVisible();
+
+    // 10. Yolculuğum sayfası: Görevlerim, Öğrenme Yolculuğum, Çalışmalarım + Eser İnceleme + Verilerimi Sil
     await page.getByRole('link', { name: /Kampüs Yolculuğumda Gör/i }).click();
+    await expect(page.getByRole('heading', { name: 'Görevlerim' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Öğrenme Yolculuğum' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Çalışmalarım' })).toBeVisible();
     await expect(page.getByText('Yıldızlı Taş Kapı').first()).toBeVisible();
+    await expect(page.getByText('Cihaza Kayıtlı').first()).toBeVisible();
+
+    await page.getByRole('button', { name: /Çalışmayı İncele/i }).first().click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('button', { name: 'Kapat', exact: true }).click();
 
     await page.getByRole('button', { name: /Verilerimi Sil/i }).first().click();
     await page.getByRole('button', { name: /Devam Et/i }).click();
     await page.getByRole('button', { name: /Evet, hepsini sil/i }).click();
 
     await expect(page.getByRole('button', { name: /Kapıyı Aç ve İçeri Gir/i })).toBeVisible();
+    await page.goto('/yolculugum');
+    await expect(page.getByText(/Henüz Başladığın Bir Görev Yok/i)).toBeVisible();
+  });
+
+  test('2. sınıf akışı (basit çizim + serbest çizim + isteğe bağlı yazı), klavye erişimi ve 4 ekran boyutunda taşmasızlık', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.goto('/');
+    await page.getByRole('button', { name: /Animasyonu Atla/i }).click();
+    await page.getByRole('button', { name: /Kendim keşfedeceğim/i }).click();
+    await page.getByRole('button', { name: /2\. Sınıf/i }).click();
+
+    await expect(page.getByRole('heading', { name: /Kampüs Haritası/i })).toBeVisible();
+
+    // 4 ekran boyutunda yatay taşma kontrolü (Kampüs Haritası + dokunmatik hedef boyutu)
+    for (const vp of [
+      { width: 360, height: 740 },
+      { width: 390, height: 844 },
+      { width: 768, height: 1024 },
+      { width: 1280, height: 840 },
+    ]) {
+      await page.setViewportSize(vp);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      );
+      expect(overflow).toBe(false);
+    }
+
+    // 390px mobil boyutta görünür butonların minimum 44x44 dokunmatik alan kontrolü
+    await page.setViewportSize({ width: 390, height: 844 });
+    const smallButtons = await page.evaluate(() => {
+      const els = Array.from(document.querySelectorAll('main button, main a'));
+      return els
+        .filter((el) => {
+          const r = el.getBoundingClientRect();
+          return r.width > 0 && r.height > 0 && (r.width < 44 || r.height < 44);
+        })
+        .map((el) => ({ text: el.textContent?.trim(), w: el.getBoundingClientRect().width, h: el.getBoundingClientRect().height }));
+    });
+    expect(smallButtons).toEqual([]);
+
+    await page.setViewportSize({ width: 1280, height: 840 });
+    await page.getByRole('link', { name: /Kapıların Anlattığı Hikâye/i }).first().click();
+
+    // 2. sınıf Öğren aşamasında doğru soru biçimi
+    await page.getByRole('button', { name: /Öğren Aşamasına Geç/i }).click();
+    await expect(page.getByText(/[“"]Door[”"] kelimesinin Türkçe karşılığı hangisidir\?/i)).toBeVisible();
+
+    // 2. sınıf Üret aşamasında başlangıçta sade araçlar + genişletilebilir panel
+    await page.getByRole('button', { name: /Üret Aşamasına Geç/i }).click();
+    await expect(page.getByRole('button', { name: /Daha Fazla Araç ve Şekil/i })).toBeVisible();
+
+    // Serbest çizim yaparak üretim (yazı yazmadan!)
+    const canvas = page.getByLabel(/Kapı tasarım ve çizim alanı/i);
+    await canvas.scrollIntoViewIfNeeded();
+    const box = await canvas.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      await page.mouse.move(box.x + 80, box.y + 80);
+      await page.mouse.down();
+      await page.mouse.move(box.x + 180, box.y + 150);
+      await page.mouse.up();
+    }
+
+    await page.getByRole('button', { name: /Kaydet ve Paylaş Adımına Geç/i }).click();
+    await expect(page.getByText(/Çalışman Hazır!/i)).toBeVisible();
+
+    // Klavyeyle şekil hareket ettirme kontrolü
+    await page.getByRole('button', { name: /Önceki Adım \(Üret\)/i }).click();
+    await page.getByRole('button', { name: /\+ Kemer/i }).click();
+    await canvas.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByText(/Seçili şekil:/i)).toBeVisible();
   });
 });
+

@@ -9,7 +9,6 @@ import {
   HelpCircle,
   Lightbulb,
   Save,
-  Sparkles,
   Volume2,
 } from 'lucide-react';
 import { useCampus } from '@/src/app/CampusProviders';
@@ -17,6 +16,7 @@ import { getMissionById } from '@/src/data/missions';
 import { MISSION_GUIDE_PROMPTS } from '@/src/data/dialogues';
 import { getArtifactById, saveArtifact } from '@/src/services/storage';
 import { speakSegments } from '@/src/services/speech';
+import { evaluateOriginalProduction } from '@/src/utils/missionValidation';
 import { composeArtifactPngDataUrl } from '@/src/utils/pngExport';
 import type {
   DrawingDocument,
@@ -39,6 +39,14 @@ interface MissionRunnerViewProps {
   missionId: string;
 }
 
+const MIDDLE_SCHOOL_MATERIALS = [
+  'Taş',
+  'Ahşap',
+  'Taş ve Ahşap',
+  'Çini ve Taş',
+  'Metal ve Cam',
+];
+
 function createEmptySelections(): MissionSelections {
   return {
     selectedDoorIds: [],
@@ -48,6 +56,7 @@ function createEmptySelections(): MissionSelections {
     matchedExampleSentence: false,
     doorName: '',
     writtenText: '',
+    materialChoice: '',
     usedEnglishWords: [],
   };
 }
@@ -85,6 +94,7 @@ function MissionRunnerInner({
 
   const mission = getMissionById(missionId);
   const isPrimary = activeGradeProfile.tier === 'ilkokul';
+  const isEarlyPrimary = effectiveGrade === 2 || effectiveGrade === 3;
 
   const [stage, setStage] = useState<MissionStageId>(
     () => initialProgress?.currentStage ?? 'kesfet',
@@ -97,7 +107,10 @@ function MissionRunnerInner({
   );
   const [drawing, setDrawing] = useState<DrawingDocument>(createEmptyDrawing);
   const [draftArtifactId, setDraftArtifactId] = useState<string | null>(
-    () => initialProgress?.draftArtifactId ?? null,
+    () => initialProgress?.savedArtifactId ?? initialProgress?.draftArtifactId ?? null,
+  );
+  const [artifactSavedAt, setArtifactSavedAt] = useState<string | null>(
+    () => initialProgress?.artifactSavedAt ?? null,
   );
   const [selfEval, setSelfEval] = useState<SelfEvaluationRecord>(
     () => initialProgress?.selfEvaluation ?? { selectedOptionId: null, note: '' },
@@ -110,7 +123,11 @@ function MissionRunnerInner({
   const [vocabFeedback, setVocabFeedback] = useState<{ type: 'ok' | 'hint'; message: string } | null>(null);
   const [activeMatchWordId, setActiveMatchWordId] = useState<string | null>(null);
   const [hasUnsavedWork, setHasUnsavedWork] = useState(false);
-  const [statusBanner, setStatusBanner] = useState<string | null>(null);
+  const [statusBanner, setStatusBanner] = useState<{
+    tone: 'success' | 'warning' | 'error';
+    message: string;
+  } | null>(null);
+  const [productionNotice, setProductionNotice] = useState<string | null>(null);
   const [speechNotice, setSpeechNotice] = useState<string | null>(null);
   const [savedPngUrl, setSavedPngUrl] = useState<string | null>(null);
   const [exitPromptOpen, setExitPromptOpen] = useState(false);
@@ -118,7 +135,7 @@ function MissionRunnerInner({
 
   // IndexedDB'deki çizim taslağını asenkron geri yükle
   useEffect(() => {
-    const artifactId = initialProgress?.draftArtifactId;
+    const artifactId = initialProgress?.savedArtifactId ?? initialProgress?.draftArtifactId;
     if (!artifactId) return;
     let active = true;
     void getArtifactById(artifactId).then((artifact) => {
@@ -130,7 +147,10 @@ function MissionRunnerInner({
     return () => {
       active = false;
     };
-  }, [initialProgress?.draftArtifactId]);
+  }, [initialProgress?.savedArtifactId, initialProgress?.draftArtifactId]);
+
+  const productionCheck = evaluateOriginalProduction(drawing, selections.writtenText);
+  const hasValidProduction = productionCheck.isValid;
 
   const persistProgress = (overrides?: Partial<MissionProgress>) => {
     if (!mission) return;
@@ -142,8 +162,11 @@ function MissionRunnerInner({
       completedStages: overrides?.completedStages ?? completedStages,
       selections: overrides?.selections ?? selections,
       draftArtifactId: overrides?.draftArtifactId ?? draftArtifactId,
+      savedArtifactId: overrides?.savedArtifactId ?? draftArtifactId,
+      artifactSavedAt: overrides?.artifactSavedAt ?? artifactSavedAt,
       selfEvaluation: overrides?.selfEvaluation ?? selfEval,
       completed: overrides?.completed ?? completed,
+      completedAt: overrides?.completedAt ?? initialProgress?.completedAt ?? null,
       updatedAt: new Date().toISOString(),
     };
     saveMissionProgress(nextProgress);
@@ -157,14 +180,14 @@ function MissionRunnerInner({
     }
   };
 
-  const handleSaveArtifactAndDraft = async (markMissionCompleted: boolean): Promise<SavedArtifact | null> => {
+  const buildArtifactPayload = (artifactId: string): { artifact: SavedArtifact; pngDataUrl: string } | null => {
     if (!mission) return null;
-    const artifactId = draftArtifactId ?? `art-${mission.id}-g${effectiveGrade}`;
     const pngDataUrl = composeArtifactPngDataUrl({
       missionTitle: mission.title,
       grade: effectiveGrade,
-      doorName: selections.doorName || (isPrimary ? 'Kapı Hikâyem' : 'Özgün Kapı Tasarımım'),
+      doorName: selections.doorName.trim() || (isPrimary ? 'Kapı Hikâyem' : 'Özgün Kapı Tasarımım'),
       writtenText: selections.writtenText,
+      materialChoice: selections.materialChoice,
       usedEnglishWords: selections.usedEnglishWords,
       drawingData: drawing,
     });
@@ -176,10 +199,11 @@ function MissionRunnerInner({
       missionVersion: mission.version,
       grade: effectiveGrade,
       title: mission.title,
-      doorName: selections.doorName || (isPrimary ? 'Kapı Hikâyem' : 'Özgün Kapı Tasarımım'),
+      doorName: selections.doorName.trim() || (isPrimary ? 'Kapı Hikâyem' : 'Özgün Kapı Tasarımım'),
       writtenText: selections.writtenText,
       selectedDoorIds: selections.selectedDoorIds,
       observations: selections.observationNotes,
+      materialChoice: selections.materialChoice,
       usedEnglishWords: selections.usedEnglishWords,
       drawingData: drawing,
       pngDataUrl,
@@ -187,39 +211,96 @@ function MissionRunnerInner({
       updatedAt: now,
     };
 
-    const status = await saveArtifact(artifact);
-    setDraftArtifactId(artifactId);
-    setSavedPngUrl(pngDataUrl);
-    setHasUnsavedWork(false);
-
-    const nextCompletedStages: MissionStageId[] = Array.from(
-      new Set<MissionStageId>([
-        ...completedStages,
-        'uret',
-        ...(markMissionCompleted ? (['paylas'] as MissionStageId[]) : []),
-      ]),
-    );
-    setCompletedStages(nextCompletedStages);
-    if (markMissionCompleted) setCompleted(true);
-
-    persistProgress({
-      draftArtifactId: artifactId,
-      completedStages: nextCompletedStages,
-      completed: markMissionCompleted || completed,
-    });
-
-    setStatusBanner(
-      status.warningMessage ??
-        'Çalışman cihazına kaydedildi. Dilersen PNG olarak da indirebilirsin.',
-    );
-    return artifact;
+    return { artifact, pngDataUrl };
   };
 
-  const handleDownloadPng = async () => {
-    const artifact = await handleSaveArtifactAndDraft(true);
-    const url = artifact?.pngDataUrl ?? savedPngUrl;
-    if (!url) return;
+  const saveArtifactToDevice = async (options?: {
+    silentIfSaved?: boolean;
+  }): Promise<{ ok: boolean; persisted: boolean; pngDataUrl: string | null }> => {
+    if (!mission) return { ok: false, persisted: false, pngDataUrl: null };
+    if (!hasValidProduction) {
+      setStatusBanner({
+        tone: 'warning',
+        message: isEarlyPrimary
+          ? 'Kaydetmeden önce bir çizim yap, hazır şekil ekle ya da kısa bir kelime yaz.'
+          : 'Kaydetmeden önce serbest çizim yapabilir, hazır şekil ekleyebilir veya özgün anlatımını yazabilirsin.',
+      });
+      return { ok: false, persisted: false, pngDataUrl: null };
+    }
 
+    const artifactId = draftArtifactId ?? `art-${mission.id}-g${effectiveGrade}`;
+    const built = buildArtifactPayload(artifactId);
+    if (!built) return { ok: false, persisted: false, pngDataUrl: null };
+
+    try {
+      const status = await saveArtifact(built.artifact);
+      setSavedPngUrl(built.pngDataUrl);
+
+      if (status.persisted) {
+        const savedAt = new Date().toISOString();
+        setDraftArtifactId(artifactId);
+        setArtifactSavedAt(savedAt);
+        setHasUnsavedWork(false);
+
+        const nextCompletedStages: MissionStageId[] = Array.from(
+          new Set<MissionStageId>([...completedStages, 'uret']),
+        );
+        setCompletedStages(nextCompletedStages);
+        persistProgress({
+          draftArtifactId: artifactId,
+          savedArtifactId: artifactId,
+          artifactSavedAt: savedAt,
+          completedStages: nextCompletedStages,
+        });
+
+        if (!options?.silentIfSaved) {
+          setStatusBanner({
+            tone: 'success',
+            message: 'Çalışman bu cihaza başarıyla kaydedildi.',
+          });
+        }
+        return { ok: true, persisted: true, pngDataUrl: built.pngDataUrl };
+      }
+
+      // Cihaz depolamasına yazılamadıysa (session-only / IndexedDB hatası) dürüst uyarı ver
+      setStatusBanner({
+        tone: 'warning',
+        message:
+          status.warningMessage ??
+          'Çalışman cihaz depolamasına kaydedilemedi; yalnızca bu oturumda geçici olarak tutuluyor. PNG olarak indirmeni öneririz.',
+      });
+      return { ok: false, persisted: false, pngDataUrl: built.pngDataUrl };
+    } catch {
+      setStatusBanner({
+        tone: 'error',
+        message:
+          'Kaydetme sırasında beklenmeyen bir hata oluştu; çalışman cihazına kaydedilemedi. Lütfen tekrar dene veya PNG olarak indir.',
+      });
+      return { ok: false, persisted: false, pngDataUrl: built.pngDataUrl };
+    }
+  };
+
+  const handleDownloadPngOnly = () => {
+    if (!mission) return;
+    if (!hasValidProduction) {
+      setStatusBanner({
+        tone: 'warning',
+        message: 'PNG indirmeden önce çizim, hazır şekil veya yazılı anlatım oluşturmalısın.',
+      });
+      return;
+    }
+
+    const built = buildArtifactPayload(draftArtifactId ?? `art-${mission.id}-g${effectiveGrade}`);
+    const url = built?.pngDataUrl || savedPngUrl;
+    if (!url) {
+      setStatusBanner({
+        tone: 'error',
+        message: 'PNG görseli oluşturulamadı. Lütfen tekrar dene.',
+      });
+      return;
+    }
+
+    setSavedPngUrl(url);
     const link = document.createElement('a');
     link.href = url;
     const slug = (selections.doorName || 'kapi-calismam')
@@ -231,11 +312,60 @@ function MissionRunnerInner({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    setStatusBanner({
+      tone: 'success',
+      message: 'PNG dosyası cihazına indirildi. (PNG indirmek isteğe bağlıdır.)',
+    });
   };
 
-  const handleBeforeNavigate = () => {
+  const handleCompleteMission = async () => {
+    if (!mission) return;
+    if (!hasValidProduction) {
+      setStatusBanner({
+        tone: 'warning',
+        message:
+          'Görevi tamamlamak için önce Üret adımında en az bir çizim, hazır şekil veya özgün anlatım oluşturmalısın.',
+      });
+      return;
+    }
+
+    let persistedDevice = Boolean(draftArtifactId && !hasUnsavedWork);
+    if (!draftArtifactId || hasUnsavedWork) {
+      const saveRes = await saveArtifactToDevice({ silentIfSaved: true });
+      persistedDevice = saveRes.persisted;
+    }
+
+    const now = new Date().toISOString();
+    const nextCompletedStages: MissionStageId[] = Array.from(
+      new Set<MissionStageId>([...completedStages, 'uret', 'paylas']),
+    );
+    setCompletedStages(nextCompletedStages);
+    setCompleted(true);
+
+    persistProgress({
+      completed: true,
+      completedAt: now,
+      completedStages: nextCompletedStages,
+    });
+
+    if (persistedDevice) {
+      setStatusBanner({
+        tone: 'success',
+        message: 'Tebrikler! Çalışman cihaza kaydedildi ve görevin başarıyla tamamlandı.',
+      });
+    } else {
+      setStatusBanner({
+        tone: 'warning',
+        message:
+          'Görevin tamamlandı ancak çalışman kalıcı cihaz depolamasına kaydedilemedi. Eserini korumak için PNG olarak indirmeni öneririz.',
+      });
+    }
+  };
+
+  const handleBeforeNavigate = (targetHref = '/harita') => {
     if (!hasUnsavedWork) return true;
-    setPendingExitUrl('/harita');
+    setPendingExitUrl(targetHref);
     setExitPromptOpen(true);
     return false;
   };
@@ -246,6 +376,7 @@ function MissionRunnerInner({
       : completedStages;
     setCompletedStages(nextCompleted);
     setStage(target);
+    setProductionNotice(null);
     setStatusBanner(null);
     persistProgress({
       currentStage: target,
@@ -303,11 +434,6 @@ function MissionRunnerInner({
 
   const currentStageIndex = mission.steps.findIndex((s) => s.id === stage);
   const progressPercent = Math.round((completedStages.length / mission.steps.length) * 100);
-  const hasAnyProduction =
-    drawing.strokes.length > 0 ||
-    drawing.shapes.length > 0 ||
-    selections.writtenText.trim().length > 0 ||
-    selections.doorName.trim().length > 0;
 
   return (
     <>
@@ -336,7 +462,7 @@ function MissionRunnerInner({
               <button
                 type="button"
                 onClick={() => {
-                  void handleSaveArtifactAndDraft(false);
+                  void saveArtifactToDevice();
                 }}
                 className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-canvas)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--campus-ink)] inline-flex items-center gap-1.5 cursor-pointer"
               >
@@ -398,9 +524,15 @@ function MissionRunnerInner({
           {statusBanner && (
             <div
               role="status"
-              className="rounded-lg bg-[var(--courtyard-sage-soft)] border border-[var(--courtyard-sage)]/30 px-4 py-2.5 text-xs sm:text-sm font-medium text-[var(--campus-ink)]"
+              className={`rounded-lg border px-4 py-2.5 text-xs sm:text-sm font-medium ${
+                statusBanner.tone === 'error'
+                  ? 'bg-[var(--alert-rose-soft)] border-[var(--alert-rose)]/35 text-[var(--alert-rose)]'
+                  : statusBanner.tone === 'warning'
+                    ? 'bg-[var(--sandstone-gold-soft)] border-[var(--sandstone-gold)]/35 text-[var(--campus-ink)]'
+                    : 'bg-[var(--courtyard-sage-soft)] border-[var(--courtyard-sage)]/30 text-[var(--campus-ink)]'
+              }`}
             >
-              {statusBanner}
+              {statusBanner.message}
             </div>
           )}
         </section>
@@ -544,7 +676,7 @@ function MissionRunnerInner({
                           setInspectGateOpen((v) => !v);
                           setSelections((prev) => ({ ...prev, inspectedCampusGate: true }));
                         }}
-                        className="min-h-[40px] px-3 py-1 rounded-lg border border-[var(--campus-border)] bg-white text-xs font-semibold shrink-0 cursor-pointer"
+                        className="min-h-[44px] px-3.5 py-1.5 rounded-lg border border-[var(--campus-border)] bg-white text-xs font-semibold shrink-0 cursor-pointer"
                       >
                         {inspectGateOpen ? 'Kapat' : 'Aralayıp Bak'}
                       </button>
@@ -676,7 +808,7 @@ function MissionRunnerInner({
                   {/* Görsel Eşleştirme */}
                   <div className="space-y-3">
                     <h3 className="text-base font-bold text-[var(--campus-ink)]">
-                      Eşleştirme: Hangisi &ldquo;Door&rdquo; kelimesini gösterir?
+                      Eşleştirme: &ldquo;Door&rdquo; kelimesinin Türkçe karşılığı hangisidir?
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {[
@@ -698,13 +830,13 @@ function MissionRunnerInner({
                                 }));
                                 setVocabFeedback({
                                   type: 'ok',
-                                  message: 'Harika! Door kelimesi Kapı anlamına gelir.',
+                                  message:
+                                    'Harika! "Door", içeri girip çıktığımız kapı anlamına gelir.',
                                 });
                               } else {
                                 setVocabFeedback({
                                   type: 'hint',
-                                  message:
-                                    'İpucu: "Door", bir eve veya okula girerken açtığımız kapıdır. Tekrar deneyebilirsin.',
+                                  message: `Yaklaştın! ${opt.label} farklı bir kavramdır. "Door", eve veya okula girerken açtığımız kapıdır; tekrar deneyebilirsin.`,
                                 });
                               }
                             }}
@@ -799,7 +931,7 @@ function MissionRunnerInner({
                         <button
                           type="button"
                           onClick={() => void handleSpeakEnglish(item.word)}
-                          className="min-h-[40px] px-2.5 py-1 rounded-lg border border-[var(--campus-border)] bg-white hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--campus-ink)] inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                          className="min-h-[44px] px-2.5 py-1.5 rounded-lg border border-[var(--campus-border)] bg-white hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--campus-ink)] inline-flex items-center justify-center gap-1.5 cursor-pointer"
                         >
                           <Volume2 className="w-3.5 h-3.5 text-[var(--seljuk-teal)]" aria-hidden="true" />
                           <span>Dinle</span>
@@ -884,9 +1016,16 @@ function MissionRunnerInner({
                             <button
                               key={`tr-${target.id}`}
                               type="button"
-                              disabled={matched || !activeMatchWordId}
+                              disabled={matched}
                               onClick={() => {
-                                if (!activeMatchWordId) return;
+                                if (!activeMatchWordId) {
+                                  setVocabFeedback({
+                                    type: 'hint',
+                                    message:
+                                      'Önce sol sütundan bir İngilizce kelime seç, sonra Türkçe karşılığına dokun.',
+                                  });
+                                  return;
+                                }
                                 if (activeMatchWordId === target.id) {
                                   setSelections((prev) => ({
                                     ...prev,
@@ -897,20 +1036,20 @@ function MissionRunnerInner({
                                   setActiveMatchWordId(null);
                                   setVocabFeedback({
                                     type: 'ok',
-                                    message: `Doğru eşleşme: ${target.word} — ${target.turkishMeaning}`,
+                                    message: `Doğru eşleşme! "${target.word}", "${target.turkishMeaning}" anlamına gelir.`,
                                   });
                                 } else {
                                   setVocabFeedback({
                                     type: 'hint',
                                     message:
-                                      'Bu eşleşme farklı görünüyor. Yukarıdaki kelime kartlarına bakıp yeniden deneyebilirsin.',
+                                      'Bu iki kart farklı anlamlara sahip. Yukarıdaki kelime kartlarına göz atıp yeniden deneyebilirsin.',
                                   });
                                 }
                               }}
                               className={`w-full min-h-[44px] px-3.5 py-2 rounded-lg border text-left text-sm cursor-pointer ${
                                 matched
                                   ? 'border-[var(--courtyard-sage)] bg-[var(--courtyard-sage-soft)] font-semibold'
-                                  : 'border-[var(--campus-border)] bg-white hover:bg-[var(--campus-surface-muted)] disabled:opacity-60'
+                                  : 'border-[var(--campus-border)] bg-white hover:bg-[var(--campus-surface-muted)]'
                               }`}
                             >
                               {target.turkishMeaning}
@@ -973,12 +1112,18 @@ function MissionRunnerInner({
                     Kitap ve Hikâye Dünyası Bağlantısı
                   </p>
                   <h2 className="text-xl font-bold text-[var(--campus-ink)]">
-                    {isPrimary ? 'Kendi Kapını ve Hikâyeni Oluştur' : 'Özgün Kapını Tasarla ve Gerekçelendir'}
+                    {isEarlyPrimary
+                      ? 'Kendi Kapını Çiz veya Şekil Ekle'
+                      : isPrimary
+                        ? 'Kendi Kapını ve Hikâyeni Oluştur'
+                        : 'Özgün Kapını Tasarla ve Gerekçelendir'}
                   </h2>
                   <p className="text-sm text-[var(--campus-ink-muted)]">
-                    {isPrimary
-                      ? `Üretim seçeneklerin (${activeGradeProfile.label}): ${activeGradeProfile.productionOptions.join(', ')}.`
-                      : `Yazma beklentisi (${activeGradeProfile.label}): ${activeGradeProfile.writingExpectation}.`}
+                    {isEarlyPrimary
+                      ? 'Çizim yap, hazır şekil ekle ya da kısa bir kelime yaz. Bunlardan biri yeterlidir.'
+                      : isPrimary
+                        ? `Üretim seçeneklerin (${activeGradeProfile.label}): ${activeGradeProfile.productionOptions.join(', ')}. Bunlardan en az birini tamamlaman yeterlidir.`
+                        : `Yazma beklentisi (${activeGradeProfile.label}): ${activeGradeProfile.writingExpectation}. Görsel tasarım veya yazılı anlatımdan en az biriyle ürün oluşturabilirsin.`}
                   </p>
                 </div>
 
@@ -1006,15 +1151,17 @@ function MissionRunnerInner({
                 <div className="rounded-xl bg-[var(--sandstone-gold-soft)]/70 border border-[var(--sandstone-gold)]/30 p-3.5 flex items-start gap-2.5 text-xs sm:text-sm text-[var(--campus-ink)]">
                   <Lightbulb className="w-4 h-4 text-[var(--sandstone-gold)] shrink-0 mt-0.5" aria-hidden="true" />
                   <div className="space-y-1">
-                    {isPrimary ? (
+                    {isEarlyPrimary ? (
+                      <p>Önce bir şekil seç veya serbest çiz. İstersen altına kısa bir kelime yaz.</p>
+                    ) : isPrimary ? (
                       <p>
                         İstersen önce &ldquo;Hazır Şekil Ekle&rdquo; düğmeleriyle bir kemer ve kapı kanadı
                         ekle, sonra serbest fırçayla kapının ardında gördüklerini çiz.
                       </p>
                     ) : (
                       <p>
-                        Tasarıma bir isim ver. Açıklamanda malzeme (wood/stone), biçim veya desen
-                        (pattern) tercihini neden seçtiğini yazabilirsin.
+                        Malzeme seçip tasarımına bir isim ver. Açıklamanda malzeme (wood/stone), biçim veya
+                        desen (pattern) tercihini neden seçtiğini karşılaştırarak yazabilirsin.
                       </p>
                     )}
                   </div>
@@ -1025,7 +1172,7 @@ function MissionRunnerInner({
               {(selectedDoorCards.length > 0 || Object.keys(selections.observationNotes).length > 0) && (
                 <div className="rounded-xl bg-[var(--campus-canvas)] border border-[var(--campus-border)] p-3.5 text-xs text-[var(--campus-ink-muted)] space-y-1">
                   <p className="font-semibold text-[var(--campus-ink)]">
-                    Önceki Adımdan Taşınan İlham Notların:
+                    Önceki Adımdan Taşınan Gözlemlerin:
                   </p>
                   {selectedDoorCards.length > 0 && (
                     <p>Seçtiğin kapılar: {selectedDoorCards.map((d) => d.title).join(', ')}</p>
@@ -1036,20 +1183,56 @@ function MissionRunnerInner({
                 </div>
               )}
 
-              {/* Çizim ve Hazır Şekil Stüdyosu */}
+              {/* Çizim ve Hazır Şekil Stüdyosu (Sınıf Düzeyine Uyarlı) */}
               <DrawingCanvasStudio
                 value={drawing}
+                grade={effectiveGrade}
                 onChange={(nextDoc) => {
                   setDrawing(nextDoc);
                   setHasUnsavedWork(true);
+                  setProductionNotice(null);
                 }}
               />
 
-              {/* Kapı İsmi ve Yazma Alanı */}
+              {/* Kapı İsmi, Malzeme (5–7. Sınıf) ve Yazma Alanı */}
               <div className="grid grid-cols-1 gap-4 pt-2">
+                {!isPrimary && (
+                  <div className="space-y-1.5">
+                    <p className="text-sm font-semibold text-[var(--campus-ink)]">
+                      Tasarım Malzemesi Seç (İsteğe Bağlı)
+                    </p>
+                    <div className="flex flex-wrap gap-2" role="group" aria-label="Tasarım malzemesi">
+                      {MIDDLE_SCHOOL_MATERIALS.map((mat) => {
+                        const selected = selections.materialChoice === mat;
+                        return (
+                          <button
+                            key={mat}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => {
+                              setSelections((prev) => ({
+                                ...prev,
+                                materialChoice: prev.materialChoice === mat ? '' : mat,
+                              }));
+                              setHasUnsavedWork(true);
+                            }}
+                            className={`min-h-[44px] px-3.5 py-2 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
+                              selected
+                                ? 'border-[var(--seljuk-teal)] bg-[var(--seljuk-teal-soft)] text-[var(--campus-ink)]'
+                                : 'border-[var(--campus-border)] bg-[var(--campus-canvas)] text-[var(--campus-ink)] hover:bg-[var(--campus-surface-muted)]'
+                            }`}
+                          >
+                            {mat}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-1.5">
                   <label htmlFor="door-name-input" className="block text-sm font-semibold text-[var(--campus-ink)]">
-                    {isPrimary ? 'Kapına veya Çalışmana Kısa Bir Ad Ver (İsteğe Bağlı)' : 'Tasarladığın Kapının Adı'}
+                    {isPrimary ? 'Kapına Kısa Bir Ad Ver (İsteğe Bağlı)' : 'Tasarladığın Kapının Adı'}
                   </label>
                   <input
                     id="door-name-input"
@@ -1084,8 +1267,9 @@ function MissionRunnerInner({
                                   : starter,
                               }));
                               setHasUnsavedWork(true);
+                              setProductionNotice(null);
                             }}
-                            className="min-h-[40px] px-3 py-1.5 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-canvas)] hover:border-[var(--seljuk-teal)] text-xs text-[var(--campus-ink)] cursor-pointer"
+                            className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-canvas)] hover:border-[var(--seljuk-teal)] text-xs text-[var(--campus-ink)] cursor-pointer"
                           >
                             + {starter}
                           </button>
@@ -1120,7 +1304,7 @@ function MissionRunnerInner({
                               });
                               setHasUnsavedWork(true);
                             }}
-                            className={`min-h-[40px] px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer ${
+                            className={`min-h-[44px] px-3.5 py-2 rounded-lg border text-xs font-semibold cursor-pointer ${
                               used
                                 ? 'border-[var(--seljuk-teal)] bg-[var(--seljuk-teal-soft)] text-[var(--campus-ink)]'
                                 : 'border-[var(--campus-border)] bg-[var(--campus-canvas)] text-[var(--campus-ink)]'
@@ -1136,10 +1320,10 @@ function MissionRunnerInner({
 
                 <div className="space-y-1.5">
                   <label htmlFor="written-text-input" className="block text-sm font-semibold text-[var(--campus-ink)]">
-                    {effectiveGrade === 2
-                      ? 'İstersen bir kelime yaz (çizim ve şekil tek başına yeterlidir)'
+                    {isEarlyPrimary
+                      ? 'İstersen Kısaca Yaz (Çizim veya Şekil Yeterlidir)'
                       : isPrimary
-                        ? 'Kapıdan geçince ne gördüğünü kısaca yaz'
+                        ? 'Kapıdan geçince ne gördüğünü kısaca yaz (isteğe bağlı)'
                         : 'Kapı Tasarımını ve Seçim Gerekçeni Açıkla'}
                   </label>
                   <textarea
@@ -1149,18 +1333,30 @@ function MissionRunnerInner({
                     onChange={(e) => {
                       setSelections((prev) => ({ ...prev, writtenText: e.target.value }));
                       setHasUnsavedWork(true);
+                      setProductionNotice(null);
                     }}
                     placeholder={
-                      effectiveGrade === 2
+                      isEarlyPrimary
                         ? 'Örneğin: Bahçe, Ağaç, Door...'
                         : isPrimary
                           ? 'Kapıdan geçince yeşil bir avlu gördüm...'
-                          : 'Bu kapıyı tasarlarken ahşap ve taş dokuyu birlikte kullandım çünkü...'
+                          : effectiveGrade === 7
+                            ? 'Seçtiğin malzemeyi, günlük kapılarla farkını ve tasarım gerekçeni 4–6 cümleyle açıkla...'
+                            : 'Bu kapıyı tasarlarken ahşap ve taş dokuyu birlikte kullandım çünkü...'
                     }
                     className="w-full p-3.5 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-canvas)] text-sm text-[var(--campus-ink)]"
                   />
                 </div>
               </div>
+
+              {productionNotice && (
+                <div
+                  role="status"
+                  className="rounded-xl bg-[var(--sandstone-gold-soft)] border border-[var(--sandstone-gold)]/40 p-3.5 text-sm font-medium text-[var(--campus-ink)]"
+                >
+                  {productionNotice}
+                </div>
+              )}
             </section>
 
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1176,8 +1372,23 @@ function MissionRunnerInner({
               <button
                 type="button"
                 onClick={async () => {
-                  await handleSaveArtifactAndDraft(false);
+                  if (!hasValidProduction) {
+                    const msg = isEarlyPrimary
+                      ? 'Devam etmek için önce bir çizim yap, hazır şekil ekle ya da kısa bir kelime yaz.'
+                      : 'Paylaş adımına geçmeden önce serbest çizim yapabilir, hazır şekil ekleyebilir ya da tasarımını yazıyla anlatabilirsin.';
+                    setProductionNotice(msg);
+                    setStatusBanner({ tone: 'warning', message: msg });
+                    return;
+                  }
+                  const saveRes = await saveArtifactToDevice({ silentIfSaved: true });
                   goToStage('paylas', true);
+                  if (saveRes.persisted) {
+                    setStatusBanner({
+                      tone: 'success',
+                      message:
+                        'Çalışman taslak olarak cihaza kaydedildi. Şimdi çalışmanı gözden geçirip görevini tamamlayabilirsin.',
+                    });
+                  }
                 }}
                 className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
               >
@@ -1192,125 +1403,196 @@ function MissionRunnerInner({
         {stage === 'paylas' && (
           <div className="space-y-6">
             <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 space-y-5">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold text-[var(--courtyard-sage)]">
-                    Paylaşım ve Cihaza Kaydetme
-                  </p>
-                  <h2 className="text-xl font-bold text-[var(--campus-ink)]">
-                    Çalışman Hazır!
-                  </h2>
-                  <p className="text-sm text-[var(--campus-ink-muted)]">
-                    Bu kampüste çalışmalar herkese açık paylaşılmaz; yalnızca cihazına kaydedebilir ve
-                    istersen ailene gösterebilirsin.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void handleSaveArtifactAndDraft(true)}
-                    className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-canvas)] hover:bg-[var(--campus-surface-muted)] text-sm font-semibold text-[var(--campus-ink)] inline-flex items-center gap-2 cursor-pointer"
-                  >
-                    <Save className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
-                    <span>Cihaza Kaydet</span>
-                  </button>
+              {!hasValidProduction ? (
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-[var(--sandstone-gold)]">
+                      Ürün Kontrolü
+                    </p>
+                    <h2 className="text-xl font-bold text-[var(--campus-ink)]">
+                      Henüz Özgün Bir Ürün Oluşturulmadı
+                    </h2>
+                    <p className="text-sm text-[var(--campus-ink-muted)]">
+                      Görevi tamamlayabilmen için serbest çizim, hazır şekil veya özgün yazılı
+                      anlatımdan en az birini oluşturmalısın.
+                    </p>
+                  </div>
 
                   <button
                     type="button"
-                    onClick={() => void handleDownloadPng()}
+                    onClick={() => goToStage('uret')}
                     className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
                   >
-                    <Download className="w-4 h-4" aria-hidden="true" />
-                    <span>Tek PNG Olarak İndir</span>
+                    <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+                    <span>Üret Adımına Dön ve Ürün Oluştur</span>
                   </button>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold text-[var(--courtyard-sage)]">
+                        Gözden Geçir, Kaydet ve Tamamla
+                      </p>
+                      <h2 className="text-xl font-bold text-[var(--campus-ink)]">
+                        {completed ? 'Görevin Tamamlandı!' : 'Çalışman Hazır!'}
+                      </h2>
+                      <p className="text-sm text-[var(--campus-ink-muted)]">
+                        Bu kampüste çalışmalar herkese açık paylaşılmaz; çalışmanı cihazına kaydedebilir,
+                        istersen PNG olarak indirebilir ve görevi tamamlayabilirsin.
+                      </p>
+                    </div>
 
-              {!hasAnyProduction && (
-                <div className="rounded-lg bg-[var(--sandstone-gold-soft)] p-3 text-xs sm:text-sm text-[var(--campus-ink)]">
-                  Henüz bir çizim veya metin eklemedin. Önceki adıma dönüp çizim veya yazı ekleyebilirsin.
-                </div>
-              )}
-
-              {/* PNG Ön İzleme */}
-              {savedPngUrl && (
-                <div className="rounded-xl border border-[var(--campus-border)] bg-[var(--campus-canvas)] p-4 space-y-2">
-                  <p className="text-xs font-semibold text-[var(--campus-ink-muted)]">
-                    Dışa Aktarılacak PNG Ön İzlemesi (Çizim + Başlık + Metin Birlikte)
-                  </p>
-                  <img
-                    src={savedPngUrl}
-                    alt={`${selections.doorName || 'Kapı çalışması'} PNG ön izlemesi`}
-                    className="w-full max-w-2xl mx-auto rounded-lg border border-[var(--campus-border)]"
-                  />
-                </div>
-              )}
-
-              {/* Yaşa Uygun İsteğe Bağlı Öz Değerlendirme */}
-              <div className="rounded-xl border border-[var(--campus-border)] bg-[var(--campus-canvas)] p-4 sm:p-5 space-y-4">
-                <div>
-                  <h3 className="text-base font-bold text-[var(--campus-ink)]">
-                    Kısa Öz Değerlendirme (İsteğe Bağlı)
-                  </h3>
-                  <p className="text-xs text-[var(--campus-ink-muted)]">
-                    Burada doğru veya yanlış cevap yoktur; kendi öğrenme deneyimini işaretleyebilirsin.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {mission.selfEvaluation.options.map((opt) => {
-                    const selected = selfEval.selectedOptionId === opt.id;
-                    return (
+                    <div className="flex flex-wrap gap-2">
                       <button
-                        key={opt.id}
                         type="button"
-                        aria-pressed={selected}
-                        onClick={() => {
-                          const nextEval: SelfEvaluationRecord = { ...selfEval, selectedOptionId: opt.id };
-                          setSelfEval(nextEval);
-                          persistProgress({
-                            selfEvaluation: nextEval,
-                            completed: true,
-                            completedStages: Array.from(new Set([...completedStages, 'paylas'])),
-                          });
-                        }}
-                        className={`min-h-[60px] p-3.5 rounded-xl border text-left transition-colors cursor-pointer flex items-center gap-3 ${
-                          selected
-                            ? 'border-[var(--seljuk-teal)] bg-[var(--seljuk-teal-soft)] font-semibold'
-                            : 'border-[var(--campus-border)] bg-[var(--campus-surface)] hover:bg-[var(--campus-surface-muted)]'
-                        }`}
+                        onClick={() => void saveArtifactToDevice()}
+                        className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-canvas)] hover:bg-[var(--campus-surface-muted)] text-sm font-semibold text-[var(--campus-ink)] inline-flex items-center gap-2 cursor-pointer"
                       >
-                        <Sparkles className="w-4 h-4 text-[var(--seljuk-teal)] shrink-0" aria-hidden="true" />
-                        <span className="text-xs sm:text-sm text-[var(--campus-ink)]">{opt.label}</span>
+                        <Save className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
+                        <span>Cihaza Kaydet</span>
                       </button>
-                    );
-                  })}
-                </div>
 
-                {(activeGradeProfile.selfEvaluationStyle === 'statements-with-note' ||
-                  activeGradeProfile.selfEvaluationStyle === 'statements-with-justified-note') && (
-                  <div className="space-y-1.5">
-                    <label htmlFor="self-eval-note" className="block text-xs font-semibold text-[var(--campus-ink)]">
-                      {activeGradeProfile.selfEvaluationStyle === 'statements-with-justified-note'
-                        ? 'Kısa Gerekçeli Notun (İsteğe Bağlı)'
-                        : 'Kısa Notun (İsteğe Bağlı)'}
-                    </label>
-                    <textarea
-                      id="self-eval-note"
-                      rows={2}
-                      value={selfEval.note}
-                      onChange={(e) => {
-                        const nextEval: SelfEvaluationRecord = { ...selfEval, note: e.target.value };
-                        setSelfEval(nextEval);
-                        persistProgress({ selfEvaluation: nextEval });
-                      }}
-                      placeholder="Bugünkü çalışmanda en çok dikkatini çeken şey neydi?"
-                      className="w-full p-3 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] text-sm text-[var(--campus-ink)]"
-                    />
+                      <button
+                        type="button"
+                        onClick={handleDownloadPngOnly}
+                        className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--seljuk-teal)]/45 bg-[var(--campus-surface)] hover:bg-[var(--seljuk-teal-soft)] text-sm font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-2 cursor-pointer"
+                      >
+                        <Download className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
+                        <span>Tek PNG Olarak İndir (İsteğe Bağlı)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => void handleCompleteMission()}
+                        className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--courtyard-sage)] hover:opacity-90 text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                        <span>{completed ? 'Görev Tamamlandı' : 'Görevi Tamamla'}</span>
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Çalışmanı Gözden Geçir Özeti + PNG Ön İzleme */}
+                  <div className="rounded-xl border border-[var(--campus-border)] bg-[var(--campus-canvas)] p-4 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-semibold text-[var(--campus-ink)]">
+                        Çalışmanı Gözden Geçir: {selections.doorName.trim() || (isPrimary ? 'Kapı Hikâyem' : 'Özgün Kapı Tasarımım')}
+                      </p>
+                      <span className="text-xs text-[var(--campus-ink-muted)]">
+                        {draftArtifactId && !hasUnsavedWork
+                          ? 'Durum: Cihaza kaydedildi'
+                          : 'Durum: Henüz kalıcı kaydedilmedi'}
+                      </span>
+                    </div>
+
+                    {selections.materialChoice && (
+                      <p className="text-xs text-[var(--campus-ink-muted)]">
+                        Seçilen malzeme: <strong className="text-[var(--campus-ink)]">{selections.materialChoice}</strong>
+                      </p>
+                    )}
+                    {selections.writtenText.trim() && (
+                      <p className="text-xs sm:text-sm text-[var(--campus-ink)] bg-[var(--campus-surface)] rounded-lg p-3 border border-[var(--campus-border)]">
+                        {selections.writtenText}
+                      </p>
+                    )}
+
+                    {(() => {
+                      const displayPngUrl =
+                        !hasUnsavedWork && savedPngUrl
+                          ? savedPngUrl
+                          : (buildArtifactPayload(draftArtifactId ?? `preview-${mission.id}`)?.pngDataUrl ?? savedPngUrl);
+                      if (!displayPngUrl) return null;
+                      return (
+                        <div className="space-y-1.5 pt-1">
+                          <p className="text-xs font-semibold text-[var(--campus-ink-muted)]">
+                            Dışa Aktarılacak PNG Ön İzlemesi (Çizim + Başlık + Metin Birlikte)
+                          </p>
+                          <img
+                            src={displayPngUrl}
+                            alt={`${selections.doorName || 'Kapı çalışması'} PNG ön izlemesi`}
+                            className="w-full max-w-2xl mx-auto rounded-lg border border-[var(--campus-border)]"
+                          />
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Yaşa Uygun İsteğe Bağlı Öz Değerlendirme */}
+                  <div className="rounded-xl border border-[var(--campus-border)] bg-[var(--campus-canvas)] p-4 sm:p-5 space-y-4">
+                    <div>
+                      <h3 className="text-base font-bold text-[var(--campus-ink)]">
+                        Kısa Öz Değerlendirme (İsteğe Bağlı)
+                      </h3>
+                      <p className="text-xs text-[var(--campus-ink-muted)]">
+                        Burada doğru veya yanlış cevap yoktur; kendi öğrenme deneyimini işaretleyebilirsin.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {mission.selfEvaluation.options.map((opt) => {
+                        const selected = selfEval.selectedOptionId === opt.id;
+                        const OptionIcon =
+                          opt.iconKey === 'learned'
+                            ? Lightbulb
+                            : opt.iconKey === 'curious'
+                              ? HelpCircle
+                              : CheckCircle2;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => {
+                              const nextEval: SelfEvaluationRecord = { ...selfEval, selectedOptionId: opt.id };
+                              setSelfEval(nextEval);
+                              persistProgress({ selfEvaluation: nextEval });
+                            }}
+                            className={`min-h-[60px] p-3.5 rounded-xl border text-left transition-colors cursor-pointer flex items-center gap-3 ${
+                              selected
+                                ? 'border-[var(--seljuk-teal)] bg-[var(--seljuk-teal-soft)] font-semibold'
+                                : 'border-[var(--campus-border)] bg-[var(--campus-surface)] hover:bg-[var(--campus-surface-muted)]'
+                            }`}
+                          >
+                            <OptionIcon
+                              className={`shrink-0 ${
+                                activeGradeProfile.selfEvaluationStyle === 'icons'
+                                  ? 'w-6 h-6 text-[var(--seljuk-teal)]'
+                                  : 'w-4 h-4 text-[var(--seljuk-teal)]'
+                              }`}
+                              aria-hidden="true"
+                            />
+                            <span className="text-xs sm:text-sm text-[var(--campus-ink)]">{opt.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {(activeGradeProfile.selfEvaluationStyle === 'statements-with-note' ||
+                      activeGradeProfile.selfEvaluationStyle === 'statements-with-justified-note') && (
+                      <div className="space-y-1.5">
+                        <label htmlFor="self-eval-note" className="block text-xs font-semibold text-[var(--campus-ink)]">
+                          {activeGradeProfile.selfEvaluationStyle === 'statements-with-justified-note'
+                            ? 'Kısa Gerekçeli Notun (İsteğe Bağlı)'
+                            : 'Kısa Notun (İsteğe Bağlı)'}
+                        </label>
+                        <textarea
+                          id="self-eval-note"
+                          rows={2}
+                          value={selfEval.note}
+                          onChange={(e) => {
+                            const nextEval: SelfEvaluationRecord = { ...selfEval, note: e.target.value };
+                            setSelfEval(nextEval);
+                            persistProgress({ selfEvaluation: nextEval });
+                          }}
+                          placeholder="Bugünkü çalışmanda en çok dikkatini çeken şey neydi?"
+                          className="w-full p-3 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] text-sm text-[var(--campus-ink)]"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </section>
 
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1325,13 +1607,7 @@ function MissionRunnerInner({
 
               <Link
                 to="/yolculugum"
-                onClick={() => {
-                  persistProgress({
-                    completed: true,
-                    completedStages: Array.from(new Set([...completedStages, 'paylas'])),
-                  });
-                }}
-                className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--courtyard-sage)] hover:opacity-90 text-white text-sm font-semibold inline-flex items-center gap-2"
+                className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-navy)] hover:bg-[var(--seljuk-navy-shade)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors"
               >
                 <span>Kampüs Yolculuğumda Gör</span>
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
@@ -1371,8 +1647,18 @@ function MissionRunnerInner({
               </button>
               <button
                 type="button"
+                onClick={() => {
+                  setExitPromptOpen(false);
+                  if (pendingExitUrl) navigate(pendingExitUrl);
+                }}
+                className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] text-sm font-semibold cursor-pointer"
+              >
+                Kaydetmeden Çık
+              </button>
+              <button
+                type="button"
                 onClick={async () => {
-                  await handleSaveArtifactAndDraft(false);
+                  await saveArtifactToDevice({ silentIfSaved: true });
                   setExitPromptOpen(false);
                   if (pendingExitUrl) navigate(pendingExitUrl);
                 }}

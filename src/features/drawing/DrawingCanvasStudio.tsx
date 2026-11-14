@@ -12,12 +12,18 @@ import {
   Trash2,
   Undo2,
 } from 'lucide-react';
-import type { DrawingDocument, DrawingShapeItem, DrawingShapeType } from '@/src/types/campus';
+import type {
+  DrawingDocument,
+  DrawingShapeItem,
+  DrawingShapeType,
+  GradeLevel,
+} from '@/src/types/campus';
 import { renderDrawingToCanvas } from '@/src/utils/pngExport';
 
 interface DrawingCanvasStudioProps {
   value: DrawingDocument;
   onChange: (next: DrawingDocument) => void;
+  grade?: GradeLevel;
 }
 
 const PALETTE_COLORS = [
@@ -60,13 +66,19 @@ export function createEmptyDrawing(): DrawingDocument {
   };
 }
 
-export function DrawingCanvasStudio({ value, onChange }: DrawingCanvasStudioProps) {
+export function DrawingCanvasStudio({
+  value,
+  onChange,
+  grade = 5,
+}: DrawingCanvasStudioProps) {
+  const isEarlyPrimary = grade === 2 || grade === 3;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [toolMode, setToolMode] = useState<'draw' | 'move'>('draw');
   const [selectedColor, setSelectedColor] = useState<string>(PALETTE_COLORS[1].hex);
   const [brushSize, setBrushSize] = useState<number>(6);
   const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+  const [showAdvancedTools, setShowAdvancedTools] = useState(!isEarlyPrimary);
 
   const activeStrokeIdRef = useRef<string | null>(null);
   const draggingShapeRef = useRef<{ id: string; offsetX: number; offsetY: number } | null>(null);
@@ -207,6 +219,9 @@ export function DrawingCanvasStudio({ value, onChange }: DrawingCanvasStudioProp
     });
     setSelectedShapeId(id);
     setToolMode('move');
+    if (isEarlyPrimary) {
+      setShowAdvancedTools(true);
+    }
   };
 
   const nudgeSelectedShape = (dx: number, dy: number) => {
@@ -277,6 +292,8 @@ export function DrawingCanvasStudio({ value, onChange }: DrawingCanvasStudioProp
   };
 
   const selectedShape = value.shapes.find((s) => s.id === selectedShapeId) ?? null;
+  const visibleColors = isEarlyPrimary && !showAdvancedTools ? PALETTE_COLORS.slice(0, 4) : PALETTE_COLORS;
+  const visibleShapes = isEarlyPrimary && !showAdvancedTools ? SHAPE_PRESETS.slice(0, 3) : SHAPE_PRESETS;
 
   return (
     <div className="space-y-4">
@@ -295,21 +312,34 @@ export function DrawingCanvasStudio({ value, onChange }: DrawingCanvasStudioProp
               }`}
             >
               <Palette className="w-4 h-4" aria-hidden="true" />
-              <span>Serbest Çizim</span>
+              <span>{isEarlyPrimary ? 'Çiz' : 'Serbest Çizim'}</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setToolMode('move')}
-              className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-semibold inline-flex items-center gap-2 cursor-pointer transition-colors ${
-                toolMode === 'move'
-                  ? 'bg-[var(--seljuk-teal)] text-white'
-                  : 'bg-[var(--campus-surface)] border border-[var(--campus-border)] text-[var(--campus-ink)]'
-              }`}
-            >
-              <Move className="w-4 h-4" aria-hidden="true" />
-              <span>Şekil Seç ve Taşı</span>
-            </button>
+            {(!isEarlyPrimary || showAdvancedTools || value.shapes.length > 0) && (
+              <button
+                type="button"
+                onClick={() => setToolMode('move')}
+                className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs font-semibold inline-flex items-center gap-2 cursor-pointer transition-colors ${
+                  toolMode === 'move'
+                    ? 'bg-[var(--seljuk-teal)] text-white'
+                    : 'bg-[var(--campus-surface)] border border-[var(--campus-border)] text-[var(--campus-ink)]'
+                }`}
+              >
+                <Move className="w-4 h-4" aria-hidden="true" />
+                <span>Şekil Seç ve Taşı</span>
+              </button>
+            )}
+
+            {isEarlyPrimary && (
+              <button
+                type="button"
+                aria-expanded={showAdvancedTools}
+                onClick={() => setShowAdvancedTools((prev) => !prev)}
+                className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--seljuk-navy)] cursor-pointer transition-colors"
+              >
+                {showAdvancedTools ? 'Temel Araçlara Dön' : 'Daha Fazla Araç ve Şekil'}
+              </button>
+            )}
           </div>
 
           {/* Geri Al & Temizle */}
@@ -335,19 +365,19 @@ export function DrawingCanvasStudio({ value, onChange }: DrawingCanvasStudioProp
                 <span>Temizle</span>
               </button>
             ) : (
-              <div className="flex items-center gap-2 bg-[var(--alert-rose-soft)] px-2.5 py-1 rounded-lg border border-[var(--alert-rose)]/30">
+              <div className="flex flex-wrap items-center gap-2 bg-[var(--alert-rose-soft)] px-2.5 py-1.5 rounded-lg border border-[var(--alert-rose)]/30">
                 <span className="text-xs font-semibold text-[var(--alert-rose)]">Çizim silinsin mi?</span>
                 <button
                   type="button"
                   onClick={handleClearCanvas}
-                  className="min-h-[36px] px-2.5 py-1 rounded bg-[var(--alert-rose)] text-white text-xs font-semibold cursor-pointer"
+                  className="min-h-[44px] px-3 py-1 rounded bg-[var(--alert-rose)] text-white text-xs font-semibold cursor-pointer"
                 >
                   Evet, temizle
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmClearOpen(false)}
-                  className="min-h-[36px] px-2.5 py-1 rounded bg-[var(--campus-surface)] text-[var(--campus-ink)] text-xs font-semibold cursor-pointer"
+                  className="min-h-[44px] px-3 py-1 rounded bg-[var(--campus-surface)] text-[var(--campus-ink)] text-xs font-semibold cursor-pointer"
                 >
                   Vazgeç
                 </button>
@@ -360,7 +390,7 @@ export function DrawingCanvasStudio({ value, onChange }: DrawingCanvasStudioProp
         <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-[var(--campus-border)]">
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Renk seçimi">
             <span className="text-xs font-semibold text-[var(--campus-ink-muted)] mr-1">Renk:</span>
-            {PALETTE_COLORS.map((color) => {
+            {visibleColors.map((color) => {
               const active = selectedColor === color.hex;
               return (
                 <button
@@ -371,47 +401,53 @@ export function DrawingCanvasStudio({ value, onChange }: DrawingCanvasStudioProp
                   aria-pressed={active}
                   title={color.name}
                   style={{ backgroundColor: color.hex }}
-                  className={`w-9 h-9 rounded-lg border-2 cursor-pointer transition-transform ${
-                    active ? 'border-[var(--campus-ink)] scale-110 ring-2 ring-[var(--seljuk-teal)]' : 'border-white'
+                  className={`w-11 h-11 rounded-lg border-2 cursor-pointer transition-transform ${
+                    active ? 'border-[var(--campus-ink)] scale-105 ring-2 ring-[var(--seljuk-teal)]' : 'border-white'
                   }`}
                 />
               );
             })}
           </div>
 
-          <div className="flex items-center gap-2" role="group" aria-label="Fırça boyutu">
-            <span className="text-xs font-semibold text-[var(--campus-ink-muted)]">Fırça:</span>
-            {BRUSH_SIZES.map((b) => (
-              <button
-                key={b.size}
-                type="button"
-                onClick={() => setBrushSize(b.size)}
-                aria-pressed={brushSize === b.size}
-                className={`min-h-[38px] px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer ${
-                  brushSize === b.size
-                    ? 'bg-[var(--campus-ink)] text-white'
-                    : 'bg-[var(--campus-surface)] border border-[var(--campus-border)] text-[var(--campus-ink)]'
-                }`}
-              >
-                {b.label}
-              </button>
-            ))}
-          </div>
+          {(!isEarlyPrimary || showAdvancedTools) && (
+            <div className="flex items-center gap-2" role="group" aria-label="Fırça boyutu">
+              <span className="text-xs font-semibold text-[var(--campus-ink-muted)]">Fırça:</span>
+              {BRUSH_SIZES.map((b) => (
+                <button
+                  key={b.size}
+                  type="button"
+                  onClick={() => setBrushSize(b.size)}
+                  aria-pressed={brushSize === b.size}
+                  className={`min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer ${
+                    brushSize === b.size
+                      ? 'bg-[var(--campus-ink)] text-white'
+                      : 'bg-[var(--campus-surface)] border border-[var(--campus-border)] text-[var(--campus-ink)]'
+                  }`}
+                >
+                  {b.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Hazır Şekiller (Klavye ve dokunmatik ile kolay tasarım) */}
         <div className="pt-2 border-t border-[var(--campus-border)] space-y-2">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--campus-ink-muted)]">
             <Shapes className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
-            <span>Hazır Şekil Ekle (dokunarak ekle ve taşı):</span>
+            <span>
+              {isEarlyPrimary
+                ? 'Hazır Şekil Ekle:'
+                : 'Hazır Şekil Ekle (dokunarak ekle ve taşı):'}
+            </span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {SHAPE_PRESETS.map((preset) => (
+            {visibleShapes.map((preset) => (
               <button
                 key={preset.type}
                 type="button"
                 onClick={() => handleAddShape(preset)}
-                className="min-h-[40px] px-3 py-1.5 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] hover:border-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-soft)] text-xs font-semibold text-[var(--campus-ink)] cursor-pointer transition-colors"
+                className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] hover:border-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-soft)] text-xs font-semibold text-[var(--campus-ink)] cursor-pointer transition-colors"
               >
                 + {preset.label}
               </button>
@@ -442,15 +478,15 @@ export function DrawingCanvasStudio({ value, onChange }: DrawingCanvasStudioProp
       {selectedShape && (
         <div className="rounded-xl bg-[var(--seljuk-teal-soft)] border border-[var(--seljuk-teal)]/30 p-3 flex flex-wrap items-center justify-between gap-3">
           <span className="text-xs font-semibold text-[var(--campus-ink)]">
-            Seçili şekil: {selectedShape.label} (tuval üzerinde sürükleyebilir veya yön düğmelerini kullanabilirsin)
+            Seçili şekil: {selectedShape.label} (sürükleyebilir veya yön düğmeleriyle taşıyabilirsin)
           </span>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
               onClick={() => nudgeSelectedShape(-12, 0)}
               aria-label="Seçili şekli sola taşı"
-              className="min-h-[40px] min-w-[40px] rounded-lg bg-white border border-[var(--campus-border)] flex items-center justify-center cursor-pointer"
+              className="min-h-[44px] min-w-[44px] rounded-lg bg-white border border-[var(--campus-border)] flex items-center justify-center cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" aria-hidden="true" />
             </button>
@@ -458,7 +494,7 @@ export function DrawingCanvasStudio({ value, onChange }: DrawingCanvasStudioProp
               type="button"
               onClick={() => nudgeSelectedShape(0, -12)}
               aria-label="Seçili şekli yukarı taşı"
-              className="min-h-[40px] min-w-[40px] rounded-lg bg-white border border-[var(--campus-border)] flex items-center justify-center cursor-pointer"
+              className="min-h-[44px] min-w-[44px] rounded-lg bg-white border border-[var(--campus-border)] flex items-center justify-center cursor-pointer"
             >
               <ArrowUp className="w-4 h-4" aria-hidden="true" />
             </button>
@@ -466,7 +502,7 @@ export function DrawingCanvasStudio({ value, onChange }: DrawingCanvasStudioProp
               type="button"
               onClick={() => nudgeSelectedShape(0, 12)}
               aria-label="Seçili şekli aşağı taşı"
-              className="min-h-[40px] min-w-[40px] rounded-lg bg-white border border-[var(--campus-border)] flex items-center justify-center cursor-pointer"
+              className="min-h-[44px] min-w-[44px] rounded-lg bg-white border border-[var(--campus-border)] flex items-center justify-center cursor-pointer"
             >
               <ArrowDown className="w-4 h-4" aria-hidden="true" />
             </button>
@@ -474,14 +510,14 @@ export function DrawingCanvasStudio({ value, onChange }: DrawingCanvasStudioProp
               type="button"
               onClick={() => nudgeSelectedShape(12, 0)}
               aria-label="Seçili şekli sağa taşı"
-              className="min-h-[40px] min-w-[40px] rounded-lg bg-white border border-[var(--campus-border)] flex items-center justify-center cursor-pointer"
+              className="min-h-[44px] min-w-[44px] rounded-lg bg-white border border-[var(--campus-border)] flex items-center justify-center cursor-pointer"
             >
               <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>
             <button
               type="button"
               onClick={handleDeleteSelectedShape}
-              className="min-h-[40px] px-3 rounded-lg bg-[var(--alert-rose)] text-white text-xs font-semibold inline-flex items-center gap-1 cursor-pointer ml-2"
+              className="min-h-[44px] px-3 rounded-lg bg-[var(--alert-rose)] text-white text-xs font-semibold inline-flex items-center gap-1 cursor-pointer ml-1"
             >
               <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Şekli Sil</span>
@@ -489,7 +525,7 @@ export function DrawingCanvasStudio({ value, onChange }: DrawingCanvasStudioProp
             <button
               type="button"
               onClick={() => setSelectedShapeId(null)}
-              className="min-h-[40px] px-3 rounded-lg bg-white border border-[var(--campus-border)] text-xs font-semibold cursor-pointer"
+              className="min-h-[44px] px-3 rounded-lg bg-white border border-[var(--campus-border)] text-xs font-semibold cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5 inline mr-1" aria-hidden="true" />
               Seçimi Bırak

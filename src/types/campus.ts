@@ -196,6 +196,7 @@ export interface MissionSelections {
   matchedExampleSentence: boolean;
   doorName: string;
   writtenText: string;
+  materialChoice?: string;
   usedEnglishWords: string[];
 }
 
@@ -212,8 +213,11 @@ export interface MissionProgress {
   completedStages: MissionStageId[];
   selections: MissionSelections;
   draftArtifactId: string | null;
+  savedArtifactId?: string | null;
+  artifactSavedAt?: string | null;
   selfEvaluation: SelfEvaluationRecord | null;
   completed: boolean;
+  completedAt?: string | null;
   updatedAt: string;
 }
 
@@ -227,9 +231,11 @@ export interface SavedArtifact {
   writtenText: string;
   selectedDoorIds: string[];
   observations: Partial<Record<'malzeme' | 'bicim' | 'islev' | 'susleme', string>>;
+  materialChoice?: string;
   usedEnglishWords: string[];
   drawingData: DrawingDocument;
   pngDataUrl: string;
+  storageLocation?: 'device' | 'session-only';
   createdAt: string;
   updatedAt: string;
 }

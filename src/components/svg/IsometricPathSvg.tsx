@@ -36,6 +36,7 @@ export function IsometricPathSvg({ segments }: IsometricPathSvgProps) {
       {segments.map((seg) => (
         <line
           key={`${seg.id}-surface`}
+          data-path-id={seg.id}
           x1={seg.x1}
           y1={seg.y1}
           x2={seg.x2}

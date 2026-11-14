@@ -98,43 +98,23 @@ export function CampusMapView() {
         : 'kitap-ve-hikaye-dunyasi'
     : 'gorev-panosu';
 
-  // Veri temelli bağlantı yolları + merkez yıldız meydanına çıkan taş yollar
-  const pathSegments: IsometricPathSegment[] = [];
-  const seenPairs = new Set<string>();
+  // Merkez yıldız meydanından beş yapıya uzanan açık ve çakışmasız ana taş yollar
+  // Not: Öğrenme alanları arasındaki pedagojik bağlantılar CAMPUS_AREAS.connectedToIds verisinde korunur.
   const plazaX = 500;
   const plazaY = 326;
-
-  for (const area of CAMPUS_AREAS) {
+  const pathSegments: IsometricPathSegment[] = CAMPUS_AREAS.map((area) => {
     const slot = getIsometricSlot(area);
     const sx = (slot.xPercent / 100) * ISO_VIEW_W;
     const sy = (slot.yPercent / 100) * ISO_VIEW_H + 14;
-    pathSegments.push({
+    return {
       id: `plaza-${area.id}`,
       x1: plazaX,
       y1: plazaY,
       x2: sx,
       y2: sy,
-      width: 22,
-    });
-
-    for (const targetId of area.connectedToIds) {
-      const target = CAMPUS_AREAS.find((a) => a.id === targetId);
-      if (!target) continue;
-      const pairKey = [area.id, target.id].sort().join('--');
-      if (seenPairs.has(pairKey)) continue;
-      seenPairs.add(pairKey);
-
-      const targetSlot = getIsometricSlot(target);
-      pathSegments.push({
-        id: pairKey,
-        x1: sx,
-        y1: sy,
-        x2: (targetSlot.xPercent / 100) * ISO_VIEW_W,
-        y2: (targetSlot.yPercent / 100) * ISO_VIEW_H + 14,
-        width: 18,
-      });
-    }
-  }
+      width: area.type === 'learning-area' ? 22 : 18,
+    };
+  });
 
   return (
     <main className="max-w-6xl mx-auto px-3.5 sm:px-6 py-5 sm:py-8 space-y-7">
@@ -244,13 +224,13 @@ export function CampusMapView() {
             <IsometricRoundTree x={656} y={142} scale={0.85} />
             <IsometricCypressTree x={500} y={536} scale={0.92} />
 
-            {/* Yönlendirme Levhası (Binalardan ve Etiketlerden Uzak) */}
-            <g transform="translate(592, 314) scale(0.9)">
+            {/* Yönlendirme Levhası (Merkez Yıldız ve Binalardan Ayrık Sağ Kenar) */}
+            <g transform="translate(652, 344) scale(0.84)">
               <IsometricSignpost x={0} y={0} />
             </g>
 
             {/* Sahne İçi Kampüs Arkadaşı */}
-            <g transform="translate(414, 266) scale(0.62)">
+            <g transform="translate(418, 254) scale(0.64)">
               <PeerGuideInSceneGraphic mood="welcoming" />
             </g>
           </svg>
