@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 160" width="320" height="160">
+  <defs>
+    <!-- Ön Plan Ağaç Dalı Degradesi -->
+    <linearGradient id="canopyBranch" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#271810"/>
+      <stop offset="60%" stop-color="#42281d"/>
+      <stop offset="100%" stop-color="#1f120b"/>
+    </linearGradient>
+
+    <!-- Ön Plan Yaprak Degradesi (Canlı, Işıklı) -->
+    <radialGradient id="canopyLeaves" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#86efac"/>
+      <stop offset="30%" stop-color="#22c55e"/>
+      <stop offset="75%" stop-color="#15803d"/>
+      <stop offset="100%" stop-color="#14532d"/>
+    </radialGradient>
+  </defs>
+
+  <!-- KIVRIMLI KALIN ANA DAL -->
+  <path d="M0 0 C40 10 90 25 150 20 C210 15 250 45 280 75 C250 65 210 50 160 40 C100 30 50 35 0 25 Z" fill="url(#canopyBranch)"/>
+  <!-- Yan İnce Dallar -->
+  <path d="M120 30 C150 45 170 80 180 110 L174 112 C164 85 146 52 118 36 Z" fill="url(#canopyBranch)"/>
+  <path d="M210 32 C235 48 245 75 250 100 L245 101 C240 78 230 52 208 38 Z" fill="url(#canopyBranch)"/>
+
+  <!-- SARKAN YAPRAK KÜMELERİ (Ön plan sinematik çerçeve) -->
+  <circle cx="60" cy="20" r="32" fill="url(#canopyLeaves)"/>
+  <circle cx="110" cy="35" r="28" fill="url(#canopyLeaves)"/>
+  <circle cx="160" cy="40" r="34" fill="url(#canopyLeaves)"/>
+  <circle cx="210" cy="55" r="30" fill="url(#canopyLeaves)"/>
+  <circle cx="260" cy="75" r="28" fill="url(#canopyLeaves)"/>
+  <circle cx="175" cy="95" r="24" fill="url(#canopyLeaves)"/>
+  <circle cx="245" cy="110" r="22" fill="url(#canopyLeaves)"/>
+  <circle cx="140" cy="70" r="26" fill="url(#canopyLeaves)"/>
+  <circle cx="90" cy="50" r="30" fill="url(#canopyLeaves)"/>
+
+  <!-- Güneş Işığı Vurguları -->
+  <ellipse cx="150" cy="30" rx="14" ry="7" fill="#bbf7d0" opacity="0.6" transform="rotate(-15 150 30)"/>
+  <ellipse cx="200" cy="45" rx="12" ry="6" fill="#bbf7d0" opacity="0.6" transform="rotate(-20 200 45)"/>
+  <ellipse cx="250" cy="65" rx="10" ry="5" fill="#bbf7d0" opacity="0.6" transform="rotate(-25 250 65)"/>
+  <ellipse cx="100" cy="25" rx="12" ry="6" fill="#bbf7d0" opacity="0.5" transform="rotate(-10 100 25)"/>
+</svg>

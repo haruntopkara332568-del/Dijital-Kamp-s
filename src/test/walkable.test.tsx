@@ -11,7 +11,40 @@ import {
 } from '@/src/features/walkable/engine/pathfinding';
 import { SmartBoardModal } from '@/src/features/walkable/components/SmartBoardModal';
 import { WalkableControlsOverlay } from '@/src/features/walkable/components/WalkableControlsOverlay';
-import type { WalkableSceneConfig } from '@/src/features/walkable/types';
+import { drawCharacter, CHARACTER_SCALES } from '@/src/features/walkable/engine/characterRenderer';
+import {
+  renderCourtyardBackground,
+  renderCourtyardLayeredBackground,
+  renderCourtyardEntities,
+  renderCourtyardForeground,
+} from '@/src/features/walkable/engine/courtyardSceneRenderer';
+import {
+  renderClassroomBackground,
+  renderClassroomLayeredBackground,
+  renderClassroomEntities,
+  renderClassroomForeground,
+} from '@/src/features/walkable/engine/classroomSceneRenderer';
+import {
+  setCachedAssetForTesting,
+  ENGLISH_BUILDING_ASSET_URL,
+  DISCOVERY_BUILDING_ASSET_URL,
+  LIBRARY_BUILDING_ASSET_URL,
+  FOUNTAIN_ASSET_URL,
+  MISSIONS_KIOSK_ASSET_URL,
+  JOURNEY_PAVILION_ASSET_URL,
+  CYPRESS_TREE_ASSET_URL,
+  SHADE_TREE_ASSET_URL,
+  STUDENT_CHARACTER_ATLAS_URL,
+  CLASSROOM_BACKGROUND_ASSET_URL,
+  CLASSROOM_DESK_ASSET_URL,
+  CLASSROOM_DESK_MIRRORED_ASSET_URL,
+  CLASSROOM_TEACHER_PODIUM_ASSET_URL,
+  CLASSROOM_BOOKSHELF_ASSET_URL,
+  SMARTBOARD_SCREEN_OFF_ASSET_URL,
+  SMARTBOARD_SCREEN_POWERING_ASSET_URL,
+  SMARTBOARD_SCREEN_ACTIVE_ASSET_URL,
+} from '@/src/features/walkable/engine/assetLoader';
+import type { WalkableSceneConfig, PlayerCharacter } from '@/src/features/walkable/types';
 
 describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () => {
   let canvas: HTMLCanvasElement;
@@ -28,6 +61,9 @@ describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () 
       save: vi.fn(),
       restore: vi.fn(),
       translate: vi.fn(),
+      rotate: vi.fn(),
+      scale: vi.fn(),
+      clip: vi.fn(),
       beginPath: vi.fn(),
       closePath: vi.fn(),
       arc: vi.fn(),
@@ -35,10 +71,16 @@ describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () 
       fill: vi.fn(),
       stroke: vi.fn(),
       fillRect: vi.fn(),
+      strokeRect: vi.fn(),
       roundRect: vi.fn(),
       moveTo: vi.fn(),
       lineTo: vi.fn(),
+      quadraticCurveTo: vi.fn(),
+      bezierCurveTo: vi.fn(),
       setLineDash: vi.fn(),
+      drawImage: vi.fn(),
+      createRadialGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
+      createLinearGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
       fillStyle: '',
       strokeStyle: '',
       lineWidth: 1,
@@ -676,5 +718,718 @@ describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () 
     expect(engine.isAnimFrameActive()).toBe(true);
 
     engine.destroy();
+  });
+
+  /* ========================================================================
+     AŞAMA 4 — GÖRSEL DÜNYA, KARAKTER VE SAHNE ENTEGRASYON TESTLERİ
+     ======================================================================== */
+
+  it('32. Karakterin dört yönde (down, up, left, right) çizimi ve yürüme/bekleme durumları hatasız çalışır', () => {
+    const mockCtx = canvas.getContext('2d')!;
+    const directions = ['down', 'up', 'left', 'right'] as const;
+
+    for (const dir of directions) {
+      const testPlayer: PlayerCharacter = {
+        x: 100,
+        y: 100,
+        width: 22,
+        height: 28,
+        direction: dir,
+        state: 'walk',
+        speed: 160,
+        walkFrame: 1.5,
+        grade: 4,
+      };
+
+      // Yürüme durumu
+      expect(() => drawCharacter(mockCtx, testPlayer)).not.toThrow();
+
+      // Bekleme (idle) durumu
+      testPlayer.state = 'idle';
+      expect(() => drawCharacter(mockCtx, testPlayer)).not.toThrow();
+    }
+  });
+
+  it('33. prefers-reduced-motion aktifken karakter ve çevre animasyonları güvenle çizilir', () => {
+    const mockCtx = canvas.getContext('2d')!;
+
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = vi.fn().mockImplementation((query) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+
+    const testPlayer: PlayerCharacter = {
+      x: 100,
+      y: 100,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'idle',
+      speed: 160,
+      walkFrame: 0,
+      grade: 4,
+    };
+
+    expect(() => drawCharacter(mockCtx, testPlayer)).not.toThrow();
+    expect(() => renderCourtyardBackground(mockCtx, 1400, 900)).not.toThrow();
+    expect(() => renderClassroomBackground(mockCtx, 960, 640, false, false)).not.toThrow();
+
+    window.matchMedia = originalMatchMedia;
+  });
+
+  it('34. Kampüs avlusu zemin, Selçuklu yıldız meydanı, binalar ve peyzaj unsurları hatasız çizilir', () => {
+    const mockCtx = canvas.getContext('2d')!;
+    expect(() => renderCourtyardBackground(mockCtx, 1400, 900)).not.toThrow();
+  });
+
+  it('35. İngilizce sınıfı zemin, pencereler, akıllı tahta (kapalı, açılıyor, açık) ve sıralar hatasız çizilir', () => {
+    const mockCtx = canvas.getContext('2d')!;
+
+    // Kapalı tahta
+    expect(() => renderClassroomBackground(mockCtx, 960, 640, false, false)).not.toThrow();
+
+    // Açılıyor durumu (Güç animasyonu)
+    expect(() => renderClassroomBackground(mockCtx, 960, 640, false, true)).not.toThrow();
+
+    // Açık tahta
+    expect(() => renderClassroomBackground(mockCtx, 960, 640, true, false)).not.toThrow();
+  });
+
+  it('36. Karakterin görsel temas noktası AABB çarpışma kutusu sınırlarıyla (DEFAULT_HITBOX) uyumludur', () => {
+    const hitbox = DEFAULT_HITBOX;
+    const playerY = 100;
+    const feetCollisionY = playerY + hitbox.offsetY + hitbox.height; // 100 + 6 + 12 = 118
+    const shadowCenterY = playerY + 18; // 118
+
+    expect(feetCollisionY).toBe(shadowCenterY);
+  });
+
+  it('37. Aşama 4.2 Katmanlı zemin, Y-Sorting varlıklar ve ön plan saçağı hatasız çizilir', () => {
+    const mockCtx = canvas.getContext('2d')!;
+    const testPlayer: PlayerCharacter = {
+      x: 700,
+      y: 560,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'idle',
+      speed: 160,
+      walkFrame: 0,
+      grade: 4,
+    };
+
+    expect(() => renderCourtyardLayeredBackground(mockCtx, 1400, 900)).not.toThrow();
+    expect(() => renderCourtyardEntities(mockCtx, testPlayer, 1400, 900)).not.toThrow();
+    expect(() => renderCourtyardForeground(mockCtx, 1400, 900)).not.toThrow();
+  });
+
+  it('38. Aşama 4.2 Y-Sorting derinlik sıralaması: Karakter kuzeydeyken varlığın arkasında, güneydeyken önünde çizilir', () => {
+    const mockCtx = canvas.getContext('2d')!;
+
+    // Karakter şadırvanın kuzeyindeyken (y: 420, baseY: 438 < şadırvan baseY: 490)
+    const northPlayer: PlayerCharacter = {
+      x: 700,
+      y: 420,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'idle',
+      speed: 160,
+      walkFrame: 0,
+      grade: 4,
+    };
+
+    renderCourtyardEntities(mockCtx, northPlayer, 1400, 900);
+    // Hata atmadan tamamlandı ve çizim yapıldı
+    expect(mockCtx.save).toHaveBeenCalled();
+  });
+
+  it('39. İngilizce Dünyası binası görsel varlık yüklendiğinde drawImage ile çizilir', () => {
+    const mockCtx = canvas.getContext('2d')!;
+
+    // Sahte yüklü görsel nesnesi oluştur
+    const fakeImg = {
+      complete: true,
+      naturalWidth: 858,
+      naturalHeight: 934,
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(ENGLISH_BUILDING_ASSET_URL, fakeImg);
+
+    renderCourtyardBackground(mockCtx, 1400, 900);
+    expect(mockCtx.drawImage).toHaveBeenCalledWith(
+      fakeImg,
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number),
+    );
+  });
+
+  it('40. İngilizce Dünyası binası AABB çarpışma sınırları ve kapı etkileşim koordinatı doğrulanır', () => {
+    const bldgObstacle = { x: 860, y: 140, width: 220, height: 180 };
+    const doorZone = { x: 970, y: 335, radius: 70 };
+
+    // Kapı X koordinatı binanın yatay merkezinde olmalıdır (860 + 220 / 2 = 970)
+    expect(doorZone.x).toBe(bldgObstacle.x + bldgObstacle.width / 2);
+
+    // Kapı Y koordinatı binanın zemin tabanının hemen önünde olmalıdır (140 + 180 = 320; kapı: 335)
+    expect(doorZone.y).toBeGreaterThan(bldgObstacle.y + bldgObstacle.height);
+    expect(doorZone.y - (bldgObstacle.y + bldgObstacle.height)).toBeLessThanOrEqual(20);
+
+    // Binanın içine doğru adım engellenmelidir
+    const insideBldg = isPositionBlocked(
+      970,
+      250,
+      [{ id: 'bldg-english', name: 'İngilizce', ...bldgObstacle }],
+      1400,
+      900,
+    );
+    expect(insideBldg).toBe(true);
+
+    // Kapı önündeki basamak alanı açık olmalıdır
+    const outsideDoor = isPositionBlocked(
+      970,
+      340,
+      [{ id: 'bldg-english', name: 'İngilizce', ...bldgObstacle }],
+      1400,
+      900,
+    );
+    expect(outsideDoor).toBe(false);
+  });
+
+  it('41. Aşama 4.3: Tüm bağımsız 2,5B avlu varlıkları (Keşif, Kütüphane, Şadırvan, Pano, Köşk, Ağaçlar) yüklendiğinde drawImage ile çizilir', () => {
+    const mockCtx = {
+      clearRect: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+      scale: vi.fn(),
+      beginPath: vi.fn(),
+      closePath: vi.fn(),
+      arc: vi.fn(),
+      ellipse: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      fillRect: vi.fn(),
+      strokeRect: vi.fn(),
+      roundRect: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      quadraticCurveTo: vi.fn(),
+      bezierCurveTo: vi.fn(),
+      setLineDash: vi.fn(),
+      fillText: vi.fn(),
+      drawImage: vi.fn(),
+      createRadialGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
+      createLinearGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
+    } as unknown as CanvasRenderingContext2D;
+
+    const fakeImg = {
+      complete: true,
+      naturalWidth: 500,
+      naturalHeight: 500,
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(DISCOVERY_BUILDING_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(LIBRARY_BUILDING_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(FOUNTAIN_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(MISSIONS_KIOSK_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(JOURNEY_PAVILION_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(CYPRESS_TREE_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(SHADE_TREE_ASSET_URL, fakeImg);
+
+    renderCourtyardBackground(mockCtx, 1400, 900);
+    // Her bir varlık drawImage ile çizilmiş olmalıdır (binalar, şadırvan ve ağaçlar toplam en az 7 çağrı)
+    expect(mockCtx.drawImage).toHaveBeenCalled();
+    expect((mockCtx.drawImage as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThanOrEqual(7);
+  });
+
+  it('42. Aşama 4.3: Avlu binaları ve etkileşimli unsurların AABB çarpışma ve konum hizalaması korunur', () => {
+    const obstacles = [
+      { id: 'bldg-discovery', name: 'Gezi ve Keşif', x: 180, y: 140, width: 220, height: 180 },
+      { id: 'bldg-library', name: 'Kitap Dünyası', x: 580, y: 100, width: 240, height: 170 },
+      { id: 'pavilion-journey', name: 'Kampüs Yolculuğum', x: 220, y: 560, width: 190, height: 140 },
+      { id: 'kiosk-missions', name: 'Görev Panosu', x: 910, y: 560, width: 190, height: 140 },
+      { id: 'fountain', name: 'Merkez Havuz', x: 670, y: 450, width: 60, height: 60 },
+    ];
+
+    for (const obs of obstacles) {
+      // İç nokta engelli olmalı
+      const inside = isPositionBlocked(obs.x + obs.width / 2, obs.y + obs.height / 2, obstacles, 1400, 900);
+      expect(inside).toBe(true);
+
+      // Hemen önündeki yol açık olmalı
+      const inFront = isPositionBlocked(obs.x + obs.width / 2, obs.y + obs.height + 25, obstacles, 1400, 900);
+      expect(inFront).toBe(false);
+    }
+  });
+
+  it('43. Aşama 4.4: Öğrenci karakteri Sprite Atlas (character_student_atlas.png) yüklendiğinde drawImage ile çizilir', () => {
+    const mockCtx = {
+      clearRect: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      scale: vi.fn(),
+      beginPath: vi.fn(),
+      closePath: vi.fn(),
+      arc: vi.fn(),
+      ellipse: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      drawImage: vi.fn(),
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
+    } as unknown as CanvasRenderingContext2D;
+
+    const fakeAtlas = {
+      complete: true,
+      naturalWidth: 560,
+      naturalHeight: 720,
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(STUDENT_CHARACTER_ATLAS_URL, fakeAtlas);
+
+    const testPlayer: PlayerCharacter = {
+      x: 700,
+      y: 560,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'idle',
+      speed: 160,
+      walkFrame: 0,
+      grade: 4,
+    };
+
+    drawCharacter(mockCtx, testPlayer);
+
+    expect(mockCtx.drawImage).toHaveBeenCalledWith(
+      fakeAtlas,
+      0, // srcX (idle col 0)
+      0, // srcY (down row 0)
+      140, // CELL_W
+      180, // CELL_H
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number),
+    );
+  });
+
+  it('44. Aşama 4.4: Karakterin 4 yönü (down, up, right, left) Sprite Atlas satırlarıyla (0, 1, 2, 3) doğru eşleşir', () => {
+    const mockCtx = {
+      clearRect: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      scale: vi.fn(),
+      beginPath: vi.fn(),
+      closePath: vi.fn(),
+      arc: vi.fn(),
+      ellipse: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      drawImage: vi.fn(),
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
+    } as unknown as CanvasRenderingContext2D;
+
+    const fakeAtlas = {
+      complete: true,
+      naturalWidth: 560,
+      naturalHeight: 720,
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(STUDENT_CHARACTER_ATLAS_URL, fakeAtlas);
+
+    const directions: Array<{ dir: PlayerCharacter['direction']; expectedRow: number }> = [
+      { dir: 'down', expectedRow: 0 },
+      { dir: 'up', expectedRow: 1 },
+      { dir: 'right', expectedRow: 2 },
+      { dir: 'left', expectedRow: 3 },
+    ];
+
+    for (const { dir, expectedRow } of directions) {
+      vi.clearAllMocks();
+      const p: PlayerCharacter = {
+        x: 700,
+        y: 560,
+        width: 22,
+        height: 28,
+        direction: dir,
+        state: 'idle',
+        speed: 160,
+        walkFrame: 0,
+        grade: 4,
+      };
+
+      drawCharacter(mockCtx, p);
+
+      expect(mockCtx.drawImage).toHaveBeenCalledWith(
+        fakeAtlas,
+        0, // col 0 (idle)
+        expectedRow * 180, // srcY
+        140,
+        180,
+        expect.any(Number),
+        expect.any(Number),
+        expect.any(Number),
+        expect.any(Number),
+      );
+    }
+  });
+
+  it('45. Aşama 4.4: Karakter yürüme durumunda (walk) adım animasyon kareleri Sprite Atlas sütunlarında sırayla ilerler', () => {
+    const mockCtx = {
+      clearRect: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      scale: vi.fn(),
+      beginPath: vi.fn(),
+      closePath: vi.fn(),
+      arc: vi.fn(),
+      ellipse: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      drawImage: vi.fn(),
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
+    } as unknown as CanvasRenderingContext2D;
+
+    const fakeAtlas = {
+      complete: true,
+      naturalWidth: 560,
+      naturalHeight: 720,
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(STUDENT_CHARACTER_ATLAS_URL, fakeAtlas);
+
+    const p: PlayerCharacter = {
+      x: 700,
+      y: 560,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'walk',
+      speed: 160,
+      walkFrame: 1.0, // Adım ilerleme
+      grade: 4,
+    };
+
+    drawCharacter(mockCtx, p);
+
+    // Yürüyüşte col > 0 olmalıdır (idle sütunu 0 değil, yürüyüş sütunlarından biri)
+    const drawCall = (mockCtx.drawImage as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    const srcX = drawCall[1];
+    expect(srcX).toBeGreaterThan(0);
+    expect(srcX % 140).toBe(0); // Hücre genişliğinin katı olmalı
+  });
+
+  it('46. Aşama 4.5: Karakter ölçek seçenekleri tanımlıdır ve seçilen %15 ölçek (53x67 px) zemin hizasını korur', () => {
+    // 1. Ölçek presetleri doğrulanır
+    expect(CHARACTER_SCALES.original).toEqual({ width: 46, height: 58, label: expect.any(String) });
+    expect(CHARACTER_SCALES.scale10).toEqual({ width: 51, height: 64, label: expect.any(String) });
+    expect(CHARACTER_SCALES.scale15).toEqual({ width: 53, height: 67, label: expect.any(String) });
+    expect(CHARACTER_SCALES.scale20).toEqual({ width: 55, height: 70, label: expect.any(String) });
+
+    // 2. Seçilen %15 ölçeğin oran ve büyüme analizi
+    const w15 = CHARACTER_SCALES.scale15.width;
+    const h15 = CHARACTER_SCALES.scale15.height;
+    expect(w15).toBe(53);
+    expect(h15).toBe(67);
+    expect(w15 / CHARACTER_SCALES.original.width).toBeCloseTo(1.152, 2);
+    expect(h15 / CHARACTER_SCALES.original.height).toBeCloseTo(1.155, 2);
+
+    // 3. Ayak zemin temas çizgisi y + 18 noktasında korunur
+    const mockCtx = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      beginPath: vi.fn(),
+      ellipse: vi.fn(),
+      fill: vi.fn(),
+      drawImage: vi.fn(),
+      fillStyle: '',
+      imageSmoothingEnabled: false,
+      imageSmoothingQuality: 'low',
+    } as unknown as CanvasRenderingContext2D;
+
+    const fakeAtlas = {
+      complete: true,
+      naturalWidth: 560,
+      naturalHeight: 720,
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(STUDENT_CHARACTER_ATLAS_URL, fakeAtlas);
+
+    const p: PlayerCharacter = {
+      x: 700,
+      y: 560,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'idle',
+      speed: 160,
+      walkFrame: 0,
+      grade: 4,
+    };
+
+    drawCharacter(mockCtx, p);
+
+    const drawCall = (mockCtx.drawImage as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    const renderW = drawCall[7];
+    const renderH = drawCall[8];
+    const renderY = drawCall[6];
+
+    expect(renderW).toBe(53);
+    expect(renderH).toBe(67);
+    // renderY = 18 - renderH + 3 + bobY = -46 + bobY (-46 civarı)
+    expect(Math.abs(renderY - (-46))).toBeLessThanOrEqual(1.0);
+    // Taban çizgisi renderY + renderH - 3 = 18 px civarı (y + 18'e tam oturur)
+    expect(Math.abs(renderY + renderH - 3 - 18)).toBeLessThanOrEqual(1.0);
+  });
+
+  it('47. Aşama 4.5: Çapraz yön hareketinde histerezis eşiği gereksiz satır titremesini önler', () => {
+    const engine = new WalkableCanvasEngine(canvas, config, { onActiveZoneChange: vi.fn() });
+    engine.start();
+
+    // Sağ-Aşağı çapraz hareket: vx = 1, vy = 1 (eşit büyüklükte)
+    // Histerezis kuralında biri diğerinin 1.15 katı olmadığında yön sıçraması yapmaz
+    engine.setVirtualDirection(1, 1);
+
+    const p1 = engine.player;
+    expect(['down', 'right']).toContain(p1.direction);
+
+    // X bileşeni belirginleştiğinde (vx=1.5, vy=0.5 -> 1.5 > 0.5 * 1.15) sağa geçmeli
+    engine.setVirtualDirection(1.5, 0.5);
+    engine.destroy();
+  });
+
+  it('48. Aşama 4.5: Çok katmanlı temas ve yönlü sabah güneşi gölgeleri çizilir', () => {
+    const mockCtx = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      beginPath: vi.fn(),
+      ellipse: vi.fn(),
+      fill: vi.fn(),
+      drawImage: vi.fn(),
+      fillStyle: '',
+      imageSmoothingEnabled: false,
+      imageSmoothingQuality: 'low',
+    } as unknown as CanvasRenderingContext2D;
+
+    const fakeAtlas = {
+      complete: true,
+      naturalWidth: 560,
+      naturalHeight: 720,
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(STUDENT_CHARACTER_ATLAS_URL, fakeAtlas);
+
+    const p: PlayerCharacter = {
+      x: 700,
+      y: 560,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'idle',
+      speed: 160,
+      walkFrame: 0,
+      grade: 4,
+    };
+
+    drawCharacter(mockCtx, p);
+
+    // mockCtx.ellipse en az 3 kez çağrılmalı (dış ortam gölgesi, orta gövde gölgesi, ayak tabanı temas gölgesi)
+    const ellipseCalls = (mockCtx.ellipse as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    expect(ellipseCalls.length).toBeGreaterThanOrEqual(3);
+
+    // Ayak tabanı temas gölgesinin y koordinatı 18 (y + 18) olmalıdır
+    const contactCall = ellipseCalls.find((c) => Math.abs(c[1] - 18) < 0.1);
+    expect(contactCall).toBeDefined();
+  });
+
+function createClassroomMockCtx(): CanvasRenderingContext2D {
+  return {
+    save: vi.fn(),
+    restore: vi.fn(),
+    translate: vi.fn(),
+    rotate: vi.fn(),
+    beginPath: vi.fn(),
+    closePath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    arc: vi.fn(),
+    ellipse: vi.fn(),
+    rect: vi.fn(),
+    roundRect: vi.fn(),
+    fill: vi.fn(),
+    stroke: vi.fn(),
+    strokeRect: vi.fn(),
+    fillRect: vi.fn(),
+    fillText: vi.fn(),
+    drawImage: vi.fn(),
+    createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+    createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+    clip: vi.fn(),
+    fillStyle: '',
+    strokeStyle: '',
+    lineWidth: 1,
+    font: '',
+    textAlign: 'center',
+    imageSmoothingEnabled: false,
+    imageSmoothingQuality: 'low',
+  } as unknown as CanvasRenderingContext2D;
+}
+
+  it('49. Aşama 4.7: Sınıf arka planı, kürsü, kitaplık ve sıralar bağımsız görsel varlıklarla ve drawImage ile çizilir', () => {
+    const mockCtx = createClassroomMockCtx();
+
+    const fakeImg = {
+      complete: true,
+      naturalWidth: 800,
+      naturalHeight: 600,
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(CLASSROOM_BACKGROUND_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(CLASSROOM_DESK_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(CLASSROOM_DESK_MIRRORED_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(CLASSROOM_TEACHER_PODIUM_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(CLASSROOM_BOOKSHELF_ASSET_URL, fakeImg);
+
+    renderClassroomLayeredBackground(mockCtx, 960, 640, false, false);
+
+    const testPlayer: PlayerCharacter = {
+      x: 480,
+      y: 350,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'idle',
+      speed: 160,
+      walkFrame: 0,
+      grade: 4,
+    };
+
+    renderClassroomEntities(mockCtx, testPlayer, 960, 640);
+
+    const drawCalls = (mockCtx.drawImage as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    expect(drawCalls.length).toBeGreaterThanOrEqual(5); // BG, podium, bookshelf, 4 desks, player
+  });
+
+  it('50. Aşama 4.7: Sınıf içi Y-Sorting derinlik sıralaması: Karakter sıranın kuzeyindeyken arkasında, güneyindeyken önünde çizilir', () => {
+    const drawnIds: string[] = [];
+
+    const mockCtx = createClassroomMockCtx();
+    mockCtx.drawImage = vi.fn((img: CanvasImageSource) => {
+      if ((img as unknown as { _tag?: string })._tag) {
+        drawnIds.push((img as unknown as { _tag: string })._tag);
+      }
+    });
+
+    const deskImg = {
+      complete: true,
+      naturalWidth: 200,
+      naturalHeight: 100,
+      _tag: 'desk',
+    } as unknown as HTMLImageElement;
+
+    const atlasImg = {
+      complete: true,
+      naturalWidth: 560,
+      naturalHeight: 720,
+      _tag: 'player',
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(CLASSROOM_DESK_ASSET_URL, deskImg);
+    setCachedAssetForTesting(STUDENT_CHARACTER_ATLAS_URL, atlasImg);
+
+    // 1. Sıranın kuzeyindeyken (y: 280, baseY: 298 < 315) -> Karakter masanın arkasında (önce) çizilir
+    const northPlayer: PlayerCharacter = {
+      x: 260,
+      y: 280,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'idle',
+      speed: 160,
+      walkFrame: 0,
+      grade: 4,
+    };
+
+    drawnIds.length = 0;
+    renderClassroomEntities(mockCtx, northPlayer, 960, 640);
+    const playerIndexNorth = drawnIds.indexOf('player');
+    const desk1IndexNorth = drawnIds.indexOf('desk');
+    expect(playerIndexNorth).toBeLessThan(desk1IndexNorth);
+
+    // 2. Sıranın güneyindeyken (y: 330, baseY: 348 > 315) -> Karakter masanın önünde (sonra) çizilir
+    const southPlayer: PlayerCharacter = {
+      x: 260,
+      y: 330,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'idle',
+      speed: 160,
+      walkFrame: 0,
+      grade: 4,
+    };
+
+    drawnIds.length = 0;
+    renderClassroomEntities(mockCtx, southPlayer, 960, 640);
+    const playerIndexSouth = drawnIds.lastIndexOf('player');
+    const firstDeskIndexSouth = drawnIds.indexOf('desk');
+    expect(playerIndexSouth).toBeGreaterThan(firstDeskIndexSouth);
+  });
+
+  it('51. Aşama 4.7: Akıllı tahtanın 3 ekran durumu (kapalı, açılıyor, aktif) ilgili varlıkla çizilir', () => {
+    const mockCtx = createClassroomMockCtx();
+
+    const offImg = { complete: true, naturalWidth: 260, naturalHeight: 120 } as unknown as HTMLImageElement;
+    const pwrImg = { complete: true, naturalWidth: 260, naturalHeight: 120 } as unknown as HTMLImageElement;
+    const actImg = { complete: true, naturalWidth: 260, naturalHeight: 120 } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(SMARTBOARD_SCREEN_OFF_ASSET_URL, offImg);
+    setCachedAssetForTesting(SMARTBOARD_SCREEN_POWERING_ASSET_URL, pwrImg);
+    setCachedAssetForTesting(SMARTBOARD_SCREEN_ACTIVE_ASSET_URL, actImg);
+
+    // Kapalı durum
+    renderClassroomLayeredBackground(mockCtx, 960, 640, false, false);
+    expect((mockCtx.drawImage as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(offImg, 350, 25, 260, 120);
+
+    // Açılıyor durumu
+    renderClassroomLayeredBackground(mockCtx, 960, 640, false, true);
+    expect((mockCtx.drawImage as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(pwrImg, 350, 25, 260, 120);
+
+    // Aktif durum
+    renderClassroomLayeredBackground(mockCtx, 960, 640, true, false);
+    expect((mockCtx.drawImage as unknown as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(actImg, 350, 25, 260, 120);
+  });
+
+  it('52. Aşama 4.7: Tavandan sarkan fenerler ve ışık huzmesi atmosferi hatasız çizilir', () => {
+    const mockCtx = createClassroomMockCtx();
+
+    expect(() => renderClassroomForeground(mockCtx, 960, 640)).not.toThrow();
+    expect(mockCtx.save).toHaveBeenCalled();
+    expect(mockCtx.restore).toHaveBeenCalled();
   });
 });

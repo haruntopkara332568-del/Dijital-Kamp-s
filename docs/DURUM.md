@@ -1,4 +1,4 @@
-# Proje Durum Raporu — Sürüm 3.6 (Aşama 3: Son Teknik Düzeltmeler ve Görsel Kabule Hazırlık)
+# Proje Durum Raporu — Sürüm 4.7 (Aşama 4.7: Sinematik Sınıf Entegrasyonu)
 
 ## Tamamlanan Bölümler
 - **Mimari Dönüşüm (Vite + React + TypeScript + Tailwind CSS v4 + React Router)**:
@@ -13,6 +13,122 @@
 - **İlk Bütünleşik Görev — "Kapıların Anlattığı Hikâye"**:
   - `KEŞFET → ÖĞREN → ÜRET → PAYLAŞ` aşamalarıyla İlkokul (2–4) ve Ortaokul (5–7) düzeyleri, Çizim Stüdyosu, tarayıcı seslendirme (`speech.ts`) ve tek PNG dışa aktarma (`pngExport.ts`) korundu.
 - **Depolama ve Veri Güvenliği**: `localStorage` (`dek_campus_v1_state`, `schemaVersion: 1`), `IndexedDB` (`dek_campus_db`), bellek yedeği ve iki adımlı `"Verilerimi Sil"` penceresi korundu. Kayıtlar tarayıcı Eş Kaynak Politikası gereği alan adına bağlıdır; alan adı değiştiğinde otomatik taşınmaz (`docs/MIMARI.md` içinde belgelendi).
+
+## Aşama 4.7 — Sinematik Sınıf Entegrasyonu (`feat/campus-visual-upgrade`)
+- **Bağımsız 2,5B Görsel Varlık Mimarisi**:
+  - Onaylanan İngilizce Dünyası sınıf konsept sanatı (`docs/assets/digital_campus_english_classroom_concept.png`) referans alınarak prosedürel düz Canvas çiziminden katmanlı, bağımsız PNG varlıklarına geçildi.
+  - Hazırlanan ve önbelleğe alınan varlıklar (`public/assets/walkable/` ve `src/features/walkable/assets/`):
+    1. `classroom_background.png` (960 × 640 px): Selçuklu mukarnas kemerli duvarlar, pencereler, tavan kirişleri, Selçuklu sekiz köşeli yıldız kakmalı parke zemin ve halı dokusu.
+    2. `classroom_teacher_podium.png` (902 × 641 px): Oyma ahşap öğretmen masası ve kürsüsü, açık defter ve kitap detayları.
+    3. `classroom_bookshelf.png` (882 × 983 px): Selçuklu kemerli kitaplık, renkli dünya hikâye kitapları ve küre.
+    4. `classroom_desk.png` ve `classroom_desk_mirrored.png` (868 × 553 px): İki kişilik öğrenci sıraları, sandalyeler, defterler ve öğrenci gereçleri.
+    5. `smartboard_screen_off.png` (260 × 120 px): Yansımalı obsidyen cam, Selçuklu yıldızı filigranı ve bekleme LED göstergesi.
+    6. `smartboard_screen_powering.png` (260 × 120 px): Turkuaz enerji ışıması, Selçuklu yıldızı ve açılış yükleme çubuğu.
+    7. `smartboard_screen_active.png` (260 × 120 px): Konsept tasarımına uygun "Welcome! Let's Explore!" aktif eğitim arayüzü.
+- **3 Katmanlı Render Mimarisi ve Y-Sorting Derinlik Sıralaması**:
+  - **Katman 1 (Arka Plan)**: `renderClassroomLayeredBackground` ile zemin, duvarlar, pencereler, akıllı tahta (aktif duruma göre ilgili doku) ve avluya çıkış kapısı çizilir.
+  - **Katman 2 (Varlıklar & Y-Sorting)**: `renderClassroomEntities` ile öğretmen kürsüsü (`baseY: 210`), kitaplık (`baseY: 235`), 1. & 2. sıralar (`baseY: 315`), 3. & 4. sıralar (`baseY: 445`) ve öğrenci karakteri (`baseY: player.y + 18`) ayak temas noktalarına göre artan sırada sıralanarak çizilir.
+    - Karakter sıranın kuzeyindeyken sıranın arkasında kalır; güneyine geçtiğinde sıranın önünde çizilir.
+  - **Katman 3 (Ön Plan & Atmosfer)**: `renderClassroomForeground` ile tavandan sarkan iki pirinç Selçuklu feneri (kehribar ışık halesi) ve sabah güneşi huzmelerinde süzülen ortam toz tanecikleri çizilir.
+- **Dünya Koordinatları ve Etkileşim Bütünlüğü**:
+  - Sınıf boyutları (`960 × 640 px`), AABB engelleri ve geniş orta koridor (`x: 340 - 590`) tamamen korundu.
+  - Akıllı Tahta etkileşimi `(480, 160, r: 80)` ve avluya çıkış kapısı `(480, 590, r: 65)` korunarak kesintisiz etkileşim sağlandı.
+- **Aşama 4.7 Görsel Kanıtları (`docs/assets/`)**:
+  - `classroom_overview_before.png` (Eski prosedürel sınıf görünümü)
+  - `classroom_overview_after.png` (Sinematik 2,5B yeni sınıf genel görünümü)
+  - `classroom_student_at_board.png` (Akıllı tahta önünde öğrenci ve etkileşim butonu)
+  - `classroom_smartboard_active.png` (Akıllı tahta aktif durumu ve açılan etkinlik modalı)
+  - `classroom_student_behind_desk.png` (Y-Sorting: Öğrenci sıranın arkasında)
+  - `classroom_student_in_front_desk.png` (Y-Sorting: Öğrenci sıranın önünde)
+  - `classroom_mobile_view.png` (390 × 844 mobil dikey görünüm ve dokunmatik kontroller)
+
+## Aşama 4.5 — Karakter Ölçeği, Animasyon ve Görsel Uyum (`feat/campus-visual-upgrade`)
+- **Karakter Ölçeği İncelemesi ve Seçimi**:
+  - Başlangıç boyutu olan 46 × 58 px, %10 (51 × 64 px), %15 (53 × 67 px) ve %20 (55 × 70 px) büyütme seçenekleri gerçek avlu sahnelerinde karşılaştırıldı.
+  - %20 ölçek (55 × 70 px) kapı kemer açıklığına (48–52 px) göre fazla geniş kaldığı ve çocuğu yetişkin mimarisine kıyasla aşırı iri gösterdiği için elendi.
+  - %10 ölçek (51 × 64 px) geniş avluda halen hafif minyatür kaldı.
+  - **%15 Büyütme (53 × 67 px)** en dengeli ve doğal oran olarak seçildi: İngilizce Dünyası taç kapısı portal yüksekliğinin yaklaşık %85'ine oturur, 72–80 px'lik taş yollar üzerinde rahat boşluk bırakır ve 10 yaşındaki ilkokul/ortaokul öğrencisi silüetini mimari çevreyle tam uyumlu kılar.
+- **Zemin Hizalama ve Çarpışma Bütünlüğü**:
+  - Karakterin ayak basma çizgisi tam olarak `y + 18` zemin çizgisine ve temas gölgesi elipsine oturur (`renderY = 18 - 67 + 3 = -46 px`; `renderY + renderH - 3 = 18 px`).
+  - Mevcut AABB çarpışma kutusu (`DEFAULT_HITBOX`: 22 × 28 px) ve A* yol bulma sistemi değiştirilmeden %100 oranında korundu; 53 px'lik görsel genişlik gövde merkezinde 22 px'lik hitbox ile harika bir tampon sağlayarak koridor ve kapılarda takılmasız geçişi sürdürdü.
+- **Animasyon Senkronizasyonu ve Akıcılık**:
+  - `WalkableCanvasEngine.ts` ve `characterRenderer.ts` arasındaki adım ritmi senkronize edildi (`walkFrame += delta * 6.5`). Mismatched frekanslar ve `walkFrame * 1.2` çarpanı kaldırılarak sabit 153 ms'lik pürüzsüz adım kadansı sağlandı.
+  - 3D sprite kareleri anatomik dikey adımı halihazırda içerdiğinden, yürüyüş esnasındaki aşırı dış gövde sekmesi (`bobY = -2.2 px`) ve omuz sallantısı sıfırlanarak gereksiz zıplama/hoplatma etkisi tamamen giderildi.
+  - Durma anında `player.state = 'idle'` ve `col = 0` ile bakılan yöndeki dinlenme duruşuna pürüzsüz geçiş sağlandı. `prefers-reduced-motion` desteği korundu.
+  - Çapraz yön hareketlerinde 1.15 eşikli histerezis (ölü bölge) getirilerek yön satırları arasındaki titreşim (flicker) giderildi.
+- **Görsel Bütünlük, Sabah Işığı ve Zemin Teması**:
+  - **Çok Katmanlı Yönlü Temas Gölgesi**: Sabah güneşi sol-üstten geldiği için sağ-alta hafif yatık dış ortam gölgesi (`(1.8, 19)`, `18.5 × 7.8 px`), orta gövde gölgesi (`(1.0, 18.5)`, `12.5 × 5.0 px`) ve taban temas gölgesi (`(0, 18)`, `8.0 × 2.8 px`, `%48` koyuluk) uygulandı. Ayakların zemine basma hissi kuvvetlendirildi.
+  - **Sabah Işığı ve Ambiyans Uyum Tonlaması**: Sprite üzerine `source-atop` kompozit katmanı ile sol-üstten gelen hafif sıcak altın sabah ışıması (`rgba(255, 246, 214, 0.08)`) ve sağ-alt yumuşak gölge tonu uygulandı; karakterin avlu atmosferine "sonradan yapıştırılmış" hissi kaldırıldı.
+  - `ctx.imageSmoothingEnabled = true` ve `imageSmoothingQuality = 'high'` ile ölçeklenen piksellerin pürüzsüz çizimi sağlandı.
+  - Y-Sorting derinlik sıralaması (`baseY = player.y + 18`) şadırvan ve binalar çevresinde korundu.
+- **Aşama 4.5 Görsel Kanıtları (`docs/assets/`)**:
+  - `student_scale_before_46x58.png` (Orijinal 46 × 58 px ölçek)
+  - `student_scale_10pct_51x64.png` (%10 büyütülmüş ölçek)
+  - `student_scale_after_53x67.png` (%15 büyütülmüş seçilen ölçek)
+  - `student_scale_20pct_55x70.png` (%20 büyütülmüş ölçek)
+  - `student_scale_comparison_options.png` (4 ölçeğin yan yana karşılaştırma paneli)
+  - `student_walk_4directions_cycle.png` (4 yönde yürüyüş döngüsü matrisi)
+  - `student_at_english_door.png` (İngilizce Dünyası kapısı önünde ölçek uyumu)
+  - `student_in_front_of_fountain.png` (Şadırvan önünde Y-Sorting kanıtı)
+  - `student_behind_fountain.png` (Şadırvan arkasında Y-Sorting kanıtı)
+  - `student_walk_in_game.png` (Avlu içi akıcı yürüyüş karesi)
+  - `student_mobile_view.png` (Mobil 390 × 844 görünümü)
+
+## Aşama 4.4 — Öğrenci Karakterinin Sinematik Dönüşümü (`feat/campus-visual-upgrade`)
+- **Bağımsız Karakter Varlığı ve 3D Animasyon Estetiği**:
+  - Onaylanmış konsept sanatı referansındaki (`docs/assets/digital_campus_courtyard_concept.jpg`) kız öğrenci esas alınarak, geometrik Canvas 2D çiziminden yüksek kaliteli 3D animasyon estetiğine sahip gerçek bir öğrenci karakteri üretildi ve entegre edildi.
+  - Karakter özellikleri: Mercan kırmızısı kapüşonlu hırka, Selçuklu 8 köşeli altın yıldız rozetli sarı tişört, mavi kot pantolon, kırmızı-beyaz spor ayakkabılar, turkuaz sırt çantası, çift örgülü koyu kahverengi saçlar ve sıcak, canlı yüz ifadesi.
+- **4 Yönlü ve 4 Kareli Sprite Atlas Mimarisi (`character_student_atlas.png`)**:
+  - `public/assets/walkable/character_student_atlas.png`, `src/features/walkable/assets/character_student_atlas.png` ve `docs/assets/character_student_atlas.png` (560×720 px, 4 sütun × 4 satır, hücre boyutu 140×180 px).
+  - Satır düzeni: 0 = Down (Ön), 1 = Up (Arka), 2 = Right (Sağ Profil), 3 = Left (Sol Profil).
+  - Sütun düzeni: 0 = Idle (Durma), 1 = Step 1 (Sol Adım), 2 = Passing (Geçiş), 3 = Step 2 (Sağ Adım). Yürüme döngüsü `[1, 2, 3, 2]` akışıyla pürüzsüzleştirildi.
+- **Ayak Hizalama, Çarpışma ve Y-Sorting Derinliği**:
+  - Karakterin görsel ayak basma noktası `y + 18` zemin koordinatına ve mevcut AABB çarpışma kutusu sınırlarına (`DEFAULT_HITBOX`: genişlik 22, yükseklik 28) tam olarak oturtuldu.
+  - Şadırvan, binalar ve ağaçlar arasında derinlik sıralaması (Y-Sorting): Karakter kuzeydeyken nesnelerin arkasında, güneydeyken nesnelerin önünde doğal olarak çizilir.
+- **Önbellek ve Geriye Dönük Çizim Yedeği (Fallback)**:
+  - `assetLoader.ts` içinde `preloadWalkableAssets` ve `getStudentCharacterAtlas()` ile sahne öncesi önbelleğe alındı. Görsel yüklenemediğinde veya headless test ortamlarında kusursuz vektörel çizim yedeği (`drawVectorFallbackCharacter`) devreye girer.
+- **Görsel Kabul Kanıtları (`docs/assets/`)**:
+  - `student_character_before.png` (Önceki geometrik Canvas karakteri)
+  - `student_character_after.png` (Yeni 3D animasyon filmi kalitesinde öğrenci karakteri)
+  - `student_directions_4views.png` (Dört yön yan yana ön izleme)
+  - `student_turnaround_4views.png` (Saydam arka planlı 4 yön inceleme tablosu)
+  - `character_student_atlas.png` (560×720 px tam sprite atlası)
+  - `student_walk_in_game.png` (Yürünebilir kampüs içinde yürüme karesi)
+  - `student_behind_fountain.png` (Şadırvanın arkasında çizim — Y-Sorting testi)
+  - `student_in_front_of_fountain.png` (Şadırvanın önünde çizim — Y-Sorting testi)
+
+## Aşama 4.3 — Sinematik Avlu Dönüşümü (`feat/campus-visual-upgrade`)
+- **Bağımsız Yüksek Kaliteli 2,5B Görsel Varlıklar ve `drawImage` Entegrasyonu**:
+  - Onaylanmış 3D animasyon filmi konsept sanatı referansına (`docs/assets/digital_campus_courtyard_concept.jpg`) sadık kalınarak kampüs avlusunun tüm temel unsurları geometrik Canvas 2D çizimlerinden bağımsız, şeffaf arka planlı PNG görsel varlıklara dönüştürüldü:
+    1. **İngilizce Dünyası Binası** (`public/assets/walkable/building_english.png` - 268×292 px render).
+    2. **Gezi ve Keşif Binası** (`public/assets/walkable/building_discovery.png` - 284×232 px render).
+    3. **Kitap ve Hikâye Dünyası Binası** (`public/assets/walkable/building_library.png` - 276×280 px render).
+    4. **Kampüs Yolculuğum Köşkü** (`public/assets/walkable/pavilion_journey.png` - 235×260 px render).
+    5. **Keşif Görevleri Panosu** (`public/assets/walkable/kiosk_missions.png` - 210×270 px render).
+    6. **Merkez Şadırvan & Fıskiye Havuzu** (`public/assets/walkable/plaza_star_fountain.png` - 250×179 px render).
+    7. **Zarif Servi Ağaçları** (`public/assets/walkable/tree_cypress.png` - 64×218 px render).
+    8. **Geniş Gölgeli Akdeniz Ağaçları** (`public/assets/walkable/tree_shade.png` - 200×185 px render).
+- **Varlık Önbellekleme ve Yükleyici Mimarisi (`assetLoader.ts`)**:
+  - `preloadWalkableAssets` sahne başlangıcında tüm görsel varlıkları tarayıcıda önceden belleğe alır.
+  - Varlıkların yüklenemediği veya headless test durumlarında geriye dönük kusursuz vektörel çizim yedeği (fallback) devreye girer.
+- **Y-Sorting ve Zemin Temas Hizalaması (`courtyardSceneRenderer.ts`)**:
+  - Tüm varlıkların ayak basma/zemin koordinatları (`baseY`) ve AABB çarpışma sınırları korunmuş; görseller tam basamak ve yol hizasına oturtulmuştur.
+  - Karakter yapıların ve ağaçların arkasındayken arkada, önündeyken önünde doğal olarak çizilir.
+  - Etkileşimli kapı ve pano ışımaları (pulsing aura) drawImage üzerine canlı katman olarak bindirilmiştir.
+- **Çarpışma Kutuları (AABB) ve Etkileşim Bütünlüğü**:
+  - Mevcut 6 engel, 1 etkileşim noktası, 5 ana taş yürüyüş yolu ve A* yol bulma sistemi %100 oranında korunmuştur.
+- **Görsel Kabul Kanıtları (`docs/assets/`)**:
+  - `courtyard_overview_before.png` vs `courtyard_overview_after.png`
+  - `building_library_before.png` vs `building_library_after.png`
+  - `building_discovery_before.png` vs `building_discovery_after.png`
+  - `fountain_plaza_before.png` vs `fountain_plaza_after.png`
+  - `kiosk_missions_before.png` vs `kiosk_missions_after.png`
+  - `english_building_before.png` vs `english_building_after.png`
+
+## Doğrulama Durumu ve Sonraki Adım
+- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [74/74], `npm run build` ve `npm run test:e2e` [10/10 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
+- Çoklu ekran boyutu denetiminde (`360×740`, `390×844`, `768×1024`, `1280×840`) yatay taşma (`0`) ve mobil `390×844` görünümünde `44×44 px` altı etkileşimli hedef (`0`) doğrulandı.
+- Geliştirmeler `feat/campus-visual-upgrade` dalında tamamlanmış olup kullanıcı onayı için hazırdır.
 
 ## Son Pedagojik ve İşlevsel İyileştirmeler (Aşama 1 Finali)
 - **Üret, Paylaş ve Kampüs Yolculuğum Tutarlılığı (`missionValidation.ts`, `MissionRunnerView.tsx`, `storage.ts`)**:
@@ -64,10 +180,34 @@
 - **Genişletilmiş Test Paketi**:
   - Toplam **60 Vitest** birim/entegrasyon testi (`src/test/walkable.test.tsx` [31 test] + `src/test/campus.test.tsx` [29 test]) ve **10 Playwright E2E** testi eksiksiz geçti.
 
+## Aşama 4 — Görsel Dünya, Karakter Animasyonu ve Sınıf Tasarımı (`feat/campus-visual-upgrade`)
+- **Öğrenci Karakterinin Yeniden Tasarımı (`characterRenderer.ts`)**:
+  - Animasyon filmi estetiğinde, sevimli, sıcak ve çocuk yaş grubuna uygun özgün ana karakter geliştirildi.
+  - Canlı badem gözler, ışıltılı çift catchlight, sevimli yanak allığı (blush), dinamik göz kırpma (blink) ve sıcak gülümseme mimikleri eklendi.
+  - Anadolu–Selçuklu turkuazı yelek, altın sarısı kenar bordürleri, göğüste minik sekiz köşeli Selçuklu yıldız rozeti ve deri sırt çantası detaylandırıldı.
+  - 4 yönde (`down`, `up`, `left`, `right`) tam tutarlı gövde ve baş perspektifi sağlandı.
+  - İki katmanlı eliptik zemin gölgesi (ortam + ayak altı temas gölgesi) ile zemine basış hissi güçlendirildi.
+  - Yürürken doğal kol-bacak salınımı, dikey gövde esnemesi (bobbing); beklemede nazik nefes alma salınımı sağlandı.
+- **Kampüs Avlusunun Görsel Dönüşümü (`courtyardSceneRenderer.ts`)**:
+  - Sıcak taş dokulu zemin, Selçuklu sekiz köşeli yıldız meydanı ve merkez şadırvanda animasyonlu su dalgalanması (`water shimmer`) uygulandı.
+  - İngilizce Dünyası binası anıtsal mukarnas taç kapı, Selçuklu çinili kubbe, giriş kandilleri ve yaklaşınca belirginleşen davetkâr kapı ışıltısıyla güçlendirildi.
+  - Gezi ve Keşif ile Kitap Dünyası binalarına özgün mimari cepheler kazandırıldı.
+  - Katmanlı gölgeli bahçe ağaçları (rüzgâr salınımlı), ahşap park bankları ve çiçek tarhları eklendi.
+  - Yürünebilir yollar, kapı koordinatları ve bina AABB çarpışma sınırları %100 korundu.
+- **İngilizce Sınıfının Görsel Dönüşümü (`classroomSceneRenderer.ts`)**:
+  - Sıcak ahşap parke zemin, Selçuklu sivri kemerli vitray pencereler ve zemine vuran açılı güneş ışığı huzmeleri (sunbeams) uygulandı.
+  - Akıllı Tahta: Anadolu–Selçuklu ahşap-pirinç kakma çerçeve, kapalıyken cam yansıması ve bekleme LED'i, açılırken radyal ışık dalgalanması, açıkken canlı eğitim arayüzü sunuldu.
+  - Ahşap öğretmen kürsüsü, kitaplık (dünya küresi ve ciltli kitaplar), sandalyeli öğrenci sıraları ve Selçuklu kemerli çıkış kapısı detaylandırıldı.
+- **Erişilebilirlik ve Performans**:
+  - Bütün çevre animasyonları (su parıltısı, yaprak salınımı, karakter nefes alma) `prefers-reduced-motion` tercihine tam uyumludur.
+  - Canvas 2D performansı korunmuş, paket boyutu yalnızca `48.09 kB` (gzip: `13.06 kB`) seviyesinde tutulmuştur.
+
 ## Doğrulama Durumu ve Sonraki Adım
-- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [60/60], `npm run build` ve `npm run test:e2e` [10/10 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
+- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [69/69], `npm run build` ve `npm run test:e2e` [10/10 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
+- İngilizce Dünyası binası 3D animasyon filmi estetiğinde bağımsız şeffaf PNG varlığı (`building_english.png`) olarak üretilmiş ve `drawImage` render motoruna entegre edilmiştir.
+- Öncesi ve sonrası ekran görüntüleri (`docs/assets/english_building_before.png` ve `docs/assets/english_building_after.png`) kaydedilmiştir.
 - Çoklu ekran boyutu denetiminde (`360×740`, `390×844`, `768×1024`, `1280×840`) yatay taşma (`0`) ve mobil `390×844` görünümünde `44×44 px` altı etkileşimli hedef (`0`) doğrulandı.
-- Aşama 3 Sürüm 1.2 son teknik düzeltmeleri ve görsel kabule hazırlık `feat/walkable-campus-prototype` dalında tamamlanmıştır.
+- Geliştirmeler `feat/campus-visual-upgrade` dalında tamamlanmış olup kullanıcı onayı için hazırdır.
 
 
 

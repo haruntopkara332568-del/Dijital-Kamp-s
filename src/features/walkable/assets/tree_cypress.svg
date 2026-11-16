@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 180" width="70" height="180">
+  <defs>
+    <!-- Zemin gölgesi -->
+    <ellipse id="treeShadow" cx="35" cy="172" rx="28" ry="7" fill="#1e293b" opacity="0.32"/>
+
+    <!-- Gövde Degradesi -->
+    <linearGradient id="trunkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3e2723"/>
+      <stop offset="40%" stop-color="#5d4037"/>
+      <stop offset="100%" stop-color="#27140f"/>
+    </linearGradient>
+
+    <!-- Servi Yaprak Katman Degradesi (Soldan Güneş Vuruyor) -->
+    <linearGradient id="cypressFoliage" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="25%" stop-color="#22c55e"/>
+      <stop offset="60%" stop-color="#15803d"/>
+      <stop offset="100%" stop-color="#14532d"/>
+    </linearGradient>
+
+    <!-- Koyu Gölge Katmanı -->
+    <linearGradient id="cypressShadowFoliage" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#166534"/>
+      <stop offset="50%" stop-color="#14532d"/>
+      <stop offset="100%" stop-color="#052e16"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 1. ZEMİN GÖLGESİ -->
+  <use href="#treeShadow"/>
+
+  <!-- 2. GÖVDE -->
+  <path d="M32 172 L34 140 L36 140 L38 172 Z" fill="url(#trunkGrad)"/>
+
+  <!-- 3. KATMANLI SERVİ TACI (Yumuşak, stilize 3D animasyon formu) -->
+  <!-- Alt Geniş Katman -->
+  <path d="M35 110 C16 115 14 156 35 160 C56 156 54 115 35 110 Z" fill="url(#cypressShadowFoliage)"/>
+  <path d="M35 110 C18 115 16 154 35 158 C52 154 50 115 35 110 Z" fill="url(#cypressFoliage)"/>
+
+  <!-- Orta Katman -->
+  <path d="M35 65 C18 70 16 122 35 126 C54 122 52 70 35 65 Z" fill="url(#cypressShadowFoliage)"/>
+  <path d="M35 65 C20 70 18 120 35 124 C50 120 48 70 35 65 Z" fill="url(#cypressFoliage)"/>
+
+  <!-- Üst Katman -->
+  <path d="M35 25 C22 30 20 80 35 84 C50 80 48 30 35 25 Z" fill="url(#cypressShadowFoliage)"/>
+  <path d="M35 25 C23 30 22 78 35 82 C47 78 46 30 35 25 Z" fill="url(#cypressFoliage)"/>
+
+  <!-- Sivri Zirve Ucu -->
+  <path d="M35 8 C28 14 26 42 35 45 C44 42 42 14 35 8 Z" fill="url(#cypressFoliage)"/>
+
+  <!-- Soldan Vuran Güneş Parıltıları -->
+  <path d="M34 12 C30 18 28 36 34 42" stroke="#86efac" stroke-width="2" fill="none" opacity="0.75" stroke-linecap="round"/>
+  <path d="M32 46 C24 55 22 84 32 94" stroke="#86efac" stroke-width="2.5" fill="none" opacity="0.65" stroke-linecap="round"/>
+  <path d="M30 100 C20 112 18 138 30 148" stroke="#86efac" stroke-width="2.5" fill="none" opacity="0.55" stroke-linecap="round"/>
+</svg>

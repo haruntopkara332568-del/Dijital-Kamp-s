@@ -1,8 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { WalkableCanvasEngine } from './engine/WalkableCanvasEngine';
-import { renderCourtyardBackground } from './engine/courtyardSceneRenderer';
-import { renderClassroomBackground } from './engine/classroomSceneRenderer';
+import {
+  renderCourtyardBackground,
+  renderCourtyardLayeredBackground,
+  renderCourtyardEntities,
+  renderCourtyardForeground,
+} from './engine/courtyardSceneRenderer';
+import {
+  renderClassroomBackground,
+  renderClassroomLayeredBackground,
+  renderClassroomEntities,
+  renderClassroomForeground,
+} from './engine/classroomSceneRenderer';
 import { WalkableControlsOverlay } from './components/WalkableControlsOverlay';
 import { SmartBoardModal } from './components/SmartBoardModal';
 import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } from './types';
@@ -195,6 +205,33 @@ export function WalkableCampusView({
           setUnreachableMessage('Oraya ulaşılamıyor, lütfen açık bir yola tıkla.');
           setTimeout(() => setUnreachableMessage(null), 2500);
         },
+        onRenderBackground: (ctx) => {
+          if (currentScene === 'classroom') {
+            renderClassroomLayeredBackground(
+              ctx,
+              config.width,
+              config.height,
+              smartBoardVisualStateRef.current.active,
+              smartBoardVisualStateRef.current.poweringOn,
+            );
+          } else {
+            renderCourtyardLayeredBackground(ctx, config.width, config.height);
+          }
+        },
+        onRenderEntities: (ctx, player) => {
+          if (currentScene === 'classroom') {
+            renderClassroomEntities(ctx, player, config.width, config.height);
+          } else {
+            renderCourtyardEntities(ctx, player, config.width, config.height);
+          }
+        },
+        onRenderForeground: (ctx) => {
+          if (currentScene === 'classroom') {
+            renderClassroomForeground(ctx, config.width, config.height);
+          } else {
+            renderCourtyardForeground(ctx, config.width, config.height);
+          }
+        },
         onCustomRender: (ctx) => {
           if (currentScene === 'classroom') {
             renderClassroomBackground(
@@ -214,6 +251,9 @@ export function WalkableCampusView({
 
     engine.start();
     engineRef.current = engine;
+    if (typeof window !== 'undefined') {
+      (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine }).__WALKABLE_ENGINE__ = engine;
+    }
 
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -227,6 +267,9 @@ export function WalkableCampusView({
 
     return () => {
       ro.disconnect();
+      if (typeof window !== 'undefined') {
+        delete (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine }).__WALKABLE_ENGINE__;
+      }
       engine.destroy();
       engineRef.current = null;
     };

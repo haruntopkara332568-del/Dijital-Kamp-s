@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 150" width="120" height="150">
+  <defs>
+    <!-- Zemin gölgesi -->
+    <ellipse id="shadeTreeShadow" cx="60" cy="142" rx="48" ry="12" fill="#1e293b" opacity="0.3"/>
+
+    <!-- Gövde Degradesi -->
+    <linearGradient id="shadeTrunkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4e342e"/>
+      <stop offset="35%" stop-color="#6d4c41"/>
+      <stop offset="70%" stop-color="#5d4037"/>
+      <stop offset="100%" stop-color="#3e2723"/>
+    </linearGradient>
+
+    <!-- Yaprak Kümesi Degradesi (Aydınlık) -->
+    <radialGradient id="foliageLight" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#bbf7d0"/>
+      <stop offset="25%" stop-color="#4ade80"/>
+      <stop offset="70%" stop-color="#16a34a"/>
+      <stop offset="100%" stop-color="#15803d"/>
+    </radialGradient>
+
+    <!-- Yaprak Kümesi Degradesi (Gölgeli) -->
+    <radialGradient id="foliageShadow" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#15803d"/>
+      <stop offset="60%" stop-color="#166534"/>
+      <stop offset="100%" stop-color="#14532d"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 1. ZEMİN GÖLGESİ -->
+  <use href="#shadeTreeShadow"/>
+
+  <!-- 2. KIVRIMLI GÖVDE VE DALLAR -->
+  <path d="M54 142 C54 120 50 100 48 85 C46 75 42 68 36 60 L42 58 C48 66 52 74 54 85 C56 95 62 108 64 142 Z" fill="url(#shadeTrunkGrad)"/>
+  <!-- Sağ Dal -->
+  <path d="M52 82 C58 74 68 68 78 62 L82 66 C72 72 62 78 54 88 Z" fill="url(#shadeTrunkGrad)"/>
+
+  <!-- 3. ARKA GÖLGE YAPRAK KÜMELERİ -->
+  <circle cx="45" cy="55" r="28" fill="url(#foliageShadow)"/>
+  <circle cx="78" cy="52" r="26" fill="url(#foliageShadow)"/>
+  <circle cx="60" cy="40" r="32" fill="url(#foliageShadow)"/>
+
+  <!-- 4. ÖN AYDINLIK YAPRAK KÜMELERİ (Hacimli Bulutsu Formlar) -->
+  <circle cx="36" cy="48" r="25" fill="url(#foliageLight)"/>
+  <circle cx="75" cy="45" r="24" fill="url(#foliageLight)"/>
+  <circle cx="56" cy="32" r="28" fill="url(#foliageLight)"/>
+  <circle cx="50" cy="58" r="22" fill="url(#foliageLight)"/>
+
+  <!-- 5. GÜNEŞ IŞIĞI VURGULARI & GÜNEŞ NOKTALARI -->
+  <circle cx="32" cy="38" r="14" fill="#86efac" opacity="0.6"/>
+  <circle cx="52" cy="22" r="16" fill="#86efac" opacity="0.7"/>
+  <circle cx="68" cy="34" r="12" fill="#86efac" opacity="0.5"/>
+
+  <!-- Işık Parıltısı -->
+  <ellipse cx="48" cy="24" rx="6" ry="3" fill="#ffffff" opacity="0.5" transform="rotate(-15 48 24)"/>
+  <ellipse cx="28" cy="42" rx="5" ry="2.5" fill="#ffffff" opacity="0.4" transform="rotate(-20 28 42)"/>
+</svg>

@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 180" width="220" height="180">
+  <defs>
+    <radialGradient id="disc-dome-grad" cx="40%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#cf6946" />
+      <stop offset="50%" stop-color="#a84a28" />
+      <stop offset="100%" stop-color="#692810" />
+    </radialGradient>
+    <linearGradient id="disc-wall-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8efe4" />
+      <stop offset="50%" stop-color="#ecd9c6" />
+      <stop offset="100%" stop-color="#dabfa6" />
+    </linearGradient>
+  </defs>
+
+  <!-- Zemin Gölgesi -->
+  <ellipse cx="110" cy="172" rx="102" ry="8" fill="rgba(23,43,71,0.22)" />
+
+  <!-- Sol Bayrak Direği ve Türk Bayrağı (Konsept görselindeki detay) -->
+  <line x1="26" y1="12" x2="26" y2="70" stroke="#756452" stroke-width="2" />
+  <rect x="27" y="14" width="18" height="12" rx="1" fill="#e03b24" />
+  <circle cx="33" cy="20" r="3.2" fill="#ffffff" />
+  <circle cx="34.2" cy="20" r="2.6" fill="#e03b24" />
+  <polygon points="36,18.5 36.5,20 38,20 36.8,20.8 37.2,22.2 36,21.3 34.8,22.2 35.2,20.8 34,20 35.5,20" fill="#ffffff" />
+
+  <!-- Ana Taş Gövde -->
+  <rect x="12" y="44" width="196" height="126" rx="6" fill="url(#disc-wall-grad)" stroke="#c2a991" stroke-width="2.5" />
+
+  <!-- Tuğla Derz Dokusu (Terracotta Kervansaray Deseni) -->
+  <path d="M 12 72 L 208 72 M 12 100 L 208 100 M 12 128 L 208 128" stroke="#b25938" stroke-width="1.2" stroke-opacity="0.35" />
+
+  <!-- Pişmiş Toprak / Bakır Kubbe -->
+  <path d="M 64 44 C 64 6 156 6 156 44 Z" fill="url(#disc-dome-grad)" stroke="#692810" stroke-width="2" />
+  <path d="M 88 44 C 88 15 110 15 110 44 M 132 44 C 132 15 110 15 110 44" stroke="#e68d6e" stroke-width="1.5" stroke-opacity="0.5" fill="none" />
+
+  <!-- Kubbe Alemi -->
+  <rect x="108" y="-6" width="4" height="14" fill="#d8972b" />
+  <circle cx="110" cy="-8" r="4.5" fill="#f5c35b" />
+
+  <!-- Üst Pişmiş Toprak Saçak -->
+  <rect x="8" y="38" width="204" height="12" rx="3" fill="#a84a28" stroke="#692810" stroke-width="1.5" />
+  <rect x="10" y="40" width="200" height="3" fill="#f5c35b" />
+
+  <!-- Yan Kemerli Revaklar -->
+  <g transform="translate(24, 76)">
+    <path d="M 0 16 Q 16 0 32 16 L 32 64 L 0 64 Z" fill="#1b3152" stroke="#b25938" stroke-width="2" />
+    <path d="M 4 20 Q 16 8 28 20 L 28 64 L 4 64 Z" fill="#2d486e" />
+  </g>
+
+  <g transform="translate(164, 76)">
+    <path d="M 0 16 Q 16 0 32 16 L 32 64 L 0 64 Z" fill="#1b3152" stroke="#b25938" stroke-width="2" />
+    <path d="M 4 20 Q 16 8 28 20 L 28 64 L 4 64 Z" fill="#2d486e" />
+  </g>
+
+  <!-- Orta Anıtsal Selçuklu Kervansaray Taç Kapısı -->
+  <rect x="72" y="66" width="76" height="104" rx="4" fill="#eddccb" stroke="#ba9e84" stroke-width="2.5" />
+  <path d="M 80 96 Q 110 74 140 96 L 140 170 L 80 170 Z" fill="#101c2e" stroke="#a84a28" stroke-width="2.5" />
+
+  <!-- Derinlikli Kemer Sıraları -->
+  <path d="M 86 102 Q 110 84 134 102 L 134 170 L 86 170 Z" fill="#0b1422" stroke="#d8972b" stroke-width="1.5" />
+
+  <!-- Ahşap Kervansaray Kapısı -->
+  <rect x="90" y="112" width="19" height="58" fill="#593c26" stroke="#332012" stroke-width="1.2" />
+  <rect x="111" y="112" width="19" height="58" fill="#66462d" stroke="#332012" stroke-width="1.2" />
+  <circle cx="104" cy="140" r="2.2" fill="#f5c35b" />
+  <circle cx="116" cy="140" r="2.2" fill="#f5c35b" />
+
+  <!-- Giriş Basamağı -->
+  <rect x="66" y="167" width="88" height="5" rx="1.5" fill="#fbf7ee" stroke="#ba9e84" stroke-width="1" />
+</svg>

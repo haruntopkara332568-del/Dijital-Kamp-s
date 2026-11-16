@@ -3,8 +3,8 @@
 ## 1. Çalıştırıldı ve Geçti
 - **`npm run typecheck` (`tsc --noEmit`)**: Geçti — 0 hata (strict TypeScript).
 - **`npm run lint` (`eslint .`)**: Geçti — 0 hata, 0 uyarı.
-- **`npm run test` (`vitest run`)**: Geçti — **60 / 60 test** (`src/test/walkable.test.tsx` [31 test] + `src/test/campus.test.tsx` [29 test], toplam `3.89 s`):
-  - **Aşama 3 Yürünebilir Kampüs ve Teknik İyileştirme Testleri (`walkable.test.tsx` — 31 Test)**:
+- **`npm run test` (`vitest run`)**: Geçti — **81 / 81 test** (`src/test/walkable.test.tsx` [52 test] + `src/test/campus.test.tsx` [29 test], toplam `4.8 s`):
+  - **Aşama 3, 4, 4.5 & 4.7 Yürünebilir Kampüs, Karakter ve Sınıf Görsel Dünya Testleri (`walkable.test.tsx` — 52 Test)**:
     1. Karakter yön tuşlarıyla ve W, A, S, D ile doğru yönde hareket eder
     2. Çapraz hareket hızı normal hareket hızından fazla olamaz (Normalizasyon)
     3. Karakter bina ve engel sınırlarının içinden geçemez (Çarpışma algılama)
@@ -25,17 +25,38 @@
     18. Farklı Canvas ve CSS boyutlarında (Responsive scale) tıklama koordinatları doğru hesaplanır
     19. Ekran boyutu değiştiğinde `updateDimensions` karakter ve kamerayı sahne sınırında tutar
     20. Mevcut iki öğrenme görevi ve sınıf düzeyleri veri bütünlüğünü korur
-    21. **A* Tek taraflı engelli çapraz köşe geçişi testi (Köşe kesme engellenmelidir)**
-    22. **A* İki tarafı engelli çapraz köşe geçişi testi (Köşegen geçiş engellenmelidir)**
-    23. **Karakter genişliğinden (18px) daha dar koridor testi (Geçiş engellenmelidir)**
-    24. **Karakter genişliğinden (18px) geniş güvenli koridor testi (Geçişe izin verilmelidir)**
-    25. **Başlangıç ve hedef aynı nokta olduğunda gereksiz hesaplama yapmadan doğrudan döner**
-    26. **Yol pürüzsüzleştirme (smoothPath) engelleri kesmeyen geçerli rotalar üretir**
-    27. **Karakter ara noktaları sırayla takip ederek hedefe ulaşır ve hedefe varınca durur**
-    28. **Animasyon döngüsü duraklatma (pause): rAF çağrısı durur, animFrameId sıfırlanır ve sıfır yeni kare planlanır**
-    29. **Animasyon döngüsü devam ettirme (resume): rAF çağrısı yeniden başlar ve delta sıçraması olmaz**
-    30. **Akıllı tahta modalı Shift+Tab ile ilk elemandan son elemana döner ve kapatıldığında önceki aktif elemana odak iade edilir**
-    31. **Tarayıcı sekmesi arka plana alındığında (visibilitychange) döngü durur, öne gelince yeniden başlar**
+    21. A* Tek taraflı engelli çapraz köşe geçişi testi (Köşe kesme engellenmelidir)
+    22. A* İki tarafı engelli çapraz köşe geçişi testi (Köşegen geçiş engellenmelidir)
+    23. Karakter genişliğinden (18px) daha dar koridor testi (Geçiş engellenmelidir)
+    24. Karakter genişliğinden (18px) geniş güvenli koridor testi (Geçişe izin verilmelidir)
+    25. Başlangıç ve hedef aynı nokta olduğunda gereksiz hesaplama yapmadan doğrudan döner
+    26. Yol pürüzsüzleştirme (smoothPath) engelleri kesmeyen geçerli rotalar üretir
+    27. Karakter ara noktaları sırayla takip ederek hedefe ulaşır ve hedefe varınca durur
+    28. Animasyon döngüsü duraklatma (pause): rAF çağrısı durur, animFrameId sıfırlanır ve sıfır yeni kare planlanır
+    29. Animasyon döngüsü devam ettirme (resume): rAF çağrısı yeniden başlar ve delta sıçraması olmaz
+    30. Akıllı tahta modalı Shift+Tab ile ilk elemandan son elemana döner ve kapatıldığında önceki aktif elemana odak iade edilir
+    31. Tarayıcı sekmesi arka plana alındığında (visibilitychange) döngü durur, öne gelince yeniden başlar
+    32. **Aşama 4: Karakterin dört yönde (down, up, left, right) çizimi ve yürüme/bekleme durumları hatasız çalışır**
+    33. **Aşama 4: prefers-reduced-motion aktifken karakter ve çevre animasyonları güvenle çizilir**
+    34. **Aşama 4: Kampüs avlusu zemin, Selçuklu yıldız meydanı, binalar ve peyzaj unsurları hatasiz çizilir**
+    35. **Aşama 4: İngilizce sınıfı zemin, pencereler, akıllı tahta (kapalı, açılıyor, açık) ve sıralar hatasız çizilir**
+    36. **Aşama 4: Karakterin görsel temas noktası AABB çarpışma kutusu sınırlarıyla (DEFAULT_HITBOX) uyumludur**
+    37. **Aşama 4.2: Katmanlı zemin, Y-Sorting varlıklar ve ön plan saçağı hatasız çizilir**
+    38. **Aşama 4.2: Y-Sorting derinlik sıralaması: Karakter kuzeydeyken varlığın arkasında, güneydeyken önünde çizilir**
+    39. **Aşama 4.2: İngilizce Dünyası binası görsel varlık yüklendiğinde drawImage ile çizilir**
+    40. **Aşama 4.2: İngilizce Dünyası binası AABB çarpışma sınırları ve kapı etkileşim koordinatı doğrulanır**
+    41. **Aşama 4.3: Tüm bağımsız 2,5B avlu varlıkları (Keşif, Kütüphane, Şadırvan, Pano, Köşk, Ağaçlar) yüklendiğinde drawImage ile çizilir**
+    42. **Aşama 4.3: Avlu binaları ve etkileşimli unsurların AABB çarpışma ve konum hizalaması korunur**
+    43. **Aşama 4.4: Öğrenci karakteri görsel atlası (character_student_atlas.png) yüklendiğinde drawImage ile kırpılarak çizilir**
+    44. **Aşama 4.4: Karakter yönleri (down, up, right, left) sprite atlasında doğru satır indeksleriyle (0, 1, 2, 3) eşleşir**
+    45. **Aşama 4.4: Karakter yürüme animasyon döngüsü ve bekleme (idle) durumu sprite atlası karelerini doğru sırayla kullanır**
+    46. **Aşama 4.5: Karakter ölçek seçenekleri tanımlıdır ve seçilen %15 ölçek (53x67 px) zemin hizasını (y + 18) korur**
+    47. **Aşama 4.5: Çapraz yön hareketinde histerezis eşiği gereksiz satır titremesini (jitter) önler**
+    48. **Aşama 4.5: Çok katmanlı temas ve yönlü sabah güneşi gölgeleri çizilir**
+    49. **Aşama 4.7: Sınıf arka planı, kürsü, kitaplık ve sıralar bağımsız PNG varlıklarıyla drawImage ile çizilir**
+    50. **Aşama 4.7: Sınıf içi Y-Sorting derinlik sıralaması: Karakter sıranın kuzeyindeyken arkasında, güneyindeyken önünde çizilir**
+    51. **Aşama 4.7: Akıllı tahtanın 3 bağımsız ekran durumu (kapalı, açılıyor, aktif) ilgili ekran görsel varlığıyla çizilir**
+    52. **Aşama 4.7: Tavandan sarkan Selçuklu pirinç fenerleri ve ışık huzmesi atmosferi (renderClassroomForeground) hatasız çizilir**
   - **Mevcut Kampüs ve Pedagoji Testleri (`campus.test.tsx` — 29 Test)**:
     - 2–7. sınıf başlangıç parametrelerinin (`gradeProfiles.ts`) doğrulaması
     - Onaylı karşılama metni, karma dil seslendirme segmentleri (`tr-TR` / `en-US` / `tr-TR`) ve rehber sorularının harfiyen korunması
@@ -55,8 +76,8 @@
     - `speechSynthesis` olmayan ortamda seslendirme servisinin çökmeden metin yedeği dönmesi
     - `GuideDialogueCard` ekrandaki metinle aynı karma dil segmentlerini seslendirme servisine göndermesi
     - Giriş kapısı, karşılama avlusu, iki adımlı "Verilerimi Sil" ve üst gezinme çubuğu testleri
-- **`npm run build` (`vite build`)**: Geçti — Vite 8.3.8 ile `844 ms` içinde derlendi (`2122` modül, dinamik `React.lazy` kod bölme etkin; `WalkableCampusView` parça boyutu A* yol bulma motoru dahil yalnızca `33.04 kB` / `gzip: 9.56 kB`).
-- **`npm run test:e2e` (`playwright test`)**: Geçti — `e2e/campus.spec.ts` **10 / 10** geçti (`16.6 s`, Chromium + Mobile Chrome):
+- **`npm run build` (`vite build`)**: Geçti — Vite 8.3.8 ile `860 ms` içinde derlendi (`2122` modül, dinamik `React.lazy` kod bölme etkin; `WalkableCampusView` parça boyutu A* ve Aşama 4 görsel çizicileri dahil yalnızca `48.09 kB` / `gzip: 13.06 kB`).
+- **`npm run test:e2e` (`playwright test`)**: Geçti — `e2e/campus.spec.ts` **10 / 10** geçti (`16.4 s`, Chromium + Mobile Chrome):
   - `[chromium]` (`10.0 s`) ve `[mobile-chrome]` (`11.1 s`): Kapı → onaylı karşılama → 5. sınıf → rehberli tur → 5 yollu harita → keşfet → öğren (yönlendirici ve olumlu geri bildirim) → boş üretim engeli → alan gezintisinde ilerleme korunması → şekil/malzeme/gerekçeli anlatım üretimi → PNG indirmeden görevi tamamlama → Yolculuğum 3 bölüm ve eser inceleme penceresi → iki adımlı Verilerimi Sil ve boş durum doğrulaması.
   - `[chromium]` (`5.9 s`) ve `[mobile-chrome]` (`5.5 s`): 2. sınıf akışı (basit çizim araçları + fareyle serbest çizim + isteğe bağlı yazı), `360×740`, `390×844`, `768×1024`, `1280×840` ekranlarında `0` yatay taşma, `390 px` ekranda `44×44 px` altı hedef olmaması ve klavye yön tuşlarıyla şekil taşıma.
   - `[chromium]` (`8.5 s`) ve `[mobile-chrome]` (`7.3 s`): Aşama 2 Aksaray Kültürel Miras Rotası (`Gezi ve Keşif` 4 durak kontrolü, Ulu Cami'nin aktif rotada yer almayıp Yakında notunda kalması, 5. sınıf `KEŞFET → ÖĞREN → ÜRET → PAYLAŞ` akışı, tek yazılı üretimle tamamlama, `390×844` ve `1280×840` taşmasızlık kontrolü, `Yolculuğum` kaydı doğrulaması).

@@ -13,6 +13,15 @@ export interface EngineCallbacks {
   onPositionChange?: (pos: Position) => void;
   onUnreachableTarget?: (pos: Position) => void;
   onCustomRender?: (ctx: CanvasRenderingContext2D, camera: Position) => void;
+  /**
+   * Katmanlı ve Derinlik Sıralı (Y-Sorting) Çizim Desteği:
+   * 1. onRenderBackground: Zemin, yollar, arka plan surları ve zemin mozaikleri.
+   * 2. onRenderEntities: Binalar, ağaçlar, şadırvan haznesi, banklar ve oyuncu karakteri (Y eksenine göre sıralı).
+   * 3. onRenderForeground: Ön plan yaprak saçağı, atmosferik ışık demetleri vb.
+   */
+  onRenderBackground?: (ctx: CanvasRenderingContext2D, camera: Position) => void;
+  onRenderEntities?: (ctx: CanvasRenderingContext2D, player: PlayerCharacter, camera: Position) => void;
+  onRenderForeground?: (ctx: CanvasRenderingContext2D, camera: Position) => void;
 }
 
 export class WalkableCanvasEngine {
@@ -48,7 +57,7 @@ export class WalkableCanvasEngine {
     }
     this.ctx = context;
     this.config = config;
-    this.callbacks = callbacks;
+    this.callbacks = callbacks ?? {};
 
     const spawnX = initialPosition?.x ?? config.playerSpawn.x;
     const spawnY = initialPosition?.y ?? config.playerSpawn.y;
@@ -343,12 +352,14 @@ export class WalkableCanvasEngine {
       vy = (vy / len) * this.player.speed;
 
       this.player.state = 'walk';
-      this.player.walkFrame += delta * 7.5; // Adım ritmi
+      this.player.walkFrame += delta * 6.5; // Adım ritmi (Aşama 4.5: Yürüyüş hızıyla tam senkron)
 
-      // Yön belirleme
-      if (Math.abs(vx) > Math.abs(vy)) {
+      // Yön belirleme (Aşama 4.5: Çapraz hareketlerde yön titremesini önleyen histerezis eşiği)
+      const absX = Math.abs(vx);
+      const absY = Math.abs(vy);
+      if (absX > absY * 1.15) {
         this.player.direction = (vx > 0 ? 'right' : 'left') as CharacterDirection;
-      } else {
+      } else if (absY > absX * 1.15) {
         this.player.direction = (vy > 0 ? 'down' : 'up') as CharacterDirection;
       }
     } else {
@@ -454,20 +465,7 @@ export class WalkableCanvasEngine {
     }
   }
 
-  private render() {
-    const { ctx, canvas } = this;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.save();
-    // Kamerayı uygula
-    ctx.translate(-Math.round(this.camera.x), -Math.round(this.camera.y));
-
-    // Özel sahne zemin ve bina çizimi (Callback)
-    if (this.callbacks.onCustomRender) {
-      this.callbacks.onCustomRender(ctx, this.camera);
-    }
-
-    // Otomatik yol bulma rotası çizimi
+  private drawPathOverlay(ctx: CanvasRenderingContext2D) {
     if (this.pathWaypoints.length > 0 && this.currentWaypointIndex < this.pathWaypoints.length) {
       const finalTarget = this.pathWaypoints[this.pathWaypoints.length - 1];
 
@@ -492,9 +490,43 @@ export class WalkableCanvasEngine {
       ctx.stroke();
       ctx.restore();
     }
+  }
 
-    // Karakteri çiz
-    drawCharacter(ctx, this.player);
+  private render() {
+    const { ctx, canvas } = this;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    // Kamerayı uygula
+    ctx.translate(-Math.round(this.camera.x), -Math.round(this.camera.y));
+
+    if (this.callbacks.onRenderEntities) {
+      // 1. Zemin ve Arka Plan Katmanı
+      if (this.callbacks.onRenderBackground) {
+        this.callbacks.onRenderBackground(ctx, this.camera);
+      }
+
+      // 2. Navigasyon Yol Göstergesi (Zemin üzerinde, varlıkların altında)
+      this.drawPathOverlay(ctx);
+
+      // 3. Y-Sorting Varlıklar ve Karakter Katmanı
+      this.callbacks.onRenderEntities(ctx, this.player, this.camera);
+
+      // 4. Ön Plan / Sinematik Çerçeve Katmanı
+      if (this.callbacks.onRenderForeground) {
+        this.callbacks.onRenderForeground(ctx, this.camera);
+      }
+    } else {
+      // Geriye dönük uyumluluk modu (onCustomRender + drawCharacter)
+      if (this.callbacks.onCustomRender) {
+        this.callbacks.onCustomRender(ctx, this.camera);
+      }
+
+      this.drawPathOverlay(ctx);
+
+      // Karakteri çiz
+      drawCharacter(ctx, this.player);
+    }
 
     ctx.restore();
   }

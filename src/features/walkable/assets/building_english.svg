@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 180" width="220" height="180">
+  <defs>
+    <radialGradient id="eng-dome-grad" cx="40%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#4fd6e8" />
+      <stop offset="45%" stop-color="#1b98a8" />
+      <stop offset="100%" stop-color="#095a66" />
+    </radialGradient>
+    <linearGradient id="eng-wall-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#faf5ec" />
+      <stop offset="60%" stop-color="#ede3d1" />
+      <stop offset="100%" stop-color="#d9caa8" />
+    </linearGradient>
+    <radialGradient id="eng-lantern-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff8d6" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#ffcc00" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#ff9900" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="eng-portal-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0c6b7a" />
+      <stop offset="40%" stop-color="#1a8797" />
+      <stop offset="100%" stop-color="#0b4e59" />
+    </linearGradient>
+  </defs>
+
+  <!-- Zemin Gölgeleri -->
+  <ellipse cx="110" cy="172" rx="104" ry="8" fill="rgba(23,43,71,0.25)" />
+
+  <!-- Ana Taş Gövde -->
+  <rect x="10" y="44" width="200" height="126" rx="6" fill="url(#eng-wall-grad)" stroke="#ccbc9d" stroke-width="2.5" />
+
+  <!-- Cephe Taş Derz Çizgileri -->
+  <path d="M 10 75 L 210 75 M 10 105 L 210 105 M 10 135 L 210 135" stroke="#ccbc9d" stroke-width="1.2" stroke-opacity="0.5" />
+  <path d="M 50 44 L 50 75 M 170 44 L 170 75 M 35 75 L 35 105 M 185 75 L 185 105" stroke="#ccbc9d" stroke-width="1.2" stroke-opacity="0.5" />
+
+  <!-- Yan Kemerli Pencereler -->
+  <path d="M 24 82 Q 38 68 52 82 L 52 118 L 24 118 Z" fill="#1b3152" stroke="#ccbc9d" stroke-width="2" />
+  <path d="M 28 86 Q 38 74 48 86 L 48 114 L 28 114 Z" fill="#4fd6e8" fill-opacity="0.65" />
+  <path d="M 38 74 L 38 114 M 28 98 L 48 98" stroke="#1b3152" stroke-width="1.5" />
+
+  <path d="M 168 82 Q 182 68 196 82 L 196 118 L 168 118 Z" fill="#1b3152" stroke="#ccbc9d" stroke-width="2" />
+  <path d="M 172 86 Q 182 74 192 86 L 192 114 L 172 114 Z" fill="#4fd6e8" fill-opacity="0.65" />
+  <path d="M 182 74 L 182 114 M 172 98 L 192 98" stroke="#1b3152" stroke-width="1.5" />
+
+  <!-- Üst Saçak ve Çini Bordürü -->
+  <rect x="6" y="36" width="208" height="14" rx="3" fill="#1b98a8" stroke="#095a66" stroke-width="1.5" />
+  <rect x="8" y="38" width="204" height="4" fill="#f5c35b" />
+  <rect x="8" y="44" width="204" height="2" fill="#095a66" />
+
+  <!-- Turkuaz Dilimli Kubbe -->
+  <path d="M 62 36 C 62 -2 158 -2 158 36 Z" fill="url(#eng-dome-grad)" stroke="#095a66" stroke-width="2" />
+  <path d="M 86 36 C 86 5 110 5 110 36 M 134 36 C 134 5 110 5 110 36" stroke="#4fd6e8" stroke-width="1.5" stroke-opacity="0.6" fill="none" />
+
+  <!-- Kubbe Alemi (Altın Hilal) -->
+  <rect x="108" y="-12" width="4" height="14" fill="#d8972b" />
+  <circle cx="110" cy="-14" r="5" fill="#f5c35b" />
+  <path d="M 108 -18 A 5 5 0 1 1 114 -12 A 4 4 0 1 0 108 -18 Z" fill="#f5c35b" />
+
+  <!-- Anıtsal Selçuklu Mukarnas Taç Kapı (Portal) -->
+  <rect x="68" y="64" width="84" height="106" rx="4" fill="#e8dac0" stroke="#bda57b" stroke-width="2" />
+
+  <!-- Mukarnas Kemer Nisi -->
+  <path d="M 76 102 C 76 74 110 66 110 66 C 110 66 144 74 144 102 L 144 170 L 76 170 Z" fill="url(#eng-portal-grad)" stroke="#d8972b" stroke-width="2.5" />
+
+  <!-- Çini Geometrik Deseni (Taç Kapı İçi) -->
+  <path d="M 84 96 L 110 76 L 136 96 L 110 116 Z" stroke="#f5c35b" stroke-width="1.5" fill="none" opacity="0.75" />
+  <path d="M 92 100 L 110 84 L 128 100" stroke="#4fd6e8" stroke-width="1.5" fill="none" opacity="0.85" />
+
+  <!-- Ahşap Kapı Kanatları -->
+  <rect x="86" y="116" width="23" height="54" fill="#4d3725" stroke="#2d1f14" stroke-width="1.5" />
+  <rect x="111" y="116" width="23" height="54" fill="#5a412c" stroke="#2d1f14" stroke-width="1.5" />
+
+  <!-- Pirinç Çiviler ve Tokmaklar -->
+  <circle cx="104" cy="142" r="2.5" fill="#f5c35b" />
+  <circle cx="116" cy="142" r="2.5" fill="#f5c35b" />
+  <circle cx="97" cy="126" r="1.5" fill="#d8972b" />
+  <circle cx="123" cy="126" r="1.5" fill="#d8972b" />
+  <circle cx="97" cy="156" r="1.5" fill="#d8972b" />
+  <circle cx="123" cy="156" r="1.5" fill="#d8972b" />
+
+  <!-- Asılı Selçuklu Kandili / Feneri -->
+  <line x1="110" y1="88" x2="110" y2="98" stroke="#172b47" stroke-width="1.5" />
+  <circle cx="110" cy="102" r="14" fill="url(#eng-lantern-glow)" />
+  <path d="M 106 98 L 114 98 L 113 105 L 107 105 Z" fill="#f5c35b" stroke="#8a5e14" stroke-width="1" />
+  <circle cx="110" cy="101" r="2.5" fill="#ffffff" />
+
+  <!-- Mermer Giriş Basamakları -->
+  <rect x="62" y="166" width="96" height="5" rx="1.5" fill="#fdf8ed" stroke="#bda57b" stroke-width="1" />
+  <rect x="58" y="171" width="104" height="6" rx="2" fill="#ede2cb" stroke="#bda57b" stroke-width="1" />
+</svg>

@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 340" width="340" height="340">
+  <defs>
+    <!-- Havuz Dış Gölgesi -->
+    <radialGradient id="poolGroundShadow" cx="50%" cy="50%" r="50%">
+      <stop offset="60%" stop-color="#1e293b" stop-opacity="0.3"/>
+      <stop offset="85%" stop-color="#1e293b" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#1e293b" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Mermer Kenarlık Degradesi -->
+    <linearGradient id="marbleBorderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="45%" stop-color="#f4efe6"/>
+      <stop offset="85%" stop-color="#ded4c3"/>
+      <stop offset="100%" stop-color="#c8bca7"/>
+    </linearGradient>
+
+    <!-- Turkuaz Su Degradesi -->
+    <radialGradient id="turquoiseWater" cx="45%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#67e8f9"/>
+      <stop offset="35%" stop-color="#06b6d4"/>
+      <stop offset="70%" stop-color="#0891b2"/>
+      <stop offset="100%" stop-color="#0e7490"/>
+    </radialGradient>
+
+    <!-- Çini Karosu Deseni -->
+    <linearGradient id="tileFrieze" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0891b2"/>
+      <stop offset="50%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#0e7490"/>
+    </linearGradient>
+
+    <!-- Fıskiye Mermeri Degradesi -->
+    <linearGradient id="fountainMarble" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#f8fafc"/>
+      <stop offset="85%" stop-color="#e2e8f0"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+
+    <!-- Su Işıltısı -->
+    <radialGradient id="waterSprayGlow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#bae6fd" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 1. MERKEZİ AVLU ZEMİN GÖLGESİ -->
+  <circle cx="170" cy="170" r="162" fill="url(#poolGroundShadow)"/>
+
+  <!-- 2. DIŞ MERMER BORDÜR (Daire Çerçeve) -->
+  <circle cx="170" cy="170" r="154" fill="url(#marbleBorderGrad)" stroke="#c2b49e" stroke-width="2"/>
+  <circle cx="170" cy="170" r="148" fill="#efe6d5" stroke="#ded0ba" stroke-width="1.5"/>
+
+  <!-- İnce Mozaik Halka -->
+  <circle cx="170" cy="170" r="144" fill="none" stroke="#0e7490" stroke-width="3" stroke-dasharray="6,4"/>
+
+  <!-- 3. SEKİZ KÖŞELİ ANADOLU SELÇUKLU YILDIZ HAVUZU -->
+  <!-- Birinci Kare (0 Derece) -->
+  <rect x="58" y="58" width="224" height="224" rx="6" fill="#0891b2" stroke="#0e7490" stroke-width="2"/>
+  <!-- İkinci Kare (45 Derece Döndürülmüş) -->
+  <rect x="58" y="58" width="224" height="224" rx="6" transform="rotate(45 170 170)" fill="#0891b2" stroke="#0e7490" stroke-width="2"/>
+
+  <!-- İç Turkuaz Basamak (0 Derece & 45 Derece) -->
+  <rect x="68" y="68" width="204" height="204" rx="4" fill="#06b6d4" stroke="#22d3ee" stroke-width="1.5"/>
+  <rect x="68" y="68" width="204" height="204" rx="4" transform="rotate(45 170 170)" fill="#06b6d4" stroke="#22d3ee" stroke-width="1.5"/>
+
+  <!-- Havuz Tabanı Turkuaz Suyu -->
+  <rect x="76" y="76" width="188" height="188" fill="url(#turquoiseWater)"/>
+  <rect x="76" y="76" width="188" height="188" transform="rotate(45 170 170)" fill="url(#turquoiseWater)"/>
+
+  <!-- Çini Geometrisi: Köşe Yıldız Uçları Altın İşlemeleri -->
+  <g fill="#fef08a" opacity="0.75">
+    <circle cx="170" cy="38" r="3"/>
+    <circle cx="170" cy="302" r="3"/>
+    <circle cx="38" cy="170" r="3"/>
+    <circle cx="302" cy="170" r="3"/>
+    <circle cx="77" cy="77" r="3"/>
+    <circle cx="263" cy="77" r="3"/>
+    <circle cx="77" cy="263" r="3"/>
+    <circle cx="263" cy="263" r="3"/>
+  </g>
+
+  <!-- Havuz İçi Dalga / Su Halkaları -->
+  <circle cx="170" cy="170" r="82" fill="none" stroke="#a5f3fc" stroke-width="1.2" opacity="0.6"/>
+  <circle cx="170" cy="170" r="66" fill="none" stroke="#cffafe" stroke-width="1.5" opacity="0.7"/>
+
+  <!-- 4. MERKEZİ MERMER ŞADIRVAN VE FISKİYE ÇANAĞI -->
+  <!-- Alt Çanak Taban Kaidesi -->
+  <ellipse cx="170" cy="174" rx="48" ry="24" fill="#64748b" opacity="0.3"/>
+  <ellipse cx="170" cy="170" rx="46" ry="22" fill="url(#fountainMarble)" stroke="#94a3b8" stroke-width="1.5"/>
+  <ellipse cx="170" cy="168" rx="42" ry="19" fill="#0891b2" stroke="#22d3ee" stroke-width="1"/>
+
+  <!-- Sütun Gövdesi -->
+  <path d="M164 168 L162 144 L178 144 L176 168 Z" fill="url(#fountainMarble)" stroke="#94a3b8" stroke-width="1"/>
+  <ellipse cx="170" cy="144" rx="10" ry="4" fill="#e2e8f0"/>
+
+  <!-- Üst Küçük Çanak -->
+  <ellipse cx="170" cy="138" rx="26" ry="12" fill="url(#fountainMarble)" stroke="#94a3b8" stroke-width="1.5"/>
+  <ellipse cx="170" cy="136" rx="23" ry="10" fill="#06b6d4"/>
+
+  <!-- Üst Çanaktan Dökülen Su Perdeleri -->
+  <g stroke="#ffffff" stroke-width="1.5" opacity="0.8" stroke-linecap="round">
+    <path d="M148 138 Q144 152 148 166"/>
+    <path d="M158 140 Q156 153 158 167"/>
+    <path d="M170 141 Q170 154 170 168"/>
+    <path d="M182 140 Q184 153 182 167"/>
+    <path d="M192 138 Q196 152 192 166"/>
+  </g>
+
+  <!-- 5. MERKEZİ FISKİYE SU JETİ VE PARILTI -->
+  <!-- Su Jeti Işık Halesi -->
+  <ellipse cx="170" cy="120" rx="20" ry="28" fill="url(#waterSprayGlow)"/>
+
+  <!-- Fıskiye Su Yükselişi -->
+  <path d="M168 136 C166 118 160 102 170 94 C180 102 174 118 172 136 Z" fill="#ffffff" opacity="0.95"/>
+  <path d="M169 136 C168 122 166 108 170 100 C174 108 172 122 171 136 Z" fill="#e0f2fe"/>
+
+  <!-- Uçuşan Su Damlacıkları & Kristal Parıltılar -->
+  <circle cx="170" cy="92" r="2.5" fill="#ffffff"/>
+  <circle cx="164" cy="98" r="1.8" fill="#ffffff" opacity="0.9"/>
+  <circle cx="176" cy="97" r="1.8" fill="#ffffff" opacity="0.9"/>
+  <circle cx="160" cy="108" r="1.4" fill="#e0f2fe" opacity="0.8"/>
+  <circle cx="180" cy="107" r="1.4" fill="#e0f2fe" opacity="0.8"/>
+  <circle cx="156" cy="118" r="1.2" fill="#bae6fd" opacity="0.7"/>
+  <circle cx="184" cy="117" r="1.2" fill="#bae6fd" opacity="0.7"/>
+
+  <!-- Yıldız Parıltısı -->
+  <polygon points="170,86 172,90 176,91 172,93 170,97 168,93 164,91 168,90" fill="#ffffff"/>
+</svg>
