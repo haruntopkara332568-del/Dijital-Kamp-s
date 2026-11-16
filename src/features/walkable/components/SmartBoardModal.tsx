@@ -8,6 +8,32 @@ interface SmartBoardModalProps {
   missionId?: string;
 }
 
+/**
+ * Modal içindeki görünür ve etkin odaklanabilir öğeleri filtreler.
+ * Devre dışı (disabled) veya gizli öğeleri hariç tutar.
+ */
+function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
+  if (!container) return [];
+  const candidates = Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  );
+
+  return candidates.filter((el) => {
+    if (el.hasAttribute('disabled') || el.getAttribute('aria-hidden') === 'true') {
+      return false;
+    }
+    if (typeof window !== 'undefined' && window.getComputedStyle) {
+      const style = window.getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden') {
+        return false;
+      }
+    }
+    return true;
+  });
+}
+
 export function SmartBoardModal({
   isOpen,
   onClose,
@@ -16,30 +42,36 @@ export function SmartBoardModal({
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
 
-  // Modal açıldığında odağı sakla, modal içine odaklan; kapandığında önceki odağı geri yükle
+  // Modal açıldığında önceki odağı sakla ve ilk odaklanabilir öğeye odaklan; kapandığında odağı geri yükle
   useEffect(() => {
     if (!isOpen) return;
 
     previousActiveElementRef.current = document.activeElement as HTMLElement | null;
 
-    // Modal açıldığında kapatma düğmesine veya ilk odaklanabilir öğeye odaklan
-    const timer = setTimeout(() => {
-      if (modalRef.current) {
-        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        if (focusable.length > 0) {
-          focusable[0].focus();
-        } else {
-          modalRef.current.focus();
-        }
+    // Modal açıldığında ilk odaklanabilir öğeye (kapat butonu vb.) odaklan
+    const focusTimer = setTimeout(() => {
+      const focusables = getFocusableElements(modalRef.current);
+      if (focusables.length > 0) {
+        focusables[0].focus();
+      } else if (modalRef.current) {
+        modalRef.current.focus();
       }
-    }, 50);
+    }, 30);
 
     return () => {
-      clearTimeout(timer);
-      if (previousActiveElementRef.current && typeof previousActiveElementRef.current.focus === 'function') {
+      clearTimeout(focusTimer);
+      // Modal kapandığında odağı önceki elemana veya canvas oyun alanına iade et
+      if (
+        previousActiveElementRef.current &&
+        typeof previousActiveElementRef.current.focus === 'function' &&
+        document.body.contains(previousActiveElementRef.current)
+      ) {
         previousActiveElementRef.current.focus();
+      } else {
+        const canvas = document.querySelector('canvas');
+        if (canvas && typeof canvas.focus === 'function') {
+          canvas.focus();
+        }
       }
     };
   }, [isOpen]);
@@ -56,12 +88,8 @@ export function SmartBoardModal({
         return;
       }
 
-      if (e.key === 'Tab' && modalRef.current) {
-        const focusables = Array.from(
-          modalRef.current.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-          ),
-        ).filter((el) => el.offsetParent !== null); // Yalnızca görünür olanlar
+      if (e.key === 'Tab') {
+        const focusables = getFocusableElements(modalRef.current);
 
         if (focusables.length === 0) {
           e.preventDefault();
@@ -70,14 +98,17 @@ export function SmartBoardModal({
 
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
+        const currentActive = document.activeElement;
 
         if (e.shiftKey) {
-          if (document.activeElement === first || !modalRef.current.contains(document.activeElement)) {
+          // Geriye sekme (Shift+Tab): İlk elemandaysa veya modal dışındaysa en son elemana dön
+          if (currentActive === first || !modalRef.current?.contains(currentActive)) {
             e.preventDefault();
             last.focus();
           }
         } else {
-          if (document.activeElement === last || !modalRef.current.contains(document.activeElement)) {
+          // İleriye sekme (Tab): Son elemandaysa veya modal dışındaysa en ilk elemana dön
+          if (currentActive === last || !modalRef.current?.contains(currentActive)) {
             e.preventDefault();
             first.focus();
           }

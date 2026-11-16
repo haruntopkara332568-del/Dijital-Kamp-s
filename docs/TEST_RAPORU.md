@@ -3,8 +3,8 @@
 ## 1. Çalıştırıldı ve Geçti
 - **`npm run typecheck` (`tsc --noEmit`)**: Geçti — 0 hata (strict TypeScript).
 - **`npm run lint` (`eslint .`)**: Geçti — 0 hata, 0 uyarı.
-- **`npm run test` (`vitest run`)**: Geçti — **49 / 49 test** (`src/test/walkable.test.tsx` [20 test] + `src/test/campus.test.tsx` [29 test], toplam `3.91 s`):
-  - **Aşama 3 Yürünebilir Kampüs ve Teknik İyileştirme Testleri (`walkable.test.tsx` — 20 Test)**:
+- **`npm run test` (`vitest run`)**: Geçti — **60 / 60 test** (`src/test/walkable.test.tsx` [31 test] + `src/test/campus.test.tsx` [29 test], toplam `3.89 s`):
+  - **Aşama 3 Yürünebilir Kampüs ve Teknik İyileştirme Testleri (`walkable.test.tsx` — 31 Test)**:
     1. Karakter yön tuşlarıyla ve W, A, S, D ile doğru yönde hareket eder
     2. Çapraz hareket hızı normal hareket hızından fazla olamaz (Normalizasyon)
     3. Karakter bina ve engel sınırlarının içinden geçemez (Çarpışma algılama)
@@ -13,18 +13,29 @@
     6. İngilizce Dünyası kapısına yaklaşıldığında etkileşim bölgesi tetiklenir ve E tuşuyla eylem çalışır
     7. Mobil dokunmatik sanal yön kontrolleri (`setVirtualDirection`) çalışır
     8. Kamera sınırların dışına taşmaz ve karakteri takip eder
-    9. **Engel arkasındaki ulaşılabilir hedefe A* yol bulma rotası ve ara noktalar oluşturma**
-    10. **Ulaşılamayan hedef (engelin içi) doğrudan reddedilir ve `onUnreachableTarget` tetiklenir**
-    11. **Otomatik yürürken klavye yön tuşuna basıldığında rota derhal iptal edilir**
-    12. **Otomatik yürürken mobil D-Pad ile yön verildiğinde rota derhal iptal edilir**
-    13. **Akıllı tahta modalı açıkken (`pause`) karakter klavye tuşlarına tepki vermez**
-    14. **Akıllı tahta modalı kapandığında (`resume`) karakter önceki konumunu korur**
-    15. **SmartBoardModal Escape tuşu ile güvenli biçimde kapanır**
-    16. **SmartBoardModal odak yönetimi (Focus Trap) ve Tab döngüsü sağlar**
-    17. **Mobilde pointercancel ve pointerleave sonrasında hareket tamamen durur**
-    18. **Farklı Canvas ve CSS boyutlarında (Responsive scale) tıklama koordinatları doğru hesaplanır**
-    19. **Ekran boyutu değiştiğinde `updateDimensions` karakter ve kamerayı sahne sınırında tutar**
-    20. **Mevcut iki öğrenme görevi ve sınıf düzeyleri veri bütünlüğünü korur**
+    9. Engel arkasındaki ulaşılabilir hedefe A* yol bulma rotası ve ara noktalar oluşturma
+    10. Ulaşılamayan hedef (engelin içi) doğrudan reddedilir ve `onUnreachableTarget` tetiklenir
+    11. Otomatik yürürken klavye yön tuşuna basıldığında rota derhal iptal edilir
+    12. Otomatik yürürken mobil D-Pad ile yön verildiğinde rota derhal iptal edilir
+    13. Akıllı tahta modalı açıkken (`pause`) karakter klavye tuşlarına tepki vermez
+    14. Akıllı tahta modalı kapandığında (`resume`) karakter önceki konumunu korur
+    15. SmartBoardModal Escape tuşu ile güvenli biçimde kapanır
+    16. SmartBoardModal odak yönetimi (Focus Trap) ve Tab döngüsü sağlar
+    17. Mobilde pointercancel ve pointerleave sonrasında hareket tamamen durur
+    18. Farklı Canvas ve CSS boyutlarında (Responsive scale) tıklama koordinatları doğru hesaplanır
+    19. Ekran boyutu değiştiğinde `updateDimensions` karakter ve kamerayı sahne sınırında tutar
+    20. Mevcut iki öğrenme görevi ve sınıf düzeyleri veri bütünlüğünü korur
+    21. **A* Tek taraflı engelli çapraz köşe geçişi testi (Köşe kesme engellenmelidir)**
+    22. **A* İki tarafı engelli çapraz köşe geçişi testi (Köşegen geçiş engellenmelidir)**
+    23. **Karakter genişliğinden (18px) daha dar koridor testi (Geçiş engellenmelidir)**
+    24. **Karakter genişliğinden (18px) geniş güvenli koridor testi (Geçişe izin verilmelidir)**
+    25. **Başlangıç ve hedef aynı nokta olduğunda gereksiz hesaplama yapmadan doğrudan döner**
+    26. **Yol pürüzsüzleştirme (smoothPath) engelleri kesmeyen geçerli rotalar üretir**
+    27. **Karakter ara noktaları sırayla takip ederek hedefe ulaşır ve hedefe varınca durur**
+    28. **Animasyon döngüsü duraklatma (pause): rAF çağrısı durur, animFrameId sıfırlanır ve sıfır yeni kare planlanır**
+    29. **Animasyon döngüsü devam ettirme (resume): rAF çağrısı yeniden başlar ve delta sıçraması olmaz**
+    30. **Akıllı tahta modalı Shift+Tab ile ilk elemandan son elemana döner ve kapatıldığında önceki aktif elemana odak iade edilir**
+    31. **Tarayıcı sekmesi arka plana alındığında (visibilitychange) döngü durur, öne gelince yeniden başlar**
   - **Mevcut Kampüs ve Pedagoji Testleri (`campus.test.tsx` — 29 Test)**:
     - 2–7. sınıf başlangıç parametrelerinin (`gradeProfiles.ts`) doğrulaması
     - Onaylı karşılama metni, karma dil seslendirme segmentleri (`tr-TR` / `en-US` / `tr-TR`) ve rehber sorularının harfiyen korunması
@@ -44,8 +55,8 @@
     - `speechSynthesis` olmayan ortamda seslendirme servisinin çökmeden metin yedeği dönmesi
     - `GuideDialogueCard` ekrandaki metinle aynı karma dil segmentlerini seslendirme servisine göndermesi
     - Giriş kapısı, karşılama avlusu, iki adımlı "Verilerimi Sil" ve üst gezinme çubuğu testleri
-- **`npm run build` (`vite build`)**: Geçti — Vite 8.3.8 ile `828 ms` içinde derlendi (`2122` modül, dinamik `React.lazy` kod bölme etkin; `WalkableCampusView` parça boyutu A* yol bulma motoru dahil yalnızca `32.09 kB` / `gzip: 9.31 kB`).
-- **`npm run test:e2e` (`playwright test`)**: Geçti — `e2e/campus.spec.ts` **10 / 10** geçti (`18.1 s`, Chromium + Mobile Chrome):
+- **`npm run build` (`vite build`)**: Geçti — Vite 8.3.8 ile `844 ms` içinde derlendi (`2122` modül, dinamik `React.lazy` kod bölme etkin; `WalkableCampusView` parça boyutu A* yol bulma motoru dahil yalnızca `33.04 kB` / `gzip: 9.56 kB`).
+- **`npm run test:e2e` (`playwright test`)**: Geçti — `e2e/campus.spec.ts` **10 / 10** geçti (`16.6 s`, Chromium + Mobile Chrome):
   - `[chromium]` (`10.0 s`) ve `[mobile-chrome]` (`11.1 s`): Kapı → onaylı karşılama → 5. sınıf → rehberli tur → 5 yollu harita → keşfet → öğren (yönlendirici ve olumlu geri bildirim) → boş üretim engeli → alan gezintisinde ilerleme korunması → şekil/malzeme/gerekçeli anlatım üretimi → PNG indirmeden görevi tamamlama → Yolculuğum 3 bölüm ve eser inceleme penceresi → iki adımlı Verilerimi Sil ve boş durum doğrulaması.
   - `[chromium]` (`5.9 s`) ve `[mobile-chrome]` (`5.5 s`): 2. sınıf akışı (basit çizim araçları + fareyle serbest çizim + isteğe bağlı yazı), `360×740`, `390×844`, `768×1024`, `1280×840` ekranlarında `0` yatay taşma, `390 px` ekranda `44×44 px` altı hedef olmaması ve klavye yön tuşlarıyla şekil taşıma.
   - `[chromium]` (`8.5 s`) ve `[mobile-chrome]` (`7.3 s`): Aşama 2 Aksaray Kültürel Miras Rotası (`Gezi ve Keşif` 4 durak kontrolü, Ulu Cami'nin aktif rotada yer almayıp Yakında notunda kalması, 5. sınıf `KEŞFET → ÖĞREN → ÜRET → PAYLAŞ` akışı, tek yazılı üretimle tamamlama, `390×844` ve `1280×840` taşmasızlık kontrolü, `Yolculuğum` kaydı doğrulaması).

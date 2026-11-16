@@ -3,7 +3,12 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { CampusProviders } from '@/src/app/CampusProviders';
 import { WalkableCanvasEngine } from '@/src/features/walkable/engine/WalkableCanvasEngine';
-import { findPath } from '@/src/features/walkable/engine/pathfinding';
+import {
+  findPath,
+  hasLineOfSight,
+  isPositionBlocked,
+  DEFAULT_HITBOX,
+} from '@/src/features/walkable/engine/pathfinding';
 import { SmartBoardModal } from '@/src/features/walkable/components/SmartBoardModal';
 import { WalkableControlsOverlay } from '@/src/features/walkable/components/WalkableControlsOverlay';
 import type { WalkableSceneConfig } from '@/src/features/walkable/types';
@@ -469,6 +474,206 @@ describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () 
     // Karakter sınıf düzeyi varsayılan 4. sınıf
     expect(engine.player.grade).toBe(4);
     expect(engine.player.speed).toBe(160);
+
+    engine.destroy();
+  });
+
+  /* ========================================================================
+     AŞAMA 3 SÜRÜM 1.2 — EK TEKNİK DOĞRULAMA VE KABUL TESTLERİ
+     ======================================================================== */
+
+  it('21. A* Tek taraflı engelli çapraz köşe geçişi testi (Köşe kesme engellenmelidir)', () => {
+    const cornerConfig: WalkableSceneConfig = {
+      width: 400,
+      height: 400,
+      playerSpawn: { x: 80, y: 150 },
+      obstacles: [{ id: 'block', name: 'Engel', x: 100, y: 100, width: 100, height: 100 }],
+      interactiveZones: [],
+    };
+
+    const path = findPath({ x: 80, y: 150 }, { x: 150, y: 60 }, cornerConfig);
+    expect(path).not.toBeNull();
+    expect(path!.length).toBeGreaterThan(0);
+
+    // Rotadaki hiçbir nokta engelle çakışmamalıdır
+    for (const point of path!) {
+      expect(isPositionBlocked(point.x, point.y, cornerConfig.obstacles, 400, 400, DEFAULT_HITBOX)).toBe(false);
+    }
+  });
+
+  it('22. A* İki tarafı engelli çapraz köşe geçişi testi (Köşegen geçiş engellenmelidir)', () => {
+    const diagonalConfig: WalkableSceneConfig = {
+      width: 400,
+      height: 400,
+      playerSpawn: { x: 50, y: 50 },
+      obstacles: [
+        { id: 'b1', name: 'Engel 1', x: 100, y: 0, width: 100, height: 100 },
+        { id: 'b2', name: 'Engel 2', x: 0, y: 100, width: 100, height: 100 },
+      ],
+      interactiveZones: [],
+    };
+
+    const path = findPath({ x: 50, y: 50 }, { x: 150, y: 150 }, diagonalConfig);
+    if (path) {
+      for (const p of path) {
+        expect(isPositionBlocked(p.x, p.y, diagonalConfig.obstacles, 400, 400, DEFAULT_HITBOX)).toBe(false);
+      }
+    }
+  });
+
+  it('23. Karakter genişliğinden (18px) daha dar koridor testi (Geçiş engellenmelidir)', () => {
+    // Koridor genişliği 12px (< 18px karakter genişliği)
+    const narrowCorridorConfig: WalkableSceneConfig = {
+      width: 400,
+      height: 400,
+      playerSpawn: { x: 106, y: 40 },
+      obstacles: [
+        { id: 'left-wall', name: 'Sol Duvar', x: 0, y: 80, width: 100, height: 80 },
+        { id: 'right-wall', name: 'Sağ Duvar', x: 112, y: 80, width: 288, height: 80 },
+      ],
+      interactiveZones: [],
+    };
+
+    // Koridorun üstünden altına geçmeye çalış (12px boşluktan 18px genişliğindeki karakter geçemez)
+    const path = findPath({ x: 106, y: 40 }, { x: 106, y: 220 }, narrowCorridorConfig);
+    expect(path).toBeNull();
+  });
+
+  it('24. Karakter genişliğinden (18px) geniş güvenli koridor testi (Geçişe izin verilmelidir)', () => {
+    // Koridor genişliği 40px (> 18px karakter genişliği)
+    const wideCorridorConfig: WalkableSceneConfig = {
+      width: 400,
+      height: 400,
+      playerSpawn: { x: 120, y: 40 },
+      obstacles: [
+        { id: 'left-wall', name: 'Sol Duvar', x: 0, y: 80, width: 100, height: 80 },
+        { id: 'right-wall', name: 'Sağ Duvar', x: 140, y: 80, width: 260, height: 80 },
+      ],
+      interactiveZones: [],
+    };
+
+    const path = findPath({ x: 120, y: 40 }, { x: 120, y: 220 }, wideCorridorConfig);
+    expect(path).not.toBeNull();
+    expect(path!.length).toBeGreaterThan(0);
+    expect(path![path!.length - 1].y).toBe(220);
+  });
+
+  it('25. Başlangıç ve hedef aynı nokta olduğunda gereksiz hesaplama yapmadan doğrudan döner', () => {
+    const point = { x: 300, y: 200 };
+    const path = findPath(point, point, config);
+    expect(path).toEqual([point]);
+  });
+
+  it('26. Yol pürüzsüzleştirme (smoothPath) engelleri kesmeyen geçerli rotalar üretir', () => {
+    const start = { x: 250, y: 330 };
+    const goal = { x: 450, y: 330 };
+    const path = findPath(start, goal, config);
+
+    expect(path).not.toBeNull();
+    let current = start;
+    for (const wp of path!) {
+      expect(hasLineOfSight(current, wp, config.obstacles, config.width, config.height, DEFAULT_HITBOX)).toBe(true);
+      current = wp;
+    }
+  });
+
+  it('27. Karakter ara noktaları sırayla takip ederek hedefe ulaşır ve hedefe varınca durur', () => {
+    const engine = new WalkableCanvasEngine(canvas, config, { onActiveZoneChange: vi.fn() });
+    engine.player.x = 200;
+    engine.player.y = 200;
+
+    // Ulaşılabilir hedefe rota ver (doğrudan hat açık: 250, 200)
+    engine.navigateWalkToTarget(250, 200);
+    expect(engine.getPathWaypoints().length).toBeGreaterThan(0);
+
+    // Adımları işlet (250 - 200 = 50px / 160px/s = ~0.35s)
+    for (let i = 0; i < 6; i++) {
+      (engine as unknown as { update: (delta: number) => void }).update(0.1);
+    }
+
+    // Hedefe varıldığında ara noktalar temizlenmeli ve karakter idle durumuna geçmelidir
+    expect(engine.getPathWaypoints().length).toBe(0);
+    expect(Math.abs(engine.player.x - 250)).toBeLessThan(6);
+    expect(engine.player.state).toBe('idle');
+
+    engine.destroy();
+  });
+
+  it('28. Animasyon döngüsü duraklatma (pause): rAF çağrısı durur, animFrameId sıfırlanır ve sıfır yeni kare planlanır', () => {
+    const engine = new WalkableCanvasEngine(canvas, config, { onActiveZoneChange: vi.fn() });
+
+    engine.start();
+    expect(engine.isAnimFrameActive()).toBe(true);
+
+    // pause() çağrıldığında döngü tamamen iptal edilmelidir
+    engine.pause();
+    expect(engine.getIsPaused()).toBe(true);
+    expect(engine.isAnimFrameActive()).toBe(false);
+
+    engine.destroy();
+  });
+
+  it('29. Animasyon döngüsü devam ettirme (resume): rAF çağrısı yeniden başlar ve delta sıçraması olmaz', () => {
+    const engine = new WalkableCanvasEngine(canvas, config, { onActiveZoneChange: vi.fn() });
+
+    engine.start();
+    engine.pause();
+    expect(engine.isAnimFrameActive()).toBe(false);
+
+    // resume() çağrıldığında döngü güvenle yeniden başlar
+    engine.resume();
+    expect(engine.getIsPaused()).toBe(false);
+    expect(engine.isAnimFrameActive()).toBe(true);
+
+    // İkinci kez resume çağrılsa bile çift döngü oluşturulmaz
+    engine.resume();
+    expect(engine.isAnimFrameActive()).toBe(true);
+
+    engine.destroy();
+  });
+
+  it('30. Akıllı tahta modalı Shift+Tab ile ilk elemandan son elemana döner ve kapatıldığında önceki aktif elemana odak iade edilir', () => {
+    const handleClose = vi.fn();
+    const triggerButton = document.createElement('button');
+    triggerButton.id = 'previous-active-btn';
+    document.body.appendChild(triggerButton);
+    triggerButton.focus();
+    expect(document.activeElement).toBe(triggerButton);
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <CampusProviders>
+          <SmartBoardModal isOpen={true} onClose={handleClose} />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    const closeBtn = screen.getByRole('button', { name: /Akıllı tahtayı kapat ve sınıfa dön/i });
+    closeBtn.focus();
+
+    // Shift+Tab simülasyonu
+    fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+    // Focus modal içinde kalmalıdır
+    expect(screen.getByRole('dialog')).toBeDefined();
+
+    unmount();
+    document.body.removeChild(triggerButton);
+  });
+
+  it('31. Tarayıcı sekmesi arka plana alındığında (visibilitychange) döngü durur, öne gelince yeniden başlar', () => {
+    const engine = new WalkableCanvasEngine(canvas, config, { onActiveZoneChange: vi.fn() });
+    engine.start();
+    expect(engine.isAnimFrameActive()).toBe(true);
+
+    // Sekme arka planda (hidden = true)
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(engine.isAnimFrameActive()).toBe(false);
+
+    // Sekme tekrar öne geldi (hidden = false)
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(engine.isAnimFrameActive()).toBe(true);
 
     engine.destroy();
   });

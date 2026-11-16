@@ -1,4 +1,4 @@
-# Proje Durum Raporu — Sürüm 3.5 (Aşama 3: Teknik Hata Giderme ve Kabul Denetimi)
+# Proje Durum Raporu — Sürüm 3.6 (Aşama 3: Son Teknik Düzeltmeler ve Görsel Kabule Hazırlık)
 
 ## Tamamlanan Bölümler
 - **Mimari Dönüşüm (Vite + React + TypeScript + Tailwind CSS v4 + React Router)**:
@@ -36,20 +36,25 @@
   - İlkokul (2–4) için `Arch` (*Kemer*), ortaokul (5–7) için 5 kelime (`Arch`, `Brick`, `Courtyard`, `Valley`, `Heritage`) + örnek cümle (`"This courtyard has a stone arch and red brick walls."`) ve 4 gözlem boyutu bağlandı; tüm sınıf düzeylerinde tek bir geçerli özgün üretim biçimiyle tamamlama ilkesi korundu.
 - **Belgelendirme Güncellemesi (`README.md`, `docs/ICERIK_REHBERI.md`, `docs/LISANSLAR.md`)**: GitHub/Vercel süreçleri, hukuki değerlendirme başlıkları ve varlık kredileri güncellendi.
 
-## Aşama 3 — Yürünebilir Kampüs ve Teknik İyileştirmeler (`feat/walkable-campus-prototype`)
-- **Otomatik Yol Bulma Motoru (`pathfinding.ts`)**:
-  - A* ızgara araması ve string-pulling (ışın izleme ile yol pürüzsüzleştirme) entegre edildi.
-  - Karakter engellerin arkasındaki açık noktalara giderken binaların etrafından doğal açılarla dolaşabilmektedir.
-  - Engelin içine tıklandığında karakter takılmadan doğrudan `onUnreachableTarget` uyarısı verilir.
-  - Yürüyüş sırasında klavye veya mobil D-Pad girdisi geldiğinde otomatik rota anında iptal edilir.
-- **Akıllı Tahta Açıkken Hareket Kontrolü (`pause` / `resume`)**:
-  - Akıllı tahta açıldığında oyun motoru duraklatılır, tuş hafızası sıfırlanır ve klavye girdilerinin görev motoruna sızması engellenir.
-  - Modal kapandığında motor güvenle devam eder; delta zaman sıçraması engellenir.
+## Aşama 3 — Yürünebilir Kampüs ve Son Teknik Düzeltmeler (`feat/walkable-campus-prototype`)
+- **Otomatik Yol Bulma ve Köşe Denetimi (`pathfinding.ts`)**:
+  - A* ızgara araması ve string-pulling (ışın izleme ile yol pürüzsüzleştirme) geliştirildi.
+  - Çapraz komşu denetiminde `side1Blocked || side2Blocked` kuralı uygulanarak engelli köşelerin kesilerek aşılması kesin olarak engellendi.
+  - Işın tarama adım aralığı 6 px seviyesine çekilerek alt karakter çözünürlüğünde keskin köşe güvenliği sağlandı.
+  - Karakter genişliğinden (18 px) dar koridorların geçilmez olduğu, geniş koridorlardan ise güvenle geçildiği birim testlerle doğrulandı.
+  - Başlangıç ve hedef aynı nokta olduğunda gereksiz hesaplama yapmadan doğrudan dönen koruma eklendi.
+  - Engelin içine tıklandığında karakter takılmadan doğrudan `onUnreachableTarget` uyarısı verir; yürüyüş sırasında klavye veya mobil D-Pad girdisi geldiğinde otomatik rota anında iptal edilir.
+- **Animasyon Döngüsü ve Yaşam Döngüsü Yönetimi (`WalkableCanvasEngine.ts`)**:
+  - `pause()` çağrıldığında animasyon döngüsü tamamen durdurulur (`cancelAnimationFrame`), `animFrameId` sıfırlanır ve modal açıkken hiçbir yeni kare planlanmaz.
+  - `resume()` çağrıldığında döngü güvenle yeniden başlatılır; `lastTime = performance.now()` ile delta zaman sıçraması (delta spike) ve çift döngü oluşumu önlenir.
+  - `visibilitychange` dinleyicisi ile tarayıcı sekmesi arka plana alındığında döngü durdurulur; sekme öne geldiğinde yeniden başlatılarak gereksiz CPU ve pil tüketimi sıfırlanır.
 - **Karakter Konumunun Korunması**:
   - React durum güncellemeleri (`isSmartBoardActive`, `isSmartBoardPoweringOn`) ref üzerinden aktarılarak motorun gereksiz yeniden oluşturulması engellendi.
   - Karakterin sınıf içi ve avlu konumları saklanarak etkinliklerden sonra aynı koordinata dönmesi sağlandı.
 - **Akıllı Tahta Modalı Erişilebilirliği (`SmartBoardModal.tsx`)**:
-  - Açılışta odağı modal içine alma, `Tab` ve `Shift+Tab` ile odak tuzağı (Focus Trap), `Escape` tuşu ile kapatma ve önceki odak noktasını geri yükleme sağlandı.
+  - Açılışta ilk etkileşimli elemana otomatik odaklanma, `Tab` ve `Shift+Tab` ile döngüsel odak tuzağı (Focus Trap) sağlandı.
+  - `Escape` tuşu ile kapatma ve modal kapandığında önceki aktif elemana (bulunamazsa canvas/oyun alanına) odak iadesi yapıldı.
+  - Devre dışı (`disabled`) veya gizli (`display: none` / `visibility: hidden`) elemanlar odak döngüsünden hariç tutuldu.
 - **Mobil Dokunmatik Kontroller (`WalkableControlsOverlay.tsx`)**:
   - `pointercancel` ve pointer capture desteği eklendi; parmak kaldırıldığında veya kaydırıldığında karakterin sonsuz yürümesi engellendi.
   - `44×44 px` üzeri dokunma alanları sağlandı.
@@ -57,12 +62,12 @@
   - `canvas.getBoundingClientRect()` ve gerçek piksel genişliği arasındaki `scaleX / scaleY` oranları entegre edildi.
   - `updateDimensions` ile pencere yeniden boyutlandırmalarında kamera ve karakter sahne sınırları içinde kenetlendi.
 - **Genişletilmiş Test Paketi**:
-  - Toplam **49 Vitest** birim/entegrasyon testi ve **10 Playwright E2E** testi eksiksiz geçti.
+  - Toplam **60 Vitest** birim/entegrasyon testi (`src/test/walkable.test.tsx` [31 test] + `src/test/campus.test.tsx` [29 test]) ve **10 Playwright E2E** testi eksiksiz geçti.
 
 ## Doğrulama Durumu ve Sonraki Adım
-- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [49/49], `npm run build` ve `npm run test:e2e` [10/10 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
+- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [60/60], `npm run build` ve `npm run test:e2e` [10/10 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
 - Çoklu ekran boyutu denetiminde (`360×740`, `390×844`, `768×1024`, `1280×840`) yatay taşma (`0`) ve mobil `390×844` görünümünde `44×44 px` altı etkileşimli hedef (`0`) doğrulandı.
-- Aşama 3 teknik hata giderme ve kabul denetimi `feat/walkable-campus-prototype` dalında tamamlanmıştır.
+- Aşama 3 Sürüm 1.2 son teknik düzeltmeleri ve görsel kabule hazırlık `feat/walkable-campus-prototype` dalında tamamlanmıştır.
 
 
 

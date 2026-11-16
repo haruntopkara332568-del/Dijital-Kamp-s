@@ -73,6 +73,7 @@ export class WalkableCanvasEngine {
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
     this.canvas.addEventListener('pointerdown', this.handlePointerDown);
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
   }
 
   public destroy() {
@@ -84,14 +85,36 @@ export class WalkableCanvasEngine {
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
     this.canvas.removeEventListener('pointerdown', this.handlePointerDown);
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
   }
+
+  private handleVisibilityChange = () => {
+    if (typeof document === 'undefined') return;
+    if (document.hidden) {
+      // Sekme arka plandayken rAF döngüsünü durdurarak CPU tüketimini sıfırla
+      if (this.animFrameId !== null) {
+        cancelAnimationFrame(this.animFrameId);
+        this.animFrameId = null;
+      }
+    } else {
+      // Sekme tekrar öne geldiğinde delta sıçramalarını önleyerek güvenle devam et
+      if (this.isRunning && !this.isPaused && this.animFrameId === null) {
+        this.lastTime = performance.now();
+        this.animFrameId = requestAnimationFrame(this.loop);
+      }
+    }
+  };
 
   /**
    * Oyun motorunu duraklatır (Örn: Akıllı Tahta veya modal açıldığında).
-   * Tüm basılı tuşları temizler ve karakterin istemsiz hareketini engeller.
+   * Animasyon döngüsünü tamamen durdurur (cancelAnimationFrame) ve basılı tuşları temizler.
    */
   public pause() {
     this.isPaused = true;
+    if (this.animFrameId !== null) {
+      cancelAnimationFrame(this.animFrameId);
+      this.animFrameId = null;
+    }
     this.keysDown.clear();
     this.virtualMovement = { x: 0, y: 0 };
     this.clearPath();
@@ -101,14 +124,23 @@ export class WalkableCanvasEngine {
 
   /**
    * Duraklatılan motoru güvenli biçimde yeniden etkinleştirir.
+   * Animasyon döngüsünü zaman sıçraması (delta spike) olmadan yeniden başlatır.
    */
   public resume() {
+    if (!this.isPaused) return;
     this.isPaused = false;
     this.lastTime = performance.now(); // Büyük delta sıçramalarını önle
+    if (this.isRunning && this.animFrameId === null) {
+      this.animFrameId = requestAnimationFrame(this.loop);
+    }
   }
 
   public getIsPaused(): boolean {
     return this.isPaused;
+  }
+
+  public isAnimFrameActive(): boolean {
+    return this.animFrameId !== null;
   }
 
   public getPosition(): Position {
@@ -247,17 +279,16 @@ export class WalkableCanvasEngine {
   public start() {
     if (this.isRunning) return;
     this.isRunning = true;
+    this.isPaused = false;
     this.lastTime = performance.now();
-    this.loop(this.lastTime);
+    if (this.animFrameId === null) {
+      this.animFrameId = requestAnimationFrame(this.loop);
+    }
   }
 
   private loop = (currentTime: number) => {
-    if (!this.isRunning) return;
-
-    if (this.isPaused) {
-      // Duraklatıldığında delta birikimini sıfırla ve rAF döngüsünü hafif beklemede tut
-      this.lastTime = currentTime;
-      this.animFrameId = requestAnimationFrame(this.loop);
+    if (!this.isRunning || this.isPaused) {
+      this.animFrameId = null;
       return;
     }
 

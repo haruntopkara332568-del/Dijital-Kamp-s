@@ -59,7 +59,7 @@ export function hasLineOfSight(
   sceneWidth: number,
   sceneHeight: number,
   hitbox: HitboxConfig = DEFAULT_HITBOX,
-  stepSize: number = 10,
+  stepSize: number = 6,
 ): boolean {
   const dx = p2.x - p1.x;
   const dy = p2.y - p1.y;
@@ -108,8 +108,13 @@ export function findPath(
     return null;
   }
 
-  // 2. Doğrudan görüş hattı varsa arama yapmadan düz rota dön (0ms hızlı yol)
-  if (hasLineOfSight(start, goal, obstacles, sceneW, sceneH, hitbox)) {
+  // 2. Başlangıç ve hedef aynı noktaysa gereksiz hesaplama yapmadan dön
+  if (Math.hypot(goal.x - start.x, goal.y - start.y) < 1) {
+    return [goal];
+  }
+
+  // 3. Doğrudan görüş hattı varsa arama yapmadan düz rota dön (0ms hızlı yol)
+  if (hasLineOfSight(start, goal, obstacles, sceneW, sceneH, hitbox, 6)) {
     return [goal];
   }
 
@@ -208,6 +213,7 @@ export function findPath(
       }
 
       // Çapraz hareket ediliyorsa köşelerden geçiş engeli kontrolü
+      // Köşe kesmeyi kesinlikle engellemek için iki komşu eksenden BİRİ BİLE engelliyse çapraz geçişi engelle!
       if (dir.dx !== 0 && dir.dy !== 0) {
         const side1Blocked = isPositionBlocked(
           current.gx * gridSize + gridSize / 2,
@@ -225,8 +231,8 @@ export function findPath(
           sceneH,
           hitbox,
         );
-        if (side1Blocked && side2Blocked) {
-          continue; // İki taraf da tıkalıysa çaprazdan geçme
+        if (side1Blocked || side2Blocked) {
+          continue; // Komşu eksenlerden en az biri engelliyse köşeyi kesme!
         }
       }
 
