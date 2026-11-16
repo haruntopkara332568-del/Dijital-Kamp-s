@@ -1,13 +1,47 @@
+import { Suspense, lazy } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useCampus } from '@/src/app/CampusProviders';
 import { CampusTopBar } from '@/src/components/CampusTopBar';
-import { CampusGateView } from '@/src/features/entrance/CampusGateView';
-import { CourtyardWelcomeView } from '@/src/features/courtyard/CourtyardWelcomeView';
-import { CampusMapView } from '@/src/features/campus-map/CampusMapView';
-import { LearningAreaView } from '@/src/features/learning-areas/LearningAreaView';
-import { MissionRunnerView } from '@/src/features/missions/MissionRunnerView';
-import { JourneyView } from '@/src/features/journey/JourneyView';
-import { DesignSystemPreviewView } from '@/src/features/design-system/DesignSystemPreviewView';
+
+const CampusGateView = lazy(() =>
+  import('@/src/features/entrance/CampusGateView').then((m) => ({ default: m.CampusGateView })),
+);
+const CourtyardWelcomeView = lazy(() =>
+  import('@/src/features/courtyard/CourtyardWelcomeView').then((m) => ({
+    default: m.CourtyardWelcomeView,
+  })),
+);
+const CampusMapView = lazy(() =>
+  import('@/src/features/campus-map/CampusMapView').then((m) => ({ default: m.CampusMapView })),
+);
+const LearningAreaView = lazy(() =>
+  import('@/src/features/learning-areas/LearningAreaView').then((m) => ({
+    default: m.LearningAreaView,
+  })),
+);
+const MissionRunnerView = lazy(() =>
+  import('@/src/features/missions/MissionRunnerView').then((m) => ({
+    default: m.MissionRunnerView,
+  })),
+);
+const JourneyView = lazy(() =>
+  import('@/src/features/journey/JourneyView').then((m) => ({ default: m.JourneyView })),
+);
+const DesignSystemPreviewView = lazy(() =>
+  import('@/src/features/design-system/DesignSystemPreviewView').then((m) => ({
+    default: m.DesignSystemPreviewView,
+  })),
+);
+
+function RouteLoadingFallback() {
+  return (
+    <main className="min-h-dvh flex items-center justify-center bg-[var(--campus-canvas)] p-6">
+      <p className="text-sm font-medium text-[var(--campus-ink-muted)]">
+        Kampüs bölümü yükleniyor...
+      </p>
+    </main>
+  );
+}
 
 export function HomeRoutePage() {
   const navigate = useNavigate();
@@ -25,15 +59,19 @@ export function HomeRoutePage() {
 
   if (state.hasCompletedOnboarding && state.selectedGrade !== null) {
     return (
-      <>
+      <Suspense fallback={<RouteLoadingFallback />}>
         <CampusTopBar />
         <CampusMapView />
-      </>
+      </Suspense>
     );
   }
 
   if (!state.hasSeenGate) {
-    return <CampusGateView onEnterCourtyard={markGateSeen} />;
+    return (
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <CampusGateView onEnterCourtyard={markGateSeen} />
+      </Suspense>
+    );
   }
 
   const initialPhase =
@@ -44,39 +82,57 @@ export function HomeRoutePage() {
       : 'welcome-choice';
 
   return (
-    <CourtyardWelcomeView
-      initialPhase={initialPhase}
-      onFinishToMap={() => navigate('/harita')}
-      onReplayGate={replayWelcomeFlow}
-    />
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <CourtyardWelcomeView
+        initialPhase={initialPhase}
+        onFinishToMap={() => navigate('/harita')}
+        onReplayGate={replayWelcomeFlow}
+      />
+    </Suspense>
   );
 }
 
 export function CampusMapRoutePage() {
   return (
-    <>
+    <Suspense fallback={<RouteLoadingFallback />}>
       <CampusTopBar />
       <CampusMapView />
-    </>
+    </Suspense>
   );
 }
 
 export function LearningAreaRoutePage() {
   const { id } = useParams<{ id: string }>();
-  return <LearningAreaView areaId={id ?? ''} />;
+  return (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <LearningAreaView areaId={id ?? ''} />
+    </Suspense>
+  );
 }
 
 export function MissionRoutePage() {
   const { id } = useParams<{ id: string }>();
-  return <MissionRunnerView missionId={id ?? ''} />;
+  return (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <MissionRunnerView missionId={id ?? ''} />
+    </Suspense>
+  );
 }
 
 export function JourneyRoutePage() {
-  return <JourneyView />;
+  return (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <JourneyView />
+    </Suspense>
+  );
 }
 
 export function DesignSystemRoutePage() {
-  return <DesignSystemPreviewView />;
+  return (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <DesignSystemPreviewView />
+    </Suspense>
+  );
 }
 
 export function NotFoundRoutePage() {

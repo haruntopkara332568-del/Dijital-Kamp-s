@@ -41,11 +41,12 @@
 - **Yeniden Kullanılabilir UI ve Anadolu Motif Bileşenleri (`CampusDesignSystem.tsx`, `AnatolianMotifSvg.tsx`)**: `CampusButton`, `CampusCard`, `CampusSectionHeader`, `CampusBadge`, `CampusProgressBar` ve 4 sadeleştirilmiş Anadolu motif SVG varyantı (`seljuk-star`, `stone-arch`, `brick-zigzag`, `tile-medallion`) eklendi.
 - **2–7. Sınıflar İçin Ortak Ama Yaşa Uyarlanabilir Görsel Dil (`getVisualLanguageSpec`)**: İlkokulda (`2–4`) `48 px` ferah dokunma yüksekliği ve açık kısa yönerge yoğunluğu; ortaokulda (`5–7`) `44 px` dengeli yoğunluk ve karşılaştırmalı gösterge dili uygulandı.
 - **Canlı Görsel Ön İzleme (`/tasarim-sistemi`)**: Öğrenci ana gezinme çubuğuna kalabalık eklemeden doğrudan ön izleme ve erişilebilirlik/sınıf uyarlama denetimi için `/tasarim-sistemi` rotası sunuldu.
+- **Sayfa Bazlı Kod Bölme (`CampusPages.tsx`)**: Tüm sayfa görünümleri (`CampusGateView`, `CourtyardWelcomeView`, `CampusMapView`, `LearningAreaView`, `MissionRunnerView`, `JourneyView`, `DesignSystemPreviewView`) `React.lazy` + `Suspense` ile ayrıştırılarak ana başlangıç JS paketi `1.003 kB` (`270.66 kB` gzip) düzeyinden `528.34 kB` (`160.31 kB` gzip) düzeyine düşürüldü.
 
 ## Doğrulama Durumu ve Sonraki Adım
 - Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [29/29], `npm run build` ve `npm run test:e2e` [8/8 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
 - Çoklu ekran boyutu denetiminde (`360×740`, `390×844`, `768×1024`, `1280×840`) yatay taşma (`0`) ve mobil `390×844` görünümünde `44×44 px` altı etkileşimli hedef (`0`) doğrulandı.
-- Tasarım Sistemi ön izlemesi ve ilgili testler tamamlanmış olup onay beklenmektedir.
+- Tasarım Sistemi ön izlemesi, kod bölme optimizasyonu ve ilgili testler tamamlanmış olup görsel sahne yönü konusunda onay beklenmektedir.
 
 
 

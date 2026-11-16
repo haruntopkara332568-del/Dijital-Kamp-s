@@ -22,12 +22,12 @@
   - `speechSynthesis` olmayan ortamda seslendirme servisinin çökmeden metin yedeği dönmesi
   - `GuideDialogueCard` ekrandaki metinle aynı karma dil segmentlerini seslendirme servisine göndermesi
   - Giriş kapısı, karşılama avlusu, iki adımlı "Verilerimi Sil" ve üst gezinme çubuğu testleri
-- **`npm run build` (`vite build`)**: Geçti — Vite 8.3.8 ile `1.18 s` içinde derlendi (`2115` modül).
-- **`npm run test:e2e` (`playwright test`)**: Geçti — `e2e/campus.spec.ts` **8 / 8** geçti (`39.6 s`):
-  - `[chromium]` (`8.2 s`) ve `[mobile-chrome]` (`8.2 s`): Kapı → onaylı karşılama → 5. sınıf → rehberli tur → 5 yollu harita → keşfet → öğren (yönlendirici ve olumlu geri bildirim) → boş üretim engeli → alan gezintisinde ilerleme korunması → şekil/malzeme/gerekçeli anlatım üretimi → PNG indirmeden görevi tamamlama → Yolculuğum 3 bölüm ve eser inceleme penceresi → iki adımlı Verilerimi Sil ve boş durum doğrulaması.
-  - `[chromium]` (`4.0 s`) ve `[mobile-chrome]` (`4.1 s`): 2. sınıf akışı (basit çizim araçları + fareyle serbest çizim + isteğe bağlı yazı), `360×740`, `390×844`, `768×1024`, `1280×840` ekranlarında `0` yatay taşma, `390 px` ekranda `44×44 px` altı hedef olmaması ve klavye yön tuşlarıyla şekil taşıma.
-  - `[chromium]` (`5.5 s`) ve `[mobile-chrome]` (`4.5 s`): Aşama 2 Aksaray Kültürel Miras Rotası (`Gezi ve Keşif` 4 durak kontrolü, Ulu Cami'nin aktif rotada yer almayıp Yakında notunda kalması, 5. sınıf `KEŞFET → ÖĞREN → ÜRET → PAYLAŞ` akışı, tek yazılı üretimle tamamlama, `390×844` ve `1280×840` taşmasızlık kontrolü, `Yolculuğum` kaydı doğrulaması).
-  - `[chromium]` (`1.2 s`) ve `[mobile-chrome]` (`1.2 s`): Tasarım Sistemi ön izlemesi (`/tasarim-sistemi`) sınıf uyarlama, motifler, ilerleme göstergesi, `390×844` / `1280×840` sıfır yatay taşma ve `44×44 px` altı hedef olmaması kontrolü.
+- **`npm run build` (`vite build`)**: Geçti — Vite 8.3.8 ile `1.14 s` içinde derlendi (`2116` modül, sayfa bazlı `React.lazy` kod bölme etkin).
+- **`npm run test:e2e` (`playwright test`)**: Geçti — `e2e/campus.spec.ts` **8 / 8** geçti (`49.2 s`):
+  - `[chromium]` (`10.4 s`) ve `[mobile-chrome]` (`10.2 s`): Kapı → onaylı karşılama → 5. sınıf → rehberli tur → 5 yollu harita → keşfet → öğren (yönlendirici ve olumlu geri bildirim) → boş üretim engeli → alan gezintisinde ilerleme korunması → şekil/malzeme/gerekçeli anlatım üretimi → PNG indirmeden görevi tamamlama → Yolculuğum 3 bölüm ve eser inceleme penceresi → iki adımlı Verilerimi Sil ve boş durum doğrulaması.
+  - `[chromium]` (`5.1 s`) ve `[mobile-chrome]` (`5.1 s`): 2. sınıf akışı (basit çizim araçları + fareyle serbest çizim + isteğe bağlı yazı), `360×740`, `390×844`, `768×1024`, `1280×840` ekranlarında `0` yatay taşma, `390 px` ekranda `44×44 px` altı hedef olmaması ve klavye yön tuşlarıyla şekil taşıma.
+  - `[chromium]` (`6.5 s`) ve `[mobile-chrome]` (`6.8 s`): Aşama 2 Aksaray Kültürel Miras Rotası (`Gezi ve Keşif` 4 durak kontrolü, Ulu Cami'nin aktif rotada yer almayıp Yakında notunda kalması, 5. sınıf `KEŞFET → ÖĞREN → ÜRET → PAYLAŞ` akışı, tek yazılı üretimle tamamlama, `390×844` ve `1280×840` taşmasızlık kontrolü, `Yolculuğum` kaydı doğrulaması).
+  - `[chromium]` (`1.3 s`) ve `[mobile-chrome]` (`1.3 s`): Tasarım Sistemi ön izlemesi (`/tasarim-sistemi`) sınıf uyarlama, motifler, ilerleme göstergesi, `390×844` / `1280×840` sıfır yatay taşma ve `44×44 px` altı hedef olmaması kontrolü.
 
 ## 2. Çalıştırılamayan Testler
 - Yok. Birim/entegrasyon (`vitest`) ve uçtan uca tarayıcı (`playwright`) testlerinin tamamı çalıştırıldı ve geçti.
@@ -37,15 +37,17 @@
 - Gerçek cihaz tarayıcılarında `speechSynthesis` ile `tr-TR` ve `en-US` ses kalitesi ve ses bulunmadığında gösterilen yedek mesaj.
 - İndirilen tek PNG çıktısında uzun Türkçe metinlerin (`ç, ğ, ı, İ, ö, ş, ü`) kesilmeden satır kaydırma ve görsel bütünlük kontrolü.
 - Ekran okuyucu (TalkBack / VoiceOver / NVDA) ile klavye gezinmesi ve WCAG 2.2 AA kontrast/odak kontrolü.
-- İlkokul ve ortaokul görevlerinde her ekranın görsel olarak adım adım gezilmesi.
+- İlkokul ve ortaokul görevlerinde her ekranın görsel olarak adım adım gezilmesi ve **görsel/estetik kalitenin** (giriş kapısı atmosferi, animasyon akıcılığı ve sahne derinliğinin) hedef görsel yönle elle değerlendirilmesi.
 
 ## 4. Çizim Bileşeninin Erişilebilirlik Sınırları
 - `DrawingCanvasStudio` içindeki `<canvas>` serbest el çizim yüzeyi doğası gereği görsel/işaretçi odaklıdır; ekran okuyucu kullanıcılarına çizim alanı içindeki pikseller tek tek okunamaz.
 - Bu sınırı azaltmak için her kullanıcıya **Hazır Şekil Ekle**, klavye yön tuşlarıyla (`ArrowLeft/Right/Up/Down`) ve düğmelerle şekil taşıma, `Delete`/`Backspace` ile silme ve yazılı tasarım (`textarea`) alternatifleri açık tutulmuştur.
 
-## 5. Paket Boyutu Ölçümü (Vite Derleme Çıktısı)
-- `dist/index.html`: `0.90 kB` (`gzip: 0.43 kB`)
+## 5. Paket Boyutu Ölçümü (Vite Derleme Çıktısı — Kod Bölme Sonrası)
+- `dist/index.html`: `0.99 kB` (`gzip: 0.46 kB`)
 - `dist/assets/index-BzqHAENj.css`: `53.88 kB` (`gzip: 8.71 kB`)
-- `dist/assets/index-iOf0J4of.js`: `1,003.42 kB` (`gzip: 270.66 kB`)
+- `dist/assets/index-BxjRSN1S.js` (ana giriş paketi): `528.34 kB` (`gzip: 160.31 kB`) — sayfa bazlı `React.lazy` kod bölme ile başlangıç JS yükü `1.003 kB` (`270.66 kB` gzip) düzeyinden `528 kB` (`160.31 kB` gzip) düzeyine düşürülmüştür.
+- İsteğe bağlı sayfa parçaları: `MissionRunnerView` (`93.44 kB` / `gzip: 19.04 kB`), `DesignSystemPreviewView` (`33.33 kB` / `gzip: 8.13 kB`), `JourneyView` (`27.13 kB` / `gzip: 5.46 kB`), `CourtyardWelcomeView` (`21.54 kB` / `gzip: 4.50 kB`), `LearningAreaView` (`18.31 kB` / `gzip: 3.51 kB`), `CampusMapView` (`18.25 kB` / `gzip: 4.38 kB`), `CampusGateView` (`4.84 kB` / `gzip: 1.75 kB`).
 - Harici yazı tipi, CDN, izleyici ve üçüncü taraf görsel isteği sıfırdır. Gerçek 4 yıllık Android cihazda açılış hızı henüz ölçülmemiştir.
+
 
