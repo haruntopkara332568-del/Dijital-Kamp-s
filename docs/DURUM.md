@@ -1,4 +1,4 @@
-# Proje Durum Raporu — Sürüm 3.6 (Aşama 3: Son Teknik Düzeltmeler ve Görsel Kabule Hazırlık)
+# Proje Durum Raporu — Sürüm 4.0 (Aşama 4: Görsel Dünya, Karakter Animasyonu ve Sınıf Tasarımı)
 
 ## Tamamlanan Bölümler
 - **Mimari Dönüşüm (Vite + React + TypeScript + Tailwind CSS v4 + React Router)**:
@@ -64,10 +64,32 @@
 - **Genişletilmiş Test Paketi**:
   - Toplam **60 Vitest** birim/entegrasyon testi (`src/test/walkable.test.tsx` [31 test] + `src/test/campus.test.tsx` [29 test]) ve **10 Playwright E2E** testi eksiksiz geçti.
 
+## Aşama 4 — Görsel Dünya, Karakter Animasyonu ve Sınıf Tasarımı (`feat/campus-visual-upgrade`)
+- **Öğrenci Karakterinin Yeniden Tasarımı (`characterRenderer.ts`)**:
+  - Animasyon filmi estetiğinde, sevimli, sıcak ve çocuk yaş grubuna uygun özgün ana karakter geliştirildi.
+  - Canlı badem gözler, ışıltılı çift catchlight, sevimli yanak allığı (blush), dinamik göz kırpma (blink) ve sıcak gülümseme mimikleri eklendi.
+  - Anadolu–Selçuklu turkuazı yelek, altın sarısı kenar bordürleri, göğüste minik sekiz köşeli Selçuklu yıldız rozeti ve deri sırt çantası detaylandırıldı.
+  - 4 yönde (`down`, `up`, `left`, `right`) tam tutarlı gövde ve baş perspektifi sağlandı.
+  - İki katmanlı eliptik zemin gölgesi (ortam + ayak altı temas gölgesi) ile zemine basış hissi güçlendirildi.
+  - Yürürken doğal kol-bacak salınımı, dikey gövde esnemesi (bobbing); beklemede nazik nefes alma salınımı sağlandı.
+- **Kampüs Avlusunun Görsel Dönüşümü (`courtyardSceneRenderer.ts`)**:
+  - Sıcak taş dokulu zemin, Selçuklu sekiz köşeli yıldız meydanı ve merkez şadırvanda animasyonlu su dalgalanması (`water shimmer`) uygulandı.
+  - İngilizce Dünyası binası anıtsal mukarnas taç kapı, Selçuklu çinili kubbe, giriş kandilleri ve yaklaşınca belirginleşen davetkâr kapı ışıltısıyla güçlendirildi.
+  - Gezi ve Keşif ile Kitap Dünyası binalarına özgün mimari cepheler kazandırıldı.
+  - Katmanlı gölgeli bahçe ağaçları (rüzgâr salınımlı), ahşap park bankları ve çiçek tarhları eklendi.
+  - Yürünebilir yollar, kapı koordinatları ve bina AABB çarpışma sınırları %100 korundu.
+- **İngilizce Sınıfının Görsel Dönüşümü (`classroomSceneRenderer.ts`)**:
+  - Sıcak ahşap parke zemin, Selçuklu sivri kemerli vitray pencereler ve zemine vuran açılı güneş ışığı huzmeleri (sunbeams) uygulandı.
+  - Akıllı Tahta: Anadolu–Selçuklu ahşap-pirinç kakma çerçeve, kapalıyken cam yansıması ve bekleme LED'i, açılırken radyal ışık dalgalanması, açıkken canlı eğitim arayüzü sunuldu.
+  - Ahşap öğretmen kürsüsü, kitaplık (dünya küresi ve ciltli kitaplar), sandalyeli öğrenci sıraları ve Selçuklu kemerli çıkış kapısı detaylandırıldı.
+- **Erişilebilirlik ve Performans**:
+  - Bütün çevre animasyonları (su parıltısı, yaprak salınımı, karakter nefes alma) `prefers-reduced-motion` tercihine tam uyumludur.
+  - Canvas 2D performansı korunmuş, paket boyutu yalnızca `48.09 kB` (gzip: `13.06 kB`) seviyesinde tutulmuştur.
+
 ## Doğrulama Durumu ve Sonraki Adım
-- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [60/60], `npm run build` ve `npm run test:e2e` [10/10 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
+- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [65/65], `npm run build` ve `npm run test:e2e` [10/10 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
 - Çoklu ekran boyutu denetiminde (`360×740`, `390×844`, `768×1024`, `1280×840`) yatay taşma (`0`) ve mobil `390×844` görünümünde `44×44 px` altı etkileşimli hedef (`0`) doğrulandı.
-- Aşama 3 Sürüm 1.2 son teknik düzeltmeleri ve görsel kabule hazırlık `feat/walkable-campus-prototype` dalında tamamlanmıştır.
+- Aşama 4 görsel dünya geliştirmeleri `feat/campus-visual-upgrade` dalında tamamlanmıştır.
 
 
 

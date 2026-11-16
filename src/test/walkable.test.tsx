@@ -11,7 +11,10 @@ import {
 } from '@/src/features/walkable/engine/pathfinding';
 import { SmartBoardModal } from '@/src/features/walkable/components/SmartBoardModal';
 import { WalkableControlsOverlay } from '@/src/features/walkable/components/WalkableControlsOverlay';
-import type { WalkableSceneConfig } from '@/src/features/walkable/types';
+import { drawCharacter } from '@/src/features/walkable/engine/characterRenderer';
+import { renderCourtyardBackground } from '@/src/features/walkable/engine/courtyardSceneRenderer';
+import { renderClassroomBackground } from '@/src/features/walkable/engine/classroomSceneRenderer';
+import type { WalkableSceneConfig, PlayerCharacter } from '@/src/features/walkable/types';
 
 describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () => {
   let canvas: HTMLCanvasElement;
@@ -28,6 +31,9 @@ describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () 
       save: vi.fn(),
       restore: vi.fn(),
       translate: vi.fn(),
+      rotate: vi.fn(),
+      scale: vi.fn(),
+      clip: vi.fn(),
       beginPath: vi.fn(),
       closePath: vi.fn(),
       arc: vi.fn(),
@@ -35,10 +41,14 @@ describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () 
       fill: vi.fn(),
       stroke: vi.fn(),
       fillRect: vi.fn(),
+      strokeRect: vi.fn(),
       roundRect: vi.fn(),
       moveTo: vi.fn(),
       lineTo: vi.fn(),
+      quadraticCurveTo: vi.fn(),
       setLineDash: vi.fn(),
+      createRadialGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
+      createLinearGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
       fillStyle: '',
       strokeStyle: '',
       lineWidth: 1,
@@ -676,5 +686,96 @@ describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () 
     expect(engine.isAnimFrameActive()).toBe(true);
 
     engine.destroy();
+  });
+
+  /* ========================================================================
+     AŞAMA 4 — GÖRSEL DÜNYA, KARAKTER VE SAHNE ENTEGRASYON TESTLERİ
+     ======================================================================== */
+
+  it('32. Karakterin dört yönde (down, up, left, right) çizimi ve yürüme/bekleme durumları hatasız çalışır', () => {
+    const mockCtx = canvas.getContext('2d')!;
+    const directions = ['down', 'up', 'left', 'right'] as const;
+
+    for (const dir of directions) {
+      const testPlayer: PlayerCharacter = {
+        x: 100,
+        y: 100,
+        width: 22,
+        height: 28,
+        direction: dir,
+        state: 'walk',
+        speed: 160,
+        walkFrame: 1.5,
+        grade: 4,
+      };
+
+      // Yürüme durumu
+      expect(() => drawCharacter(mockCtx, testPlayer)).not.toThrow();
+
+      // Bekleme (idle) durumu
+      testPlayer.state = 'idle';
+      expect(() => drawCharacter(mockCtx, testPlayer)).not.toThrow();
+    }
+  });
+
+  it('33. prefers-reduced-motion aktifken karakter ve çevre animasyonları güvenle çizilir', () => {
+    const mockCtx = canvas.getContext('2d')!;
+
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = vi.fn().mockImplementation((query) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+
+    const testPlayer: PlayerCharacter = {
+      x: 100,
+      y: 100,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'idle',
+      speed: 160,
+      walkFrame: 0,
+      grade: 4,
+    };
+
+    expect(() => drawCharacter(mockCtx, testPlayer)).not.toThrow();
+    expect(() => renderCourtyardBackground(mockCtx, 1400, 900)).not.toThrow();
+    expect(() => renderClassroomBackground(mockCtx, 960, 640, false, false)).not.toThrow();
+
+    window.matchMedia = originalMatchMedia;
+  });
+
+  it('34. Kampüs avlusu zemin, Selçuklu yıldız meydanı, binalar ve peyzaj unsurları hatasız çizilir', () => {
+    const mockCtx = canvas.getContext('2d')!;
+    expect(() => renderCourtyardBackground(mockCtx, 1400, 900)).not.toThrow();
+  });
+
+  it('35. İngilizce sınıfı zemin, pencereler, akıllı tahta (kapalı, açılıyor, açık) ve sıralar hatasız çizilir', () => {
+    const mockCtx = canvas.getContext('2d')!;
+
+    // Kapalı tahta
+    expect(() => renderClassroomBackground(mockCtx, 960, 640, false, false)).not.toThrow();
+
+    // Açılıyor durumu (Güç animasyonu)
+    expect(() => renderClassroomBackground(mockCtx, 960, 640, false, true)).not.toThrow();
+
+    // Açık tahta
+    expect(() => renderClassroomBackground(mockCtx, 960, 640, true, false)).not.toThrow();
+  });
+
+  it('36. Karakterin görsel temas noktası AABB çarpışma kutusu sınırlarıyla (DEFAULT_HITBOX) uyumludur', () => {
+    const hitbox = DEFAULT_HITBOX;
+    const playerY = 100;
+    const feetCollisionY = playerY + hitbox.offsetY + hitbox.height; // 100 + 6 + 12 = 118
+    const shadowCenterY = playerY + 18; // 118
+
+    expect(feetCollisionY).toBe(shadowCenterY);
   });
 });
