@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useCampus } from '@/src/app/CampusProviders';
 import { getMissionById } from '@/src/data/missions';
-import { MISSION_GUIDE_PROMPTS } from '@/src/data/dialogues';
+import { AKSARAY_MISSION_GUIDE_PROMPTS, MISSION_GUIDE_PROMPTS } from '@/src/data/dialogues';
 import { getArtifactById, saveArtifact } from '@/src/services/storage';
 import { speakSegments } from '@/src/services/speech';
 import { evaluateOriginalProduction } from '@/src/utils/missionValidation';
@@ -47,6 +47,63 @@ const MIDDLE_SCHOOL_MATERIALS = [
   'Çini ve Taş',
   'Metal ve Cam',
 ];
+
+const DEFAULT_DOOR_UI_COPY = {
+  kesfetPrimaryBadge: 'Gezi ve Keşif Bağlantısı',
+  kesfetPrimaryHeading: 'Gördüğün Kapıları Seç',
+  kesfetPrimaryEarlyDesc: 'Tanıdığın kapılara dokun.',
+  kesfetPrimaryDesc: 'Daha önce gördüğün kapıları seç; seçimin sonraki adımlarda kullanılacak.',
+  kesfetMiddleBadge: 'Gezi ve Keşif · Karşılaştırmalı Gözlem',
+  kesfetMiddleHeading: 'Günlük Kapılar ile Kampüs Kapısını Karşılaştır',
+  kesfetMiddleDesc:
+    'İki görseli incele ve aşağıdaki dört gözlem alanında dikkatini çeken özellikleri seç.',
+  selectedCarryoverLabel: 'Seçtiğin kapılar',
+  ogrenPrimaryHeading: 'Yeni Kelimemiz: Door — Kapı',
+  ogrenMiddleHeading: 'Kapı ve Malzeme Kelimelerini Keşfet',
+  ogrenPrimaryMatchQuestion: 'Eşleştirme: "Door" kelimesinin Türkçe karşılığı hangisidir?',
+  ogrenPrimaryCorrectFeedback: 'Harika! "Door", içeri girip çıktığımız kapı anlamına gelir.',
+  ogrenPrimaryMatchOptions: [
+    { id: 'match-door', label: 'Kapı', isCorrect: true, desc: 'İçeri girdiğimiz kapı' },
+    { id: 'match-window', label: 'Pencere', isCorrect: false, desc: 'Dışarıya baktığımız cam açıklık' },
+    { id: 'match-tree', label: 'Ağaç', isCorrect: false, desc: 'Avludaki yeşil bitki' },
+  ],
+  ogrenPrimaryContextPrefix: 'Keşfet adımında seçtiğin kapılar',
+  ogrenMiddleComparePair: [
+    {
+      word: 'Door',
+      meaning: 'Kapı',
+      desc: 'Genellikle oda veya bina girişindeki kapı',
+      illustration: 'indoor-door' as const,
+    },
+    {
+      word: 'Gate',
+      meaning: 'Giriş kapısı / Büyük kapı',
+      desc: 'Avlu, bahçe veya geniş yerleşkeye açılan büyük kapı',
+      illustration: 'courtyard-gate' as const,
+    },
+  ],
+  uretHeadingEarly: 'Kendi Kapını Çiz veya Şekil Ekle',
+  uretHeadingPrimary: 'Kendi Kapını ve Hikâyeni Oluştur',
+  uretHeadingMiddle: 'Özgün Kapını Tasarla ve Gerekçelendir',
+  uretHintPrimary:
+    'İstersen önce "Hazır Şekil Ekle" düğmeleriyle bir kemer ve kapı kanadı ekle, sonra serbest fırçayla kapının ardında gördüklerini çiz.',
+  uretHintMiddle:
+    'Malzeme seçip tasarımına bir isim ver. Açıklamanda malzeme (wood/stone), biçim veya desen (pattern) tercihini neden seçtiğini karşılaştırarak yazabilirsin.',
+  uretNameLabelPrimary: 'Kapına Kısa Bir Ad Ver (İsteğe Bağlı)',
+  uretNameLabelMiddle: 'Tasarladığın Kapının Adı',
+  uretNamePlaceholderPrimary: 'Örneğin: Bahçe Kapısı',
+  uretNamePlaceholderMiddle: 'Örneğin: Yıldızlı Avlu Kapısı',
+  uretTextLabelPrimary: 'Kapıdan geçince ne gördüğünü kısaca yaz (isteğe bağlı)',
+  uretTextLabelMiddle: 'Kapı Tasarımını ve Seçim Gerekçeni Açıkla',
+  uretTextPlaceholderEarly: 'Örneğin: Bahçe, Ağaç, Door...',
+  uretTextPlaceholderPrimary: 'Kapıdan geçince yeşil bir avlu gördüm...',
+  uretTextPlaceholderMiddle: 'Bu kapıyı tasarlarken ahşap ve taş dokuyu birlikte kullandım çünkü...',
+  uretTextPlaceholderGrade7:
+    'Seçtiğin malzemeyi, günlük kapılarla farkını ve tasarım gerekçeni 4–6 cümleyle açıkla...',
+  artifactDefaultNamePrimary: 'Kapı Hikâyem',
+  artifactDefaultNameMiddle: 'Özgün Kapı Tasarımım',
+  materialChoices: MIDDLE_SCHOOL_MATERIALS,
+};
 
 function createEmptySelections(): MissionSelections {
   return {
@@ -96,6 +153,11 @@ function MissionRunnerInner({
   const mission = getMissionById(missionId);
   const isPrimary = activeGradeProfile.tier === 'ilkokul';
   const isEarlyPrimary = effectiveGrade === 2 || effectiveGrade === 3;
+  const uiCopy = mission?.uiCopy ?? DEFAULT_DOOR_UI_COPY;
+  const guidePrompts =
+    mission?.guidePromptGroup === 'aksaray' ? AKSARAY_MISSION_GUIDE_PROMPTS : MISSION_GUIDE_PROMPTS;
+  const isAksarayRoute = mission?.routeKind === 'thematic-digital-route';
+  const primaryVocab = mission?.contentRefs.ilkokulVocabulary[0];
 
   const [stage, setStage] = useState<MissionStageId>(
     () => initialProgress?.currentStage ?? 'kesfet',
@@ -187,10 +249,13 @@ function MissionRunnerInner({
 
   const buildArtifactPayload = (artifactId: string): { artifact: SavedArtifact; pngDataUrl: string } | null => {
     if (!mission) return null;
+    const resolvedName =
+      selections.doorName.trim() ||
+      (isPrimary ? uiCopy.artifactDefaultNamePrimary : uiCopy.artifactDefaultNameMiddle);
     const pngDataUrl = composeArtifactPngDataUrl({
       missionTitle: mission.title,
       grade: effectiveGrade,
-      doorName: selections.doorName.trim() || (isPrimary ? 'Kapı Hikâyem' : 'Özgün Kapı Tasarımım'),
+      doorName: resolvedName,
       writtenText: selections.writtenText,
       materialChoice: selections.materialChoice,
       usedEnglishWords: selections.usedEnglishWords,
@@ -204,7 +269,7 @@ function MissionRunnerInner({
       missionVersion: mission.version,
       grade: effectiveGrade,
       title: mission.title,
-      doorName: selections.doorName.trim() || (isPrimary ? 'Kapı Hikâyem' : 'Özgün Kapı Tasarımım'),
+      doorName: resolvedName,
       writtenText: selections.writtenText,
       selectedDoorIds: selections.selectedDoorIds,
       observations: selections.observationNotes,
@@ -555,8 +620,8 @@ function MissionRunnerInner({
             <GuideDialogueCard
               dialogue={
                 isPrimary
-                  ? MISSION_GUIDE_PROMPTS.ilkokulKesfet
-                  : MISSION_GUIDE_PROMPTS.ortaokulKesfet
+                  ? guidePrompts.ilkokulKesfet
+                  : guidePrompts.ortaokulKesfet
               }
               mood="thinking"
             />
@@ -565,15 +630,15 @@ function MissionRunnerInner({
               <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 space-y-6">
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-[var(--sandstone-gold)]">
-                    Gezi ve Keşif Bağlantısı
+                    {uiCopy.kesfetPrimaryBadge}
                   </p>
                   <h2 className="text-lg font-bold text-[var(--campus-ink)]">
-                    Gördüğün Kapıları Seç
+                    {uiCopy.kesfetPrimaryHeading}
                   </h2>
                   <p className="text-sm text-[var(--campus-ink-muted)]">
                     {activeGradeProfile.grade === 2
-                      ? 'Tanıdığın kapılara dokun.'
-                      : 'Daha önce gördüğün kapıları seç; seçimin sonraki adımlarda kullanılacak.'}
+                      ? uiCopy.kesfetPrimaryEarlyDesc
+                      : uiCopy.kesfetPrimaryDesc}
                   </p>
                 </div>
 
@@ -603,7 +668,12 @@ function MissionRunnerInner({
                         }`}
                       >
                         <DoorIllustrationSvg variant={door.illustration} title={door.title} />
-                        <div className="space-y-0.5">
+                        <div className="space-y-1">
+                          {door.periodBadge && (
+                            <p className="text-[11px] font-semibold text-[var(--seljuk-teal)]">
+                              {door.periodBadge}
+                            </p>
+                          )}
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-sm font-bold text-[var(--campus-ink)]">
                               {door.title}
@@ -615,86 +685,136 @@ function MissionRunnerInner({
                           <p className="text-xs text-[var(--campus-ink-muted)]">
                             {door.shortDescription}
                           </p>
+                          {door.sourceNote && (
+                            <p className="text-[11px] text-[var(--campus-ink-muted)] pt-0.5">
+                              Kaynak: {door.sourceNote}
+                            </p>
+                          )}
                         </div>
                       </button>
                     );
                   })}
                 </div>
 
-                {/* Kampüs Kapısını Yeniden İnceleme */}
-                <div className="rounded-xl bg-[var(--campus-canvas)] border border-[var(--campus-border)] p-4 sm:p-5 space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <h3 className="text-base font-bold text-[var(--campus-ink)]">
-                        Kampüs Kapısını Yeniden İncele
-                      </h3>
-                      <p className="text-xs text-[var(--campus-ink-muted)]">
-                        Taş kemerine ve yıldız desenlerine yakından bak.
+                {isAksarayRoute ? (
+                  <div className="rounded-xl bg-[var(--campus-canvas)] border border-[var(--campus-border)] p-4 sm:p-5 space-y-2">
+                    <h3 className="text-base font-bold text-[var(--campus-ink)]">
+                      Tematik Dijital Öğrenme Rotası Notu
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[var(--campus-ink-muted)]">
+                      Bu rota bir yolculuk veya ulaşım planı değildir; Sultanhanı Kervansarayı, Eğri
+                      Minare, Zinciriye Medresesi ve Ihlara Vadisi’ni taş, tuğla ve doğal kaya
+                      özellikleriyle yakından gözlemlemen için hazırlanmıştır.
+                    </p>
+                    {selectedDoorCards.length > 0 && (
+                      <p className="text-xs font-semibold text-[var(--seljuk-teal)]">
+                        Seçilen duraklar: {selectedDoorCards.map((d) => `${d.title} (${d.materialHint})`).join(' · ')}
                       </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setInspectGateOpen((v) => !v);
-                        setSelections((prev) => ({ ...prev, inspectedCampusGate: true }));
-                      }}
-                      className="min-h-[44px] px-4 py-2 rounded-lg bg-[var(--campus-surface)] border border-[var(--campus-border)] hover:border-[var(--seljuk-teal)] text-xs font-semibold text-[var(--campus-ink)] inline-flex items-center gap-2 cursor-pointer"
-                    >
-                      <Eye className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
-                      <span>{inspectGateOpen ? 'Kapıyı Kapat' : 'Kapıyı Açıp Bak'}</span>
-                    </button>
+                    )}
                   </div>
-                  <CampusPortalGateSvg isOpen={inspectGateOpen} compact />
-                </div>
-              </section>
-            ) : (
-              /* ORTAOKUL KEŞFET: Karşılaştırma ve 4 Gözlem Boyutu */
-              <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 space-y-6">
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold text-[var(--sandstone-gold)]">
-                    Gezi ve Keşif · Karşılaştırmalı Gözlem
-                  </p>
-                  <h2 className="text-lg font-bold text-[var(--campus-ink)]">
-                    Günlük Kapılar ile Kampüs Kapısını Karşılaştır
-                  </h2>
-                  <p className="text-sm text-[var(--campus-ink-muted)]">
-                    İki görseli incele ve aşağıdaki dört gözlem alanında dikkatini çeken özellikleri seç.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="rounded-xl border border-[var(--campus-border)] bg-[var(--campus-canvas)] p-4 space-y-2">
-                    <p className="text-xs font-semibold text-[var(--campus-ink-muted)]">
-                      Günlük Yaşam Kapısı (Okul / Ev)
-                    </p>
-                    <DoorIllustrationSvg variant="okul" title="Günlük okul kapısı" className="w-full h-44" />
-                    <p className="text-xs text-[var(--campus-ink-muted)]">
-                      Düz hatlar, sade yüzey, cam ve metal çerçeve ile hızlı giriş-çıkışa odaklı yapı.
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-[var(--campus-border)] bg-[var(--campus-canvas)] p-4 space-y-2">
-                    <p className="text-xs font-semibold text-[var(--sandstone-gold)]">
-                      Anadolu Esintili Kampüs Kapısı
-                    </p>
-                    <CampusPortalGateSvg isOpen={inspectGateOpen} compact />
-                    <div className="flex items-center justify-between gap-2 pt-1">
-                      <p className="text-xs text-[var(--campus-ink-muted)]">
-                        Taş kemer, ahşap kanatlar ve sekiz köşeli geometrik motifli dış çerçeve.
-                      </p>
+                ) : (
+                  /* Kampüs Kapısını Yeniden İnceleme */
+                  <div className="rounded-xl bg-[var(--campus-canvas)] border border-[var(--campus-border)] p-4 sm:p-5 space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-base font-bold text-[var(--campus-ink)]">
+                          Kampüs Kapısını Yeniden İncele
+                        </h3>
+                        <p className="text-xs text-[var(--campus-ink-muted)]">
+                          Taş kemerine ve yıldız desenlerine yakından bak.
+                        </p>
+                      </div>
                       <button
                         type="button"
                         onClick={() => {
                           setInspectGateOpen((v) => !v);
                           setSelections((prev) => ({ ...prev, inspectedCampusGate: true }));
                         }}
-                        className="min-h-[44px] px-3.5 py-1.5 rounded-lg border border-[var(--campus-border)] bg-white text-xs font-semibold shrink-0 cursor-pointer"
+                        className="min-h-[44px] px-4 py-2 rounded-lg bg-[var(--campus-surface)] border border-[var(--campus-border)] hover:border-[var(--seljuk-teal)] text-xs font-semibold text-[var(--campus-ink)] inline-flex items-center gap-2 cursor-pointer"
                       >
-                        {inspectGateOpen ? 'Kapat' : 'Aralayıp Bak'}
+                        <Eye className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
+                        <span>{inspectGateOpen ? 'Kapıyı Kapat' : 'Kapıyı Açıp Bak'}</span>
                       </button>
                     </div>
+                    <CampusPortalGateSvg isOpen={inspectGateOpen} compact />
                   </div>
+                )}
+              </section>
+            ) : (
+              /* ORTAOKUL KEŞFET: Karşılaştırma ve 4 Gözlem Boyutu */
+              <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 space-y-6">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-[var(--sandstone-gold)]">
+                    {uiCopy.kesfetMiddleBadge}
+                  </p>
+                  <h2 className="text-lg font-bold text-[var(--campus-ink)]">
+                    {uiCopy.kesfetMiddleHeading}
+                  </h2>
+                  <p className="text-sm text-[var(--campus-ink-muted)]">
+                    {uiCopy.kesfetMiddleDesc}
+                  </p>
                 </div>
+
+                {isAksarayRoute ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {mission.contentRefs.ilkokulDoors.map((stop) => (
+                      <div
+                        key={stop.id}
+                        className="rounded-xl border border-[var(--campus-border)] bg-[var(--campus-canvas)] p-3.5 space-y-2 flex flex-col justify-between"
+                      >
+                        <div className="space-y-2">
+                          <DoorIllustrationSvg variant={stop.illustration} title={stop.title} className="w-full h-36" />
+                          {stop.periodBadge && (
+                            <p className="text-[11px] font-semibold text-[var(--seljuk-teal)]">
+                              {stop.periodBadge}
+                            </p>
+                          )}
+                          <h3 className="text-sm font-bold text-[var(--campus-ink)]">{stop.title}</h3>
+                          <p className="text-xs text-[var(--campus-ink-muted)]">{stop.shortDescription}</p>
+                        </div>
+                        {stop.sourceNote && (
+                          <p className="text-[11px] text-[var(--campus-ink-muted)] border-t border-[var(--campus-border)] pt-1.5">
+                            Kaynak: {stop.sourceNote}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="rounded-xl border border-[var(--campus-border)] bg-[var(--campus-canvas)] p-4 space-y-2">
+                      <p className="text-xs font-semibold text-[var(--campus-ink-muted)]">
+                        Günlük Yaşam Kapısı (Okul / Ev)
+                      </p>
+                      <DoorIllustrationSvg variant="okul" title="Günlük okul kapısı" className="w-full h-44" />
+                      <p className="text-xs text-[var(--campus-ink-muted)]">
+                        Düz hatlar, sade yüzey, cam ve metal çerçeve ile hızlı giriş-çıkışa odaklı yapı.
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-[var(--campus-border)] bg-[var(--campus-canvas)] p-4 space-y-2">
+                      <p className="text-xs font-semibold text-[var(--sandstone-gold)]">
+                        Anadolu Esintili Kampüs Kapısı
+                      </p>
+                      <CampusPortalGateSvg isOpen={inspectGateOpen} compact />
+                      <div className="flex items-center justify-between gap-2 pt-1">
+                        <p className="text-xs text-[var(--campus-ink-muted)]">
+                          Taş kemer, ahşap kanatlar ve sekiz köşeli geometrik motifli dış çerçeve.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInspectGateOpen((v) => !v);
+                            setSelections((prev) => ({ ...prev, inspectedCampusGate: true }));
+                          }}
+                          className="min-h-[44px] px-3.5 py-1.5 rounded-lg border border-[var(--campus-border)] bg-white text-xs font-semibold shrink-0 cursor-pointer"
+                        >
+                          {inspectGateOpen ? 'Kapat' : 'Aralayıp Bak'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {mission.contentRefs.ortaokulDimensions.map((dim) => {
@@ -763,9 +883,7 @@ function MissionRunnerInner({
                   İngilizce Dünyası Bağlantısı
                 </p>
                 <h2 className="text-xl font-bold text-[var(--campus-ink)]">
-                  {isPrimary
-                    ? 'Yeni Kelimemiz: Door — Kapı'
-                    : 'Kapı ve Malzeme Kelimelerini Keşfet'}
+                  {isPrimary ? uiCopy.ogrenPrimaryHeading : uiCopy.ogrenMiddleHeading}
                 </h2>
                 <p className="text-sm text-[var(--campus-ink-muted)]">
                   {isPrimary
@@ -782,37 +900,45 @@ function MissionRunnerInner({
 
               {selectedDoorCards.length > 0 && isPrimary && (
                 <div className="rounded-xl bg-[var(--campus-canvas)] border border-[var(--campus-border)] p-3.5 text-xs text-[var(--campus-ink-muted)]">
-                  Keşfet adımında seçtiğin kapılar:{' '}
+                  {uiCopy.ogrenPrimaryContextPrefix}:{' '}
                   <strong className="text-[var(--campus-ink)]">
                     {selectedDoorCards.map((d) => d.title).join(', ')}
                   </strong>
-                  . Şimdi İngilizcede kapıya ne dendiğini öğrenelim.
+                  . Şimdi odak İngilizce kelimemizi öğrenelim.
                 </div>
               )}
 
               {isPrimary ? (
-                /* İLKOKUL ÖĞREN: Door — Kapı + Basit Görsel Eşleştirme */
+                /* İLKOKUL ÖĞREN: Tek Odak Kelime + Basit Görsel Eşleştirme */
                 <div className="space-y-6">
                   <div className="rounded-xl border border-[var(--seljuk-teal)]/30 bg-[var(--seljuk-teal-soft)]/50 p-5 flex flex-col sm:flex-row items-center gap-6">
                     <div className="w-44 shrink-0">
                       <DoorIllustrationSvg
-                        variant={selectedDoorCards[0]?.illustration ?? 'ev'}
-                        title="Door — Kapı"
+                        variant={
+                          selectedDoorCards[0]?.illustration ??
+                          primaryVocab?.illustration ??
+                          'ev'
+                        }
+                        title={`${primaryVocab?.word ?? 'Door'} — ${primaryVocab?.turkishMeaning ?? 'Kapı'}`}
                         className="w-full h-36"
                       />
                     </div>
                     <div className="space-y-3 text-center sm:text-left">
                       <div>
-                        <p className="text-3xl font-bold text-[var(--campus-ink)]">Door</p>
-                        <p className="text-lg font-semibold text-[var(--seljuk-teal)]">Kapı</p>
+                        <p className="text-3xl font-bold text-[var(--campus-ink)]">
+                          {primaryVocab?.word ?? 'Door'}
+                        </p>
+                        <p className="text-lg font-semibold text-[var(--seljuk-teal)]">
+                          {primaryVocab?.turkishMeaning ?? 'Kapı'}
+                        </p>
                       </div>
                       <button
                         type="button"
-                        onClick={() => void handleSpeakEnglish('Door')}
+                        onClick={() => void handleSpeakEnglish(primaryVocab?.word ?? 'Door')}
                         className="min-h-[44px] px-4 py-2 rounded-lg bg-[var(--seljuk-teal)] text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
                       >
                         <Volume2 className="w-4 h-4" aria-hidden="true" />
-                        <span>İngilizce Dinle (Door)</span>
+                        <span>İngilizce Dinle ({primaryVocab?.word ?? 'Door'})</span>
                       </button>
                     </div>
                   </div>
@@ -820,16 +946,13 @@ function MissionRunnerInner({
                   {/* Görsel Eşleştirme */}
                   <div className="space-y-3">
                     <h3 className="text-base font-bold text-[var(--campus-ink)]">
-                      Eşleştirme: &ldquo;Door&rdquo; kelimesinin Türkçe karşılığı hangisidir?
+                      {uiCopy.ogrenPrimaryMatchQuestion}
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {[
-                        { id: 'match-door', label: 'Kapı', isCorrect: true, desc: 'İçeri girdiğimiz kapı' },
-                        { id: 'match-window', label: 'Pencere', isCorrect: false, desc: 'Dışarıya baktığımız cam açıklık' },
-                        { id: 'match-tree', label: 'Ağaç', isCorrect: false, desc: 'Avludaki yeşil bitki' },
-                      ].map((opt) => {
+                      {uiCopy.ogrenPrimaryMatchOptions.map((opt) => {
+                        const targetVocabId = primaryVocab?.id ?? 'vocab-door';
                         const matched =
-                          opt.isCorrect && selections.matchedVocabularyIds.includes('vocab-door');
+                          opt.isCorrect && selections.matchedVocabularyIds.includes(targetVocabId);
                         return (
                           <button
                             key={opt.id}
@@ -838,17 +961,16 @@ function MissionRunnerInner({
                               if (opt.isCorrect) {
                                 setSelections((prev) => ({
                                   ...prev,
-                                  matchedVocabularyIds: ['vocab-door'],
+                                  matchedVocabularyIds: [targetVocabId],
                                 }));
                                 setVocabFeedback({
                                   type: 'ok',
-                                  message:
-                                    'Harika! "Door", içeri girip çıktığımız kapı anlamına gelir.',
+                                  message: uiCopy.ogrenPrimaryCorrectFeedback,
                                 });
                               } else {
                                 setVocabFeedback({
                                   type: 'hint',
-                                  message: `Yaklaştın! ${opt.label} farklı bir kavramdır. "Door", eve veya okula girerken açtığımız kapıdır; tekrar deneyebilirsin.`,
+                                  message: `Yaklaştın! ${opt.label} farklı bir kavramdır. "${primaryVocab?.word ?? 'Door'}" kelimesi "${primaryVocab?.turkishMeaning ?? 'Kapı'}" anlamına gelir; tekrar deneyebilirsin.`,
                                 });
                               }
                             }}
@@ -880,51 +1002,37 @@ function MissionRunnerInner({
                   </div>
                 </div>
               ) : (
-                /* ORTAOKUL ÖĞREN: 5 Kelime + Door/Gate Karşılaştırması + Örnek Cümle */
+                /* ORTAOKUL ÖĞREN: 5 Kelime + İkili Görsel Karşılaştırma + Örnek Cümle */
                 <div className="space-y-6">
-                  {/* Door vs Gate Görsel Karşılaştırma */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="rounded-xl border border-[var(--campus-border)] bg-[var(--campus-canvas)] p-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-lg font-bold text-[var(--campus-ink)]">Door — Kapı</p>
-                          <p className="text-xs text-[var(--campus-ink-muted)]">
-                            Genellikle oda veya bina girişindeki kapı
-                          </p>
+                    {uiCopy.ogrenMiddleComparePair.map((pair) => (
+                      <div
+                        key={pair.word}
+                        className="rounded-xl border border-[var(--campus-border)] bg-[var(--campus-canvas)] p-4 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-lg font-bold text-[var(--campus-ink)]">
+                              {pair.word} — {pair.meaning}
+                            </p>
+                            <p className="text-xs text-[var(--campus-ink-muted)]">{pair.desc}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => void handleSpeakEnglish(pair.word)}
+                            aria-label={`${pair.word} kelimesini dinle`}
+                            className="min-h-[44px] min-w-[44px] rounded-lg border border-[var(--campus-border)] bg-white flex items-center justify-center cursor-pointer"
+                          >
+                            <Volume2 className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => void handleSpeakEnglish('Door')}
-                          aria-label="Door kelimesini dinle"
-                          className="min-h-[44px] min-w-[44px] rounded-lg border border-[var(--campus-border)] bg-white flex items-center justify-center cursor-pointer"
-                        >
-                          <Volume2 className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
-                        </button>
+                        <DoorIllustrationSvg
+                          variant={pair.illustration}
+                          title={`${pair.word} — ${pair.meaning}`}
+                          className="w-full h-36"
+                        />
                       </div>
-                      <DoorIllustrationSvg variant="indoor-door" title="Door — İç mekân kapısı" className="w-full h-36" />
-                    </div>
-
-                    <div className="rounded-xl border border-[var(--campus-border)] bg-[var(--campus-canvas)] p-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-lg font-bold text-[var(--campus-ink)]">
-                            Gate — Giriş kapısı / Büyük kapı
-                          </p>
-                          <p className="text-xs text-[var(--campus-ink-muted)]">
-                            Avlu, bahçe veya geniş yerleşkeye açılan büyük kapı
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => void handleSpeakEnglish('Gate')}
-                          aria-label="Gate kelimesini dinle"
-                          className="min-h-[44px] min-w-[44px] rounded-lg border border-[var(--campus-border)] bg-white flex items-center justify-center cursor-pointer"
-                        >
-                          <Volume2 className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
-                        </button>
-                      </div>
-                      <DoorIllustrationSvg variant="courtyard-gate" title="Gate — Büyük avlu giriş kapısı" className="w-full h-36" />
-                    </div>
+                    ))}
                   </div>
 
                   {/* 5 Kelime Kartları */}
@@ -1114,7 +1222,7 @@ function MissionRunnerInner({
         {stage === 'uret' && (
           <div className="space-y-6">
             {isPrimary && (
-              <GuideDialogueCard dialogue={MISSION_GUIDE_PROMPTS.ilkokulUret} mood="welcoming" />
+              <GuideDialogueCard dialogue={guidePrompts.ilkokulUret} mood="welcoming" />
             )}
 
             <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 space-y-5">
@@ -1125,10 +1233,10 @@ function MissionRunnerInner({
                   </p>
                   <h2 className="text-xl font-bold text-[var(--campus-ink)]">
                     {isEarlyPrimary
-                      ? 'Kendi Kapını Çiz veya Şekil Ekle'
+                      ? uiCopy.uretHeadingEarly
                       : isPrimary
-                        ? 'Kendi Kapını ve Hikâyeni Oluştur'
-                        : 'Özgün Kapını Tasarla ve Gerekçelendir'}
+                        ? uiCopy.uretHeadingPrimary
+                        : uiCopy.uretHeadingMiddle}
                   </h2>
                   <p className="text-sm text-[var(--campus-ink-muted)]">
                     {isEarlyPrimary
@@ -1166,15 +1274,9 @@ function MissionRunnerInner({
                     {isEarlyPrimary ? (
                       <p>Önce bir şekil seç veya serbest çiz. İstersen altına kısa bir kelime yaz.</p>
                     ) : isPrimary ? (
-                      <p>
-                        İstersen önce &ldquo;Hazır Şekil Ekle&rdquo; düğmeleriyle bir kemer ve kapı kanadı
-                        ekle, sonra serbest fırçayla kapının ardında gördüklerini çiz.
-                      </p>
+                      <p>{uiCopy.uretHintPrimary}</p>
                     ) : (
-                      <p>
-                        Malzeme seçip tasarımına bir isim ver. Açıklamanda malzeme (wood/stone), biçim veya
-                        desen (pattern) tercihini neden seçtiğini karşılaştırarak yazabilirsin.
-                      </p>
+                      <p>{uiCopy.uretHintMiddle}</p>
                     )}
                   </div>
                 </div>
@@ -1187,7 +1289,10 @@ function MissionRunnerInner({
                     Önceki Adımdan Taşınan Gözlemlerin:
                   </p>
                   {selectedDoorCards.length > 0 && (
-                    <p>Seçtiğin kapılar: {selectedDoorCards.map((d) => d.title).join(', ')}</p>
+                    <p>
+                      {uiCopy.selectedCarryoverLabel}:{' '}
+                      {selectedDoorCards.map((d) => d.title).join(', ')}
+                    </p>
                   )}
                   {Object.entries(selections.observationNotes).map(([k, val]) => (
                     <p key={k}>• {val}</p>
@@ -1206,7 +1311,7 @@ function MissionRunnerInner({
                 }}
               />
 
-              {/* Kapı İsmi, Malzeme (5–7. Sınıf) ve Yazma Alanı */}
+              {/* Çalışma İsmi, Malzeme (5–7. Sınıf) ve Yazma Alanı */}
               <div className="grid grid-cols-1 gap-4 pt-2">
                 {!isPrimary && (
                   <div className="space-y-1.5">
@@ -1214,7 +1319,7 @@ function MissionRunnerInner({
                       Tasarım Malzemesi Seç (İsteğe Bağlı)
                     </p>
                     <div className="flex flex-wrap gap-2" role="group" aria-label="Tasarım malzemesi">
-                      {MIDDLE_SCHOOL_MATERIALS.map((mat) => {
+                      {uiCopy.materialChoices.map((mat) => {
                         const selected = selections.materialChoice === mat;
                         return (
                           <button
@@ -1244,7 +1349,7 @@ function MissionRunnerInner({
 
                 <div className="space-y-1.5">
                   <label htmlFor="door-name-input" className="block text-sm font-semibold text-[var(--campus-ink)]">
-                    {isPrimary ? 'Kapına Kısa Bir Ad Ver (İsteğe Bağlı)' : 'Tasarladığın Kapının Adı'}
+                    {isPrimary ? uiCopy.uretNameLabelPrimary : uiCopy.uretNameLabelMiddle}
                   </label>
                   <input
                     id="door-name-input"
@@ -1254,7 +1359,9 @@ function MissionRunnerInner({
                       setSelections((prev) => ({ ...prev, doorName: e.target.value }));
                       setHasUnsavedWork(true);
                     }}
-                    placeholder={isPrimary ? 'Örneğin: Bahçe Kapısı' : 'Örneğin: Yıldızlı Avlu Kapısı'}
+                    placeholder={
+                      isPrimary ? uiCopy.uretNamePlaceholderPrimary : uiCopy.uretNamePlaceholderMiddle
+                    }
                     className="w-full min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-canvas)] text-sm text-[var(--campus-ink)]"
                   />
                 </div>
@@ -1335,8 +1442,8 @@ function MissionRunnerInner({
                     {isEarlyPrimary
                       ? 'İstersen Kısaca Yaz (Çizim veya Şekil Yeterlidir)'
                       : isPrimary
-                        ? 'Kapıdan geçince ne gördüğünü kısaca yaz (isteğe bağlı)'
-                        : 'Kapı Tasarımını ve Seçim Gerekçeni Açıkla'}
+                        ? uiCopy.uretTextLabelPrimary
+                        : uiCopy.uretTextLabelMiddle}
                   </label>
                   <textarea
                     id="written-text-input"
@@ -1349,12 +1456,12 @@ function MissionRunnerInner({
                     }}
                     placeholder={
                       isEarlyPrimary
-                        ? 'Örneğin: Bahçe, Ağaç, Door...'
+                        ? uiCopy.uretTextPlaceholderEarly
                         : isPrimary
-                          ? 'Kapıdan geçince yeşil bir avlu gördüm...'
+                          ? uiCopy.uretTextPlaceholderPrimary
                           : effectiveGrade === 7
-                            ? 'Seçtiğin malzemeyi, günlük kapılarla farkını ve tasarım gerekçeni 4–6 cümleyle açıkla...'
-                            : 'Bu kapıyı tasarlarken ahşap ve taş dokuyu birlikte kullandım çünkü...'
+                            ? uiCopy.uretTextPlaceholderGrade7
+                            : uiCopy.uretTextPlaceholderMiddle
                     }
                     className="w-full p-3.5 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-canvas)] text-sm text-[var(--campus-ink)]"
                   />
@@ -1542,7 +1649,9 @@ function MissionRunnerInner({
                   <div className="rounded-xl border border-[var(--campus-border)] bg-[var(--campus-canvas)] p-4 space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs font-semibold text-[var(--campus-ink)]">
-                        Çalışmanı Gözden Geçir: {selections.doorName.trim() || (isPrimary ? 'Kapı Hikâyem' : 'Özgün Kapı Tasarımım')}
+                        Çalışmanı Gözden Geçir:{' '}
+                        {selections.doorName.trim() ||
+                          (isPrimary ? uiCopy.artifactDefaultNamePrimary : uiCopy.artifactDefaultNameMiddle)}
                       </p>
                       <span className="text-xs font-medium text-[var(--campus-ink-muted)]">
                         {saveFailedSessionOnly
@@ -1577,7 +1686,7 @@ function MissionRunnerInner({
                           </p>
                           <img
                             src={displayPngUrl}
-                            alt={`${selections.doorName || 'Kapı çalışması'} PNG ön izlemesi`}
+                            alt={`${selections.doorName || uiCopy.artifactDefaultNamePrimary} PNG ön izlemesi`}
                             className="w-full max-w-2xl mx-auto rounded-lg border border-[var(--campus-border)]"
                           />
                         </div>

@@ -7,6 +7,7 @@ import { CampusMapView } from '@/src/features/campus-map/CampusMapView';
 import { LearningAreaView } from '@/src/features/learning-areas/LearningAreaView';
 import { MissionRunnerView } from '@/src/features/missions/MissionRunnerView';
 import { JourneyView } from '@/src/features/journey/JourneyView';
+import { DesignSystemPreviewView } from '@/src/features/design-system/DesignSystemPreviewView';
 
 export function HomeRoutePage() {
   const navigate = useNavigate();
@@ -72,6 +73,10 @@ export function MissionRoutePage() {
 
 export function JourneyRoutePage() {
   return <JourneyView />;
+}
+
+export function DesignSystemRoutePage() {
+  return <DesignSystemPreviewView />;
 }
 
 export function NotFoundRoutePage() {

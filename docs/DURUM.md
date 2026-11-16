@@ -1,4 +1,4 @@
-# Proje Durum Raporu — Sürüm 3.2 (Aşama 1: Vite Mimari Geçişi)
+# Proje Durum Raporu — Sürüm 3.3 (Aşama 1 + Aşama 2: Aksaray Kültürel Miras Rotası)
 
 ## Tamamlanan Bölümler
 - **Mimari Dönüşüm (Vite + React + TypeScript + Tailwind CSS v4 + React Router)**:
@@ -23,11 +23,29 @@
 - **Sınıf Düzeyine Göre Uyarlı Arayüz (`DrawingCanvasStudio.tsx`, `MissionRunnerView.tsx`)**: 2–3. sınıflarda temel çizim araçlarıyla sade başlangıç ve açılabilir `"Daha Fazla Araç ve Şekil"` paneli, `44×44 px` üzeri dokunma hedefleri ve ikon destekli 3 seçenekli öz değerlendirme sunuldu; 5–7. sınıflarda malzeme seçimi ve gerekçeli açıklama alanı güçlendirildi, 7. sınıfta cümle başlangıçları kapalı tutuldu.
 - **Kampüs Yolculuğum (`JourneyView.tsx`)**: Sayfa **Görevlerim**, **Öğrenme Yolculuğum** (`1. Keşfet → 2. Öğren → 3. Üret → 4. Paylaş`) ve **Çalışmalarım** (`Cihaza Kayıtlı` vs `Oturum Belleğinde (Geçici)`) bölümlerine ayrıldı; tamamlanan görev inceleme ve ayrıntılı eser ön izleme penceresi eklendi.
 - **Türkçe Yazım ve Geri Bildirim Denetimi**: Yönlendirici/yargılayıcı olmayan geri bildirimler ve TDK uyumlu soru/etiket ifadeleri (`"Door" kelimesinin Türkçe karşılığı hangisidir?`) düzeltildi.
-
 - **Üret / Paylaş ve Yazılı Ürün Doğrulaması**: Yalnızca noktalama işareti veya rakam içeren (`!!!`, `...`, `123`) metinler yazılı ürün sayılmayacak biçimde en az 2 harf şartı eklendi (`src/utils/missionValidation.ts`). Kalıcı kayıt başarısız olduğunda (`persisted: false`), 2–3. sınıflara özel sadeleştirilmiş geçicilik uyarısı, sayfa kapatıldığında çalışmanın kaybolabileceği uyarısı ve belirgin PNG indirme çağrısı (`Çalışmamı Şimdi PNG Olarak İndir`) eklendi.
 
+## Aşama 2 — Gezi ve Keşif: Aksaray Kültürel Miras Öğrenme Rotası
+- **Eğitim Senaryosu ve Resmî Kaynak Belgelendirmesi (`docs/ASAMA2_AKSARAY_ROTASI.md`)**:
+  - İlk rota onaylı **4 durakla** sınırlandırıldı: **Sultanhanı Kervansarayı**, **Eğri Minare (Kızıl Minare)**, **Zinciriye Medresesi** ve **Ihlara Vadisi ve Melendiz Çayı** (`Aksaray Ulu Cami` sonraki Aksaray Merkez rotası için kapsam dışı tutuldu).
+  - Rota fiziksel ulaşım güzergâhı değil, **tematik dijital öğrenme rotası** olarak tanımlandı; doğrudan resmî `.gov.tr` kaynakları (`aksaray.ktb.gov.tr`, `aksaray.gov.tr`, `okuldisiogrenme.eba.gov.tr`, `muze.gov.tr`) doğrulandı ve belgelendi.
+  - Bütün belgelerde ve arayüzde `KEŞFET → ÖĞREN → ÜRET → PAYLAŞ` akışı standartlaştırıldı.
+- **Özgün Görsel Varlıklar (`HeritageStopSvg.tsx`, `DoorIllustrationSvg.tsx`)**: 4 durak için yalnızca `src/styles/globals.css` belirteçlerini kullanan sadeleştirilmiş Anadolu–Selçuklu geometrik SVG çizimleri üretildi.
+- **Görev Entegrasyonu (`missions.ts`, `dialogues.ts`, `campusAreas.ts`, `LearningAreaView.tsx`, `MissionRunnerView.tsx`)**:
+  - Mevcut 2,5B kampüs tasarımı, `dek_` depolama anahtarları ve ilk görev (`kapilarin-anlattigi-hikaye`) bozulmadan `aksaray-kulturel-miras-rotasi` aktif görevi eklendi.
+  - İlkokul (2–4) için `Arch` (*Kemer*), ortaokul (5–7) için 5 kelime (`Arch`, `Brick`, `Courtyard`, `Valley`, `Heritage`) + örnek cümle (`"This courtyard has a stone arch and red brick walls."`) ve 4 gözlem boyutu bağlandı; tüm sınıf düzeylerinde tek bir geçerli özgün üretim biçimiyle tamamlama ilkesi korundu.
+- **Belgelendirme Güncellemesi (`README.md`, `docs/ICERIK_REHBERI.md`, `docs/LISANSLAR.md`)**: GitHub/Vercel süreçleri, hukuki değerlendirme başlıkları ve varlık kredileri güncellendi.
+
+## Tasarım Sistemi ve Görsel Ön İzleme (`src/styles/globals.css`, `src/data/designSystem.ts`, `/tasarim-sistemi`)
+- **Ortak Renk, Tipografi ve Hareket Belirteçleri**: Merkezi CSS renk ve yerel Türkçe yazı tipi belirteçleri (`--font-sans`, `--font-display`, `--focus-ring-color`), sayısal hizalama (`.tabular-nums`), mobil kırılımlar (`360/390/768/1024+ px`) ve `prefers-reduced-motion` kuralları tek yapıda toplandı (`docs/TASARIM_SISTEMI.md`).
+- **Yeniden Kullanılabilir UI ve Anadolu Motif Bileşenleri (`CampusDesignSystem.tsx`, `AnatolianMotifSvg.tsx`)**: `CampusButton`, `CampusCard`, `CampusSectionHeader`, `CampusBadge`, `CampusProgressBar` ve 4 sadeleştirilmiş Anadolu motif SVG varyantı (`seljuk-star`, `stone-arch`, `brick-zigzag`, `tile-medallion`) eklendi.
+- **2–7. Sınıflar İçin Ortak Ama Yaşa Uyarlanabilir Görsel Dil (`getVisualLanguageSpec`)**: İlkokulda (`2–4`) `48 px` ferah dokunma yüksekliği ve açık kısa yönerge yoğunluğu; ortaokulda (`5–7`) `44 px` dengeli yoğunluk ve karşılaştırmalı gösterge dili uygulandı.
+- **Canlı Görsel Ön İzleme (`/tasarim-sistemi`)**: Öğrenci ana gezinme çubuğuna kalabalık eklemeden doğrudan ön izleme ve erişilebilirlik/sınıf uyarlama denetimi için `/tasarim-sistemi` rotası sunuldu.
+
 ## Doğrulama Durumu ve Sonraki Adım
-- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [23/23], `npm run build` ve `npm run test:e2e` [4/4 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
+- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [29/29], `npm run build` ve `npm run test:e2e` [8/8 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
 - Çoklu ekran boyutu denetiminde (`360×740`, `390×844`, `768×1024`, `1280×840`) yatay taşma (`0`) ve mobil `390×844` görünümünde `44×44 px` altı etkileşimli hedef (`0`) doğrulandı.
-- Aşama 1 tamamlanmış olup bu noktada durulmuştur; Aşama 2 / yeni modüllere geçilmemiştir.
+- Tasarım Sistemi ön izlemesi ve ilgili testler tamamlanmış olup onay beklenmektedir.
+
+
 

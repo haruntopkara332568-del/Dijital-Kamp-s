@@ -182,5 +182,105 @@ test.describe('Dijital Eğitim Kampüsü Uçtan Uca Yolculuk', () => {
     await page.keyboard.press('ArrowRight');
     await expect(page.getByText(/Seçili şekil:/i)).toBeVisible();
   });
+
+  test('Aşama 2: Aksaray Kültürel Miras Rotası (4 durak, 5. sınıf KEŞFET → ÖĞREN → ÜRET → PAYLAŞ ve taşmasızlık)', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /Animasyonu Atla/i }).click();
+    await page.getByRole('button', { name: /Kendim keşfedeceğim/i }).click();
+    await page.getByRole('button', { name: /5\. Sınıf/i }).click();
+
+    // Gezi ve Keşif alanından 4 Aksaray durağını kontrol et ve rotayı başlat
+    await page.getByRole('link', { name: /Gezi ve Keşif/i }).first().click();
+    await expect(page.getByRole('heading', { name: /Aksaray Kültürel Miras Durakları/i })).toBeVisible();
+    await expect(page.locator('p', { hasText: /^Sultanhanı Kervansarayı$/ })).toBeVisible();
+    await expect(page.locator('p', { hasText: /^Eğri Minare \(Kızıl Minare\)$/ })).toBeVisible();
+    await expect(page.locator('p', { hasText: /^Zinciriye Medresesi$/ })).toBeVisible();
+    await expect(page.locator('p', { hasText: /^Ihlara Vadisi ve Melendiz Çayı$/ })).toBeVisible();
+    // Aksaray Ulu Cami ilk rotada yer almaz, yalnızca Yakında notunda belirtilir
+    await expect(page.getByText(/Aksaray Merkez kültürel miras rotası — Ulu Cami/i)).toBeVisible();
+
+    await page.getByRole('link', { name: /Aksaray Rotasını Başlat/i }).click();
+
+    // Keşfet (Ortaokul): 4 durak ve 4 gözlem boyutu
+    await expect(page.getByRole('heading', { name: /Aksaray Kültürel Miras Rotası/i })).toBeVisible();
+    await page.getByRole('button', { name: /Sultanhanı kesme taş, Eğri Minare kırmızı tuğla/i }).click();
+    await page.getByRole('button', { name: /Öğren Aşamasına Geç/i }).click();
+
+    // Öğren: 5 kelime + örnek cümle
+    await expect(page.getByText(/This courtyard has a stone arch and red brick walls\./i)).toBeVisible();
+    await page.getByRole('button', { name: 'Heritage', exact: true }).click();
+    await page.getByRole('button', { name: 'Miras / Kültürel Miras', exact: true }).click();
+    await expect(page.getByText(/Doğru eşleşme!/i)).toBeVisible();
+    await page.getByRole('button', { name: /Üret Aşamasına Geç/i }).click();
+
+    // Üret: tek geçerli üretim biçimi (yazılı anlatım) ile tamamlama
+    await page.getByLabel(/Aksaray Çalışmanın Adı/i).fill('Aksaray Taş ve Tuğla Rotam');
+    await page.getByRole('button', { name: 'Kırmızı Tuğla ve Çini', exact: true }).click();
+    await page.getByRole('button', { name: 'Brick (Tuğla)' }).click();
+    await page.getByLabel(/Aksaray Gözlemini ve Tasarım Gerekçeni Açıkla/i).fill(
+      'Eğri Minare kırmızı brick gövdesiyle, Sultanhanı ise taş avlusuyla dikkat çekiyor.',
+    );
+
+    // Mobil ve masaüstü yatay taşma kontrolü
+    for (const vp of [
+      { width: 390, height: 844 },
+      { width: 1280, height: 840 },
+    ]) {
+      await page.setViewportSize(vp);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      );
+      expect(overflow).toBe(false);
+    }
+
+    await page.getByRole('button', { name: /Kaydet ve Paylaş Adımına Geç/i }).click();
+    await expect(page.getByText(/Çalışman Hazır!/i)).toBeVisible();
+
+    await page.getByRole('button', { name: /Görevi Tamamla/i }).click();
+    await expect(page.getByText(/Görevin Tamamlandı!/i)).toBeVisible();
+
+    await page.getByRole('link', { name: /Kampüs Yolculuğumda Gör/i }).click();
+    await expect(page.getByText('Aksaray Taş ve Tuğla Rotam').first()).toBeVisible();
+  });
+
+  test('Tasarım Sistemi ön izlemesi (/tasarim-sistemi): sınıf uyarlama, motifler ve mobil dokunma/taşma denetimi', async ({
+    page,
+  }) => {
+    await page.goto('/tasarim-sistemi');
+
+    await expect(
+      page.getByRole('heading', { name: 'Dijital Eğitim Kampüsü Tasarım Sistemi' }),
+    ).toBeVisible();
+    await expect(page.getByRole('progressbar', { name: 'Görev Aşama İlerlemesi' })).toBeVisible();
+
+    await page.getByRole('button', { name: /^7\. Sınıf$/ }).click();
+    await expect(page.getByText(/En çok 25 sözcüklü yönerge/i)).toBeVisible();
+
+    for (const vp of [
+      { width: 390, height: 844 },
+      { width: 1280, height: 840 },
+    ]) {
+      await page.setViewportSize(vp);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      );
+      expect(overflow).toBe(false);
+    }
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    const smallButtons = await page.evaluate(() => {
+      const els = Array.from(document.querySelectorAll('main button, main a'));
+      return els
+        .filter((el) => {
+          const r = el.getBoundingClientRect();
+          return r.width > 0 && r.height > 0 && (r.width < 44 || r.height < 44);
+        })
+        .map((el) => ({ text: el.textContent?.trim(), w: el.getBoundingClientRect().width, h: el.getBoundingClientRect().height }));
+    });
+    expect(smallButtons).toEqual([]);
+  });
 });
+
 

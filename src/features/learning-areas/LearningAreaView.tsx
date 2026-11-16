@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowLeft, ArrowRight, Play, Volume2 } from 'lucide-react';
 import { getCampusAreaById } from '@/src/data/campusAreas';
-import { MISSIONS, getMissionById } from '@/src/data/missions';
+import { MISSIONS, getActiveMissions, getMissionById } from '@/src/data/missions';
 import { useCampus } from '@/src/app/CampusProviders';
 import { speakSegments } from '@/src/services/speech';
 import { CampusTopBar } from '@/src/components/CampusTopBar';
@@ -16,9 +16,12 @@ interface LearningAreaViewProps {
 export function LearningAreaView({ areaId }: LearningAreaViewProps) {
   const { activeGradeProfile, getLatestUnfinishedMission } = useCampus();
   const area = getCampusAreaById(areaId);
+  const activeMissions = getActiveMissions();
   const sampleMission = getMissionById('kapilarin-anlattigi-hikaye');
+  const aksarayMission = getMissionById('aksaray-kulturel-miras-rotasi');
   const unfinished = getLatestUnfinishedMission();
   const hasActiveSampleMission = unfinished?.missionId === sampleMission?.id;
+  const hasActiveAksarayMission = unfinished?.missionId === aksarayMission?.id;
   const [speechNotice, setSpeechNotice] = useState<string | null>(null);
 
   if (!area) {
@@ -79,88 +82,167 @@ export function LearningAreaView({ areaId }: LearningAreaViewProps) {
               {area.detailNote}
             </p>
 
-            {sampleMission && area.id !== 'gorev-panosu' && (
-              <div className="pt-1">
-                <Link
-                  to={`/gorev/${sampleMission.id}`}
-                  className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors"
-                >
-                  <Play className="w-4 h-4" aria-hidden="true" />
-                  <span>
-                    {hasActiveSampleMission
-                      ? `${sampleMission.title} Görevine Devam Et`
-                      : `${sampleMission.title} Görevine Başla`}
-                  </span>
-                </Link>
+            {area.id !== 'gorev-panosu' && (
+              <div className="flex flex-wrap gap-2.5 pt-1">
+                {sampleMission && (
+                  <Link
+                    to={`/gorev/${sampleMission.id}`}
+                    className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors"
+                  >
+                    <Play className="w-4 h-4" aria-hidden="true" />
+                    <span>
+                      {hasActiveSampleMission
+                        ? `${sampleMission.title} Görevine Devam Et`
+                        : `${sampleMission.title} Görevine Başla`}
+                    </span>
+                  </Link>
+                )}
+
+                {aksarayMission && (
+                  <Link
+                    to={`/gorev/${aksarayMission.id}`}
+                    className="min-h-[44px] px-5 py-2.5 rounded-lg border border-[var(--seljuk-teal)] bg-[var(--seljuk-teal-soft)] hover:bg-[var(--campus-surface-muted)] text-[var(--seljuk-navy)] text-sm font-semibold inline-flex items-center gap-2 transition-colors"
+                  >
+                    <Play className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
+                    <span>
+                      {hasActiveAksarayMission
+                        ? `${aksarayMission.title} Görevine Devam Et`
+                        : `${aksarayMission.title} Görevine Başla`}
+                    </span>
+                  </Link>
+                )}
               </div>
             )}
           </div>
         </section>
 
         {/* Serbest Keşif İçerikleri */}
-        {area.id === 'gezi-ve-kesif' && sampleMission && (
-          <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 space-y-4">
-            <h2 className="text-lg font-bold text-[var(--seljuk-navy)]">
-              Serbest Gözlem: Çevremizdeki Kapılar
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {sampleMission.contentRefs.ilkokulDoors.map((door) => (
-                <div
-                  key={door.id}
-                  className="rounded-xl border border-[var(--campus-border)] bg-[var(--stone-cream)] p-3 space-y-2"
-                >
-                  <DoorIllustrationSvg variant={door.illustration} title={door.title} />
-                  <p className="text-sm font-bold text-[var(--seljuk-navy)]">{door.title}</p>
-                  <p className="text-xs text-[var(--campus-ink-muted)]">{door.shortDescription}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {area.id === 'ingilizce-dunyasi' && sampleMission && (
-          <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-lg font-bold text-[var(--seljuk-navy)]">
-                Serbest Keşif: İngilizce Kelime Kartları ({activeGradeProfile.label})
-              </h2>
-              {speechNotice && (
-                <p role="status" className="text-xs font-medium text-[var(--sandstone-gold)]">
-                  {speechNotice}
-                </p>
-              )}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {(isPrimary
-                ? sampleMission.contentRefs.ilkokulVocabulary
-                : sampleMission.contentRefs.ortaokulVocabulary
-              ).map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-xl border border-[var(--campus-border)] bg-[var(--stone-cream)] p-4 flex items-center justify-between gap-3"
-                >
-                  <div>
-                    <p className="text-lg font-bold text-[var(--seljuk-navy)]">{item.word}</p>
-                    <p className="text-xs font-medium text-[var(--seljuk-teal)]">
-                      {item.turkishMeaning}
+        {area.id === 'gezi-ve-kesif' && (
+          <div className="space-y-6">
+            {aksarayMission && (
+              <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 space-y-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-[var(--terracotta)]">
+                      Tematik Dijital Öğrenme Rotası (4 Durak)
                     </p>
+                    <h2 className="text-lg font-bold text-[var(--seljuk-navy)]">
+                      Aksaray Kültürel Miras Durakları
+                    </h2>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => void handleSpeak(item.word)}
-                    aria-label={`${item.word} kelimesini sesli dinle`}
-                    className="min-h-[44px] px-3 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-1.5 cursor-pointer"
+                  <Link
+                    to={`/gorev/${aksarayMission.id}`}
+                    className="min-h-[44px] px-4 py-2 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-2 transition-colors"
                   >
-                    <Volume2 className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
-                    <span>Dinle</span>
-                  </button>
+                    <span>Aksaray Rotasını Başlat</span>
+                    <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                  </Link>
                 </div>
-              ))}
-            </div>
-          </section>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {aksarayMission.contentRefs.ilkokulDoors.map((stop) => (
+                    <div
+                      key={stop.id}
+                      className="rounded-xl border border-[var(--campus-border)] bg-[var(--stone-cream)] p-3.5 space-y-2 flex flex-col justify-between"
+                    >
+                      <div className="space-y-2">
+                        <DoorIllustrationSvg variant={stop.illustration} title={stop.title} />
+                        {stop.periodBadge && (
+                          <p className="text-[11px] font-semibold text-[var(--seljuk-teal)]">
+                            {stop.periodBadge}
+                          </p>
+                        )}
+                        <p className="text-sm font-bold text-[var(--seljuk-navy)]">{stop.title}</p>
+                        <p className="text-xs text-[var(--campus-ink-muted)]">{stop.shortDescription}</p>
+                      </div>
+                      {stop.sourceNote && (
+                        <p className="text-[11px] text-[var(--campus-ink-muted)] border-t border-[var(--campus-border)] pt-2">
+                          Kaynak: {stop.sourceNote}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {sampleMission && (
+              <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 space-y-4">
+                <h2 className="text-lg font-bold text-[var(--seljuk-navy)]">
+                  Serbest Gözlem: Çevremizdeki Kapılar
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {sampleMission.contentRefs.ilkokulDoors.map((door) => (
+                    <div
+                      key={door.id}
+                      className="rounded-xl border border-[var(--campus-border)] bg-[var(--stone-cream)] p-3 space-y-2"
+                    >
+                      <DoorIllustrationSvg variant={door.illustration} title={door.title} />
+                      <p className="text-sm font-bold text-[var(--seljuk-navy)]">{door.title}</p>
+                      <p className="text-xs text-[var(--campus-ink-muted)]">{door.shortDescription}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
         )}
 
-        {area.id === 'kitap-ve-hikaye-dunyasi' && sampleMission && (
+        {area.id === 'ingilizce-dunyasi' && (
+          <div className="space-y-6">
+            {activeMissions.map((m) => {
+              const vocabList = isPrimary
+                ? m.contentRefs.ilkokulVocabulary
+                : m.contentRefs.ortaokulVocabulary;
+              return (
+                <section
+                  key={m.id}
+                  className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 space-y-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-semibold text-[var(--seljuk-teal)]">{m.title}</p>
+                      <h2 className="text-lg font-bold text-[var(--seljuk-navy)]">
+                        Serbest Keşif: İngilizce Kelime Kartları ({activeGradeProfile.label})
+                      </h2>
+                    </div>
+                    {speechNotice && (
+                      <p role="status" className="text-xs font-medium text-[var(--sandstone-gold)]">
+                        {speechNotice}
+                      </p>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {vocabList.map((item) => (
+                      <div
+                        key={`${m.id}-${item.id}`}
+                        className="rounded-xl border border-[var(--campus-border)] bg-[var(--stone-cream)] p-4 flex items-center justify-between gap-3"
+                      >
+                        <div>
+                          <p className="text-lg font-bold text-[var(--seljuk-navy)]">{item.word}</p>
+                          <p className="text-xs font-medium text-[var(--seljuk-teal)]">
+                            {item.turkishMeaning}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void handleSpeak(item.word)}
+                          aria-label={`${item.word} kelimesini sesli dinle`}
+                          className="min-h-[44px] px-3 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Volume2 className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
+                          <span>Dinle</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        )}
+
+        {area.id === 'kitap-ve-hikaye-dunyasi' && (
           <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 space-y-3">
             <h2 className="text-lg font-bold text-[var(--seljuk-navy)]">
               Yaratıcı Üretim Atölyesi
@@ -170,13 +252,24 @@ export function LearningAreaView({ areaId }: LearningAreaViewProps) {
               Kaydettiğin tüm eserlere ise Kampüs Yolculuğum bölümünden ulaşabilirsin.
             </p>
             <div className="flex flex-wrap gap-3 pt-1">
-              <Link
-                to={`/gorev/${sampleMission.id}`}
-                className="min-h-[44px] px-4 py-2 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors"
-              >
-                <span>Örnek Göreve Katıl</span>
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              </Link>
+              {sampleMission && (
+                <Link
+                  to={`/gorev/${sampleMission.id}`}
+                  className="min-h-[44px] px-4 py-2 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors"
+                >
+                  <span>{sampleMission.title}</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </Link>
+              )}
+              {aksarayMission && (
+                <Link
+                  to={`/gorev/${aksarayMission.id}`}
+                  className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--seljuk-teal)] bg-[var(--seljuk-teal-soft)] hover:bg-[var(--campus-surface-muted)] text-sm font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-2 transition-colors"
+                >
+                  <span>{aksarayMission.title}</span>
+                  <ArrowRight className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
+                </Link>
+              )}
               <Link
                 to="/yolculugum"
                 className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-sm font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-2 transition-colors"
@@ -206,7 +299,11 @@ export function LearningAreaView({ areaId }: LearningAreaViewProps) {
                             isReady ? 'text-[var(--courtyard-sage)]' : 'text-[var(--terracotta)]'
                           }`}
                         >
-                          {isReady ? 'Hazır · Bütünleşik Görev' : 'Yakında'}
+                          {isReady
+                            ? m.routeKind === 'thematic-digital-route'
+                              ? 'Hazır · Tematik Dijital Rota'
+                              : 'Hazır · Bütünleşik Görev'
+                            : 'Yakında'}
                         </span>
                         <span className="text-[var(--campus-ink-muted)] tabular-nums">
                           {m.gradeRange[0]}–{m.gradeRange[m.gradeRange.length - 1]}. Sınıflar
@@ -215,7 +312,7 @@ export function LearningAreaView({ areaId }: LearningAreaViewProps) {
                       <h3 className="text-lg font-bold text-[var(--seljuk-navy)]">{m.title}</h3>
                       <p className="text-xs text-[var(--campus-ink-muted)]">
                         {isReady
-                          ? 'Keşfet (Gezi ve Keşif) → Öğren (İngilizce Dünyası) → Üret & Paylaş (Kitap ve Hikâye Dünyası)'
+                          ? 'Keşfet (Gezi ve Keşif) → Öğren (İngilizce Dünyası) → Üret (Kitap ve Hikâye Dünyası) → Paylaş (Kampüs Yolculuğum)'
                           : 'Bu görev kaynak ve içerik doğrulama sürecindedir.'}
                       </p>
                     </div>

@@ -617,3 +617,199 @@ describe('Görev Akışı, Sınıf Düzeyi Farkları ve Kampüs Yolculuğum', ()
   });
 });
 
+describe('Aşama 2 — Aksaray Kültürel Miras Rotası Veri ve Akış Doğrulaması', () => {
+  beforeEach(async () => {
+    window.localStorage.clear();
+    await clearAllCampusData();
+  });
+
+  it('4 onaylı durağı ve KEŞFET → ÖĞREN → ÜRET → PAYLAŞ akışını içerir, Aksaray Ulu Cami içermez', () => {
+    const mission = getMissionById('aksaray-kulturel-miras-rotasi');
+    expect(mission).toBeDefined();
+    expect(mission?.status).toBe('active');
+    expect(mission?.routeKind).toBe('thematic-digital-route');
+    expect(mission?.verificationStatus).toBe('dogrulandi');
+    expect(mission?.steps.map((s) => s.title)).toEqual(['Keşfet', 'Öğren', 'Üret', 'Paylaş']);
+
+    const stopTitles = mission?.contentRefs.ilkokulDoors.map((d) => d.title) ?? [];
+    expect(stopTitles).toEqual([
+      'Sultanhanı Kervansarayı',
+      'Eğri Minare (Kızıl Minare)',
+      'Zinciriye Medresesi',
+      'Ihlara Vadisi ve Melendiz Çayı',
+    ]);
+    expect(stopTitles.join(' ')).not.toMatch(/Ulu Cami/i);
+
+    expect(mission?.contentRefs.ilkokulVocabulary.map((v) => `${v.word}:${v.turkishMeaning}`)).toEqual([
+      'Arch:Kemer',
+    ]);
+    expect(mission?.contentRefs.ortaokulVocabulary.map((v) => `${v.word}:${v.turkishMeaning}`)).toEqual([
+      'Arch:Kemer',
+      'Brick:Tuğla',
+      'Courtyard:Avlu',
+      'Valley:Vadi',
+      'Heritage:Miras / Kültürel Miras',
+    ]);
+    expect(mission?.contentRefs.ortaokulExampleSentence.english).toBe(
+      'This courtyard has a stone arch and red brick walls.',
+    );
+  });
+
+  it('2. sınıfta Aksaray rotasını tek geçerli şekil üretimiyle ve Arch eşleştirmesiyle tamamlar', async () => {
+    const st = createInitialStudentState();
+    st.selectedGrade = 2;
+    st.hasSeenGate = true;
+    st.hasCompletedOnboarding = true;
+    saveStudentState(st);
+
+    render(
+      <MemoryRouter>
+        <CampusProviders>
+          <MissionRunnerView missionId="aksaray-kulturel-miras-rotasi" />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getAllByText('Sultanhanı Kervansarayı').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Eğri Minare (Kızıl Minare)').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Zinciriye Medresesi').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Ihlara Vadisi ve Melendiz Çayı').length).toBeGreaterThan(0);
+    expect(screen.getByText(/Tematik Dijital Öğrenme Rotası Notu/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /2\. Öğren/i }));
+    expect(screen.getByText(/"Arch" kelimesinin Türkçe karşılığı hangisidir\?/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Kemer/i }));
+    expect(screen.getByText(/Harika! "Arch", taş kapılarda/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /3\. Üret/i }));
+    fireEvent.click(screen.getByRole('button', { name: /\+ Kemer/i }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Kaydet ve Paylaş Adımına Geç/i }));
+    });
+    expect(screen.getByText(/Çalışman Hazır!/i)).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Görevi Tamamla/i }));
+    });
+    expect(
+      loadStudentState().missionProgressByKey['aksaray-kulturel-miras-rotasi::grade-2']?.completed,
+    ).toBe(true);
+  });
+
+  it('6. sınıfta Aksaray rotasını 5 kelime, örnek cümle ve yalnızca yazılı anlatımla tamamlar', async () => {
+    const st = createInitialStudentState();
+    st.selectedGrade = 6;
+    st.hasSeenGate = true;
+    st.hasCompletedOnboarding = true;
+    saveStudentState(st);
+
+    render(
+      <MemoryRouter>
+        <CampusProviders>
+          <MissionRunnerView missionId="aksaray-kulturel-miras-rotasi" />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /2\. Öğren/i }));
+    expect(screen.getByText(/This courtyard has a stone arch and red brick walls\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Kelime Eşleştirme \(0 \/ 5\)/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^Courtyard$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Avlu$/ }));
+    expect(screen.getByText(/Kelime Eşleştirme \(1 \/ 5\)/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /3\. Üret/i }));
+    fireEvent.change(screen.getByLabelText(/Aksaray Gözlemini ve Tasarım Gerekçeni Açıkla/i), {
+      target: {
+        value:
+          'Sultanhanı Kervansarayı taş taç kapısıyla, Eğri Minare kırmızı tuğla gövdesiyle ve Ihlara Vadisi doğal kanyon yapısıyla öne çıkar.',
+      },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Kaydet ve Paylaş Adımına Geç/i }));
+    });
+    expect(screen.getByText(/Çalışman Hazır!/i)).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Görevi Tamamla/i }));
+    });
+    expect(
+      loadStudentState().missionProgressByKey['aksaray-kulturel-miras-rotasi::grade-6']?.completed,
+    ).toBe(true);
+  });
+});
+
+import {
+  DESIGN_COLOR_GROUPS,
+  TURKISH_FONT_STACK,
+  getVisualLanguageSpec,
+} from '@/src/data/designSystem';
+import {
+  CampusBadge,
+  CampusButton,
+  CampusCard,
+  CampusProgressBar,
+} from '@/src/components/ui/CampusDesignSystem';
+import { AnatolianMotifSvg } from '@/src/components/svg/AnatolianMotifSvg';
+import { DesignSystemPreviewView } from '@/src/features/design-system/DesignSystemPreviewView';
+
+describe('Tasarım Sistemi Belirteçleri, Bileşenler ve Ön İzleme', () => {
+  it('ortak renk belirteçleri, Türkçe yerel yazı tipi ve 2–7. sınıf uyarlanabilir görsel dilini tanımlar', () => {
+    expect(DESIGN_COLOR_GROUPS.flatMap((g) => g.tokens).length).toBe(12);
+    expect(TURKISH_FONT_STACK).toContain('system-ui');
+    expect(TURKISH_FONT_STACK).not.toMatch(/fonts\.googleapis|https?:\/\//i);
+
+    const g2 = getVisualLanguageSpec(2);
+    const g7 = getVisualLanguageSpec(7);
+    expect(g2.tier).toBe('ilkokul');
+    expect(g2.touchMinHeightClass).toBe('min-h-[48px]');
+    expect(g7.tier).toBe('ortaokul');
+    expect(g7.touchMinHeightClass).toBe('min-h-[44px]');
+  });
+
+  it('yeniden kullanılabilir düğme, kart, ilerleme göstergesi, rozet ve Anadolu motif SVG bileşenlerini render eder', () => {
+    const { container } = render(
+      <CampusCard tone="stone" tier="ilkokul" showCrownAccent>
+        <CampusBadge tone="sage">Aktif</CampusBadge>
+        <CampusProgressBar label="Test İlerlemesi" current={2} total={4} />
+        <CampusButton tier="ilkokul">Deneme Düğmesi</CampusButton>
+        <AnatolianMotifSvg variant="seljuk-star" title="Selçuklu Yıldızı" />
+      </CampusCard>,
+    );
+
+    expect(screen.getByRole('progressbar', { name: 'Test İlerlemesi' })).toHaveAttribute(
+      'aria-valuenow',
+      '2',
+    );
+    expect(screen.getByRole('button', { name: 'Deneme Düğmesi' }).className).toContain(
+      'min-h-[48px]',
+    );
+    expect(screen.getByRole('img', { name: 'Selçuklu Yıldızı' })).toBeInTheDocument();
+    expect(container.innerHTML).not.toMatch(/#[0-9a-f]{3,6}/i);
+  });
+
+  it('Tasarım Sistemi Görsel Ön İzleme sayfası 2. ve 7. sınıf arasında görsel dili uyarlar', () => {
+    render(
+      <MemoryRouter initialEntries={['/tasarim-sistemi']}>
+        <CampusProviders>
+          <DesignSystemPreviewView />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.getByRole('heading', { name: 'Dijital Eğitim Kampüsü Tasarım Sistemi' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Sınıf Düzeyi Görsel Dil Ön İzlemesi \(2\. Sınıf\)/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^7\. Sınıf$/ }));
+    expect(screen.getByText(/Sınıf Düzeyi Görsel Dil Ön İzlemesi \(7\. Sınıf\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/En çok 25 sözcüklü yönerge/i)).toBeInTheDocument();
+  });
+});
+
+
+

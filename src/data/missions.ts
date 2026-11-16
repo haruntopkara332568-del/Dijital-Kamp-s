@@ -205,15 +205,25 @@ export const MISSIONS: MissionDefinition[] = [
     contentVersion: '1.0.0',
   },
   {
-    id: 'aksaray-tas-isci-rotasi',
-    title: 'Anadolu Avlularında Geometri Rotası',
-    version: '0.1.0',
-    status: 'coming-soon',
-    gradeRange: [3, 4, 5, 6, 7],
+    id: 'aksaray-kulturel-miras-rotasi',
+    title: 'Aksaray Kültürel Miras Rotası',
+    version: '1.0.0',
+    status: 'active',
+    gradeRange: [2, 3, 4, 5, 6, 7],
     relatedAreaIds: ['gezi-ve-kesif', 'ingilizce-dunyasi', 'kitap-ve-hikaye-dunyasi'],
+    routeKind: 'thematic-digital-route',
+    guidePromptGroup: 'aksaray',
     learningObjectives: {
-      ilkokul: ['Yakında eklenecek doğrulanmış gözlem hedefleri.'],
-      ortaokul: ['Yakında eklenecek doğrulanmış karşılaştırma hedefleri.'],
+      ilkokul: [
+        'Aksaray tematik dijital öğrenme rotasındaki dört durağı malzeme ve biçim özellikleriyle ayırt etmek.',
+        'İngilizce "Arch" kelimesinin "Kemer" anlamıyla eşleşmesini görsel üzerinden göstermek.',
+        'Serbest çizim, hazır şekil veya kısa yazıyla seçtiği duraktan esinlenen özgün bir çalışma üretmek.',
+      ],
+      ortaokul: [
+        'Sultanhanı Kervansarayı, Eğri Minare, Zinciriye Medresesi ve Ihlara Vadisi duraklarını malzeme, biçim, işlev ve süsleme boyutlarında karşılaştırmak.',
+        'Arch, Brick, Courtyard, Valley ve Heritage kelimelerini bağlam içinde ayırt etmek ve örnek cümlede kullanmak.',
+        'Seçtiği duraklardan yola çıkarak özgün bir tasarım veya karşılaştırmalı gezi anlatımı üretip tek PNG çalışmasında bütünleştirmek.',
+      ],
     },
     steps: [
       {
@@ -246,12 +256,217 @@ export const MISSIONS: MissionDefinition[] = [
       },
     ],
     contentRefs: {
-      ilkokulDoors: [],
-      ilkokulVocabulary: [],
-      ortaokulDimensions: [],
-      ortaokulVocabulary: [],
-      ortaokulExampleSentence: { english: '', turkish: '' },
-      sentenceStartersByGrade: {},
+      ilkokulDoors: [
+        {
+          id: 'sultanhani',
+          title: 'Sultanhanı Kervansarayı',
+          illustration: 'sultanhani',
+          periodBadge: '1229 · Anadolu Selçuklu',
+          shortDescription:
+            'I. Alâeddin Keykubad döneminde yapılan, yazlık açık avlulu ve kışlık kapalı hollü büyük taş kervansaray.',
+          materialHint: 'Kesme taş',
+          sourceNote: 'Aksaray İl Kültür ve Turizm Müdürlüğü & Aksaray Valiliği',
+        },
+        {
+          id: 'egri-minare',
+          title: 'Eğri Minare (Kızıl Minare)',
+          illustration: 'egri-minare',
+          periodBadge: '13. Yüzyıl · Anadolu Selçuklu',
+          shortDescription:
+            'Taş kaide üzerinde yükselen, kırmızı tuğla gövdeli, zikzak örgülü ve çini mozaik süslemeli eğik minare.',
+          materialHint: 'Kırmızı tuğla ve çini',
+          sourceNote: 'Aksaray İl Kültür ve Turizm Müdürlüğü',
+        },
+        {
+          id: 'zinciriye',
+          title: 'Zinciriye Medresesi',
+          illustration: 'zinciriye',
+          periodBadge: '1336 · Karamanoğulları',
+          shortDescription:
+            'Yahşi Bey tarafından yaptırılan, dört eyvanlı, açık avlulu ve dış duvarları dendaneli tarihî eğitim yapısı.',
+          materialHint: 'Tüf kesme taş ve tuğla',
+          sourceNote: 'MEB EBA & Aksaray İl Kültür ve Turizm Müdürlüğü',
+        },
+        {
+          id: 'ihlara',
+          title: 'Ihlara Vadisi ve Melendiz Çayı',
+          illustration: 'ihlara',
+          periodBadge: 'Doğal Kanyon ve Kaya Oyma Miras',
+          shortDescription:
+            'Hasan Dağı volkanik tabakalarının Melendiz Çayı ile aşınmasıyla oluşan 14 km kanyon ve kaya oyma mekânlar.',
+          materialHint: 'Doğal kaya ve akarsu',
+          sourceNote: 'T.C. Kültür ve Turizm Bakanlığı & Müze Portalı',
+        },
+      ],
+      ilkokulVocabulary: [
+        {
+          id: 'vocab-arch',
+          word: 'Arch',
+          turkishMeaning: 'Kemer',
+          exampleSentence: 'Look at the stone arch.',
+          exampleTurkish: 'Taş kemere bak.',
+          illustration: 'sultanhani',
+        },
+      ],
+      ortaokulDimensions: [
+        {
+          id: 'malzeme',
+          title: 'Malzeme',
+          prompt: 'Duraklarda insan yapımı taş-tuğla ile doğal kaya nasıl farklılaşıyor?',
+          choices: [
+            'Sultanhanı kesme taş, Eğri Minare kırmızı tuğla ve çini, Zinciriye taş-tuğla birlikte kullanır.',
+            'Ihlara Vadisi’nde yapılar dışarıdan örülmek yerine doğal volkanik kayaçlara oyulmuştur.',
+            'Her durak çevresindeki yerel taş, kil ve kayaç imkânlarından yararlanmıştır.',
+          ],
+        },
+        {
+          id: 'bicim',
+          title: 'Biçim',
+          prompt: 'Durakların plan düzeni ve yükseliş biçimi nasıl ayrışıyor?',
+          choices: [
+            'Sultanhanı yazlık avlu ve kışlık hol düzenine, Zinciriye dört eyvanlı açık avluya sahiptir.',
+            'Eğri Minare dört köşe kaide üstünde yükselen eğimli silindirik gövdelidir.',
+            'Ihlara Vadisi dik kanyon duvarları boyunca uzanan doğal bir geçit biçimindedir.',
+          ],
+        },
+        {
+          id: 'islev',
+          title: 'İşlev',
+          prompt: 'Bu dört durak geçmişte ve günümüzde hangi amaçlara hizmet etmiştir?',
+          choices: [
+            'Sultanhanı İpek Yolu yolcularının konaklaması, Zinciriye Medresesi ise eğitim için yapılmıştır.',
+            'Eğri Minare ibadet çağrısı ve şehir simgesi olarak öne çıkar.',
+            'Ihlara Vadisi erken dönem kaya yerleşimlerine ve günümüzde doğa-kültür yürüyüşlerine ev sahipliği yapar.',
+          ],
+        },
+        {
+          id: 'susleme',
+          title: 'Süsleme',
+          prompt: 'Yüzey detaylarında ve çevre dokusunda neler göze çarpıyor?',
+          choices: [
+            'Sultanhanı taç kapısında taş kabartma ve geometrik bezemeler dikkat çeker.',
+            'Eğri Minare’de zikzak tuğla örgü ve çini mozaik kuşaklar görülür.',
+            'Zinciriye’de kale görünümü veren dendaneler, Ihlara’da kaya oyma nişler ve fresk izleri yer alır.',
+          ],
+        },
+      ],
+      ortaokulVocabulary: [
+        {
+          id: 'vocab-arch',
+          word: 'Arch',
+          turkishMeaning: 'Kemer',
+          illustration: 'sultanhani',
+          contrastNote: 'Taş taç kapılarda ve medrese eyvanlarında üst açıklığı taşıyan kavisli mimari öğedir.',
+        },
+        {
+          id: 'vocab-brick',
+          word: 'Brick',
+          turkishMeaning: 'Tuğla',
+          illustration: 'egri-minare',
+          contrastNote: 'Pişmiş kilden yapılan yapı malzemesidir; Eğri Minare kırmızı tuğlasıyla tanınır.',
+        },
+        {
+          id: 'vocab-courtyard',
+          word: 'Courtyard',
+          turkishMeaning: 'Avlu',
+          illustration: 'zinciriye',
+          contrastNote: 'Yapıların ortasında yer alan üstü açık toplanma ve geçiş alanıdır.',
+        },
+        {
+          id: 'vocab-valley',
+          word: 'Valley',
+          turkishMeaning: 'Vadi',
+          illustration: 'ihlara',
+          contrastNote: 'Akarsuyun aşındırmasıyla oluşan iki yamaç arasındaki uzun çukur yeryüzü şeklidir.',
+        },
+        {
+          id: 'vocab-heritage',
+          word: 'Heritage',
+          turkishMeaning: 'Miras / Kültürel Miras',
+          contrastNote: 'Geçmişten günümüze ulaşan ve korunması gereken tarihî, mimari ve doğal değerlerdir.',
+        },
+      ],
+      ortaokulExampleSentence: {
+        english: 'This courtyard has a stone arch and red brick walls.',
+        turkish: 'Bu avluda taş bir kemer ve kırmızı tuğla duvarlar vardır.',
+      },
+      sentenceStartersByGrade: {
+        2: ['Aksaray durağında ... gördüm.'],
+        3: ['Seçtiğim durakta ... kullanılmış.'],
+        4: ['Aksaray rotasında en çok ... ilgimi çekti. Burada ...'],
+        5: [
+          'Bu Aksaray durağında ... malzemesi öne çıkıyor çünkü ...',
+          'Tasarladığım gezi kartında ... ve ... bölümlerini birleştirdim.',
+        ],
+        6: [
+          'Seçtiğim yapıyı Ihlara Vadisi ile karşılaştırdığımda ... farkını gözlemledim çünkü ...',
+        ],
+      },
+    },
+    uiCopy: {
+      kesfetPrimaryBadge: 'Gezi ve Keşif · Tematik Dijital Öğrenme Rotası',
+      kesfetPrimaryHeading: 'Aksaray Duraklarını Keşfet',
+      kesfetPrimaryEarlyDesc:
+        'Bu dijital öğrenme rotasında beğendiğin duraklara dokun. (Fiziksel yol tarifi değildir.)',
+      kesfetPrimaryDesc:
+        'Aksaray tematik dijital öğrenme rotasındaki dört durağı incele ve sonraki adımda kullanacağın durakları seç.',
+      kesfetMiddleBadge: 'Gezi ve Keşif · Tematik Dijital Öğrenme Rotası',
+      kesfetMiddleHeading: 'Aksaray Duraklarını Malzeme ve Çevre Açısından Karşılaştır',
+      kesfetMiddleDesc:
+        'Bu rota fiziksel ulaşım güzergâhı değil, dijital gözlem yolculuğudur. Dört durağı inceleyip aşağıdaki boyutlarda gözlemlerini seç.',
+      selectedCarryoverLabel: 'Seçtiğin Aksaray durakları',
+      ogrenPrimaryHeading: 'Yeni Kelimemiz: Arch — Kemer',
+      ogrenMiddleHeading: 'Mimari ve Miras Kelimelerini Keşfet',
+      ogrenPrimaryMatchQuestion: 'Eşleştirme: "Arch" kelimesinin Türkçe karşılığı hangisidir?',
+      ogrenPrimaryCorrectFeedback:
+        'Harika! "Arch", taş kapılarda ve medrese girişlerinde gördüğümüz kemer anlamına gelir.',
+      ogrenPrimaryMatchOptions: [
+        { id: 'match-arch', label: 'Kemer', isCorrect: true, desc: 'Kapı veya avlu üstündeki kavisli taş açıklık' },
+        { id: 'match-valley', label: 'Vadi', isCorrect: false, desc: 'Akarsuyun aşındırdığı derin yeryüzü alanı' },
+        { id: 'match-brick', label: 'Tuğla', isCorrect: false, desc: 'Pişmiş kilden yapılan kırmızı yapı malzemesi' },
+      ],
+      ogrenPrimaryContextPrefix: 'Keşfet adımında seçtiğin duraklar',
+      ogrenMiddleComparePair: [
+        {
+          word: 'Arch',
+          meaning: 'Kemer',
+          desc: 'Taç kapı ve revak açıklıklarında kullanılan kavisli taş öğe',
+          illustration: 'sultanhani',
+        },
+        {
+          word: 'Courtyard',
+          meaning: 'Avlu',
+          desc: 'Kervansaray veya medresenin ortasındaki açık taş alan',
+          illustration: 'zinciriye',
+        },
+      ],
+      uretHeadingEarly: 'Aksaray Çalışmanı Çiz veya Şekil Ekle',
+      uretHeadingPrimary: 'Kendi Aksaray Gezi Kartını Oluştur',
+      uretHeadingMiddle: 'Aksaray Tasarımını Oluştur ve Gerekçelendir',
+      uretHintPrimary:
+        'İstersen "Hazır Şekil Ekle" düğmeleriyle bir kemer, sütun ve avlu ağacı ekle; istersen Ihlara Vadisi veya Eğri Minare’yi fırçayla çiz.',
+      uretHintMiddle:
+        'Malzeme seçip çalışmana ad ver. Seçtiğin Aksaray durağındaki stone/brick/arch özelliklerini neden tercih ettiğini karşılaştırarak yazabilirsin.',
+      uretNameLabelPrimary: 'Çalışmana Kısa Bir Ad Ver (İsteğe Bağlı)',
+      uretNameLabelMiddle: 'Aksaray Çalışmanın Adı',
+      uretNamePlaceholderPrimary: 'Örneğin: Sultanhanı Kemeri',
+      uretNamePlaceholderMiddle: 'Örneğin: Taş Avlu ve Kemer Tasarımı',
+      uretTextLabelPrimary: 'Seçtiğin durak hakkında gördüklerini kısaca yaz (isteğe bağlı)',
+      uretTextLabelMiddle: 'Aksaray Gözlemini ve Tasarım Gerekçeni Açıkla',
+      uretTextPlaceholderEarly: 'Örneğin: Kemer, Taş, Arch...',
+      uretTextPlaceholderPrimary: 'Sultanhanı avlusunda taş bir kemer gördüm...',
+      uretTextPlaceholderMiddle: 'Zinciriye Medresesi ve Eğri Minare’yi karşılaştırırken...',
+      uretTextPlaceholderGrade7:
+        'Dört Aksaray durağının malzeme, biçim ve çevre uyumunu gerekçeleriyle 4–6 cümlede değerlendir...',
+      artifactDefaultNamePrimary: 'Aksaray Keşif Kartım',
+      artifactDefaultNameMiddle: 'Aksaray Miras Çalışmam',
+      materialChoices: [
+        'Kesme Taş',
+        'Kırmızı Tuğla ve Çini',
+        'Taş ve Tuğla',
+        'Doğal Kaya ve Su',
+        'Ahşap ve Taş',
+      ],
     },
     options: {
       allowFreeDrawing: true,
@@ -259,8 +474,9 @@ export const MISSIONS: MissionDefinition[] = [
       allowWrittenDesign: true,
       allowPngExport: true,
     },
-    startConditions: 'Yakında açılacak.',
-    completionConditions: 'Yakında açılacak.',
+    startConditions: 'Öğrencinin sınıf düzeyi seçilmiş olmalıdır.',
+    completionConditions:
+      'Tüm sınıf düzeylerinde serbest çizim, hazır şekil veya anlamlı yazılı anlatımdan yalnız biri yeterlidir.',
     selfEvaluation: {
       options: [
         { id: 'learned', label: 'Bugün yeni bir şey öğrendim.', iconKey: 'learned' },
@@ -268,10 +484,11 @@ export const MISSIONS: MissionDefinition[] = [
         { id: 'completed', label: 'Çalışmamı tamamladım.', iconKey: 'completed' },
       ],
     },
-    source: 'TODO: kaynak doğrulanacak',
-    verificationStatus: 'TODO: kaynak doğrulanacak',
-    targetGrades: [3, 4, 5, 6, 7],
-    contentVersion: '0.1.0',
+    source:
+      'https://aksaray.ktb.gov.tr/TR-63658/hanlar-ve-kervansaraylar.html | https://aksaray.ktb.gov.tr/TR-232485/egri-minare.html | https://okuldisiogrenme.eba.gov.tr/mekan-detay/zinciriye-medresesi-5892 | https://aksaray.ktb.gov.tr/TR-243212/ihlara-vadisi.html',
+    verificationStatus: 'dogrulandi',
+    targetGrades: [2, 3, 4, 5, 6, 7],
+    contentVersion: '1.0.0',
   },
 ];
 

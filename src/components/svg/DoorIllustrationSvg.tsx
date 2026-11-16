@@ -1,5 +1,6 @@
 import type { DoorIllustrationKey } from '@/src/types/campus';
 import { SeljukStarMotif } from './SeljukStarMotif';
+import { HeritageStopSvg } from './HeritageStopSvg';
 
 interface DoorIllustrationSvgProps {
   variant: DoorIllustrationKey;
@@ -8,8 +9,8 @@ interface DoorIllustrationSvgProps {
 }
 
 /**
- * Örnek görev için özgün SVG kapı çizimleri:
- * ev, okul, bahçe, Anadolu motifli kapı ve Door/Gate karşılaştırma çizimleri.
+ * Örnek görevler için özgün SVG çizimleri:
+ * Kapı varyantları ve Aksaray kültürel miras durakları.
  * Yalnızca src/styles/globals.css renk belirteçlerini kullanır.
  */
 export function DoorIllustrationSvg({
@@ -17,6 +18,15 @@ export function DoorIllustrationSvg({
   title,
   className = 'w-full h-40',
 }: DoorIllustrationSvgProps) {
+  if (
+    variant === 'sultanhani' ||
+    variant === 'egri-minare' ||
+    variant === 'zinciriye' ||
+    variant === 'ihlara'
+  ) {
+    return <HeritageStopSvg variant={variant} title={title} className={className} />;
+  }
+
   const label = title ?? 'Kapı çizimi';
 
   return (

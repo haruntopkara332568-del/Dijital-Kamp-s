@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router';
 import {
   CampusMapRoutePage,
+  DesignSystemRoutePage,
   HomeRoutePage,
   JourneyRoutePage,
   LearningAreaRoutePage,
@@ -17,5 +18,6 @@ export const campusRouter = createBrowserRouter([
   { path: '/alan/:id', element: <LearningAreaRoutePage /> },
   { path: '/gorev/:id', element: <MissionRoutePage /> },
   { path: '/yolculugum', element: <JourneyRoutePage /> },
+  { path: '/tasarim-sistemi', element: <DesignSystemRoutePage /> },
   { path: '*', element: <NotFoundRoutePage /> },
 ]);

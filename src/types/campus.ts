@@ -82,7 +82,18 @@ export interface MissionStepDefinition {
   journeyStepLabel: string;
 }
 
-export type DoorIllustrationKey = 'ev' | 'okul' | 'bahce' | 'anadolu' | 'campus-gate' | 'indoor-door' | 'courtyard-gate';
+export type DoorIllustrationKey =
+  | 'ev'
+  | 'okul'
+  | 'bahce'
+  | 'anadolu'
+  | 'campus-gate'
+  | 'indoor-door'
+  | 'courtyard-gate'
+  | 'sultanhani'
+  | 'egri-minare'
+  | 'zinciriye'
+  | 'ihlara';
 
 export interface DoorCardOption {
   id: string;
@@ -90,6 +101,8 @@ export interface DoorCardOption {
   illustration: DoorIllustrationKey;
   shortDescription: string;
   materialHint: string;
+  periodBadge?: string;
+  sourceNote?: string;
 }
 
 export interface VocabularyItem {
@@ -115,6 +128,52 @@ export interface SelfEvaluationOption {
   iconKey: 'learned' | 'curious' | 'completed';
 }
 
+export interface MissionMatchOption {
+  id: string;
+  label: string;
+  isCorrect: boolean;
+  desc: string;
+}
+
+export interface MissionUiCopy {
+  kesfetPrimaryBadge: string;
+  kesfetPrimaryHeading: string;
+  kesfetPrimaryEarlyDesc: string;
+  kesfetPrimaryDesc: string;
+  kesfetMiddleBadge: string;
+  kesfetMiddleHeading: string;
+  kesfetMiddleDesc: string;
+  selectedCarryoverLabel: string;
+  ogrenPrimaryHeading: string;
+  ogrenMiddleHeading: string;
+  ogrenPrimaryMatchQuestion: string;
+  ogrenPrimaryCorrectFeedback: string;
+  ogrenPrimaryMatchOptions: MissionMatchOption[];
+  ogrenPrimaryContextPrefix: string;
+  ogrenMiddleComparePair: [
+    { word: string; meaning: string; desc: string; illustration: DoorIllustrationKey },
+    { word: string; meaning: string; desc: string; illustration: DoorIllustrationKey },
+  ];
+  uretHeadingEarly: string;
+  uretHeadingPrimary: string;
+  uretHeadingMiddle: string;
+  uretHintPrimary: string;
+  uretHintMiddle: string;
+  uretNameLabelPrimary: string;
+  uretNameLabelMiddle: string;
+  uretNamePlaceholderPrimary: string;
+  uretNamePlaceholderMiddle: string;
+  uretTextLabelPrimary: string;
+  uretTextLabelMiddle: string;
+  uretTextPlaceholderEarly: string;
+  uretTextPlaceholderPrimary: string;
+  uretTextPlaceholderMiddle: string;
+  uretTextPlaceholderGrade7: string;
+  artifactDefaultNamePrimary: string;
+  artifactDefaultNameMiddle: string;
+  materialChoices: string[];
+}
+
 export interface MissionDefinition extends ContentProvenance {
   id: string;
   title: string;
@@ -122,6 +181,8 @@ export interface MissionDefinition extends ContentProvenance {
   status: AreaStatus;
   gradeRange: GradeLevel[];
   relatedAreaIds: string[];
+  routeKind?: 'thematic-digital-route' | 'observation-mission';
+  guidePromptGroup?: 'door' | 'aksaray';
   learningObjectives: {
     ilkokul: string[];
     ortaokul: string[];
@@ -138,6 +199,7 @@ export interface MissionDefinition extends ContentProvenance {
     };
     sentenceStartersByGrade: Partial<Record<GradeLevel, string[]>>;
   };
+  uiCopy?: MissionUiCopy;
   options: {
     allowFreeDrawing: boolean;
     allowShapeStamps: boolean;

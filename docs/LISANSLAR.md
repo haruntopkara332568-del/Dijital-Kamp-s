@@ -4,7 +4,7 @@
 Uygulama çalışma zamanında Google Fonts veya başka bir harici yazı tipi servisine istek göndermez. İşletim sistemi üzerinde yer alan standart sans-serif yazı tipi ailesi (`Avenir Next`, `Segoe UI`, `SF Pro`, `system-ui`) kullanılır. Ek yazı tipi lisansı gerektirmez.
 
 ## 2. Görseller ve Çizimler
-- **Kampüs Giriş Kapısı, Avlu, Rehber Karakter ve Örnek Görev Kapıları**: Tamamı bu proje kapsamında özgün SVG bileşenleri (`src/components/svg/`) olarak üretilmiştir. Tarihî yapılar birebir kopyalanmamış, geometrik esinlenmeyle sadeleştirilmiş özgün çizimler oluşturulmuştur.
+- **Kampüs Giriş Kapısı, Avlu, Rehber Karakter, Örnek Görev Kapıları, Aksaray Durakları (`HeritageStopSvg.tsx`) ve Anadolu Motif Gösterimi (`AnatolianMotifSvg.tsx`)**: Tamamı bu proje kapsamında özgün SVG bileşenleri (`src/components/svg/`) olarak üretilmiştir. Tarihî yapılar birebir kopyalanmamış, geometrik esinlenmeyle sadeleştirilmiş özgün çizimler oluşturulmuştur.
 - Harici görsel CDN veya stok fotoğraf kullanılmamıştır.
 
 ## 3. Simge Seti ve Açık Kaynak Bağımlılıklar

@@ -59,18 +59,23 @@
 
   --alert-rose: #b81d3b;
   --alert-rose-soft: #fde8ec;
+
+  /* Türkçe Destekli Yerel Yazı Tipi ve Odak Belirteçleri */
+  --font-sans: 'Avenir Next', 'Segoe UI', 'SF Pro Text', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Avenir Next', 'Segoe UI', 'SF Pro Display', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --focus-ring-color: var(--seljuk-teal);
 }
 
 @layer base {
   html {
-    font-family: 'Avenir Next', 'Segoe UI', 'SF Pro Text', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--font-sans);
     color: var(--campus-ink);
     background-color: var(--campus-canvas);
     scroll-behavior: smooth;
   }
 
   h1, h2, h3, h4 {
-    font-family: 'Avenir Next', 'Segoe UI', 'SF Pro Display', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--font-display);
     text-wrap: balance;
   }
 

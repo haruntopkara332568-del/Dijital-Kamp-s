@@ -173,6 +173,54 @@ export const MISSION_GUIDE_PROMPTS: Record<
   },
 };
 
+export const AKSARAY_MISSION_GUIDE_PROMPTS: Record<
+  'ilkokulKesfet' | 'ilkokulUret' | 'ortaokulKesfet',
+  DialogueRecord
+> = {
+  ilkokulKesfet: {
+    id: 'mission-aksaray-ilkokul-kesfet',
+    speaker: 'Kampüs Arkadaşı',
+    segments: [
+      {
+        text: 'Aksaray dijital öğrenme rotamızda dört durağımız var. Hangileri taş veya tuğladan yapılmış, hangisi doğal bir vadi? Birlikte bakalım!',
+        lang: 'tr-TR',
+      },
+    ],
+    source: 'T.C. Kültür ve Turizm Bakanlığı / Aksaray İl Kültür ve Turizm Müdürlüğü Kaynakları',
+    verificationStatus: 'dogrulandi',
+    targetGrades: [2, 3, 4],
+    contentVersion: '1.0.0',
+  },
+  ilkokulUret: {
+    id: 'mission-aksaray-ilkokul-uret',
+    speaker: 'Kampüs Arkadaşı',
+    segments: [
+      {
+        text: 'Seçtiğin Aksaray durağından ilham alarak çizim yapabilir, hazır şekil ekleyebilir ya da kısa bir not yazabilirsin.',
+        lang: 'tr-TR',
+      },
+    ],
+    source: 'T.C. Kültür ve Turizm Bakanlığı / Aksaray İl Kültür ve Turizm Müdürlüğü Kaynakları',
+    verificationStatus: 'dogrulandi',
+    targetGrades: [2, 3, 4],
+    contentVersion: '1.0.0',
+  },
+  ortaokulKesfet: {
+    id: 'mission-aksaray-ortaokul-kesfet',
+    speaker: 'Kampüs Arkadaşı',
+    segments: [
+      {
+        text: 'Aksaray duraklarını malzeme, biçim, işlev ve çevre uyumu açısından karşılaştırarak gözlemlerini not edebilirsin.',
+        lang: 'tr-TR',
+      },
+    ],
+    source: 'T.C. Kültür ve Turizm Bakanlığı / Aksaray İl Kültür ve Turizm Müdürlüğü Kaynakları',
+    verificationStatus: 'dogrulandi',
+    targetGrades: [5, 6, 7],
+    contentVersion: '1.0.0',
+  },
+};
+
 export function getTourDialogueForTier(stop: GuidedTourStop, tier: GradeTier): DialogueRecord {
   return tier === 'ilkokul' ? stop.ilkokulDialogue : stop.ortaokulDialogue;
 }

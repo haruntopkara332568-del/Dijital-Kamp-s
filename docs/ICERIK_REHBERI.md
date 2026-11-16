@@ -30,9 +30,10 @@ Bu belge, yazılıma yeni bir öğrenme alanı, diyalog veya görev eklemek iste
 - `id`, `title`, `version`, `status`
 - `gradeRange` ve `relatedAreaIds`
 - `learningObjectives` (`ilkokul` ve `ortaokul` gözlenebilir hedefler)
-- `steps` (`kesfet`, `ogren`, `uret`, `paylas`)
+- `steps` (`KEŞFET → ÖĞREN → ÜRET → PAYLAŞ` sırasıyla `kesfet`, `ogren`, `uret`, `paylas`)
 - `contentRefs`, `options`, `startConditions`, `completionConditions`, `selfEvaluation`
 - `source` ve `verificationStatus`
 
 ## 3. Doğrulama Kuralı
 Doğrulanmamış tarihî, kültürel veya bilimsel bilgi kesinlikle eklenmez. Kaynağı henüz kesinleşmeyen içeriklerde `verificationStatus: 'TODO: kaynak doğrulanacak'` alanı kullanılır ve son kullanıcıya gösterilmez.
+

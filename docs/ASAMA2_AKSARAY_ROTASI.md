@@ -1,125 +1,99 @@
 # Aşama 2 — Gezi ve Keşif: Aksaray Kültürel Miras Öğrenme Rotası
 
-Bu belge, **Aşama 2** kapsamında mevcut **Dijital Eğitim Kampüsü** mimarisi ve 2,5B Anadolu–Selçuklu görsel tasarımı korunarak geliştirilecek **"Aksaray Kültürel Miras Öğrenme Rotası"** bütünleşik görevinin eğitim senaryosunu, doğrulanmış tarihî kaynaklarını, sınıf düzeylerine (2–7. sınıflar) göre etkinlik tasarımını ve **İngilizce Dünyası** bağlantılarını tanımlar.
+Bu belge, **Aşama 2** kapsamında mevcut **Dijital Eğitim Kampüsü** mimarisi, depolama anahtarları (`dek_campus_v1_state`, `dek_campus_db`), ilk bütünleşik görev (`Kapıların Anlattığı Hikâye`) ve 2,5B Anadolu–Selçuklu görsel tasarımı korunarak entegre edilen **Aksaray Kültürel Miras Rotası** görevinin eğitim senaryosunu, doğrulanmış doğrudan resmî kaynaklarını, sınıf düzeylerine (2–7. sınıflar) göre etkinliklerini ve **İngilizce Dünyası** bağlantılarını tanımlar.
 
 ---
 
-## 1. Eğitim Senaryosu ve Görev Akışı
+## 1. Kapsam ve Tematik Dijital Öğrenme Rotası Tanımı
 
-### Görev Kimliği (Planlanan)
-- **Önerilen Görev Başlığı**: `Aksaray Kültürel Miras Rotası: Taştan Vadiye İzler`
-- **Kapsam**: 2, 3, 4, 5, 6 ve 7. sınıflar (İlkokul ve Ortaokul ayrı kurguyla)
-- **Bağlantılı Kampüs Alanları**:
-  1. `Keşfet` → **Gezi ve Keşif** (Aksaray duraklarını gözlemleme ve karşılaştırma)
-  2. `Öğren` → **İngilizce Dünyası** (Sınıf düzeyine uygun mimari/coğrafi İngilizce kelimeler ve sesli dinleme)
-  3. `Üret` → **Kitap ve Hikâye Dünyası** (Çizim, hazır şekiller ve sınıf düzeyine uygun kısa gezi notu / gerekçeli tasarım üretimi)
-  4. `Paylaş` → **Kampüs Yolculuğum** (Cihaza kayıt, isteğe bağlı tek PNG dışa aktarma ve öz değerlendirme)
-
-### Hikâye Kurgusu (Akran Rehber Eşliğinde)
-Akran rehber öğrenciyi **Gezi ve Keşif** binasından sanal bir Aksaray keşif yolculuğuna davet eder:
-- **İlkokul (2–4. sınıflar)**: "Anadolu'nun kalbindeki Aksaray'a uzanan kısa bir keşif yolculuğuna çıkıyoruz. Taş kervansaraydan eğik tuğla minareye, avlulu medreseden derin kanyon vadisine durakları inceleyeceğiz."
-- **Ortaokul (5–7. sınıflar)**: "İpek Yolu üzerindeki Aksaray'da farklı dönemlere ve doğal koşullara ait dört mirası; malzeme, biçim, işlev ve çevre uyumu açısından karşılaştırıp kendi gezi tasarımımızı oluşturacağız."
-
-### Pedagojik Kural Uyumu
-- Mevcut görev motorundaki pedagojik kural aynen korunur: Öğrenci geçerli bir özgün ürün (çizim, şekil veya en az 2 harfli yazılı anlatım) oluşturduysa cihaz depolama hatası nedeniyle görevden başarısız sayılmaz; ancak kalıcı kayıt sağlanamadığında açık geçicilik uyarısı ve belirgin PNG indirme çağrısı gösterilir.
-- Kişisel veri (ad, soyad, numara, fotoğraf, konum vb.) kesinlikle istenmez.
+- **Görev Kimliği**: `aksaray-kulturel-miras-rotasi`
+- **Görev Başlığı**: `Aksaray Kültürel Miras Rotası`
+- **Rota Niteliği**: Bu rota fiziksel bir ulaşım veya gezi güzergâhı **değildir**; öğrencilerin ekran başında gözlem, karşılaştırma, yabancı dil ilişkilendirme ve özgün üretim becerilerini geliştirmek için kurgulanmış **tematik dijital öğrenme rotasıdır**.
+- **Onaylı 4 Durak**:
+  1. **Sultanhanı Kervansarayı**
+  2. **Eğri Minare (Kızıl Minare)**
+  3. **Zinciriye Medresesi**
+  4. **Ihlara Vadisi ve Melendiz Çayı**
+- **Kapsam Dışı Tutulan Yapı**: **Aksaray Ulu Cami** bu ilk rotaya eklenmemiştir; ilerleyen dönemdeki *Aksaray Merkez Kültürel Miras Rotası* için değerlendirilecektir.
 
 ---
 
-## 2. Doğrulanmış Tarihî ve Kültürel Kaynaklar (Aksaray Durakları)
+## 2. Eğitim Senaryosu ve Standart Akış (`KEŞFET → ÖĞREN → ÜRET → PAYLAŞ`)
 
-Tüm bilgiler resmî kültür ve kamu kaynaklarından doğrulanmıştır. Tarihlendirmede birden fazla akademik/resmî yorumun bulunduğu noktalarda ihtiyatlı ifade kullanılır.
+Görev, kampüs genelinde standartlaştırılmış dört aşamalı akışı izler:
 
-### Durak 1: Sultanhanı Kervansarayı (Sultanhanı)
-- **Dönem ve Bani**: 1229 yılında Anadolu Selçuklu Sultanı **I. Alâeddin Keykubad** tarafından yaptırılmıştır (1278 yılında genişletilmiştir). Mimarı Şamlı Muhammed bin Havlan el-Dımışki'dir.
-- **Öne Çıkan Özellikler**:
-  - Tarihî İpek Yolu (Aksaray–Konya hattı) üzerinde yer alan Anadolu'daki en büyük Selçuklu kervansaraylarından biridir.
-  - Açık avlulu (**yazlık**) ve kapalı hollü (**kışlık**) iki ana bölümden oluşur; avlu ortasında kare planlı **köşk mescit** bulunur.
-  - Anıtsal kesme taş taç kapısı geometrik taş işçiliğiyle öne çıkar.
-- **Doğrulanan Kaynaklar**: T.C. Kültür ve Turizm Bakanlığı Türkiye Kültür Portalı (`kulturportali.gov.tr`), Aksaray İl Kültür ve Turizm Müdürlüğü (`aksaray.ktb.gov.tr`).
-
-### Durak 2: Eğri Minare / Kızıl Minare (Aksaray Merkez)
-- **Dönem**: 13. yüzyıl **Anadolu Selçuklu** dönemine aittir. *(Not: Resmî kaynaklarda genellikle I. Gıyaseddin Keyhüsrev dönemine atfedilmekle birlikte bazı kaynaklarda 1221–1236 yılları arasında I. Alâeddin Keykubad dönemiyle de tarihlendirilir; içerikte kesin tek yıl iddiası yerine "13. yüzyıl Anadolu Selçuklu eseri" ifadesi kullanılır.)*
-- **Öne Çıkan Özellikler**:
-  - Dört köşe taş kaide üzerinde yükselen silindirik gövde, Horasan harcı ve **kırmızı tuğla** ile örülmüştür.
-  - Alt bölümünde zikzak tuğla dizilimi, üst bölümünde ise **çini mozaik** süslemeler yer alır.
-  - Belirgin eğik duruşuyla şehrin simge yapılarındandır.
-- **Doğrulanan Kaynaklar**: T.C. Kültür ve Turizm Bakanlığı Türkiye Kültür Portalı (`kulturportali.gov.tr`), Aksaray İl Kültür ve Turizm Müdürlüğü (`aksaray.ktb.gov.tr`).
-
-### Durak 3: Zinciriye Medresesi (Aksaray Merkez)
-- **Dönem ve Bani**: **1336** yılında Karamanoğulları Beyliği döneminde (**Yahşi Bey** tarafından) inşa edilmiştir.
-- **Öne Çıkan Özellikler**:
-  - Tüf kesme taş ve tuğla kullanılarak **dört eyvanlı** ve **açık avlulu** planla yapılmıştır.
-  - Dış duvarlarındaki dişli taş sıraları (dendaneler) yapıya kale görünümü kazandırır; taç kapısı Selçuklu bezeme geleneğini yansıtır.
-  - Tarihte ilim ve eğitim merkezi, Cumhuriyet döneminde bir süre müze olarak hizmet vermiş; restorasyon sonrası kültürel etkinlik alanı hâline gelmiştir.
-- **Doğrulanan Kaynaklar**: T.C. Kültür ve Turizm Bakanlığı (`ktb.gov.tr`), Aksaray İl Kültür ve Turizm Müdürlüğü (`aksaray.ktb.gov.tr`), MEB EBA arşiv kaynakları (`eba.gov.tr`).
-
-### Durak 4: Ihlara Vadisi ve Melendiz Çayı (Güzelyurt)
-- **Oluşum ve Coğrafya**: Hasan Dağı'nın volkanik püskürmeleri sonrası oluşan tabakaların, **Melendiz Çayı** tarafından aşındırılmasıyla meydana gelmiş yaklaşık **14 km** uzunluğunda kanyon vadidir (Ihlara'dan Belisırma üzerinden Selime'ye uzanır).
-- **Öne Çıkan Özellikler**:
-  - Doğal kanyon yapısı ile insan elinden çıkan kaya oyma mimariyi bir arada sunar.
-  - Dik yamaçlarda kayalara oyulmuş yaşam alanları ve erken dönem freskli kaya kiliseleri bulunur.
-- **Doğrulanan Kaynaklar**: T.C. Kültür ve Turizm Bakanlığı (`ktb.gov.tr`), Müze Portalı (`muze.gov.tr`, `turkishmuseums.com`), Aksaray Valiliği (`aksaray.gov.tr`).
-
-> **Opsiyonel 5. Durak Önerisi (Onayınıza Bağlı)**: İsterseniz **Aksaray Ulu Cami** (temeli 12. yüzyıl Selçuklu, 1408–1409 Karamanoğlu Mehmed Bey yenilemesi; çivi kullanılmadan **kündekâri** tekniğiyle yapılan abanoz ağacı minberi — *Kaynak: `ktb.gov.tr`*) de 5. durak olarak rotaya eklenebilir. 4 duraklık yapı ise 2–7. sınıf bilişsel yükü ve mevcut 4 kartlı ızgara düzeniyle birebir uyumludur.
+1. **KEŞFET** (`Gezi ve Keşif`):
+   - **İlkokul (2–4. sınıflar)**: Akran rehber eşliğinde 4 Aksaray durağının sadeleştirilmiş görsellerini ve kısa gözlem kartlarını inceler; tanıdığı veya ilgisini çeken durakları seçer.
+   - **Ortaokul (5–7. sınıflar)**: 4 durağı inceleyip **Taş ve Tuğla Mimari Yapılar** ile **Doğal Kanyon ve Kaya Oyma Miras** arasında karşılaştırma yapar; **Malzeme, Biçim, İşlev ve Süsleme** boyutlarında gözlem notlarını seçer.
+2. **ÖĞREN** (`İngilizce Dünyası`):
+   - **İlkokul (2–4. sınıflar)**: Sınıf profiline uygun olarak **1 odak kelime** (`Arch` — *Kemer*) dinlenir (`en-US`) ve görsel eşleştirme yapılır.
+   - **Ortaokul (5–7. sınıflar)**: **5 yeni kelime** (`Arch`, `Brick`, `Courtyard`, `Valley`, `Heritage`) ile örnek cümle (`"This courtyard has a stone arch and red brick walls."`) dinlenir ve etkileşimli kelime eşleştirmesi tamamlanır.
+3. **ÜRET** (`Kitap ve Hikâye Dünyası`):
+   - Öğrenci serbest çizim, hazır şekil veya sınıf düzeyine uygun yazılı anlatım kullanarak özgün bir çalışma üretir.
+   - **Değişmez Tamamlama İlkesi**: Tüm sınıf düzeylerinde (2–7. sınıflar) öğrenci **tek bir geçerli özgün üretim biçimiyle** (serbest çizim, hazır şekil veya en az 2 harfli anlamlı yazılı anlatım) görevi sürdürebilir ve tamamlayabilir.
+4. **PAYLAŞ** (`Kampüs Yolculuğum`):
+   - Çalışma cihaz içi depolamaya (`IndexedDB`) kaydedilir; isteğe bağlı olarak tek bir PNG dosyasına dönüştürülüp indirilebilir ve öz değerlendirme eklenerek görev tamamlanır.
+   - Kalıcı kayıt başarısız olduğunda öğrenci görevden başarısız sayılmaz; ancak çalışmanın geçici olduğu açıkça bildirilir ve belirgin PNG indirme seçeneği sunulur.
 
 ---
 
-## 3. Sınıf Düzeylerine Göre Etkinlik Tasarımı (`gradeProfiles.ts` Uyumlu)
+## 3. Doğrulanmış Tarihî Duraklar ve Doğrudan Resmî Kaynak Bağlantıları
 
-Etkinlikler, mevcut `src/data/gradeProfiles.ts` parametrelerine tam uyumlu biçimde kademelendirilir:
+### 1. Sultanhanı Kervansarayı
+- **Dönem ve Bani**: 1229 yılında Anadolu Selçuklu Sultanı **I. Alâeddin Keykubad** tarafından İpek Yolu (Aksaray–Konya hattı) üzerinde yaptırılmıştır (1278 yılında genişletilmiştir).
+- **Gözlem Özellikleri**: Yazlık (açık avlulu) ve kışlık (kapalı hol) iki ana bölümden oluşur. Avlunun ortasında kare planlı **köşk mescit**, girişinde ise geometrik taş işçiliğiyle öne çıkan anıtsal **taç kapı** bulunur.
+- **Doğrudan Resmî Kaynak Bağlantıları**:
+  - T.C. Kültür ve Turizm Bakanlığı — Aksaray İl Kültür ve Turizm Müdürlüğü (*Hanlar ve Kervansaraylar*): https://aksaray.ktb.gov.tr/TR-63658/hanlar-ve-kervansaraylar.html
+  - T.C. Aksaray Valiliği (*Sultanhanı Kervansarayı*): https://www.aksaray.gov.tr/sultanhani-kervansarayi
 
-### İlkokul Düzeyi (2, 3 ve 4. Sınıflar)
-| Aşama | 2. Sınıf (Yüksek Destek) | 3. Sınıf (Yüksek Destek) | 4. Sınıf (Orta Destek) |
-| :--- | :--- | :--- | :--- |
-| **1. Keşfet** | 4 durak görselinden **1 veya 2 durak** seçer. Tek kısa cümleli (≤ 8 sözcük) açıklama ve sesli dinleme her zaman açıktır. | **2 durak** seçip temel malzemesini ("Taş", "Tuğla", "Kaya") işaretler. İsteğe bağlı en çok 3 kademeli ipucu sunulur. | **2–3 durak** inceler; "Taş yapı mı, doğal vadi mi?" basit eşleştirmesi yapar. En çok 2 kademeli ipucu sunulur. |
-| **2. Öğren** | **1 yeni İngilizce kelime**: `Stone` (Taş) veya `Arch` (Kemer). Görsel kart + `en-US` seslendirme + tek seçimlik eşleştirme. | **1 yeni İngilizce kelime**: `Arch` (Kemer). Görsel kart + seslendirme + yönlendirici geri bildirimli eşleştirme. | **1 yeni İngilizce kelime**: `Arch` (Kemer) + kısa bağlam farkı ("Kemerli kapı nasıl görünür?"). |
-| **3. Üret** | Sade çizim tuvali (temel renkler + hazır şekiller: kemer, sütun, ağaç, yıldız motifi). Tek kelime veya kısa durak adı yeterli. | Çizim + hazır şekiller + isteğe bağlı cümle başlangıcı (`"Aksaray'da gördüğüm yerde ... vardı."`). | Çizim/şekil + **1–2 cümlelik** kısa gezi kartı (`"Seçtiğim durakta ... kullanılmış. Burada ..."`). |
-| **4. Paylaş** | Cihaza kaydetme + isteğe bağlı PNG indirme + **3 ikonlu tek dokunuş** öz değerlendirme. | Cihaza kaydetme + PNG indirme + **3 ikonlu** öz değerlendirme. | Cihaza kaydetme + PNG indirme + **3 ifadeli** öz değerlendirme. |
+### 2. Eğri Minare (Kızıl Minare)
+- **Dönem**: 13. yüzyıl **Anadolu Selçuklu** dönemi eseridir *(resmî kaynaklarda I. Gıyaseddin Keyhüsrev dönemine atfedilmekle birlikte bazı kaynaklarda 1221–1236 yılları arasında I. Alâeddin Keykubad dönemine de tarihlendirildiği için içerikte "13. yüzyıl Anadolu Selçuklu eseri" ifadesi kullanılır)*.
+- **Gözlem Özellikleri**: Dört köşe taş kaide üzerinde yükselen silindirik gövdesi Horasan harcı ve **kırmızı tuğla** ile örülmüştür. Gövdesinde zikzak tuğla örgü ve üst bölümünde çini mozaik süslemeler yer alır; belirgin eğik duruşuyla Aksaray'ın simge yapılarındandır.
+- **Doğrudan Resmî Kaynak Bağlantısı**:
+  - T.C. Kültür ve Turizm Bakanlığı — Aksaray İl Kültür ve Turizm Müdürlüğü (*Eğri Minare*): https://aksaray.ktb.gov.tr/TR-232485/egri-minare.html
 
-### Ortaokul Düzeyi (5, 6 ve 7. Sınıflar)
-| Aşama | 5. Sınıf (Orta Destek) | 6. Sınıf (Düşük–Orta Destek) | 7. Sınıf (Düşük Destek / Gerekçeli) |
-| :--- | :--- | :--- | :--- |
-| **1. Keşfet** | 4 Aksaray durağını **Malzeme, Biçim, İşlev ve Çevre** boyutlarında inceler; destekli karşılaştırma seçeneklerinden seçim yapar. | Duraklar arasında **taş/tuğla/doğal kaya** farklarını ve İpek Yolu / yerleşim ilişkisini analiz eder. | 4 boyutlu karşılaştırmayı **neden–sonuç ilişkisiyle** değerlendirir (ör. yazlık–kışlık kervansaray planının iklimle ilişkisi). |
-| **2. Öğren** | **5 yeni İngilizce kelime**: `Arch`, `Brick`, `Courtyard`, `Valley`, `Heritage` + 1 örnek cümle eşleştirme (`"This courtyard is made of stone and brick."`). | Aynı 5 kelime + `Brick` / `Stone` malzeme ayrımı ve örnek cümleyi kendi tasarım notuna isteğe bağlı ekleme. | Aynı 5 kelime + İngilizce ifadeyi gerekçeli tasarım açıklamasında isteğe bağlı kullanma. |
-| **3. Üret** | Çizim/şekil tuvali + malzeme seçimi + cümle başlangıçlı **2–3 cümlelik** gezi tasarım metni (`"... seçtim çünkü ..."`). | Çizim/şekil + malzeme seçimi + **3–5 cümlelik** karşılaştırmalı tasarım açıklaması. | Cümle başlangıcı verilmeden **4–6 cümlelik** gerekçeli gezi/tasarım değerlendirmesi + isteğe bağlı İngilizce kelime kullanımı. |
-| **4. Paylaş** | Cihaza kaydetme + PNG indirme + **3 ifade + isteğe bağlı kısa not**. | Cihaza kaydetme + PNG indirme + **3 ifade + kısa not**. | Cihaza kaydetme + PNG indirme + **3 ifade + gerekçeli not**. |
+### 3. Zinciriye Medresesi
+- **Dönem ve Bani**: **1336** yılında Karamanoğulları Beyliği döneminde (Yahşi Bey tarafından) inşa edilmiştir.
+- **Gözlem Özellikleri**: Kesme taş ve tuğla işçiliğiyle **dört eyvanlı** ve **açık avlulu** planla yapılmıştır. Dış duvarlarındaki dişli taş sıraları (dendaneler) yapıya kale görünümü kazandırır; taç kapısı Selçuklu bezeme geleneğini sürdürür. Tarihte medrese ve müze olarak kullanılmış, restorasyon sonrası kültürel etkinlik alanı olarak değerlendirilmektedir.
+- **Doğrudan Resmî Kaynak Bağlantıları**:
+  - T.C. Millî Eğitim Bakanlığı EBA Okul Dışı Öğrenme Ortamları (*Zinciriye Medresesi*): https://okuldisiogrenme.eba.gov.tr/mekan-detay/zinciriye-medresesi-5892
+  - T.C. Kültür ve Turizm Bakanlığı — Aksaray İl Kültür ve Turizm Müdürlüğü (*Müze Müdürlüğü / İlk Müze Binası Tarihçesi*): https://aksaray.ktb.gov.tr/TR-327364/muze-mudurlugu.html
 
----
-
-## 4. İngilizce Dünyası Bağlantıları (`en-US` Seslendirme Uyumlu)
-
-Kelimeler mevcut **Kapıların Anlattığı Hikâye** görevindeki kelimelerin (`Door`, `Gate`, `Wood`, `Stone`, `Pattern`) devamı olacak şekilde seçilmiştir:
-
-### İlkokul (2–4. Sınıf) Odak Kelime (`newEnglishWordsCount: 1`)
-- **`Arch`** → **Kemer**
-  - *Bağlam*: Sultanhanı taç kapısında ve Zinciriye Medresesi avlusunda görülen kemer formu (`"Look at the stone arch."` — Taş kemere bak).
-  - *Seslendirme*: `speech.ts` üzerinden `en-US` telaffuz düğmesi.
-
-### Ortaokul (5–7. Sınıf) Odak Kelimeler (`newEnglishWordsCount: 5`)
-1. **`Arch`** — **Kemer** *(Sultanhanı ve Zinciriye Medresesi taş kemerleri)*
-2. **`Brick`** — **Tuğla** *(Eğri Minare'nin kırmızı tuğla gövdesi; `Stone` ile karşıtlık)*
-3. **`Courtyard`** — **Avlu** *(Sultanhanı yazlık avlusu ve Zinciriye Medresesi açık avlusu)*
-4. **`Valley`** — **Vadi** *(Melendiz Çayı'nın oluşturduğu Ihlara Vadisi)*
-5. **`Heritage`** — **Miras / Kültürel Miras** *(Korunması gereken ortak tarihî ve doğal değerler)*
-- **Örnek Cümle Eşleştirme**:
-  - İngilizce: `"This courtyard has a stone arch and red brick walls."`
-  - Türkçe: `"Bu avluda taş bir kemer ve kırmızı tuğla duvarlar vardır."`
+### 4. Ihlara Vadisi ve Melendiz Çayı
+- **Oluşum ve Coğrafya**: Hasan Dağı'nın volkanik püskürmelerinin ardından **Melendiz Çayı**'nın kayaçları uzun jeolojik süreçte aşındırmasıyla oluşan yaklaşık **14 km** uzunluğunda kanyon vadidir (Ihlara–Belisırma–Selime hattı).
+- **Gözlem Özellikleri**: Doğal kanyon yapısı ile dik yamaçlara oyulmuş tarihî yaşam alanlarını ve erken dönem freskli kaya kiliselerini bir arada sunar.
+- **Doğrudan Resmî Kaynak Bağlantıları**:
+  - T.C. Kültür ve Turizm Bakanlığı — Aksaray İl Kültür ve Turizm Müdürlüğü (*Ihlara Vadisi*): https://aksaray.ktb.gov.tr/TR-243212/ihlara-vadisi.html
+  - T.C. Kültür ve Turizm Bakanlığı — Türkiye'nin Müzeleri Portalı (*Ihlara Vadisi Örenyeri*): https://muze.gov.tr/muze-detay?sectionId=IH101&distId=IH1
 
 ---
 
-## 5. Mevcut Kampüse Entegrasyon Planı (Tasarım Değiştirilmeden)
+## 4. Sınıf Düzeylerine Göre Etkinlikler (`gradeProfiles.ts` Uyumlu)
 
-Onayınızın ardından uygulama adımında mevcut kampüs kabuğu, 2,5B izometrik harita, renk belirteçleri ve ilk görev korunarak şu sınırlı ve uyumlu güncellemeler yapılacaktır:
+Her sınıf düzeyinde öğrenci **tek bir geçerli özgün üretim biçimiyle** (serbest çizim, hazır şekil veya anlamlı yazılı anlatım) görevi tamamlayabilir:
 
-1. **Veri Katmanı (`src/data/`, `src/types/campus.ts`)**:
-   - `src/data/missions.ts` içindeki `aksaray-tas-isci-rotasi` taslağı (veya onaylanan ID ile) tam çalışır `status: 'active'` görev hâline getirilecek, `verificationStatus: 'dogrulandi'` ve doğrulanmış kaynak referansları işlenecektir.
-   - `src/data/campusAreas.ts` içindeki `gezi-ve-kesif` alanının `upcomingTopics` listesi güncellenerek Aksaray rotasının aktifleştiği yansıtılacaktır.
-2. **Özgün SVG Durak Kartları (`src/components/svg/`)**:
-   - Yalnızca `src/styles/globals.css` renk belirteçlerini (`--stone-*`, `--seljuk-*`, `--terracotta`, `--courtyard-sage`) kullanan 4 sadeleştirilmiş özgün SVG illüstrasyon (`Sultanhanı`, `Eğri Minare`, `Zinciriye Medresesi`, `Ihlara Vadisi`) eklenecektir.
-3. **Görev Motoru ve Alan Görünümleri (`LearningAreaView.tsx`, `MissionRunnerView.tsx`)**:
-   - **Gezi ve Keşif** sayfasında (`/alan/gezi-ve-kesif`) Aksaray duraklarının serbest ön izleme kartları ve yeni görev başlatma düğmesi görünecektir.
-   - **İngilizce Dünyası** sayfasında (`/alan/ingilizce-dunyasi`) her aktif görev için ayrı kelime grubu sekmesi/bölümü sunulacaktır.
-   - **Keşif Görevleri Panosu** ve **Kampüs Yolculuğum** her iki aktif görevi (`kapilarin-anlattigi-hikaye` ve Aksaray rotası) kendi `missionId` anahtarıyla bağımsız olarak izleyecek; çizimler ve PNG çıktıları mevcut `IndexedDB` yapısında güvenle saklanacaktır.
-4. **Test ve Doğrulama**:
-   - Vitest birim/bileşen testleri ile Playwright E2E testleri yeni Aksaray rotasını, sınıf kademelerini ve `en-US` kelime eşleştirmelerini kapsayacak şekilde genişletilecek; `typecheck`, `lint`, `test`, `build` ve `test:e2e` çalıştırılıp sonuçlar `docs/DURUM.md` ve `docs/TEST_RAPORU.md` belgelerine işlenecektir.
+### İlkokul (2, 3 ve 4. Sınıflar)
+- **2. Sınıf**: Her adımda açık kısa ipucu (`≤ 8` sözcüklü yönerge), 4 duraktan tanıdık/ilgi çekici gelenleri seçme, `Arch` (*Kemer*) kelimesini sesli dinleyip eşleştirme, sade tuval araçlarıyla çizim/şekil veya tek kelime yazma, 3 ikonlu öz değerlendirme.
+- **3. Sınıf**: 4 duraktan seçim yapıp yapı malzemesini fark etme, isteğe bağlı en çok 3 kademeli ipucu, `Arch` (*Kemer*) eşleştirmesi, çizim/şekil veya isteğe bağlı cümle başlangıcıyla kısa ifade yazma, 3 ikonlu öz değerlendirme.
+- **4. Sınıf**: Durakları taş/tuğla/doğal vadi özellikleri açısından inceleme, en çok 2 kademeli ipucu, `Arch` (*Kemer*) eşleştirmesi, çizim/şekil veya cümle başlangıçlı 1–2 cümlelik kısa gezi notu, 3 ifadeli öz değerlendirme.
+
+### Ortaokul (5, 6 ve 7. Sınıflar)
+- **5. Sınıf**: 4 gözlem boyutunda (malzeme, biçim, işlev, süsleme) karşılaştırma, 5 İngilizce kelime (`Arch`, `Brick`, `Courtyard`, `Valley`, `Heritage`) + örnek cümle eşleştirmesi, tasarım malzemesi seçimi + cümle başlangıçlı 2–3 cümlelik destekli açıklama veya görsel üretim, 3 ifade + isteğe bağlı kısa not.
+- **6. Sınıf**: Taş/tuğla yapılar ile doğal kanyon/kaya oyma mirası karşılaştırma, 5 İngilizce kelimeyi isteğe bağlı yazıda kullanma, görsel üretim veya 3–5 cümlelik karşılaştırmalı açıklama, 3 ifade + kısa not.
+- **7. Sınıf**: Cümle başlangıcı sunulmadan bağımsız gerekçelendirme; görsel üretim veya 4–6 cümlelik neden–sonuç ilişkili değerlendirme, isteğe bağlı İngilizce kelime kullanımı, 3 ifade + gerekçeli öz değerlendirme notu.
+
+---
+
+## 5. İngilizce Dünyası Bağlantıları (Yazım ve Karşılık Doğrulaması)
+
+- **İlkokul (2–4. Sınıf — `newEnglishWordsCount: 1`)**:
+  - `Arch` → **Kemer**
+- **Ortaokul (5–7. Sınıf — `newEnglishWordsCount: 5`)**:
+  1. `Arch` → **Kemer**
+  2. `Brick` → **Tuğla**
+  3. `Courtyard` → **Avlu**
+  4. `Valley` → **Vadi**
+  5. `Heritage` → **Miras / Kültürel Miras**
+- **Örnek Cümle**:
+  - İngilizce: `This courtyard has a stone arch and red brick walls.`
+  - Türkçe: `Bu avluda taş bir kemer ve kırmızı tuğla duvarlar vardır.`
