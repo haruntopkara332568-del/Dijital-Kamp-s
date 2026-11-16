@@ -945,22 +945,8 @@ function drawExitDoor(ctx: CanvasRenderingContext2D, width: number, height: numb
 }
 
 /**
- * Güvenli Dikdörtgen / Köşe Yuvarlatma Çizim Yardımcısı (Test mock ortamı uyumluluğu için)
+ * Tavandan Sarkan Selçuklu Feneri
  */
-function safeRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r?: number | number[],
-) {
-  if (typeof ctx.roundRect === 'function' && r !== undefined) {
-    ctx.roundRect(x, y, w, h, r);
-  } else if (typeof ctx.rect === 'function') {
-    ctx.rect(x, y, w, h);
-  }
-}
 function drawHangingCeilingLamp(
   ctx: CanvasRenderingContext2D,
   x: number,

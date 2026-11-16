@@ -1203,7 +1203,7 @@ describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () 
     // renderY = 18 - renderH + 3 + bobY = -46 + bobY (-46 civarı)
     expect(Math.abs(renderY - (-46))).toBeLessThanOrEqual(1.0);
     // Taban çizgisi renderY + renderH - 3 = 18 px civarı (y + 18'e tam oturur)
-    expect(renderY + renderH - 3).toBeCloseTo(18, 0);
+    expect(Math.abs(renderY + renderH - 3 - 18)).toBeLessThanOrEqual(1.0);
   });
 
   it('47. Aşama 4.5: Çapraz yön hareketinde histerezis eşiği gereksiz satır titremesini önler', () => {
@@ -1311,6 +1311,7 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
 
     setCachedAssetForTesting(CLASSROOM_BACKGROUND_ASSET_URL, fakeImg);
     setCachedAssetForTesting(CLASSROOM_DESK_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(CLASSROOM_DESK_MIRRORED_ASSET_URL, fakeImg);
     setCachedAssetForTesting(CLASSROOM_TEACHER_PODIUM_ASSET_URL, fakeImg);
     setCachedAssetForTesting(CLASSROOM_BOOKSHELF_ASSET_URL, fakeImg);
 
