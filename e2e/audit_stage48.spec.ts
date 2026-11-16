@@ -2,8 +2,30 @@ import { test, expect } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 
+interface EngineWindow extends Window {
+  __WALKABLE_ENGINE__?: {
+    player: { x: number; y: number; direction?: string };
+    navigateWalkToTarget: (x: number, y: number) => void;
+  };
+}
+
+interface PerformanceMemoryWindow extends Window {
+  performance: Performance & {
+    memory?: { usedJSHeapSize: number };
+  };
+}
+
+interface FpsMetrics {
+  avgFps: number;
+  avgDeltaMs: number;
+  maxDeltaMs: number;
+  minDeltaMs?: number;
+  jankFrames: number;
+  totalFrames: number;
+}
+
 // Aşama 4.8 test ve ölçüm verilerini toplayan paylaşımlı yapı
-const auditResults: any = {
+const auditResults: Record<string, unknown> = {
   timestamp: new Date().toISOString(),
   scenarios: {},
   viewports: {},
@@ -38,8 +60,8 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
     // 1.1. Klavye WASD / Ok Tuşları Hareketi
     await canvas.focus();
     const initialPos = await page.evaluate(() => {
-      const eng = (window as any).__WALKABLE_ENGINE__;
-      return { x: eng?.player?.x, y: eng?.player?.y };
+      const eng = (window as unknown as EngineWindow).__WALKABLE_ENGINE__;
+      return { x: eng?.player?.x ?? 0, y: eng?.player?.y ?? 0 };
     });
 
     await page.keyboard.down('KeyD');
@@ -47,15 +69,15 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
     await page.keyboard.up('KeyD');
 
     const movedPos = await page.evaluate(() => {
-      const eng = (window as any).__WALKABLE_ENGINE__;
-      return { x: eng?.player?.x, y: eng?.player?.y };
+      const eng = (window as unknown as EngineWindow).__WALKABLE_ENGINE__;
+      return { x: eng?.player?.x ?? 0, y: eng?.player?.y ?? 0 };
     });
     expect(movedPos.x).toBeGreaterThan(initialPos.x);
-    auditResults.scenarios.keyboardMovement = { passed: true, initial: initialPos, moved: movedPos };
+    (auditResults.scenarios as Record<string, unknown>).keyboardMovement = { passed: true, initial: initialPos, moved: movedPos };
 
     // 1.2. Çarpışma Testi: İngilizce Dünyası Binasına Doğru Yürüme (İçinden Geçmeme)
     await page.evaluate(() => {
-      const eng = (window as any).__WALKABLE_ENGINE__;
+      const eng = (window as unknown as EngineWindow).__WALKABLE_ENGINE__;
       if (eng) {
         eng.player.x = 840;
         eng.player.y = 200;
@@ -66,25 +88,25 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
     await page.keyboard.up('ArrowRight');
 
     const blockedPos = await page.evaluate(() => {
-      const eng = (window as any).__WALKABLE_ENGINE__;
-      return { x: eng?.player?.x, y: eng?.player?.y };
+      const eng = (window as unknown as EngineWindow).__WALKABLE_ENGINE__;
+      return { x: eng?.player?.x ?? 0, y: eng?.player?.y ?? 0 };
     });
     // Bina x: 860, y: 140, w: 220, h: 180. Karakter x <= 865 olmalı
     expect(blockedPos.x).toBeLessThanOrEqual(865);
-    auditResults.scenarios.obstacleCollision = { passed: true, blockedAtX: blockedPos.x };
+    (auditResults.scenarios as Record<string, unknown>).obstacleCollision = { passed: true, blockedAtX: blockedPos.x };
 
     // 1.3. Ulaşılamayan Hedef Geri Bildirimi
     await page.evaluate(() => {
-      const eng = (window as any).__WALKABLE_ENGINE__;
+      const eng = (window as unknown as EngineWindow).__WALKABLE_ENGINE__;
       eng?.navigateWalkToTarget(950, 200);
     });
     const unreachableMsg = page.getByText(/Oraya ulaşılamıyor/i);
     await expect(unreachableMsg).toBeVisible({ timeout: 4000 });
-    auditResults.scenarios.unreachableTargetFeedback = { passed: true };
+    (auditResults.scenarios as Record<string, unknown>).unreachableTargetFeedback = { passed: true };
 
     // 1.4. Senaryo B: İngilizce Dünyası Kapısına Yaklaşma ve Giriş
     await page.evaluate(() => {
-      const eng = (window as any).__WALKABLE_ENGINE__;
+      const eng = (window as unknown as EngineWindow).__WALKABLE_ENGINE__;
       if (eng) {
         eng.player.x = 970;
         eng.player.y = 330;
@@ -94,19 +116,19 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
 
     // Etkileşim balonu görünür olmalı
     await expect(page.getByText('İngilizce Sınıfına Gir')).toBeVisible({ timeout: 4000 });
-    auditResults.scenarios.englishDoorPrompt = { passed: true };
+    (auditResults.scenarios as Record<string, unknown>).englishDoorPrompt = { passed: true };
 
     // E tuşuyla sınıfa gir
     await page.keyboard.press('KeyE');
     await expect(page.getByText('İngilizce Sınıfı')).toBeVisible({ timeout: 5000 });
 
     const classroomSpawnPos = await page.evaluate(() => {
-      const eng = (window as any).__WALKABLE_ENGINE__;
-      return { x: eng?.player?.x, y: eng?.player?.y };
+      const eng = (window as unknown as EngineWindow).__WALKABLE_ENGINE__;
+      return { x: eng?.player?.x ?? 0, y: eng?.player?.y ?? 0 };
     });
     expect(classroomSpawnPos.x).toBe(480);
     expect(classroomSpawnPos.y).toBe(520);
-    auditResults.scenarios.enterClassroom = { passed: true, spawn: classroomSpawnPos };
+    (auditResults.scenarios as Record<string, unknown>).enterClassroom = { passed: true, spawn: classroomSpawnPos };
   });
 
   // -------------------------------------------------------------
@@ -130,7 +152,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
 
     // 2.1. Sıra Çarpışma Testi (Desk 3: x: 190, y: 390, w: 150, h: 55)
     await page.evaluate(() => {
-      const eng = (window as any).__WALKABLE_ENGINE__;
+      const eng = (window as unknown as EngineWindow).__WALKABLE_ENGINE__;
       if (eng) {
         eng.player.x = 350;
         eng.player.y = 410;
@@ -141,15 +163,15 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
     await page.keyboard.up('ArrowLeft');
 
     const deskCollisionPos = await page.evaluate(() => {
-      const eng = (window as any).__WALKABLE_ENGINE__;
-      return { x: eng?.player?.x, y: eng?.player?.y };
+      const eng = (window as unknown as EngineWindow).__WALKABLE_ENGINE__;
+      return { x: eng?.player?.x ?? 0, y: eng?.player?.y ?? 0 };
     });
     expect(deskCollisionPos.x).toBeGreaterThanOrEqual(335);
-    auditResults.scenarios.deskCollision = { passed: true, stoppedAtX: deskCollisionPos.x };
+    (auditResults.scenarios as Record<string, unknown>).deskCollision = { passed: true, stoppedAtX: deskCollisionPos.x };
 
     // 2.2. Y-Sorting: Öğrenci Sıranın Arkasında (y = 280 < 315)
     await page.evaluate(() => {
-      const eng = (window as any).__WALKABLE_ENGINE__;
+      const eng = (window as unknown as EngineWindow).__WALKABLE_ENGINE__;
       if (eng) {
         eng.player.x = 265;
         eng.player.y = 280;
@@ -164,7 +186,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
 
     // 2.3. Y-Sorting: Öğrenci Sıranın Önünde (y = 330 > 315)
     await page.evaluate(() => {
-      const eng = (window as any).__WALKABLE_ENGINE__;
+      const eng = (window as unknown as EngineWindow).__WALKABLE_ENGINE__;
       if (eng) {
         eng.player.x = 265;
         eng.player.y = 330;
@@ -177,7 +199,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
       path: path.join(process.cwd(), 'docs/assets/audit_student_in_front_desk.png'),
     });
 
-    auditResults.scenarios.ySorting = { passed: true, behindDeskY: 280, inFrontDeskY: 330 };
+    (auditResults.scenarios as Record<string, unknown>).ySorting = { passed: true, behindDeskY: 280, inFrontDeskY: 330 };
   });
 
   // -------------------------------------------------------------
@@ -191,7 +213,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
 
     // 3.1. Akıllı Tahtaya Yaklaşma
     await page.evaluate(() => {
-      const eng = (window as any).__WALKABLE_ENGINE__;
+      const eng = (window as unknown as EngineWindow).__WALKABLE_ENGINE__;
       if (eng) {
         eng.player.x = 480;
         eng.player.y = 175;
@@ -212,7 +234,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
     await page.screenshot({
       path: path.join(process.cwd(), 'docs/assets/audit_smartboard_open.png'),
     });
-    auditResults.scenarios.smartboardOpen = { passed: true };
+    (auditResults.scenarios as Record<string, unknown>).smartboardOpen = { passed: true };
 
     // Sınıfa dön butonuyla modalı kapat
     const closeBtn = page.getByRole('button', { name: /Sınıfa Dön/i });
@@ -221,7 +243,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
 
     // 3.2. Çıkış Kapısına Yaklaşma ve Avluya Dönüş
     await page.evaluate(() => {
-      const eng = (window as any).__WALKABLE_ENGINE__;
+      const eng = (window as unknown as EngineWindow).__WALKABLE_ENGINE__;
       if (eng) {
         eng.player.x = 480;
         eng.player.y = 575;
@@ -236,12 +258,12 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
 
     // Avluya dönüş koordinatı: İngilizce binası önü (970, 350)
     const returnPos = await page.evaluate(() => {
-      const eng = (window as any).__WALKABLE_ENGINE__;
-      return { x: eng?.player?.x, y: eng?.player?.y };
+      const eng = (window as unknown as EngineWindow).__WALKABLE_ENGINE__;
+      return { x: eng?.player?.x ?? 0, y: eng?.player?.y ?? 0 };
     });
     expect(returnPos.x).toBe(970);
     expect(returnPos.y).toBe(350);
-    auditResults.scenarios.returnToCourtyard = { passed: true, pos: returnPos };
+    (auditResults.scenarios as Record<string, unknown>).returnToCourtyard = { passed: true, pos: returnPos };
 
     const canvas = page.getByTestId('walkable-canvas');
     await page.waitForTimeout(600);
@@ -264,12 +286,12 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
       return raw ? JSON.parse(raw) : null;
     });
     expect(savedState).toBeDefined();
-    auditResults.scenarios.localStorageFound = !!savedState;
+    (auditResults.scenarios as Record<string, unknown>).localStorageFound = !!savedState;
 
     // Sayfa yenileme testi
     await page.reload();
     await expect(page.getByText('Yürünebilir Kampüs Avlusu')).toBeVisible();
-    auditResults.scenarios.reloadSurvived = true;
+    (auditResults.scenarios as Record<string, unknown>).reloadSurvived = true;
   });
 
   // -------------------------------------------------------------
@@ -303,7 +325,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
         dpadVisible = await page.getByRole('group', { name: /Dokunmatik yön kontrolleri/i }).isVisible();
       }
 
-      auditResults.viewports[vp.name] = {
+      (auditResults.viewports as Record<string, unknown>)[vp.name] = {
         viewport: vp,
         hasHorizontalOverflow: overflow.hasOverflow,
         scrollWidth: overflow.scrollWidth,
@@ -341,7 +363,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
 
     // 6.1. Avlu Gerçek FPS ve Kare Süresi (60 kare rAF)
     const courtyardFps = await page.evaluate(async () => {
-      return new Promise<any>((resolve) => {
+      return new Promise<FpsMetrics>((resolve) => {
         const frameTimes: number[] = [];
         let lastTime = performance.now();
         let count = 0;
@@ -374,7 +396,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
         requestAnimationFrame(loop);
       });
     });
-    auditResults.fps.courtyard = courtyardFps;
+    (auditResults.fps as Record<string, unknown>).courtyard = courtyardFps;
 
     // 6.2. Sınıf Gerçek FPS ve Kare Süresi
     await page.getByRole('button', { name: /Doğrudan Sınıfa Gir/i }).click();
@@ -382,7 +404,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
     await page.waitForTimeout(600);
 
     const classroomFps = await page.evaluate(async () => {
-      return new Promise<any>((resolve) => {
+      return new Promise<FpsMetrics>((resolve) => {
         const frameTimes: number[] = [];
         let lastTime = performance.now();
         let count = 0;
@@ -413,14 +435,14 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
         requestAnimationFrame(loop);
       });
     });
-    auditResults.fps.classroom = classroomFps;
+    (auditResults.fps as Record<string, unknown>).classroom = classroomFps;
 
     // 6.3. Avlu <-> Sınıf 4 Tekrarlı Geçişte Bellek Ölçümü
     const heapHistory: number[] = [];
     for (let i = 0; i < 4; i++) {
       // Sınıf -> Avlu (Avluya dön düğmesiyle veya kapıdan)
       await page.evaluate(() => {
-        const eng = (window as any).__WALKABLE_ENGINE__;
+        const eng = (window as unknown as EngineWindow).__WALKABLE_ENGINE__;
         if (eng) {
           eng.player.x = 480;
           eng.player.y = 575;
@@ -436,18 +458,19 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
       await page.waitForTimeout(150);
 
       const heap = await page.evaluate(() => {
-        return (performance as any).memory
-          ? Math.round(((performance as any).memory.usedJSHeapSize / (1024 * 1024)) * 10) / 10
+        const perf = (window as unknown as PerformanceMemoryWindow).performance;
+        return perf.memory
+          ? Math.round(((perf.memory.usedJSHeapSize / (1024 * 1024)) * 10)) / 10
           : null;
       });
       if (heap !== null) heapHistory.push(heap);
     }
 
-    auditResults.memory.heapHistoryMb = heapHistory;
+    (auditResults.memory as Record<string, unknown>).heapHistoryMb = heapHistory;
     if (heapHistory.length >= 2) {
       const growth = heapHistory[heapHistory.length - 1] - heapHistory[0];
-      auditResults.memory.stable = growth < 10.0;
-      auditResults.memory.heapGrowthMb = Math.round(growth * 10) / 10;
+      (auditResults.memory as Record<string, unknown>).stable = growth < 10.0;
+      (auditResults.memory as Record<string, unknown>).heapGrowthMb = Math.round(growth * 10) / 10;
     }
 
     // 6.4. Erişilebilirlik
