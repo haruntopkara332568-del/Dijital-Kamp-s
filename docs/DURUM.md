@@ -1,4 +1,4 @@
-# Proje Durum Raporu — Sürüm 3.3 (Aşama 1 + Aşama 2: Aksaray Kültürel Miras Rotası)
+# Proje Durum Raporu — Sürüm 3.4 (Aşama 1 + Aşama 2: Aksaray Rotası + Aşama 3: Yürünebilir Kampüs Prototipi)
 
 ## Tamamlanan Bölümler
 - **Mimari Dönüşüm (Vite + React + TypeScript + Tailwind CSS v4 + React Router)**:
@@ -36,17 +36,26 @@
   - İlkokul (2–4) için `Arch` (*Kemer*), ortaokul (5–7) için 5 kelime (`Arch`, `Brick`, `Courtyard`, `Valley`, `Heritage`) + örnek cümle (`"This courtyard has a stone arch and red brick walls."`) ve 4 gözlem boyutu bağlandı; tüm sınıf düzeylerinde tek bir geçerli özgün üretim biçimiyle tamamlama ilkesi korundu.
 - **Belgelendirme Güncellemesi (`README.md`, `docs/ICERIK_REHBERI.md`, `docs/LISANSLAR.md`)**: GitHub/Vercel süreçleri, hukuki değerlendirme başlıkları ve varlık kredileri güncellendi.
 
-## Tasarım Sistemi ve Görsel Ön İzleme (`src/styles/globals.css`, `src/data/designSystem.ts`, `/tasarim-sistemi`)
-- **Ortak Renk, Tipografi ve Hareket Belirteçleri**: Merkezi CSS renk ve yerel Türkçe yazı tipi belirteçleri (`--font-sans`, `--font-display`, `--focus-ring-color`), sayısal hizalama (`.tabular-nums`), mobil kırılımlar (`360/390/768/1024+ px`) ve `prefers-reduced-motion` kuralları tek yapıda toplandı (`docs/TASARIM_SISTEMI.md`).
-- **Yeniden Kullanılabilir UI ve Anadolu Motif Bileşenleri (`CampusDesignSystem.tsx`, `AnatolianMotifSvg.tsx`)**: `CampusButton`, `CampusCard`, `CampusSectionHeader`, `CampusBadge`, `CampusProgressBar` ve 4 sadeleştirilmiş Anadolu motif SVG varyantı (`seljuk-star`, `stone-arch`, `brick-zigzag`, `tile-medallion`) eklendi.
-- **2–7. Sınıflar İçin Ortak Ama Yaşa Uyarlanabilir Görsel Dil (`getVisualLanguageSpec`)**: İlkokulda (`2–4`) `48 px` ferah dokunma yüksekliği ve açık kısa yönerge yoğunluğu; ortaokulda (`5–7`) `44 px` dengeli yoğunluk ve karşılaştırmalı gösterge dili uygulandı.
-- **Canlı Görsel Ön İzleme (`/tasarim-sistemi`)**: Öğrenci ana gezinme çubuğuna kalabalık eklemeden doğrudan ön izleme ve erişilebilirlik/sınıf uyarlama denetimi için `/tasarim-sistemi` rotası sunuldu.
-- **Sayfa Bazlı Kod Bölme (`CampusPages.tsx`)**: Tüm sayfa görünümleri (`CampusGateView`, `CourtyardWelcomeView`, `CampusMapView`, `LearningAreaView`, `MissionRunnerView`, `JourneyView`, `DesignSystemPreviewView`) `React.lazy` + `Suspense` ile ayrıştırılarak ana başlangıç JS paketi `1.003 kB` (`270.66 kB` gzip) düzeyinden `528.34 kB` (`160.31 kB` gzip) düzeyine düşürüldü.
+## Aşama 3 — Yürünebilir ve Etkileşimli Kampüs Prototipi (`feat/walkable-campus-prototype`)
+- **Ayrık Oyun Motoru ve Karakter Render Sistemi (`src/features/walkable/engine/`)**:
+  - `characterRenderer.ts`: 4 yönlü (aşağı, yukarı, sol, sağ) yürüyüş ve bekleme (idle) durumlarını, dinamik adım/kol salınım döngüsü ve Anadolu-Selçuklu renk paletiyle çizen Canvas 2D karakter motoru.
+  - `WalkableCanvasEngine.ts`: 60fps oyun döngüsü (`requestAnimationFrame`), klavye (Ok tuşları + WASD), normalize çapraz hareket hızı, AABB engel çarpışma algılama ve duvar kayması (wall sliding), yumuşak kamera takibi (lerp), tıklayarak/dokunarak otomatik yürüme ve mesafe bazlı etkileşim bölgesi yönetimi.
+  - `courtyardSceneRenderer.ts`: 1400×900 piksel boyutunda Selçuklu yıldız meydanı, mermer fıskiye, taş yollar, 5 bina silüeti ve ağaçlarla donatılmış 2,5B yürünebilir avlu sahnesi.
+  - `classroomSceneRenderer.ts`: 960×640 piksel boyutunda ahşap parke zemin, kemer pencereler, öğrenci sıraları, kürsü, kitaplık ve etkileşimli akıllı tahta (kapalı, açılıyor, aktif durumları) içeren İngilizce sınıfı.
+- **Arayüz ve Etkileşim Katmanı (`src/features/walkable/components/`)**:
+  - `WalkableControlsOverlay.tsx`: Ekran üstü durum rozeti, etkileşim balonu (`[E]`), ulaşılamayan hedef uyarısı, mobil dokunmatik D-Pad (`44×44 px` üzeri hedefler) ve klavyesiz erişim butonları (`Doğrudan Sınıfa Gir`, `Kuşbakışı Harita`).
+  - `SmartBoardModal.tsx`: Akıllı tahta çerçevesi içinde mevcut görev motorunu (`MissionRunnerView`) başlatan modal; "Sınıfa Dön" ile kesintisiz sınıfa geri dönüş imkânı.
+  - `WalkableCampusView.tsx`: Avlu ve sınıf sahneleri arasında akıcı geçiş sağlayan ana orkestratör bileşen.
+- **Yönlendirme ve Bağlantılar (`router.tsx`, `CampusPages.tsx`, `CampusMapView.tsx`, `CampusTopBar.tsx`)**:
+  - `/yuruyus` rotası eklendi; `React.lazy` ile dinamik kod bölme uygulandı.
+  - Kampüs Haritası üst eylem alanına `"Yürüyerek Keşfet"` bağlantısı, gezinme çekmecesine `"Yürünebilir Kampüs Avlusu"` erişimi eklendi.
+- **Phaser 3 Karşılaştırma Analizi**:
+  - Phaser 3'ün 1.28 MB (gzip: 310 kB) paket ağırlığı yerine, özel Canvas 2D motoru derleme çıktısında sadece **25.79 kB** (gzip: **7.42 kB**) yer tutmuş ve sıfır harici kütüphane bağımlılığıyla ~40 kat daha hafif bir çözüm sunulmuştur.
 
 ## Doğrulama Durumu ve Sonraki Adım
-- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [29/29], `npm run build` ve `npm run test:e2e` [8/8 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
+- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [37/37], `npm run build` ve `npm run test:e2e` [10/10 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
 - Çoklu ekran boyutu denetiminde (`360×740`, `390×844`, `768×1024`, `1280×840`) yatay taşma (`0`) ve mobil `390×844` görünümünde `44×44 px` altı etkileşimli hedef (`0`) doğrulandı.
-- Tasarım Sistemi ön izlemesi, kod bölme optimizasyonu ve ilgili testler tamamlanmış olup görsel sahne yönü konusunda onay beklenmektedir.
+- Aşama 3 prototipi `feat/walkable-campus-prototype` dalında tamamlanmıştır.
 
 
 

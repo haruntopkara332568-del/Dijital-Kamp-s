@@ -32,6 +32,11 @@ const DesignSystemPreviewView = lazy(() =>
     default: m.DesignSystemPreviewView,
   })),
 );
+const WalkableCampusView = lazy(() =>
+  import('@/src/features/walkable/WalkableCampusView').then((m) => ({
+    default: m.WalkableCampusView,
+  })),
+);
 
 function RouteLoadingFallback() {
   return (
@@ -131,6 +136,14 @@ export function DesignSystemRoutePage() {
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
       <DesignSystemPreviewView />
+    </Suspense>
+  );
+}
+
+export function WalkableCampusRoutePage() {
+  return (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <WalkableCampusView />
     </Suspense>
   );
 }

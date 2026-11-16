@@ -37,3 +37,29 @@ Teknik önlemler hukuki uygunluğu tek başına otomatik olarak sağlamaz; yayı
 1. **Barındırma Sunucu Kayıtları vs. Uygulama Verisi**: Uygulama kodunun kendisi öğrenci verisi toplamaz ve sunucuya göndermez; ancak Vercel gibi barındırma sağlayıcılarının HTTP erişim/IP günlükleri (teknik sunucu kayıtları) ayrı bir veri işleme faaliyeti olarak değerlendirilmelidir.
 2. **Çocuklara Yönelik Aydınlatma Metni**: 2–7. sınıf öğrencileri ve velileri için sade, yaşa uygun bilgilendirme ve veli rızası gereksinimlerinin hukuken gözden geçirilmesi.
 3. **Gelecek Sürümlerde İçerik Yönetim Sistemi**: Yalnızca yetkili proje yöneticisinin erişebileceği yönetim altyapısı eklendiğinde kimlik doğrulama ve yetkilendirme güvenliğinin ayrıca tasarlanması.
+
+## 6. Aşama 3 — Yürünebilir Kampüs ve Etkileşimli Sınıf Mimarisi
+
+### 6.1. Ayrık Hibrit Mimari (React + Canvas 2D)
+Aşama 3 kapsamında öğrencinin karakterini serbestçe yönlendirebildiği ve eğitim mekânlarıyla etkileşime girebildiği yürünebilir kampüs prototipi geliştirilmiştir:
+- **React 19 Katmanı**: Görev motoru (`MissionRunnerView`), akıllı tahta arayüzü (`SmartBoardModal`), ekran üstü kontroller (`WalkableControlsOverlay`), öğrenci durumu/ilerlemesi ve erişilebilirlik bağlantıları.
+- **Canvas 2D Oyun Motoru (`WalkableCanvasEngine`)**: Karakter hareketi, 60fps render döngüsü (`requestAnimationFrame`), AABB çarpışma kutuları, kamera lerp takibi, tıklayarak otomatik yürüme ve etkileşim yarıçapı denetimleri.
+- **Tip Güvenliği (`src/features/walkable/types.ts`)**: Karakter yönü (`up`, `down`, `left`, `right`), durumlar (`idle`, `walk`), sahne nesneleri, engeller ve etkileşimli alanlar TypeScript strict modunda modellenmiştir.
+
+### 6.2. Phaser 3 ve Canvas 2D Teknik Değerlendirmesi
+Geliştirme öncesinde Phaser 3 oyun motoru paket boyutu, mobil uyumluluk ve mevcut SPA yapısıyla entegrasyon açısından değerlendirilmiştir:
+1. **Paket Boyutu**: Phaser 3 minified haliyle **~1.28 MB** (gzip: **~310 kB**) ek yük getirmekte olup düşük donanımlı mobil cihazlarda ilk açılış süresini olumsuz etkilemektedir.
+2. **Özel Canvas 2D Motoru**: Sıfır harici kütüphane bağımlılığıyla yazılan `WalkableCanvasEngine`, derleme çıktısında yalnızca **25.79 kB** (gzip: **7.42 kB**) yer kaplamakta ve Phaser'a kıyasla **~40 kat daha hafif** kalmaktadır.
+3. **Bellek ve Test Kolaylığı**: WebGL bağlamı gerektirmeyen Canvas 2D altyapısı Vitest JSDOM test ortamında ve mobil tarayıcılarda sızıntısız çalışmakta; sekme arka plana geçtiğinde animasyon döngüsü duraklatılarak pil tasarrufu sağlanmaktadır.
+4. **Kod Bölme (`React.lazy`)**: Yürünebilir sahne bileşenleri (`WalkableCampusView`) bağımsız bir dinamik parça (`chunk`) olarak ayrılmış; harita veya görev panosunu kullanan öğrencilere ek indirme maliyeti yüklenmemiştir.
+
+### 6.3. Sahne Kurgusu ve Akıllı Tahta Entegrasyonu
+- **Yürünebilir Kampüs Avlusu (`1400×900`)**: Selçuklu sekiz köşeli yıldız meydanı, mermer fıskiye, taş döşeli yollar, 5 bina silüeti ve ağaç engelleri yer alır. Karakter İngilizce Dünyası binasına yaklaştığında `[E] İngilizce Sınıfına Gir` etkileşimi etkinleşir.
+- **İngilizce Sınıfı İç Mekânı (`960×640`)**: Ahşap parke zemin, Selçuklu kemerli pencereler, öğrenci sıraları, öğretmen kürsüsü, kitaplık ve çıkış kapısı bulunur.
+- **Akıllı Tahta Etkileşimi**: Öğrenci tahtaya yaklaştığında `[E] Akıllı Tahtayı Aç` bildirimi belirir. Etkileşim tetiklendiğinde açılma animasyonu oynatılır ve mevcut `MissionRunnerView` bileşeni `kapilarin-anlattigi-hikaye` göreviyle akıllı tahta modal çerçevesi içinde açılır. Görev motorunun iç yapısı, sınıf profilleri ve depolama mekanizması değiştirilmemiştir. Etkinlikten çıkıldığında öğrenci doğrudan sınıfa, sınıftan çıkıldığında avluya geri döner.
+
+### 6.4. Çoklu Kontrol ve Erişilebilirlik
+- **Klavye**: Yön tuşları ve `W-A-S-D` desteği; normalize edilmiş çapraz hareket hızı; metin girişlerinde tuş dinleyicilerinin otomatik pasifleşmesi.
+- **Tıklayarak Yürüme**: Sahne üzerinde tıklanan açık noktaya karakterin engelleri aşarak yürümesi; engel üzerine tıklandığında nazik geri bildirim (`Oraya ulaşılamıyor, lütfen açık bir yola tıkla.`).
+- **Mobil Dokunmatik D-Pad**: Küçük ekranlarda `44×44 px` üzeri hedeflere sahip sanal yön tuşları.
+- **Erişilebilir Kısayollar**: Klavyeyle yürümek istemeyen öğrenciler için `Doğrudan Sınıfa Gir` ve `Kuşbakışı Harita` butonları korunmuştur.

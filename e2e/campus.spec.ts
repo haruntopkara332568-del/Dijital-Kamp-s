@@ -281,6 +281,53 @@ test.describe('Dijital Eğitim Kampüsü Uçtan Uca Yolculuk', () => {
     });
     expect(smallButtons).toEqual([]);
   });
+
+  test('Aşama 3: Yürünebilir kampüs avlusu, İngilizce sınıfı, akıllı tahta ve harita geçişi', async ({
+    page,
+  }) => {
+    await page.goto('/yuruyus');
+
+    // 1. Yürünebilir kampüs avlusu başlangıç görünümü
+    await expect(page.getByText('Yürünebilir Kampüs Avlusu')).toBeVisible();
+    const canvas = page.getByTestId('walkable-canvas');
+    await expect(canvas).toBeVisible();
+
+    // 2. Doğrudan sınıfa geçiş butonu ile İngilizce sınıfına gir
+    await page.getByRole('button', { name: /Doğrudan Sınıfa Gir/i }).click();
+    await expect(page.getByText('İngilizce Sınıfı')).toBeVisible();
+
+    // 3. Sınıf içinde akıllı tahtaya doğru yürü (klavye ile yukarı hareket)
+    await canvas.focus();
+    await page.keyboard.down('ArrowUp');
+    await page.waitForTimeout(2600);
+    await page.keyboard.up('ArrowUp');
+
+    // Akıllı tahta etkileşim butonu görünür olmalı ve tıklanmalı
+    const interactBtn = page.getByRole('button', { name: /Etkileşimi Başlat \[E\]/i });
+    await expect(interactBtn).toBeVisible({ timeout: 6000 });
+    await interactBtn.click();
+
+    // 4. Akıllı Tahta modalı açılır ve mevcut Kapıların Anlattığı Hikâye etkinliği görünür
+    await expect(page.getByText(/İngilizce Sınıfı — Etkileşimli Akıllı Tahta/i)).toBeVisible();
+    await expect(page.getByText(/Kapıların Anlattığı Hikâye/i).first()).toBeVisible();
+
+    // 5. Sınıfa Dön butonu ile modalı kapat
+    await page.getByRole('button', { name: /Sınıfa Dön/i }).click();
+    await expect(page.getByText(/İngilizce Sınıfı — Etkileşimli Akıllı Tahta/i)).not.toBeVisible();
+    await expect(page.getByText('İngilizce Sınıfı')).toBeVisible();
+
+    // 6. Kuşbakışı haritaya dön
+    await page.getByRole('button', { name: /Kuşbakışı Harita/i }).click();
+    await expect(page.getByRole('heading', { name: /Kampüs Haritası/i })).toBeVisible();
+
+    // 7. Harita üzerinden tekrar yürüyüşe geç
+    await page.getByRole('link', { name: /Yürüyerek Keşfet/i }).click();
+    await expect(page.getByText('Yürünebilir Kampüs Avlusu')).toBeVisible();
+
+    // 8. Mobil boyut (390x844) ve D-Pad kontrolü
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.getByRole('group', { name: /Dokunmatik yön kontrolleri/i })).toBeVisible();
+  });
 });
 
 
