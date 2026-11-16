@@ -3,17 +3,29 @@
 ## 1. Çalıştırıldı ve Geçti
 - **`npm run typecheck` (`tsc --noEmit`)**: Geçti — 0 hata (strict TypeScript).
 - **`npm run lint` (`eslint .`)**: Geçti — 0 hata, 0 uyarı.
-- **`npm run test` (`vitest run`)**: Geçti — **37 / 37 test** (`src/test/walkable.test.ts` [8 test] + `src/test/campus.test.tsx` [29 test], toplam `3.77 s`):
-  - **Aşama 3 Yürünebilir Kampüs Motoru Testleri (`walkable.test.ts`)**:
-    - Klavye hareket girdisi (Yön tuşları ve WASD) ve bekleme durumları
-    - Çapraz hareket hızının normal yürüme hızını aşmayacak şekilde normalize edilmesi
-    - Sahne engelleriyle AABB çarpışma algılaması ve karakterin engellerin içine girmesinin önlenmesi
-    - Tıklayarak otomatik yürüme, hedefe varışta duruş ve yeni tuş basımında otomatik yürümenin iptali
-    - Engelli veya erişilemeyen hedefe tıklamada nazik uyarı tetiklenmesi
-    - Etkileşim bölgesine yaklaşınca aktif bölge bildirimi ve `E` tuşuyla etkileşimin tetiklenmesi
-    - Mobil dokunmatik sanal yön kontrolleri (`setVirtualDirection`) ile hareket entegrasyonu
-    - Kamera lerp takibi ve sahne sınırları dışına taşmama (clamp) doğrulaması
-  - **Mevcut Kampüs ve Pedagoji Testleri (`campus.test.tsx`)**:
+- **`npm run test` (`vitest run`)**: Geçti — **49 / 49 test** (`src/test/walkable.test.tsx` [20 test] + `src/test/campus.test.tsx` [29 test], toplam `3.91 s`):
+  - **Aşama 3 Yürünebilir Kampüs ve Teknik İyileştirme Testleri (`walkable.test.tsx` — 20 Test)**:
+    1. Karakter yön tuşlarıyla ve W, A, S, D ile doğru yönde hareket eder
+    2. Çapraz hareket hızı normal hareket hızından fazla olamaz (Normalizasyon)
+    3. Karakter bina ve engel sınırlarının içinden geçemez (Çarpışma algılama)
+    4. Tıklanan ulaşılabilir noktaya otomatik yürür ve manuel hareket otomatik yürümeyi iptal eder
+    5. Ulaşılamayan bir engel içine tıklandığında hata geri bildirimi verir
+    6. İngilizce Dünyası kapısına yaklaşıldığında etkileşim bölgesi tetiklenir ve E tuşuyla eylem çalışır
+    7. Mobil dokunmatik sanal yön kontrolleri (`setVirtualDirection`) çalışır
+    8. Kamera sınırların dışına taşmaz ve karakteri takip eder
+    9. **Engel arkasındaki ulaşılabilir hedefe A* yol bulma rotası ve ara noktalar oluşturma**
+    10. **Ulaşılamayan hedef (engelin içi) doğrudan reddedilir ve `onUnreachableTarget` tetiklenir**
+    11. **Otomatik yürürken klavye yön tuşuna basıldığında rota derhal iptal edilir**
+    12. **Otomatik yürürken mobil D-Pad ile yön verildiğinde rota derhal iptal edilir**
+    13. **Akıllı tahta modalı açıkken (`pause`) karakter klavye tuşlarına tepki vermez**
+    14. **Akıllı tahta modalı kapandığında (`resume`) karakter önceki konumunu korur**
+    15. **SmartBoardModal Escape tuşu ile güvenli biçimde kapanır**
+    16. **SmartBoardModal odak yönetimi (Focus Trap) ve Tab döngüsü sağlar**
+    17. **Mobilde pointercancel ve pointerleave sonrasında hareket tamamen durur**
+    18. **Farklı Canvas ve CSS boyutlarında (Responsive scale) tıklama koordinatları doğru hesaplanır**
+    19. **Ekran boyutu değiştiğinde `updateDimensions` karakter ve kamerayı sahne sınırında tutar**
+    20. **Mevcut iki öğrenme görevi ve sınıf düzeyleri veri bütünlüğünü korur**
+  - **Mevcut Kampüs ve Pedagoji Testleri (`campus.test.tsx` — 29 Test)**:
     - 2–7. sınıf başlangıç parametrelerinin (`gradeProfiles.ts`) doğrulaması
     - Onaylı karşılama metni, karma dil seslendirme segmentleri (`tr-TR` / `en-US` / `tr-TR`) ve rehber sorularının harfiyen korunması
     - Görev aşamalarının (`KEŞFET → ÖĞREN → ÜRET → PAYLAŞ`) doğrulanması
@@ -32,13 +44,13 @@
     - `speechSynthesis` olmayan ortamda seslendirme servisinin çökmeden metin yedeği dönmesi
     - `GuideDialogueCard` ekrandaki metinle aynı karma dil segmentlerini seslendirme servisine göndermesi
     - Giriş kapısı, karşılama avlusu, iki adımlı "Verilerimi Sil" ve üst gezinme çubuğu testleri
-- **`npm run build` (`vite build`)**: Geçti — Vite 8.3.8 ile `813 ms` içinde derlendi (`2121` modül, dinamik `React.lazy` kod bölme etkin; `WalkableCampusView` yalnızca `25.79 kB` / `gzip: 7.42 kB`).
-- **`npm run test:e2e` (`playwright test`)**: Geçti — `e2e/campus.spec.ts` **10 / 10** geçti (`17.1 s`, Chromium + Mobile Chrome):
-  - `[chromium]` (`10.0 s`) ve `[mobile-chrome]` (`10.8 s`): Kapı → onaylı karşılama → 5. sınıf → rehberli tur → 5 yollu harita → keşfet → öğren (yönlendirici ve olumlu geri bildirim) → boş üretim engeli → alan gezintisinde ilerleme korunması → şekil/malzeme/gerekçeli anlatım üretimi → PNG indirmeden görevi tamamlama → Yolculuğum 3 bölüm ve eser inceleme penceresi → iki adımlı Verilerimi Sil ve boş durum doğrulaması.
-  - `[chromium]` (`6.0 s`) ve `[mobile-chrome]` (`5.2 s`): 2. sınıf akışı (basit çizim araçları + fareyle serbest çizim + isteğe bağlı yazı), `360×740`, `390×844`, `768×1024`, `1280×840` ekranlarında `0` yatay taşma, `390 px` ekranda `44×44 px` altı hedef olmaması ve klavye yön tuşlarıyla şekil taşıma.
-  - `[chromium]` (`7.7 s`) ve `[mobile-chrome]` (`5.5 s`): Aşama 2 Aksaray Kültürel Miras Rotası (`Gezi ve Keşif` 4 durak kontrolü, Ulu Cami'nin aktif rotada yer almayıp Yakında notunda kalması, 5. sınıf `KEŞFET → ÖĞREN → ÜRET → PAYLAŞ` akışı, tek yazılı üretimle tamamlama, `390×844` ve `1280×840` taşmasızlık kontrolü, `Yolculuğum` kaydı doğrulaması).
-  - `[chromium]` (`2.3 s`) ve `[mobile-chrome]` (`1.5 s`): Tasarım Sistemi ön izlemesi (`/tasarim-sistemi`) sınıf uyarlama, motifler, ilerleme göstergesi, `390×844` / `1280×840` sıfır yatay taşma ve `44×44 px` altı hedef olmaması kontrolü.
-  - `[chromium]` (`6.7 s`) ve `[mobile-chrome]` (`5.1 s`): **Aşama 3 Yürünebilir Kampüs ve Akıllı Tahta Entegrasyonu**: `/yuruyus` başlangıç görünümü ve canvas doğrulaması, `Doğrudan Sınıfa Gir` ile İngilizce sınıfına geçiş, sınıf içinde akıllı tahtaya yürüme, `[E] Etkileşimi Başlat` ile akıllı tahta açılma animasyonu, modal içinde `Kapıların Anlattığı Hikâye` görevinin açılması, `Sınıfa Dön` ile modalın kapanıp sınıfa geri dönülmesi, `Kuşbakışı Harita` butonuna basılarak haritaya geçiş, haritadan `Yürüyerek Keşfet` ile avluya dönüş, mobil `390×844` ekranında dokunmatik D-Pad görünürlüğü.
+- **`npm run build` (`vite build`)**: Geçti — Vite 8.3.8 ile `828 ms` içinde derlendi (`2122` modül, dinamik `React.lazy` kod bölme etkin; `WalkableCampusView` parça boyutu A* yol bulma motoru dahil yalnızca `32.09 kB` / `gzip: 9.31 kB`).
+- **`npm run test:e2e` (`playwright test`)**: Geçti — `e2e/campus.spec.ts` **10 / 10** geçti (`18.1 s`, Chromium + Mobile Chrome):
+  - `[chromium]` (`10.0 s`) ve `[mobile-chrome]` (`11.1 s`): Kapı → onaylı karşılama → 5. sınıf → rehberli tur → 5 yollu harita → keşfet → öğren (yönlendirici ve olumlu geri bildirim) → boş üretim engeli → alan gezintisinde ilerleme korunması → şekil/malzeme/gerekçeli anlatım üretimi → PNG indirmeden görevi tamamlama → Yolculuğum 3 bölüm ve eser inceleme penceresi → iki adımlı Verilerimi Sil ve boş durum doğrulaması.
+  - `[chromium]` (`5.9 s`) ve `[mobile-chrome]` (`5.5 s`): 2. sınıf akışı (basit çizim araçları + fareyle serbest çizim + isteğe bağlı yazı), `360×740`, `390×844`, `768×1024`, `1280×840` ekranlarında `0` yatay taşma, `390 px` ekranda `44×44 px` altı hedef olmaması ve klavye yön tuşlarıyla şekil taşıma.
+  - `[chromium]` (`8.5 s`) ve `[mobile-chrome]` (`7.3 s`): Aşama 2 Aksaray Kültürel Miras Rotası (`Gezi ve Keşif` 4 durak kontrolü, Ulu Cami'nin aktif rotada yer almayıp Yakında notunda kalması, 5. sınıf `KEŞFET → ÖĞREN → ÜRET → PAYLAŞ` akışı, tek yazılı üretimle tamamlama, `390×844` ve `1280×840` taşmasızlık kontrolü, `Yolculuğum` kaydı doğrulaması).
+  - `[chromium]` (`2.2 s`) ve `[mobile-chrome]` (`1.7 s`): Tasarım Sistemi ön izlemesi (`/tasarim-sistemi`) sınıf uyarlama, motifler, ilerleme göstergesi, `390×844` / `1280×840` sıfır yatay taşma ve `44×44 px` altı hedef olmaması kontrolü.
+  - `[chromium]` (`6.5 s`) ve `[mobile-chrome]` (`5.1 s`): **Aşama 3 Yürünebilir Kampüs ve Akıllı Tahta Entegrasyonu**: `/yuruyus` başlangıç görünümü ve canvas doğrulaması, `Doğrudan Sınıfa Gir` ile İngilizce sınıfına geçiş, sınıf içinde akıllı tahtaya yürüme, `[E] Etkileşimi Başlat` ile akıllı tahta açılış animasyonu, modal içinde `Kapıların Anlattığı Hikâye` görevinin açılması, **Escape tuşuyla güvenle modal kapatma**, `Kuşbakışı Harita` butonuna basılarak haritaya geçiş, haritadan `Yürüyerek Keşfet` ile avluya dönüş, mobil `390×844` ekranında dokunmatik D-Pad görünürlüğü.
 
 ## 2. Çalıştırılamayan Testler
 - Yok. Birim/entegrasyon (`vitest`) ve uçtan uca tarayıcı (`playwright`) testlerinin tamamı çalıştırıldı ve geçti.
@@ -54,15 +66,13 @@
 - `DrawingCanvasStudio` ve `WalkableCanvasEngine` içindeki `<canvas>` yüzeyleri doğası gereği grafik odaklıdır; pikseller ekran okuyucuya doğrudan metin olarak aktarılamaz.
 - Bu sınırı aşmak amacıyla:
   - Yürünebilir sahnede ekran okuyucu ve klavyeyle yönlendirme yapamayan öğrenciler için `Doğrudan Sınıfa Gir` ve `Kuşbakışı Harita` gibi erişilebilir HTML buton alternatifleri sunulmuştur.
-  - Akıllı tahta modalı `role="dialog"` ve `aria-labelledby` ile erişilebilir çerçeveye alınmıştır.
+  - Akıllı tahta modalı `role="dialog"` ve `aria-modal="true"`, `aria-labelledby`, `aria-describedby`, Focus Trap ve Escape desteği ile erişilebilir kılınmıştır.
   - Çizim stüdyosunda hazır şekiller, klavyeyle taşıma ve metin tabanlı gerekçeli anlatım alanları korunmaktadır.
 
 ## 5. Paket Boyutu Ölçümü (Vite Derleme Çıktısı — Kod Bölme Sonrası)
 - `dist/index.html`: `1.01 kB` (`gzip: 0.47 kB`)
-- `dist/assets/index-D5j-xoj8.css`: `57.13 kB` (`gzip: 9.21 kB`)
-- `dist/assets/index-C0whkBtd.js` (ana giriş paketi): `333.72 kB` (`gzip: 104.48 kB`) — sayfa bazlı dinamik `React.lazy` kod bölme ile başlangıç paketi son derece hafiftir.
-- **Yürünebilir Sahne Paketi (`WalkableCampusView-DXOEM0A3.js`)**: Yalnızca **25.79 kB** (`gzip: 7.42 kB`) — Phaser'a (1.28 MB) kıyasla 40 kat daha küçüktür ve yalnızca `/yuruyus` rotasına girildiğinde yüklenir.
-- İsteğe bağlı diğer sayfa parçaları: `MissionRunnerView` (`71.85 kB` / `gzip: 16.60 kB`), `DesignSystemPreviewView` (`23.55 kB` / `gzip: 7.03 kB`), `JourneyView` (`19.01 kB` / `gzip: 4.67 kB`), `CourtyardWelcomeView` (`13.97 kB` / `gzip: 3.68 kB`), `LearningAreaView` (`12.47 kB` / `gzip: 2.89 kB`), `CampusMapView` (`13.28 kB` / `gzip: 3.90 kB`), `CampusGateView` (`3.63 kB` / `gzip: 1.58 kB`).
+- `dist/assets/index-XN61vt9h.css`: `56.95 kB` (`gzip: 9.20 kB`)
+- `dist/assets/index-Bg2oYn_I.js` (ana giriş paketi): `333.72 kB` (`gzip: 104.47 kB`) — sayfa bazlı dinamik `React.lazy` kod bölme ile başlangıç paketi son derece hafiftir.
+- **Yürünebilir Sahne Paketi (`WalkableCampusView-BJjd90Vt.js`)**: Yalnızca **32.09 kB** (`gzip: 9.31 kB`) — A* yol bulma ve string-pulling dahil Phaser'a (1.28 MB) kıyasla ~35 kat daha küçüktür ve yalnızca `/yuruyus` rotasına girildiğinde yüklenir.
+- İsteğe bağlı diğer sayfa parçaları: `MissionRunnerView` (`71.85 kB` / `gzip: 16.61 kB`), `DesignSystemPreviewView` (`23.55 kB` / `gzip: 7.03 kB`), `JourneyView` (`19.01 kB` / `gzip: 4.67 kB`), `CourtyardWelcomeView` (`13.97 kB` / `gzip: 3.68 kB`), `LearningAreaView` (`12.47 kB` / `gzip: 2.89 kB`), `CampusMapView` (`13.28 kB` / `gzip: 3.90 kB`), `CampusGateView` (`3.63 kB` / `gzip: 1.58 kB`).
 - Harici yazı tipi, CDN, üçüncü taraf izleyici ve harici API isteği sıfırdır.
-
-

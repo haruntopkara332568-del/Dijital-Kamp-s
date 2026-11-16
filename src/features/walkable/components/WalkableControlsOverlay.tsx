@@ -1,3 +1,4 @@
+import React from 'react';
 import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Sparkles, Map, HelpCircle } from 'lucide-react';
 import type { InteractiveZone } from '../types';
 
@@ -20,6 +21,28 @@ export function WalkableControlsOverlay({
   unreachableMessage,
   currentScene,
 }: WalkableControlsOverlayProps) {
+  const handlePointerDownDir = (e: React.PointerEvent<HTMLButtonElement>, vx: number, vy: number) => {
+    e.preventDefault();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Tarayıcı emniyet desteği
+    }
+    onVirtualDirection(vx, vy);
+  };
+
+  const handlePointerUpDir = (e: React.PointerEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      // Emniyet
+    }
+    onVirtualDirection(0, 0);
+  };
+
   return (
     <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-3 sm:p-5 select-none z-20">
       {/* Üst Çubuk: Bilgi Rozeti, Haritaya Dönüş ve Erişilebilir Kısayollar */}
@@ -86,19 +109,21 @@ export function WalkableControlsOverlay({
 
       {/* Alt Çubuk: Klavye Yardım İpucu ve Mobil Dokunmatik D-Pad */}
       <footer className="flex items-end justify-between gap-4">
-        {/* Sol Alt: Mobil Dokunmatik D-Pad */}
+        {/* Sol Alt: Mobil Dokunmatik D-Pad (Touch-friendly 44x44+ hedefler) */}
         <div
-          className="pointer-events-auto grid grid-cols-3 gap-1.5 w-36 h-36 bg-[var(--campus-surface)]/85 backdrop-blur-xs p-2 rounded-2xl border border-[var(--campus-border)] shadow-md sm:hidden"
+          className="pointer-events-auto grid grid-cols-3 gap-1.5 w-36 h-36 bg-[var(--campus-surface)]/90 backdrop-blur-xs p-2 rounded-2xl border border-[var(--campus-border)] shadow-md sm:hidden touch-none"
           role="group"
           aria-label="Dokunmatik yön kontrolleri"
         >
           <div />
           <button
             type="button"
-            onPointerDown={() => onVirtualDirection(0, -1)}
-            onPointerUp={() => onVirtualDirection(0, 0)}
-            onPointerLeave={() => onVirtualDirection(0, 0)}
-            className="min-h-[44px] rounded-xl bg-[var(--stone-cream)] active:bg-[var(--seljuk-teal)] active:text-white flex items-center justify-center text-[var(--seljuk-navy)] border border-[var(--campus-border)]"
+            onPointerDown={(e) => handlePointerDownDir(e, 0, -1)}
+            onPointerUp={handlePointerUpDir}
+            onPointerLeave={handlePointerUpDir}
+            onPointerCancel={handlePointerUpDir}
+            onLostPointerCapture={handlePointerUpDir}
+            className="min-h-[44px] min-w-[44px] rounded-xl bg-[var(--stone-cream)] active:bg-[var(--seljuk-teal)] active:text-white flex items-center justify-center text-[var(--seljuk-navy)] border border-[var(--campus-border)] cursor-pointer touch-none select-none"
             aria-label="Yukarı"
           >
             <ArrowUp className="w-5 h-5" />
@@ -107,23 +132,27 @@ export function WalkableControlsOverlay({
 
           <button
             type="button"
-            onPointerDown={() => onVirtualDirection(-1, 0)}
-            onPointerUp={() => onVirtualDirection(0, 0)}
-            onPointerLeave={() => onVirtualDirection(0, 0)}
-            className="min-h-[44px] rounded-xl bg-[var(--stone-cream)] active:bg-[var(--seljuk-teal)] active:text-white flex items-center justify-center text-[var(--seljuk-navy)] border border-[var(--campus-border)]"
+            onPointerDown={(e) => handlePointerDownDir(e, -1, 0)}
+            onPointerUp={handlePointerUpDir}
+            onPointerLeave={handlePointerUpDir}
+            onPointerCancel={handlePointerUpDir}
+            onLostPointerCapture={handlePointerUpDir}
+            className="min-h-[44px] min-w-[44px] rounded-xl bg-[var(--stone-cream)] active:bg-[var(--seljuk-teal)] active:text-white flex items-center justify-center text-[var(--seljuk-navy)] border border-[var(--campus-border)] cursor-pointer touch-none select-none"
             aria-label="Sol"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div className="flex items-center justify-center text-[10px] font-bold text-[var(--campus-ink-muted)]">
+          <div className="flex items-center justify-center text-[10px] font-bold text-[var(--campus-ink-muted)] select-none">
             D-PAD
           </div>
           <button
             type="button"
-            onPointerDown={() => onVirtualDirection(1, 0)}
-            onPointerUp={() => onVirtualDirection(0, 0)}
-            onPointerLeave={() => onVirtualDirection(0, 0)}
-            className="min-h-[44px] rounded-xl bg-[var(--stone-cream)] active:bg-[var(--seljuk-teal)] active:text-white flex items-center justify-center text-[var(--seljuk-navy)] border border-[var(--campus-border)]"
+            onPointerDown={(e) => handlePointerDownDir(e, 1, 0)}
+            onPointerUp={handlePointerUpDir}
+            onPointerLeave={handlePointerUpDir}
+            onPointerCancel={handlePointerUpDir}
+            onLostPointerCapture={handlePointerUpDir}
+            className="min-h-[44px] min-w-[44px] rounded-xl bg-[var(--stone-cream)] active:bg-[var(--seljuk-teal)] active:text-white flex items-center justify-center text-[var(--seljuk-navy)] border border-[var(--campus-border)] cursor-pointer touch-none select-none"
             aria-label="Sağ"
           >
             <ArrowRight className="w-5 h-5" />
@@ -132,10 +161,12 @@ export function WalkableControlsOverlay({
           <div />
           <button
             type="button"
-            onPointerDown={() => onVirtualDirection(0, 1)}
-            onPointerUp={() => onVirtualDirection(0, 0)}
-            onPointerLeave={() => onVirtualDirection(0, 0)}
-            className="min-h-[44px] rounded-xl bg-[var(--stone-cream)] active:bg-[var(--seljuk-teal)] active:text-white flex items-center justify-center text-[var(--seljuk-navy)] border border-[var(--campus-border)]"
+            onPointerDown={(e) => handlePointerDownDir(e, 0, 1)}
+            onPointerUp={handlePointerUpDir}
+            onPointerLeave={handlePointerUpDir}
+            onPointerCancel={handlePointerUpDir}
+            onLostPointerCapture={handlePointerUpDir}
+            className="min-h-[44px] min-w-[44px] rounded-xl bg-[var(--stone-cream)] active:bg-[var(--seljuk-teal)] active:text-white flex items-center justify-center text-[var(--seljuk-navy)] border border-[var(--campus-border)] cursor-pointer touch-none select-none"
             aria-label="Aşağı"
           >
             <ArrowDown className="w-5 h-5" />

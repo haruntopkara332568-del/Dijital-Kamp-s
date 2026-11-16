@@ -6,6 +6,7 @@ import type {
   WalkableSceneConfig,
 } from '../types';
 import { drawCharacter } from './characterRenderer';
+import { findPath, DEFAULT_HITBOX } from './pathfinding';
 
 export interface EngineCallbacks {
   onActiveZoneChange: (zone: InteractiveZone | null) => void;
@@ -25,10 +26,12 @@ export class WalkableCanvasEngine {
 
   private keysDown: Set<string> = new Set();
   private virtualMovement: Position = { x: 0, y: 0 };
-  private autoWalkTarget: Position | null = null;
+  private pathWaypoints: Position[] = [];
+  private currentWaypointIndex: number = 0;
   private activeZone: InteractiveZone | null = null;
 
   private isRunning: boolean = false;
+  private isPaused: boolean = false;
   private animFrameId: number | null = null;
   private lastTime: number = 0;
 
@@ -36,6 +39,7 @@ export class WalkableCanvasEngine {
     canvas: HTMLCanvasElement,
     config: WalkableSceneConfig,
     callbacks: EngineCallbacks,
+    initialPosition?: Position,
   ) {
     this.canvas = canvas;
     const context = canvas.getContext('2d');
@@ -46,9 +50,12 @@ export class WalkableCanvasEngine {
     this.config = config;
     this.callbacks = callbacks;
 
+    const spawnX = initialPosition?.x ?? config.playerSpawn.x;
+    const spawnY = initialPosition?.y ?? config.playerSpawn.y;
+
     this.player = {
-      x: config.playerSpawn.x,
-      y: config.playerSpawn.y,
+      x: spawnX,
+      y: spawnY,
       width: 22,
       height: 28,
       direction: 'down',
@@ -79,6 +86,50 @@ export class WalkableCanvasEngine {
     this.canvas.removeEventListener('pointerdown', this.handlePointerDown);
   }
 
+  /**
+   * Oyun motorunu duraklatır (Örn: Akıllı Tahta veya modal açıldığında).
+   * Tüm basılı tuşları temizler ve karakterin istemsiz hareketini engeller.
+   */
+  public pause() {
+    this.isPaused = true;
+    this.keysDown.clear();
+    this.virtualMovement = { x: 0, y: 0 };
+    this.clearPath();
+    this.player.state = 'idle';
+    this.player.walkFrame = 0;
+  }
+
+  /**
+   * Duraklatılan motoru güvenli biçimde yeniden etkinleştirir.
+   */
+  public resume() {
+    this.isPaused = false;
+    this.lastTime = performance.now(); // Büyük delta sıçramalarını önle
+  }
+
+  public getIsPaused(): boolean {
+    return this.isPaused;
+  }
+
+  public getPosition(): Position {
+    return { x: this.player.x, y: this.player.y };
+  }
+
+  public setPosition(pos: Position) {
+    this.player.x = Math.max(16, Math.min(this.config.width - 16, pos.x));
+    this.player.y = Math.max(20, Math.min(this.config.height - 20, pos.y));
+    this.updateCamera(true);
+  }
+
+  /**
+   * Ekran boyutu değiştiğinde canvas boyutunu ve kamerayı günceller.
+   */
+  public updateDimensions(width: number, height: number) {
+    this.canvas.width = Math.max(320, width);
+    this.canvas.height = Math.max(240, height);
+    this.updateCamera(true);
+  }
+
   private isInputFocused(): boolean {
     const el = document.activeElement;
     if (!el) return false;
@@ -87,7 +138,8 @@ export class WalkableCanvasEngine {
   }
 
   private handleKeyDown = (e: KeyboardEvent) => {
-    if (this.isInputFocused()) return;
+    // Modal açıkken veya metin kutusundayken girdileri işleme
+    if (this.isPaused || this.isInputFocused()) return;
 
     const key = e.key.toLowerCase();
 
@@ -103,54 +155,90 @@ export class WalkableCanvasEngine {
     if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(key)) {
       e.preventDefault();
       this.keysDown.add(key);
-      // Klavye hareketine başlandığında otomatik yürüme iptal edilir
-      this.autoWalkTarget = null;
+      // Klavye hareketine başlandığında otomatik yol bulma rotası iptal edilir
+      this.clearPath();
     }
   };
 
   private handleKeyUp = (e: KeyboardEvent) => {
+    if (this.isPaused) return;
     const key = e.key.toLowerCase();
     this.keysDown.delete(key);
   };
 
   private handlePointerDown = (e: PointerEvent) => {
-    if (e.button !== 0) return; // Yalnızca sol tık
+    if (this.isPaused || e.button !== 0) return; // Yalnızca sol tık ve aktif durumda
 
     const rect = this.canvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
+    const rectW = rect.width || this.canvas.width || 800;
+    const rectH = rect.height || this.canvas.height || 600;
+
+    // CSS ölçekleme (Responsive / devicePixelRatio) oranlarını hesaba kat
+    const scaleX = rectW > 0 ? this.canvas.width / rectW : 1;
+    const scaleY = rectH > 0 ? this.canvas.height / rectH : 1;
+
+    const clickX = (e.clientX - (rect.left || 0)) * scaleX;
+    const clickY = (e.clientY - (rect.top || 0)) * scaleY;
 
     // Ekran koordinatını dünya koordinatına çevir
     const worldX = clickX + this.camera.x;
     const worldY = clickY + this.camera.y;
 
-    // Hedef nokta bir engelin içinde mi kontrol et
-    const isInsideObstacle = this.config.obstacles.some(
-      (obs) =>
-        worldX >= obs.x &&
-        worldX <= obs.x + obs.width &&
-        worldY >= obs.y &&
-        worldY <= obs.y + obs.height,
+    this.navigateWalkToTarget(worldX, worldY);
+  };
+
+  /**
+   * Karakteri A* yol bulma algoritmasıyla engellerin etrafından hedefe yönlendirir.
+   */
+  public navigateWalkToTarget(targetX: number, targetY: number) {
+    // Sahne sınırları dışındaysa engelle
+    const clampedX = Math.max(16, Math.min(this.config.width - 16, targetX));
+    const clampedY = Math.max(20, Math.min(this.config.height - 20, targetY));
+
+    const path = findPath(
+      { x: this.player.x, y: this.player.y },
+      { x: clampedX, y: clampedY },
+      this.config,
+      DEFAULT_HITBOX,
     );
 
-    if (isInsideObstacle) {
+    if (!path || path.length === 0) {
       if (this.callbacks.onUnreachableTarget) {
-        this.callbacks.onUnreachableTarget({ x: worldX, y: worldY });
+        this.callbacks.onUnreachableTarget({ x: targetX, y: targetY });
       }
       return;
     }
 
-    this.autoWalkTarget = { x: worldX, y: worldY };
-  };
+    this.pathWaypoints = path;
+    this.currentWaypointIndex = 0;
+  }
+
+  /**
+   * Testler ve doğrudan hedefleme için rota belirleme.
+   */
+  public setTarget(x: number, y: number) {
+    this.navigateWalkToTarget(x, y);
+  }
+
+  public getPathWaypoints(): readonly Position[] {
+    return this.pathWaypoints;
+  }
+
+  public clearPath() {
+    this.pathWaypoints = [];
+    this.currentWaypointIndex = 0;
+  }
 
   public setVirtualDirection(vx: number, vy: number) {
+    if (this.isPaused) return;
     this.virtualMovement = { x: vx, y: vy };
     if (vx !== 0 || vy !== 0) {
-      this.autoWalkTarget = null;
+      this.clearPath();
     }
   }
 
   public triggerActiveInteraction() {
+    if (this.isPaused) return;
     if (this.activeZone) {
       this.activeZone.action();
     }
@@ -165,6 +253,13 @@ export class WalkableCanvasEngine {
 
   private loop = (currentTime: number) => {
     if (!this.isRunning) return;
+
+    if (this.isPaused) {
+      // Duraklatıldığında delta birikimini sıfırla ve rAF döngüsünü hafif beklemede tut
+      this.lastTime = currentTime;
+      this.animFrameId = requestAnimationFrame(this.loop);
+      return;
+    }
 
     const delta = Math.min((currentTime - this.lastTime) / 1000, 0.1); // Maksimum 100ms delta
     this.lastTime = currentTime;
@@ -191,14 +286,19 @@ export class WalkableCanvasEngine {
       vy = this.virtualMovement.y;
     }
 
-    // 3. Tıklayarak otomatik yürüme
-    if (vx === 0 && vy === 0 && this.autoWalkTarget) {
-      const dx = this.autoWalkTarget.x - this.player.x;
-      const dy = this.autoWalkTarget.y - this.player.y;
+    // 3. Otomatik yol bulma rotasını takip et
+    if (vx === 0 && vy === 0 && this.currentWaypointIndex < this.pathWaypoints.length) {
+      const target = this.pathWaypoints[this.currentWaypointIndex];
+      const dx = target.x - this.player.x;
+      const dy = target.y - this.player.y;
       const dist = Math.hypot(dx, dy);
 
-      if (dist < 4) {
-        this.autoWalkTarget = null;
+      if (dist < 6) {
+        // Ara noktaya ulaşıldı, bir sonrakine geç
+        this.currentWaypointIndex++;
+        if (this.currentWaypointIndex >= this.pathWaypoints.length) {
+          this.clearPath();
+        }
       } else {
         vx = dx / dist;
         vy = dy / dist;
@@ -245,8 +345,8 @@ export class WalkableCanvasEngine {
     if (!this.checkObstacleCollision(targetX, this.player.y)) {
       this.player.x = Math.max(16, Math.min(this.config.width - 16, targetX));
     } else {
-      // Çarpışma olduysa otomatik yürümeyi sonlandır
-      if (this.autoWalkTarget) this.autoWalkTarget = null;
+      // Beklenmedik bir çarpışma olursa rotayı temizle
+      if (this.pathWaypoints.length > 0) this.clearPath();
     }
 
     // Y ekseninde hareket denemesi (duvar boyunca kayma / sliding)
@@ -254,25 +354,25 @@ export class WalkableCanvasEngine {
     if (!this.checkObstacleCollision(this.player.x, targetY)) {
       this.player.y = Math.max(20, Math.min(this.config.height - 20, targetY));
     } else {
-      if (this.autoWalkTarget) this.autoWalkTarget = null;
+      if (this.pathWaypoints.length > 0) this.clearPath();
     }
   }
 
   private checkObstacleCollision(x: number, y: number): boolean {
-    // Karakterin ayak tabanı çarpışma kutusu (Hitbox)
-    const boxW = 18;
-    const boxH = 12;
+    const boxW = DEFAULT_HITBOX.width;
+    const boxH = DEFAULT_HITBOX.height;
     const left = x - boxW / 2;
     const right = x + boxW / 2;
-    const top = y + 6;
-    const bottom = y + 6 + boxH;
+    const top = y + DEFAULT_HITBOX.offsetY;
+    const bottom = top + boxH;
 
     // Sahne sınırları
     if (left < 0 || right > this.config.width || top < 0 || bottom > this.config.height) {
       return true;
     }
 
-    for (const obs of this.config.obstacles) {
+    for (let i = 0; i < this.config.obstacles.length; i++) {
+      const obs = this.config.obstacles[i];
       if (
         right > obs.x &&
         left < obs.x + obs.width &&
@@ -336,14 +436,28 @@ export class WalkableCanvasEngine {
       this.callbacks.onCustomRender(ctx, this.camera);
     }
 
-    // Otomatik yürüme hedef noktası göstergesi (Hedefleme halkası)
-    if (this.autoWalkTarget) {
+    // Otomatik yol bulma rotası çizimi
+    if (this.pathWaypoints.length > 0 && this.currentWaypointIndex < this.pathWaypoints.length) {
+      const finalTarget = this.pathWaypoints[this.pathWaypoints.length - 1];
+
       ctx.save();
+      // Rota çizgisi
       ctx.beginPath();
-      ctx.arc(this.autoWalkTarget.x, this.autoWalkTarget.y, 8, 0, Math.PI * 2);
+      ctx.moveTo(this.player.x, this.player.y + 12);
+      for (let i = this.currentWaypointIndex; i < this.pathWaypoints.length; i++) {
+        ctx.lineTo(this.pathWaypoints[i].x, this.pathWaypoints[i].y + 12);
+      }
       ctx.strokeStyle = '#0e768a';
       ctx.lineWidth = 2;
-      ctx.setLineDash([3, 3]);
+      ctx.setLineDash([4, 4]);
+      ctx.stroke();
+
+      // Hedef halkası
+      ctx.beginPath();
+      ctx.arc(finalTarget.x, finalTarget.y + 12, 7, 0, Math.PI * 2);
+      ctx.strokeStyle = '#a66414';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([]);
       ctx.stroke();
       ctx.restore();
     }

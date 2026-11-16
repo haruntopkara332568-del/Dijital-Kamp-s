@@ -311,8 +311,8 @@ test.describe('Dijital Eğitim Kampüsü Uçtan Uca Yolculuk', () => {
     await expect(page.getByText(/İngilizce Sınıfı — Etkileşimli Akıllı Tahta/i)).toBeVisible();
     await expect(page.getByText(/Kapıların Anlattığı Hikâye/i).first()).toBeVisible();
 
-    // 5. Sınıfa Dön butonu ile modalı kapat
-    await page.getByRole('button', { name: /Sınıfa Dön/i }).click();
+    // 5. Escape tuşu ile modalı güvenli biçimde kapat ve sınıfa dön
+    await page.keyboard.press('Escape');
     await expect(page.getByText(/İngilizce Sınıfı — Etkileşimli Akıllı Tahta/i)).not.toBeVisible();
     await expect(page.getByText('İngilizce Sınıfı')).toBeVisible();
 

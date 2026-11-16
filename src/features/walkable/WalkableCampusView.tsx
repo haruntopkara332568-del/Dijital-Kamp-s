@@ -5,7 +5,7 @@ import { renderCourtyardBackground } from './engine/courtyardSceneRenderer';
 import { renderClassroomBackground } from './engine/classroomSceneRenderer';
 import { WalkableControlsOverlay } from './components/WalkableControlsOverlay';
 import { SmartBoardModal } from './components/SmartBoardModal';
-import type { InteractiveZone, SceneObstacle, WalkableSceneConfig } from './types';
+import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } from './types';
 
 export interface WalkableCampusViewProps {
   initialScene?: 'courtyard' | 'classroom';
@@ -21,12 +21,29 @@ export function WalkableCampusView({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<WalkableCanvasEngine | null>(null);
 
+  // Sahne içi son konumları saklayarak geri dönüşlerde konumu koruma (Section 6)
+  const lastCourtyardPosRef = useRef<Position>({ x: 700, y: 560 });
+  const lastClassroomPosRef = useRef<Position>({ x: 480, y: 520 });
+
   const [currentScene, setCurrentScene] = useState<'courtyard' | 'classroom'>(initialScene);
   const [activeZone, setActiveZone] = useState<InteractiveZone | null>(null);
   const [unreachableMessage, setUnreachableMessage] = useState<string | null>(null);
   const [isSmartBoardModalOpen, setIsSmartBoardModalOpen] = useState(false);
   const [isSmartBoardPoweringOn, setIsSmartBoardPoweringOn] = useState(false);
   const [isSmartBoardActive, setIsSmartBoardActive] = useState(false);
+
+  // Akıllı tahta animasyon durumunu ref üzerinden aktararak motorun gereksiz sıfırlanmasını önle
+  const smartBoardVisualStateRef = useRef({
+    active: false,
+    poweringOn: false,
+  });
+
+  useEffect(() => {
+    smartBoardVisualStateRef.current = {
+      active: isSmartBoardActive,
+      poweringOn: isSmartBoardPoweringOn,
+    };
+  }, [isSmartBoardActive, isSmartBoardPoweringOn]);
 
   const handleBackToMap = useCallback(() => {
     if (onBackToMap) {
@@ -79,6 +96,8 @@ export function WalkableCampusView({
             y: 590,
             radius: 65,
             action: () => {
+              // Avluya dönerken İngilizce binasının kapı önüne çık
+              lastCourtyardPosRef.current = { x: 970, y: 350 };
               setCurrentScene('courtyard');
             },
           },
@@ -87,7 +106,7 @@ export function WalkableCampusView({
         return {
           width: 960,
           height: 640,
-          playerSpawn: { x: 480, y: 520 },
+          playerSpawn: lastClassroomPosRef.current,
           obstacles,
           interactiveZones,
         };
@@ -118,6 +137,8 @@ export function WalkableCampusView({
           y: 335,
           radius: 70,
           action: () => {
+            // Sınıfa girerken kapı önünde başla
+            lastClassroomPosRef.current = { x: 480, y: 520 };
             setCurrentScene('classroom');
           },
         },
@@ -126,7 +147,7 @@ export function WalkableCampusView({
       return {
         width: 1400,
         height: 900,
-        playerSpawn: { x: 700, y: 560 },
+        playerSpawn: lastCourtyardPosRef.current,
         obstacles,
         interactiveZones,
       };
@@ -134,7 +155,7 @@ export function WalkableCampusView({
     [],
   );
 
-  // Motor başlatma ve sahne yükleme
+  // Motor başlatma ve sahne yükleme (Yalnızca sahne değiştiğinde çalışır, React durum güncellemelerinde motor sıfırlanmaz)
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
@@ -145,38 +166,62 @@ export function WalkableCampusView({
     // Canvas boyutunu container'a göre uyarla
     const updateCanvasSize = () => {
       const rect = container.getBoundingClientRect();
-      canvas.width = Math.max(320, Math.floor(rect.width));
-      canvas.height = Math.max(240, Math.floor(rect.height));
+      const newW = Math.max(320, Math.floor(rect.width));
+      const newH = Math.max(240, Math.floor(rect.height));
+      canvas.width = newW;
+      canvas.height = newH;
+      if (engineRef.current) {
+        engineRef.current.updateDimensions(newW, newH);
+      }
     };
 
     updateCanvasSize();
 
-    const engine = new WalkableCanvasEngine(canvas, config, {
-      onActiveZoneChange: (zone) => setActiveZone(zone),
-      onUnreachableTarget: () => {
-        setUnreachableMessage('Oraya ulaşılamıyor, lütfen açık bir yola tıkla.');
-        setTimeout(() => setUnreachableMessage(null), 2500);
+    const spawnPos = currentScene === 'classroom' ? lastClassroomPosRef.current : lastCourtyardPosRef.current;
+
+    const engine = new WalkableCanvasEngine(
+      canvas,
+      config,
+      {
+        onActiveZoneChange: (zone) => setActiveZone(zone),
+        onPositionChange: (pos) => {
+          if (currentScene === 'classroom') {
+            lastClassroomPosRef.current = pos;
+          } else {
+            lastCourtyardPosRef.current = pos;
+          }
+        },
+        onUnreachableTarget: () => {
+          setUnreachableMessage('Oraya ulaşılamıyor, lütfen açık bir yola tıkla.');
+          setTimeout(() => setUnreachableMessage(null), 2500);
+        },
+        onCustomRender: (ctx) => {
+          if (currentScene === 'classroom') {
+            renderClassroomBackground(
+              ctx,
+              config.width,
+              config.height,
+              smartBoardVisualStateRef.current.active,
+              smartBoardVisualStateRef.current.poweringOn,
+            );
+          } else {
+            renderCourtyardBackground(ctx, config.width, config.height);
+          }
+        },
       },
-      onCustomRender: (ctx) => {
-        if (currentScene === 'classroom') {
-          renderClassroomBackground(
-            ctx,
-            config.width,
-            config.height,
-            isSmartBoardActive,
-            isSmartBoardPoweringOn,
-          );
-        } else {
-          renderCourtyardBackground(ctx, config.width, config.height);
-        }
-      },
-    });
+      spawnPos,
+    );
 
     engine.start();
     engineRef.current = engine;
 
-    const ro = new ResizeObserver(() => {
-      updateCanvasSize();
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0 && engineRef.current) {
+          engineRef.current.updateDimensions(Math.floor(width), Math.floor(height));
+        }
+      }
     });
     ro.observe(container);
 
@@ -185,7 +230,17 @@ export function WalkableCampusView({
       engine.destroy();
       engineRef.current = null;
     };
-  }, [currentScene, getSceneConfig, isSmartBoardActive, isSmartBoardPoweringOn]);
+  }, [currentScene, getSceneConfig]);
+
+  // Akıllı Tahta modalı açıldığında oyun motorunu duraklat, kapandığında güvenle devam ettir (Section 5)
+  useEffect(() => {
+    if (!engineRef.current) return;
+    if (isSmartBoardModalOpen) {
+      engineRef.current.pause();
+    } else {
+      engineRef.current.resume();
+    }
+  }, [isSmartBoardModalOpen]);
 
   const handleVirtualDirection = (vx: number, vy: number) => {
     if (engineRef.current) {
@@ -200,6 +255,7 @@ export function WalkableCampusView({
   };
 
   const handleDirectEnterClassroom = () => {
+    lastClassroomPosRef.current = { x: 480, y: 520 };
     setCurrentScene('classroom');
   };
 

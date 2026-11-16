@@ -63,3 +63,17 @@ Geliştirme öncesinde Phaser 3 oyun motoru paket boyutu, mobil uyumluluk ve mev
 - **Tıklayarak Yürüme**: Sahne üzerinde tıklanan açık noktaya karakterin engelleri aşarak yürümesi; engel üzerine tıklandığında nazik geri bildirim (`Oraya ulaşılamıyor, lütfen açık bir yola tıkla.`).
 - **Mobil Dokunmatik D-Pad**: Küçük ekranlarda `44×44 px` üzeri hedeflere sahip sanal yön tuşları.
 - **Erişilebilir Kısayollar**: Klavyeyle yürümek istemeyen öğrenciler için `Doğrudan Sınıfa Gir` ve `Kuşbakışı Harita` butonları korunmuştur.
+
+### 6.5. Otomatik Yol Bulma ve Pürüzsüzleştirme (`pathfinding.ts`)
+Aşama 3 teknik iyileştirme sürümünde (Sürüm 1.1), karakterin engellerin çevresinden dolaşmasını sağlayan hafif bir A* algoritması ve string-pulling (doğrudan görüş hattı pürüzsüzleştirmesi) entegre edilmiştir:
+- **Doğrudan Hat Denetimi (0ms Hızlı Yol)**: Hedef ile başlangıç arasında doğrudan görüş hattı varsa (`hasLineOfSight`), arama algoritması çalıştırılmadan doğrudan tek adımlı rota döner.
+- **Engel Algılama**: Hedef nokta bir engelin içindeyse, karakter takılmadan doğrudan `onUnreachableTarget` geri bildirimi tetiklenir.
+- **A* Izgara Araması**: 25 px hücre çözünürlüğü ve 8 yönlü hareketle (çapraz maliyet: 1.414) engellerin çevresinden en kısa yol bulunur.
+- **String Pulling (Yol Pürüzsüzleştirme)**: Izgara basamakları arasındaki gereksiz kırılımlar doğrudan ışın denetimiyle elenerek doğal düz çizgi rotalarına dönüştürülür.
+- **Manuel Müdahale Önceliği**: Otomatik yürüyüş esnasında klavyeden yön tuşuna basıldığında veya mobil D-Pad dokunuşu geldiğinde otomatik rota anında temizlenir.
+
+### 6.6. Yaşam Döngüsü, Duraklatma ve Odak Güvenliği
+- **Oyun Motoru Duraklatma (`pause / resume`)**: Akıllı tahta açıldığında motor duraklatılır, basılı tuşlar ve rotalar temizlenir; böylece görev ekranındaki klavye ve fare etkileşimleri arka plandaki karakteri hareket ettirmez.
+- **Süreklilik ve Konum Koruma**: React durum güncellemeleri motorun yeniden oluşturulmasına yol açmaz. Sınıf ve avlu konumları `lastClassroomPosRef` ve `lastCourtyardPosRef` içinde saklanarak etkinliklerden sonra aynı koordinata dönülmesi garanti edilir.
+- **Akıllı Tahta Erişilebilirliği (Focus Trap)**: `SmartBoardModal`, açılışta odağı içine hapseder; `Tab` ve `Shift+Tab` ile döngüsel gezinme sağlar; `Escape` tuşuyla güvenle kapanır ve kapanışta odağı önceki aktif elemana geri devreder.
+- **Duyarlı Koordinat Ölçekleme**: `canvas.getBoundingClientRect()` genişlik ve yükseklik oranları (`scaleX`, `scaleY`) hesaba katılarak CSS boyutu ile gerçek piksel boyutu arasındaki farklarda kusursuz hedefleme sağlanır.
