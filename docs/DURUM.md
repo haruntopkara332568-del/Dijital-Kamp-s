@@ -123,9 +123,11 @@
   - Canvas 2D performansı korunmuş, paket boyutu yalnızca `48.09 kB` (gzip: `13.06 kB`) seviyesinde tutulmuştur.
 
 ## Doğrulama Durumu ve Sonraki Adım
-- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [65/65], `npm run build` ve `npm run test:e2e` [10/10 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
+- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [69/69], `npm run build` ve `npm run test:e2e` [10/10 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
+- İngilizce Dünyası binası 3D animasyon filmi estetiğinde bağımsız şeffaf PNG varlığı (`building_english.png`) olarak üretilmiş ve `drawImage` render motoruna entegre edilmiştir.
+- Öncesi ve sonrası ekran görüntüleri (`docs/assets/english_building_before.png` ve `docs/assets/english_building_after.png`) kaydedilmiştir.
 - Çoklu ekran boyutu denetiminde (`360×740`, `390×844`, `768×1024`, `1280×840`) yatay taşma (`0`) ve mobil `390×844` görünümünde `44×44 px` altı etkileşimli hedef (`0`) doğrulandı.
-- Aşama 4 görsel dünya geliştirmeleri `feat/campus-visual-upgrade` dalında tamamlanmıştır.
+- Geliştirmeler `feat/campus-visual-upgrade` dalında tamamlanmış olup kullanıcı onayı için hazırdır.
 
 
 

@@ -3,8 +3,8 @@
 ## 1. Çalıştırıldı ve Geçti
 - **`npm run typecheck` (`tsc --noEmit`)**: Geçti — 0 hata (strict TypeScript).
 - **`npm run lint` (`eslint .`)**: Geçti — 0 hata, 0 uyarı.
-- **`npm run test` (`vitest run`)**: Geçti — **67 / 67 test** (`src/test/walkable.test.tsx` [38 test] + `src/test/campus.test.tsx` [29 test], toplam `3.79 s`):
-  - **Aşama 3 & 4 Yürünebilir Kampüs ve Görsel Dünya Testleri (`walkable.test.tsx` — 38 Test)**:
+- **`npm run test` (`vitest run`)**: Geçti — **69 / 69 test** (`src/test/walkable.test.tsx` [40 test] + `src/test/campus.test.tsx` [29 test], toplam `3.88 s`):
+  - **Aşama 3 & 4 Yürünebilir Kampüs ve Görsel Dünya Testleri (`walkable.test.tsx` — 40 Test)**:
     1. Karakter yön tuşlarıyla ve W, A, S, D ile doğru yönde hareket eder
     2. Çapraz hareket hızı normal hareket hızından fazla olamaz (Normalizasyon)
     3. Karakter bina ve engel sınırlarının içinden geçemez (Çarpışma algılama)
@@ -43,6 +43,8 @@
     36. **Aşama 4: Karakterin görsel temas noktası AABB çarpışma kutusu sınırlarıyla (DEFAULT_HITBOX) uyumludur**
     37. **Aşama 4.2: Katmanlı zemin, Y-Sorting varlıklar ve ön plan saçağı hatasız çizilir**
     38. **Aşama 4.2: Y-Sorting derinlik sıralaması: Karakter kuzeydeyken varlığın arkasında, güneydeyken önünde çizilir**
+    39. **Aşama 4.2: İngilizce Dünyası binası görsel varlık yüklendiğinde drawImage ile çizilir**
+    40. **Aşama 4.2: İngilizce Dünyası binası AABB çarpışma sınırları ve kapı etkileşim koordinatı doğrulanır**
   - **Mevcut Kampüs ve Pedagoji Testleri (`campus.test.tsx` — 29 Test)**:
     - 2–7. sınıf başlangıç parametrelerinin (`gradeProfiles.ts`) doğrulaması
     - Onaylı karşılama metni, karma dil seslendirme segmentleri (`tr-TR` / `en-US` / `tr-TR`) ve rehber sorularının harfiyen korunması

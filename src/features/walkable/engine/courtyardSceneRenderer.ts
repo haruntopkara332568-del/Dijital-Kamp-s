@@ -10,6 +10,7 @@
 
 import type { PlayerCharacter } from '../types';
 import { drawCharacter } from './characterRenderer';
+import { getEnglishBuildingAsset } from './assetLoader';
 
 export interface DepthEntity {
   id: string;
@@ -519,7 +520,8 @@ function drawStonePathways(ctx: CanvasRenderingContext2D, cx: number, cy: number
 
 /**
  * A. İngilizce Dünyası Binası (860, 140, 220, 180)
- * Selçuklu mukarnaslı taç kapısı, çinili kubbe, asılı fener ve davetkâr kapı ışıltısı.
+ * 3D animasyon filmi estetiğinde bağımsız görsel varlık (building_english.png) ve drawImage ile çizilir.
+ * Varlık yüklenene kadar veya test ortamlarında geriye dönük vektörel çizim yedeği devreye girer.
  */
 function drawEnglishBuilding(
   ctx: CanvasRenderingContext2D,
@@ -529,6 +531,57 @@ function drawEnglishBuilding(
   h: number,
   now: number,
 ) {
+  const asset = getEnglishBuildingAsset();
+
+  if (asset) {
+    ctx.save();
+
+    // 1. Zemin Derinlik ve Temas Gölgesi
+    ctx.fillStyle = 'rgba(23, 43, 71, 0.28)';
+    ctx.beginPath();
+    ctx.ellipse(x + w / 2, y + h + 8, w / 2 + 18, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Yüksek Kaliteli 2,5B Görsel Varlık (drawImage)
+    // Boyutlandırma ve hizalama: Zemin basamağı y + h (320px) ile hizalanır, kubbe yukarı uzanır.
+    const renderW = 268;
+    const renderH = 292;
+    const renderX = x + (w - renderW) / 2; // 836 (Merkez: 970)
+    const renderY = y + h - renderH + 12; // 40
+
+    ctx.drawImage(asset, renderX, renderY, renderW, renderH);
+
+    // 3. Etkileşimli Taç Kapı Işıltısı (Öğrenci yaklaşınca belirginleşen davetkâr portal aurası)
+    const portalCenterX = x + w / 2; // 970
+    const doorBottomY = y + h - 18; // 302
+    const pulse = Math.sin(now / 320) * 0.35 + 0.65;
+
+    ctx.save();
+    ctx.strokeStyle = `rgba(36, 154, 176, ${pulse})`;
+    ctx.lineWidth = 3;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.roundRect(portalCenterX - 28, doorBottomY - 70, 56, 70, [18, 18, 0, 0]);
+    ctx.stroke();
+    ctx.restore();
+
+    // 4. Asılı Selçuklu Kandilinin Sıcak Işık Halesi
+    const lanternGlow = Math.sin(now / 280) * 0.15 + 0.85;
+    ctx.fillStyle = `rgba(254, 240, 138, ${0.35 * lanternGlow})`;
+    ctx.beginPath();
+    ctx.arc(portalCenterX, doorBottomY - 50, 24, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 5. Giriş Basamağı Mermer Vurgusu
+    ctx.fillStyle = 'rgba(36, 154, 176, 0.35)';
+    ctx.beginPath();
+    ctx.roundRect(portalCenterX - 45, y + h - 2, 90, 6, 2);
+    ctx.fill();
+
+    ctx.restore();
+    return;
+  }
+
   ctx.save();
 
   // 1. Zemin Derinlik Gölgesi

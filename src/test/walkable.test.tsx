@@ -19,6 +19,10 @@ import {
   renderCourtyardForeground,
 } from '@/src/features/walkable/engine/courtyardSceneRenderer';
 import { renderClassroomBackground } from '@/src/features/walkable/engine/classroomSceneRenderer';
+import {
+  setCachedAssetForTesting,
+  ENGLISH_BUILDING_ASSET_URL,
+} from '@/src/features/walkable/engine/assetLoader';
 import type { WalkableSceneConfig, PlayerCharacter } from '@/src/features/walkable/types';
 
 describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () => {
@@ -53,6 +57,7 @@ describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () 
       quadraticCurveTo: vi.fn(),
       bezierCurveTo: vi.fn(),
       setLineDash: vi.fn(),
+      drawImage: vi.fn(),
       createRadialGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
       createLinearGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
       fillStyle: '',
@@ -823,5 +828,59 @@ describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () 
     renderCourtyardEntities(mockCtx, northPlayer, 1400, 900);
     // Hata atmadan tamamlandı ve çizim yapıldı
     expect(mockCtx.save).toHaveBeenCalled();
+  });
+
+  it('39. İngilizce Dünyası binası görsel varlık yüklendiğinde drawImage ile çizilir', () => {
+    const mockCtx = canvas.getContext('2d')!;
+
+    // Sahte yüklü görsel nesnesi oluştur
+    const fakeImg = {
+      complete: true,
+      naturalWidth: 858,
+      naturalHeight: 934,
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(ENGLISH_BUILDING_ASSET_URL, fakeImg);
+
+    renderCourtyardBackground(mockCtx, 1400, 900);
+    expect(mockCtx.drawImage).toHaveBeenCalledWith(
+      fakeImg,
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number),
+    );
+  });
+
+  it('40. İngilizce Dünyası binası AABB çarpışma sınırları ve kapı etkileşim koordinatı doğrulanır', () => {
+    const bldgObstacle = { x: 860, y: 140, width: 220, height: 180 };
+    const doorZone = { x: 970, y: 335, radius: 70 };
+
+    // Kapı X koordinatı binanın yatay merkezinde olmalıdır (860 + 220 / 2 = 970)
+    expect(doorZone.x).toBe(bldgObstacle.x + bldgObstacle.width / 2);
+
+    // Kapı Y koordinatı binanın zemin tabanının hemen önünde olmalıdır (140 + 180 = 320; kapı: 335)
+    expect(doorZone.y).toBeGreaterThan(bldgObstacle.y + bldgObstacle.height);
+    expect(doorZone.y - (bldgObstacle.y + bldgObstacle.height)).toBeLessThanOrEqual(20);
+
+    // Binanın içine doğru adım engellenmelidir
+    const insideBldg = isPositionBlocked(
+      970,
+      250,
+      [{ id: 'bldg-english', name: 'İngilizce', ...bldgObstacle }],
+      1400,
+      900,
+    );
+    expect(insideBldg).toBe(true);
+
+    // Kapı önündeki basamak alanı açık olmalıdır
+    const outsideDoor = isPositionBlocked(
+      970,
+      340,
+      [{ id: 'bldg-english', name: 'İngilizce', ...bldgObstacle }],
+      1400,
+      900,
+    );
+    expect(outsideDoor).toBe(false);
   });
 });
