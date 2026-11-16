@@ -33,6 +33,7 @@ export const MISSIONS_KIOSK_ASSET_URL = '/assets/walkable/kiosk_missions.png';
 export const JOURNEY_PAVILION_ASSET_URL = '/assets/walkable/pavilion_journey.png';
 export const CYPRESS_TREE_ASSET_URL = '/assets/walkable/tree_cypress.png';
 export const SHADE_TREE_ASSET_URL = '/assets/walkable/tree_shade.png';
+export const STUDENT_CHARACTER_ATLAS_URL = '/assets/walkable/character_student_atlas.png';
 
 /**
  * Varlık getter fonksiyonları
@@ -69,6 +70,10 @@ export function getShadeTreeAsset(): HTMLImageElement | null {
   return getLoadedAsset(SHADE_TREE_ASSET_URL);
 }
 
+export function getStudentCharacterAtlas(): HTMLImageElement | null {
+  return getLoadedAsset(STUDENT_CHARACTER_ATLAS_URL);
+}
+
 /**
  * Test veya özel durumlar için önbelleğe doğrudan görsel nesnesi ekleme.
  */
@@ -89,6 +94,7 @@ export function preloadWalkableAssets() {
   getLoadedAsset(JOURNEY_PAVILION_ASSET_URL);
   getLoadedAsset(CYPRESS_TREE_ASSET_URL);
   getLoadedAsset(SHADE_TREE_ASSET_URL);
+  getLoadedAsset(STUDENT_CHARACTER_ATLAS_URL);
 }
 
 // Modül yüklendiğinde otomatik ön yükleme başlat

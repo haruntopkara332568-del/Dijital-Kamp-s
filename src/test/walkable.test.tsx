@@ -29,6 +29,7 @@ import {
   JOURNEY_PAVILION_ASSET_URL,
   CYPRESS_TREE_ASSET_URL,
   SHADE_TREE_ASSET_URL,
+  STUDENT_CHARACTER_ATLAS_URL,
 } from '@/src/features/walkable/engine/assetLoader';
 import type { WalkableSceneConfig, PlayerCharacter } from '@/src/features/walkable/types';
 
@@ -960,5 +961,171 @@ describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () 
       const inFront = isPositionBlocked(obs.x + obs.width / 2, obs.y + obs.height + 25, obstacles, 1400, 900);
       expect(inFront).toBe(false);
     }
+  });
+
+  it('43. Aşama 4.4: Öğrenci karakteri Sprite Atlas (character_student_atlas.png) yüklendiğinde drawImage ile çizilir', () => {
+    const mockCtx = {
+      clearRect: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      scale: vi.fn(),
+      beginPath: vi.fn(),
+      closePath: vi.fn(),
+      arc: vi.fn(),
+      ellipse: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      drawImage: vi.fn(),
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
+    } as unknown as CanvasRenderingContext2D;
+
+    const fakeAtlas = {
+      complete: true,
+      naturalWidth: 560,
+      naturalHeight: 720,
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(STUDENT_CHARACTER_ATLAS_URL, fakeAtlas);
+
+    const testPlayer: PlayerCharacter = {
+      x: 700,
+      y: 560,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'idle',
+      speed: 160,
+      walkFrame: 0,
+      grade: 4,
+    };
+
+    drawCharacter(mockCtx, testPlayer);
+
+    expect(mockCtx.drawImage).toHaveBeenCalledWith(
+      fakeAtlas,
+      0, // srcX (idle col 0)
+      0, // srcY (down row 0)
+      140, // CELL_W
+      180, // CELL_H
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Number),
+    );
+  });
+
+  it('44. Aşama 4.4: Karakterin 4 yönü (down, up, right, left) Sprite Atlas satırlarıyla (0, 1, 2, 3) doğru eşleşir', () => {
+    const mockCtx = {
+      clearRect: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      scale: vi.fn(),
+      beginPath: vi.fn(),
+      closePath: vi.fn(),
+      arc: vi.fn(),
+      ellipse: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      drawImage: vi.fn(),
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
+    } as unknown as CanvasRenderingContext2D;
+
+    const fakeAtlas = {
+      complete: true,
+      naturalWidth: 560,
+      naturalHeight: 720,
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(STUDENT_CHARACTER_ATLAS_URL, fakeAtlas);
+
+    const directions: Array<{ dir: PlayerCharacter['direction']; expectedRow: number }> = [
+      { dir: 'down', expectedRow: 0 },
+      { dir: 'up', expectedRow: 1 },
+      { dir: 'right', expectedRow: 2 },
+      { dir: 'left', expectedRow: 3 },
+    ];
+
+    for (const { dir, expectedRow } of directions) {
+      vi.clearAllMocks();
+      const p: PlayerCharacter = {
+        x: 700,
+        y: 560,
+        width: 22,
+        height: 28,
+        direction: dir,
+        state: 'idle',
+        speed: 160,
+        walkFrame: 0,
+        grade: 4,
+      };
+
+      drawCharacter(mockCtx, p);
+
+      expect(mockCtx.drawImage).toHaveBeenCalledWith(
+        fakeAtlas,
+        0, // col 0 (idle)
+        expectedRow * 180, // srcY
+        140,
+        180,
+        expect.any(Number),
+        expect.any(Number),
+        expect.any(Number),
+        expect.any(Number),
+      );
+    }
+  });
+
+  it('45. Aşama 4.4: Karakter yürüme durumunda (walk) adım animasyon kareleri Sprite Atlas sütunlarında sırayla ilerler', () => {
+    const mockCtx = {
+      clearRect: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      scale: vi.fn(),
+      beginPath: vi.fn(),
+      closePath: vi.fn(),
+      arc: vi.fn(),
+      ellipse: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      drawImage: vi.fn(),
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
+    } as unknown as CanvasRenderingContext2D;
+
+    const fakeAtlas = {
+      complete: true,
+      naturalWidth: 560,
+      naturalHeight: 720,
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(STUDENT_CHARACTER_ATLAS_URL, fakeAtlas);
+
+    const p: PlayerCharacter = {
+      x: 700,
+      y: 560,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'walk',
+      speed: 160,
+      walkFrame: 1.0, // Adım ilerleme
+      grade: 4,
+    };
+
+    drawCharacter(mockCtx, p);
+
+    // Yürüyüşte col > 0 olmalıdır (idle sütunu 0 değil, yürüyüş sütunlarından biri)
+    const drawCall = (mockCtx.drawImage as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    const srcX = drawCall[1];
+    expect(srcX).toBeGreaterThan(0);
+    expect(srcX % 140).toBe(0); // Hücre genişliğinin katı olmalı
   });
 });

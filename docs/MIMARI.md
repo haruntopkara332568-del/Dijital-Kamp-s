@@ -148,3 +148,30 @@ Aşama 4.3 kapsamında, konsept görseli (`digital_campus_courtyard_concept.jpg`
 3. **Y-Sorting ve Çarpışma Bütünlüğü**:
    - Tüm binalar, yapılar ve ağaçlar mevcut AABB çarpışma sınırları (`SceneObstacle`), A* yol bulma ızgarası ve etkileşim yarıçapları (`InteractiveZone`) ile milimetrik olarak hizalanmıştır.
 
+### 7.5. Aşama 4.4 — Öğrenci Karakterinin Sinematik Dönüşümü ve Sprite Atlas Mimarisi
+Aşama 4.4 kapsamında, avludaki görsel devrime paralel olarak öğrenci karakteri de geometrik Canvas 2D çizimlerinden konsept sanatındaki (`digital_campus_courtyard_concept.jpg`) 10 yaşındaki kız öğrenci karakterine tam uyumlu, 3D animasyon estetiğinde bağımsız bir Sprite Atlas sistemine dönüştürülmüştür:
+1. **Sprite Atlas Mimarisi (`character_student_atlas.png`)**:
+   - Dosya konumları: `public/assets/walkable/character_student_atlas.png` ve `src/features/walkable/assets/character_student_atlas.png`.
+   - Çözünürlük: 560×720 piksel. 4 sütun × 4 satır ızgara; her hücre 140×180 pikseldir.
+   - Saydam arka plan (RGBA) ve pürüzsüz kenar yumuşatma (anti-aliasing) ile üretilmiştir.
+   - **Satır Düzeni (Yönler)**:
+     - `Satır 0 (y: 0 - 179)`: Down (Güney / Ön Bakış)
+     - `Satır 1 (y: 180 - 359)`: Up (Kuzey / Arka Bakış)
+     - `Satır 2 (y: 360 - 539)`: Right (Doğu / Sağ Profil)
+     - `Satır 3 (y: 540 - 719)`: Left (Batı / Sol Profil)
+   - **Sütun Düzeni (Animasyon Kareleri)**:
+     - `Sütun 0 (x: 0 - 139)`: Idle (Bekleme duruşu)
+     - `Sütun 1 (x: 140 - 279)`: Step 1 (Sol ayak adım)
+     - `Sütun 2 (x: 280 - 419)`: Passing (Geçiş duruşu)
+     - `Sütun 3 (x: 420 - 559)`: Step 2 (Sağ ayak adım)
+     - Yürüme esnasında kare akışı `[1, 2, 3, 2]` döngüsüyle 140 ms'de bir güncellenerek organik adım salınımı sağlanır.
+2. **Ayak Hizalaması ve AABB Çarpışma Uyumu (`characterRenderer.ts`)**:
+   - Karakter tuval üzerinde `renderW: 46 px, renderH: 58 px` boyutlarında çizilir.
+   - Karakterin görsel ayak tabanı tam olarak `y + 18` zemin çizgisine ve temas gölgesi elipsine oturur (`renderY = y + 18 - renderH + 3 + bobY`).
+   - Bu hizalama mevcut AABB çarpışma kutusu (`DEFAULT_HITBOX`: genişlik 22, yükseklik 28, ofset `y - 14` / `y + 14`) ve A* yol bulma sistemiyle %100 örtüşür.
+3. **Y-Sorting Derinliği**:
+   - Karakterin `baseY` koordinatı (`player.y + 18`), sahnede yer alan binalar, şadırvan haznesi ve peyzaj ağaçlarının `baseY` değerleriyle dinamik olarak karşılaştırılır. Karakter nesnelerin kuzeyindeyken arkada, güneyindeyken önde çizilir.
+4. **Varlık Önbellekleme ve Fallback**:
+   - Atlas, sahne başlangıcında `preloadWalkableAssets` ve `getStudentCharacterAtlas()` ile taranır. Atlas yüklenene kadar veya headless test ortamlarında vektörel yedek (`drawVectorFallbackCharacter`) kesintisiz devreye girer.
+
+

@@ -3,8 +3,8 @@
 ## 1. Çalıştırıldı ve Geçti
 - **`npm run typecheck` (`tsc --noEmit`)**: Geçti — 0 hata (strict TypeScript).
 - **`npm run lint` (`eslint .`)**: Geçti — 0 hata, 0 uyarı.
-- **`npm run test` (`vitest run`)**: Geçti — **71 / 71 test** (`src/test/walkable.test.tsx` [42 test] + `src/test/campus.test.tsx` [29 test], toplam `3.91 s`):
-  - **Aşama 3 & 4 Yürünebilir Kampüs ve Görsel Dünya Testleri (`walkable.test.tsx` — 42 Test)**:
+- **`npm run test` (`vitest run`)**: Geçti — **74 / 74 test** (`src/test/walkable.test.tsx` [45 test] + `src/test/campus.test.tsx` [29 test], toplam `6.71 s`):
+  - **Aşama 3 & 4 Yürünebilir Kampüs ve Görsel Dünya Testleri (`walkable.test.tsx` — 45 Test)**:
     1. Karakter yön tuşlarıyla ve W, A, S, D ile doğru yönde hareket eder
     2. Çapraz hareket hızı normal hareket hızından fazla olamaz (Normalizasyon)
     3. Karakter bina ve engel sınırlarının içinden geçemez (Çarpışma algılama)
@@ -38,7 +38,7 @@
     31. Tarayıcı sekmesi arka plana alındığında (visibilitychange) döngü durur, öne gelince yeniden başlar
     32. **Aşama 4: Karakterin dört yönde (down, up, left, right) çizimi ve yürüme/bekleme durumları hatasız çalışır**
     33. **Aşama 4: prefers-reduced-motion aktifken karakter ve çevre animasyonları güvenle çizilir**
-    34. **Aşama 4: Kampüs avlusu zemin, Selçuklu yıldız meydanı, binalar ve peyzaj unsurları hatasız çizilir**
+    34. **Aşama 4: Kampüs avlusu zemin, Selçuklu yıldız meydanı, binalar ve peyzaj unsurları hatasiz çizilir**
     35. **Aşama 4: İngilizce sınıfı zemin, pencereler, akıllı tahta (kapalı, açılıyor, açık) ve sıralar hatasız çizilir**
     36. **Aşama 4: Karakterin görsel temas noktası AABB çarpışma kutusu sınırlarıyla (DEFAULT_HITBOX) uyumludur**
     37. **Aşama 4.2: Katmanlı zemin, Y-Sorting varlıklar ve ön plan saçağı hatasız çizilir**
@@ -47,6 +47,9 @@
     40. **Aşama 4.2: İngilizce Dünyası binası AABB çarpışma sınırları ve kapı etkileşim koordinatı doğrulanır**
     41. **Aşama 4.3: Tüm bağımsız 2,5B avlu varlıkları (Keşif, Kütüphane, Şadırvan, Pano, Köşk, Ağaçlar) yüklendiğinde drawImage ile çizilir**
     42. **Aşama 4.3: Avlu binaları ve etkileşimli unsurların AABB çarpışma ve konum hizalaması korunur**
+    43. **Aşama 4.4: Öğrenci karakteri görsel atlası (character_student_atlas.png) yüklendiğinde drawImage ile kırpılarak çizilir**
+    44. **Aşama 4.4: Karakter yönleri (down, up, right, left) sprite atlasında doğru satır indeksleriyle (0, 1, 2, 3) eşleşir**
+    45. **Aşama 4.4: Karakter yürüme animasyon döngüsü ve bekleme (idle) durumu sprite atlası karelerini doğru sırayla kullanır**
   - **Mevcut Kampüs ve Pedagoji Testleri (`campus.test.tsx` — 29 Test)**:
     - 2–7. sınıf başlangıç parametrelerinin (`gradeProfiles.ts`) doğrulaması
     - Onaylı karşılama metni, karma dil seslendirme segmentleri (`tr-TR` / `en-US` / `tr-TR`) ve rehber sorularının harfiyen korunması

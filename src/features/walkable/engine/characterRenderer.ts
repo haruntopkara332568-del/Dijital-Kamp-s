@@ -1,9 +1,11 @@
 import type { PlayerCharacter } from '../types';
+import { getStudentCharacterAtlas } from './assetLoader';
 
 /**
- * Çocuk dostu, animasyon filmi estetiğine sahip öğrenci karakteri çizici.
- * 4 yönlü (ön, arka, sol, sağ), zengin yüz ifadesi, Selçuklu motifli yelek,
- * sırt çantası, doğal adım salınımı ve bekleme (idle nefes alma + göz kırpma) animasyonları içerir.
+ * Çocuk dostu, 3D animasyon filmi estetiğine sahip öğrenci karakteri çizici (Aşama 4.4).
+ * Bağımsız Sprite Atlas (character_student_atlas.png) üzerinden 4 yönlü (ön, arka, sol, sağ)
+ * ve 4 kareli yürüyüş/bekleme döngüsüyle yüksek kaliteli Pixar/Disney estetiğinde çizilir.
+ * Görsel yüklenene kadar veya test ortamlarında geriye dönük vektörel çizim yedeği devreye girer.
  */
 export function drawCharacter(ctx: CanvasRenderingContext2D, player: PlayerCharacter) {
   const { x, y, direction, state, walkFrame } = player;
@@ -14,6 +16,87 @@ export function drawCharacter(ctx: CanvasRenderingContext2D, player: PlayerChara
 
   const now = isReducedMotion ? 0 : performance.now();
   const isWalking = state === 'walk';
+
+  // 1. Yeni 2,5B Sinematik Sprite Atlas Entegrasyonu (Aşama 4.4)
+  const atlas = getStudentCharacterAtlas();
+  if (atlas) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Zemin Gölgeleri (Katmanlı temas ve ortam gölgesi)
+    // Dış yumuşak gölge
+    ctx.beginPath();
+    ctx.ellipse(0, 18, 16, 7, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(23, 43, 71, 0.14)';
+    ctx.fill();
+
+    // İç koyu temas gölgesi (Ayakların tam altına basma hissi verir)
+    ctx.beginPath();
+    ctx.ellipse(0, 18, 10, 4, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(23, 43, 71, 0.32)';
+    ctx.fill();
+
+    // Yön ve Animasyon Karesi Hesaplama (Sprite Atlas: 4 kolon x 4 satır, hücre: 140x180 px)
+    const CELL_W = 140;
+    const CELL_H = 180;
+
+    let row = 0; // 0: down, 1: up, 2: right, 3: left
+    switch (direction) {
+      case 'down':
+        row = 0;
+        break;
+      case 'up':
+        row = 1;
+        break;
+      case 'right':
+        row = 2;
+        break;
+      case 'left':
+        row = 3;
+        break;
+    }
+
+    let col = 0; // 0: idle
+    if (isWalking) {
+      // Yürüyüş döngüsü: frame 1 -> frame 2 -> frame 3 -> frame 2
+      const walkCycle = [1, 2, 3, 2];
+      const cycleIndex = Math.floor(walkFrame * 1.2) % walkCycle.length;
+      col = walkCycle[cycleIndex];
+    }
+
+    // Salınım ve Ritim (Bobbing & Sway)
+    const bobY = isWalking
+      ? (isReducedMotion ? 0 : Math.abs(Math.sin(walkFrame * Math.PI)) * -2.2)
+      : (isReducedMotion ? 0 : Math.sin(now / 520) * 0.8);
+
+    const swayX = isWalking && !isReducedMotion ? Math.sin(walkFrame * Math.PI) * 0.6 : 0;
+
+    // Tuvalde Render Boyutu ve Hizalama
+    // Karakterin ayak temas noktası y + 18'dir; baş yukarı uzanır.
+    const renderW = 46;
+    const renderH = 58;
+    const renderX = -renderW / 2 + swayX;
+    const renderY = 18 - renderH + 3 + bobY;
+
+    // Sprite Atlas'tan ilgili kareyi çiz
+    const srcX = col * CELL_W;
+    const srcY = row * CELL_H;
+
+    ctx.drawImage(
+      atlas,
+      srcX,
+      srcY,
+      CELL_W,
+      CELL_H,
+      renderX,
+      renderY,
+      renderW,
+      renderH,
+    );
+
+    ctx.restore();
+    return;
+  }
 
   // 1. Zemin Gölgeleri (Katmanlı temas ve ortam gölgesi)
   ctx.save();

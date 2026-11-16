@@ -1,4 +1,4 @@
-# Proje Durum Raporu — Sürüm 4.3 (Aşama 4.3: Sinematik Avlu Dönüşümü ve Bağımsız Varlık Entegrasyonu)
+# Proje Durum Raporu — Sürüm 4.4 (Aşama 4.4: Öğrenci Karakterinin Sinematik Dönüşümü ve Sprite Atlas Entegrasyonu)
 
 ## Tamamlanan Bölümler
 - **Mimari Dönüşüm (Vite + React + TypeScript + Tailwind CSS v4 + React Router)**:
@@ -13,6 +13,29 @@
 - **İlk Bütünleşik Görev — "Kapıların Anlattığı Hikâye"**:
   - `KEŞFET → ÖĞREN → ÜRET → PAYLAŞ` aşamalarıyla İlkokul (2–4) ve Ortaokul (5–7) düzeyleri, Çizim Stüdyosu, tarayıcı seslendirme (`speech.ts`) ve tek PNG dışa aktarma (`pngExport.ts`) korundu.
 - **Depolama ve Veri Güvenliği**: `localStorage` (`dek_campus_v1_state`, `schemaVersion: 1`), `IndexedDB` (`dek_campus_db`), bellek yedeği ve iki adımlı `"Verilerimi Sil"` penceresi korundu. Kayıtlar tarayıcı Eş Kaynak Politikası gereği alan adına bağlıdır; alan adı değiştiğinde otomatik taşınmaz (`docs/MIMARI.md` içinde belgelendi).
+
+## Aşama 4.4 — Öğrenci Karakterinin Sinematik Dönüşümü (`feat/campus-visual-upgrade`)
+- **Bağımsız Karakter Varlığı ve 3D Animasyon Estetiği**:
+  - Onaylanmış konsept sanatı referansındaki (`docs/assets/digital_campus_courtyard_concept.jpg`) kız öğrenci esas alınarak, geometrik Canvas 2D çiziminden yüksek kaliteli 3D animasyon estetiğine sahip gerçek bir öğrenci karakteri üretildi ve entegre edildi.
+  - Karakter özellikleri: Mercan kırmızısı kapüşonlu hırka, Selçuklu 8 köşeli altın yıldız rozetli sarı tişört, mavi kot pantolon, kırmızı-beyaz spor ayakkabılar, turkuaz sırt çantası, çift örgülü koyu kahverengi saçlar ve sıcak, canlı yüz ifadesi.
+- **4 Yönlü ve 4 Kareli Sprite Atlas Mimarisi (`character_student_atlas.png`)**:
+  - `public/assets/walkable/character_student_atlas.png`, `src/features/walkable/assets/character_student_atlas.png` ve `docs/assets/character_student_atlas.png` (560×720 px, 4 sütun × 4 satır, hücre boyutu 140×180 px).
+  - Satır düzeni: 0 = Down (Ön), 1 = Up (Arka), 2 = Right (Sağ Profil), 3 = Left (Sol Profil).
+  - Sütun düzeni: 0 = Idle (Durma), 1 = Step 1 (Sol Adım), 2 = Passing (Geçiş), 3 = Step 2 (Sağ Adım). Yürüme döngüsü `[1, 2, 3, 2]` akışıyla pürüzsüzleştirildi.
+- **Ayak Hizalama, Çarpışma ve Y-Sorting Derinliği**:
+  - Karakterin görsel ayak basma noktası `y + 18` zemin koordinatına ve mevcut AABB çarpışma kutusu sınırlarına (`DEFAULT_HITBOX`: genişlik 22, yükseklik 28) tam olarak oturtuldu.
+  - Şadırvan, binalar ve ağaçlar arasında derinlik sıralaması (Y-Sorting): Karakter kuzeydeyken nesnelerin arkasında, güneydeyken nesnelerin önünde doğal olarak çizilir.
+- **Önbellek ve Geriye Dönük Çizim Yedeği (Fallback)**:
+  - `assetLoader.ts` içinde `preloadWalkableAssets` ve `getStudentCharacterAtlas()` ile sahne öncesi önbelleğe alındı. Görsel yüklenemediğinde veya headless test ortamlarında kusursuz vektörel çizim yedeği (`drawVectorFallbackCharacter`) devreye girer.
+- **Görsel Kabul Kanıtları (`docs/assets/`)**:
+  - `student_character_before.png` (Önceki geometrik Canvas karakteri)
+  - `student_character_after.png` (Yeni 3D animasyon filmi kalitesinde öğrenci karakteri)
+  - `student_directions_4views.png` (Dört yön yan yana ön izleme)
+  - `student_turnaround_4views.png` (Saydam arka planlı 4 yön inceleme tablosu)
+  - `character_student_atlas.png` (560×720 px tam sprite atlası)
+  - `student_walk_in_game.png` (Yürünebilir kampüs içinde yürüme karesi)
+  - `student_behind_fountain.png` (Şadırvanın arkasında çizim — Y-Sorting testi)
+  - `student_in_front_of_fountain.png` (Şadırvanın önünde çizim — Y-Sorting testi)
 
 ## Aşama 4.3 — Sinematik Avlu Dönüşümü (`feat/campus-visual-upgrade`)
 - **Bağımsız Yüksek Kaliteli 2,5B Görsel Varlıklar ve `drawImage` Entegrasyonu**:
@@ -43,7 +66,7 @@
   - `english_building_before.png` vs `english_building_after.png`
 
 ## Doğrulama Durumu ve Sonraki Adım
-- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [71/71], `npm run build` ve `npm run test:e2e` [10/10 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
+- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [74/74], `npm run build` ve `npm run test:e2e` [10/10 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
 - Çoklu ekran boyutu denetiminde (`360×740`, `390×844`, `768×1024`, `1280×840`) yatay taşma (`0`) ve mobil `390×844` görünümünde `44×44 px` altı etkileşimli hedef (`0`) doğrulandı.
 - Geliştirmeler `feat/campus-visual-upgrade` dalında tamamlanmış olup kullanıcı onayı için hazırdır.
 
