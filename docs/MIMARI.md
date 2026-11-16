@@ -129,3 +129,22 @@ SVG formatında üretilen 9 ana varlık dosyası:
 - `tree_cypress.svg` (70×180)
 - `tree_shade.svg` (120×150)
 - `foliage_canopy.svg` (320×160)
+
+### 7.4. Aşama 4.3 — Sinematik Avlu Dönüşümü ve Bağımsız Görsel Varlık Mimarisi
+Aşama 4.3 kapsamında, konsept görseli (`digital_campus_courtyard_concept.jpg`) referans alınarak kampüs avlusunun tüm temel unsurları 3D animasyon filmi estetiğinde bağımsız, şeffaf arka planlı PNG görsel varlıklarına dönüştürülmüş ve Canvas 2D render motoruna `drawImage` ile entegre edilmiştir:
+1. **Bağımsız PNG Varlıkları (`public/assets/walkable/` ve `src/features/walkable/assets/`)**:
+   - `building_english.png` (268×292 px render; Selçuklu turkuaz çinili dilimli kubbe, mukarnas taç kapı, asılı fener ve pirinç tokmaklı kapı).
+   - `building_discovery.png` (284×232 px render; Pişmiş toprak kiremit kubbe, Selçuklu zencerek kabartmalı portal ve sancak).
+   - `building_library.png` (276×280 px render; Altın kumtaşı sekizgen kümbet, piramidal külah, vitray pencereler ve mukarnas portal).
+   - `pavilion_journey.png` (235×260 px render; Açık Selçuklu çalışma köşkü, mermer sütunlar ve açık el yazması defter).
+   - `kiosk_missions.png` (210×270 px render; Oyma taş ayaklı, ahşap saçaklı görev bülten panosu ve balmumu mühürlü parşömenler).
+   - `plaza_star_fountain.png` (250×179 px render; Sekiz köşeli Selçuklu yıldız mermer havuzu, turkuaz çini bordürler ve kademeli şadırvan).
+   - `tree_cypress.png` (64×218 px render; Zengin katmanlı zümrüt serviler, sol kenar güneş vurgusu ve gölge).
+   - `tree_shade.png` (200×185 px render; Geniş gölgeli Akdeniz çınarı/ıhlamuru, hacimli yaprak öbekleri ve organik gövde).
+2. **Asset Loader & Önbellek Mimarisi (`assetLoader.ts`)**:
+   - `preloadWalkableAssets` fonksiyonu tüm varlıkları uygulama açılışında `new Image()` ile arka planda belleğe alır.
+   - `getLoadedAsset` görselin `img.complete && img.naturalWidth > 0` durumunu denetleyerek tuvalde yarım/bozuk çizimi önler.
+   - Varlık yüklenene kadar veya JSDOM test ortamlarında mevcut Canvas 2D vektör çizim kodu yedek (fallback) olarak çalışmaya devam eder.
+3. **Y-Sorting ve Çarpışma Bütünlüğü**:
+   - Tüm binalar, yapılar ve ağaçlar mevcut AABB çarpışma sınırları (`SceneObstacle`), A* yol bulma ızgarası ve etkileşim yarıçapları (`InteractiveZone`) ile milimetrik olarak hizalanmıştır.
+

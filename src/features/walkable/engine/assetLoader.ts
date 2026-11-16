@@ -23,12 +23,50 @@ export function getLoadedAsset(url: string): HTMLImageElement | null {
 }
 
 /**
- * İngilizce Dünyası Binası yüksek kaliteli görselini döner.
+ * Varlık URL sabitleri
  */
 export const ENGLISH_BUILDING_ASSET_URL = '/assets/walkable/building_english.png';
+export const DISCOVERY_BUILDING_ASSET_URL = '/assets/walkable/building_discovery.png';
+export const LIBRARY_BUILDING_ASSET_URL = '/assets/walkable/building_library.png';
+export const FOUNTAIN_ASSET_URL = '/assets/walkable/plaza_star_fountain.png';
+export const MISSIONS_KIOSK_ASSET_URL = '/assets/walkable/kiosk_missions.png';
+export const JOURNEY_PAVILION_ASSET_URL = '/assets/walkable/pavilion_journey.png';
+export const CYPRESS_TREE_ASSET_URL = '/assets/walkable/tree_cypress.png';
+export const SHADE_TREE_ASSET_URL = '/assets/walkable/tree_shade.png';
 
+/**
+ * Varlık getter fonksiyonları
+ */
 export function getEnglishBuildingAsset(): HTMLImageElement | null {
   return getLoadedAsset(ENGLISH_BUILDING_ASSET_URL);
+}
+
+export function getDiscoveryBuildingAsset(): HTMLImageElement | null {
+  return getLoadedAsset(DISCOVERY_BUILDING_ASSET_URL);
+}
+
+export function getLibraryBuildingAsset(): HTMLImageElement | null {
+  return getLoadedAsset(LIBRARY_BUILDING_ASSET_URL);
+}
+
+export function getFountainAsset(): HTMLImageElement | null {
+  return getLoadedAsset(FOUNTAIN_ASSET_URL);
+}
+
+export function getMissionsKioskAsset(): HTMLImageElement | null {
+  return getLoadedAsset(MISSIONS_KIOSK_ASSET_URL);
+}
+
+export function getJourneyPavilionAsset(): HTMLImageElement | null {
+  return getLoadedAsset(JOURNEY_PAVILION_ASSET_URL);
+}
+
+export function getCypressTreeAsset(): HTMLImageElement | null {
+  return getLoadedAsset(CYPRESS_TREE_ASSET_URL);
+}
+
+export function getShadeTreeAsset(): HTMLImageElement | null {
+  return getLoadedAsset(SHADE_TREE_ASSET_URL);
 }
 
 /**
@@ -44,6 +82,13 @@ export function setCachedAssetForTesting(url: string, img: HTMLImageElement) {
 export function preloadWalkableAssets() {
   if (typeof window === 'undefined') return;
   getLoadedAsset(ENGLISH_BUILDING_ASSET_URL);
+  getLoadedAsset(DISCOVERY_BUILDING_ASSET_URL);
+  getLoadedAsset(LIBRARY_BUILDING_ASSET_URL);
+  getLoadedAsset(FOUNTAIN_ASSET_URL);
+  getLoadedAsset(MISSIONS_KIOSK_ASSET_URL);
+  getLoadedAsset(JOURNEY_PAVILION_ASSET_URL);
+  getLoadedAsset(CYPRESS_TREE_ASSET_URL);
+  getLoadedAsset(SHADE_TREE_ASSET_URL);
 }
 
 // Modül yüklendiğinde otomatik ön yükleme başlat

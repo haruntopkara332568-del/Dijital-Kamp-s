@@ -22,6 +22,13 @@ import { renderClassroomBackground } from '@/src/features/walkable/engine/classr
 import {
   setCachedAssetForTesting,
   ENGLISH_BUILDING_ASSET_URL,
+  DISCOVERY_BUILDING_ASSET_URL,
+  LIBRARY_BUILDING_ASSET_URL,
+  FOUNTAIN_ASSET_URL,
+  MISSIONS_KIOSK_ASSET_URL,
+  JOURNEY_PAVILION_ASSET_URL,
+  CYPRESS_TREE_ASSET_URL,
+  SHADE_TREE_ASSET_URL,
 } from '@/src/features/walkable/engine/assetLoader';
 import type { WalkableSceneConfig, PlayerCharacter } from '@/src/features/walkable/types';
 
@@ -882,5 +889,76 @@ describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () 
       900,
     );
     expect(outsideDoor).toBe(false);
+  });
+
+  it('41. Aşama 4.3: Tüm bağımsız 2,5B avlu varlıkları (Keşif, Kütüphane, Şadırvan, Pano, Köşk, Ağaçlar) yüklendiğinde drawImage ile çizilir', () => {
+    const mockCtx = {
+      clearRect: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+      scale: vi.fn(),
+      beginPath: vi.fn(),
+      closePath: vi.fn(),
+      arc: vi.fn(),
+      ellipse: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      fillRect: vi.fn(),
+      strokeRect: vi.fn(),
+      roundRect: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      quadraticCurveTo: vi.fn(),
+      bezierCurveTo: vi.fn(),
+      setLineDash: vi.fn(),
+      fillText: vi.fn(),
+      drawImage: vi.fn(),
+      createRadialGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
+      createLinearGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
+    } as unknown as CanvasRenderingContext2D;
+
+    const fakeImg = {
+      complete: true,
+      naturalWidth: 500,
+      naturalHeight: 500,
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(DISCOVERY_BUILDING_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(LIBRARY_BUILDING_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(FOUNTAIN_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(MISSIONS_KIOSK_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(JOURNEY_PAVILION_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(CYPRESS_TREE_ASSET_URL, fakeImg);
+    setCachedAssetForTesting(SHADE_TREE_ASSET_URL, fakeImg);
+
+    renderCourtyardBackground(mockCtx, 1400, 900);
+    // Her bir varlık drawImage ile çizilmiş olmalıdır (binalar, şadırvan ve ağaçlar toplam en az 7 çağrı)
+    expect(mockCtx.drawImage).toHaveBeenCalled();
+    expect((mockCtx.drawImage as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThanOrEqual(7);
+  });
+
+  it('42. Aşama 4.3: Avlu binaları ve etkileşimli unsurların AABB çarpışma ve konum hizalaması korunur', () => {
+    const obstacles = [
+      { id: 'bldg-discovery', name: 'Gezi ve Keşif', x: 180, y: 140, width: 220, height: 180 },
+      { id: 'bldg-library', name: 'Kitap Dünyası', x: 580, y: 100, width: 240, height: 170 },
+      { id: 'pavilion-journey', name: 'Kampüs Yolculuğum', x: 220, y: 560, width: 190, height: 140 },
+      { id: 'kiosk-missions', name: 'Görev Panosu', x: 910, y: 560, width: 190, height: 140 },
+      { id: 'fountain', name: 'Merkez Havuz', x: 670, y: 450, width: 60, height: 60 },
+    ];
+
+    for (const obs of obstacles) {
+      // İç nokta engelli olmalı
+      const inside = isPositionBlocked(obs.x + obs.width / 2, obs.y + obs.height / 2, obstacles, 1400, 900);
+      expect(inside).toBe(true);
+
+      // Hemen önündeki yol açık olmalı
+      const inFront = isPositionBlocked(obs.x + obs.width / 2, obs.y + obs.height + 25, obstacles, 1400, 900);
+      expect(inFront).toBe(false);
+    }
   });
 });

@@ -1,4 +1,4 @@
-# Proje Durum Raporu — Sürüm 4.2 (Aşama 4.2: Sinematik Görsel Entegrasyon ve Katmanlı Derinlik)
+# Proje Durum Raporu — Sürüm 4.3 (Aşama 4.3: Sinematik Avlu Dönüşümü ve Bağımsız Varlık Entegrasyonu)
 
 ## Tamamlanan Bölümler
 - **Mimari Dönüşüm (Vite + React + TypeScript + Tailwind CSS v4 + React Router)**:
@@ -14,39 +14,36 @@
   - `KEŞFET → ÖĞREN → ÜRET → PAYLAŞ` aşamalarıyla İlkokul (2–4) ve Ortaokul (5–7) düzeyleri, Çizim Stüdyosu, tarayıcı seslendirme (`speech.ts`) ve tek PNG dışa aktarma (`pngExport.ts`) korundu.
 - **Depolama ve Veri Güvenliği**: `localStorage` (`dek_campus_v1_state`, `schemaVersion: 1`), `IndexedDB` (`dek_campus_db`), bellek yedeği ve iki adımlı `"Verilerimi Sil"` penceresi korundu. Kayıtlar tarayıcı Eş Kaynak Politikası gereği alan adına bağlıdır; alan adı değiştiğinde otomatik taşınmaz (`docs/MIMARI.md` içinde belgelendi).
 
-## Aşama 4.2 — Sinematik Görsel Entegrasyon ve Katmanlı Derinlik (`feat/campus-visual-upgrade`)
-- **Onaylanan Avlu Konsept Sanatı Referansı (`digital_campus_courtyard_concept.jpg`)**:
-  - Yüksek kaliteli 3D animasyon filmi estetiğini, Anadolu–Selçuklu mimari motiflerini ve sıcak çocuk dostu atmosferi yürünebilir kampüse taşıyan katmanlı varlık kütüphanesi oluşturuldu.
-  - Varlık dosyaları `public/assets/walkable/` dizinine eklendi:
-    - `building_english.svg`: Mukarnas taç kapı, turkuaz sırlı kubbe, altın hilal alemi, asılı fener ve giriş ışıltısı (220×180).
-    - `building_library.svg`: Altın kumtaşı sekizgen kasnaklı kümbet kütüphane ve sivri kemerler (240×170).
-    - `building_discovery.svg`: Pişmiş toprak rengi kubbe, Selçuklu kervansaray taç kapısı ve Türk bayrağı (220×180).
-    - `pavilion_journey.svg`: Adaçayı yeşili Selçuklu revaklı köşkü (190×140).
-    - `kiosk_missions.svg`: Oyma taş sütunlu, ahşap saçaklı ve pirinç kandilli Selçuklu görev panosu (190×140).
-    - `plaza_star_fountain.svg`: Sekiz köşeli Selçuklu yıldız havuzu, basamaklı mermer şadırvan çanağı ve kristal fıskiye su spreyi (340×340).
-    - `tree_cypress.svg`: Anadolu–Selçuklu avlularının simgesi zarif servi ağacı ve zemin gölgesi (70×180).
-    - `tree_shade.svg`: Geniş gölgeli, hacimli yaprak kümeli bahçe ağacı (120×150).
-    - `foliage_canopy.svg`: Sahneye animasyon filmi derinliği katan ön plan yaprak saçağı (320×160).
-- **Y-Sorting (Derinlik Sıralamalı) Çok Katmanlı Render Mimarisi (`WalkableCanvasEngine.ts`, `courtyardSceneRenderer.ts`)**:
-  - `onRenderBackground`: Zemin ızgarası, arka plan surları, Selçuklu sekiz köşeli yıldız taban mozaiği, 5 ana taş yol ve çiçek tarhları.
-  - `onRenderEntities`: Tüm yapılar, şadırvan çanağı, fıskiye su jeti, bahçe bankları, ağaçlar, serviler ve öğrenci karakteri zemin temas noktasına (`baseY`) göre sıralanarak çizilir. Karakter bir ağacın, şadırvanın veya binanın kuzeyindeyken arkasında, güneyindeyken önünde doğal olarak görünür.
-  - `onRenderForeground`: Üst köşelerden sahneye sarkan sinematik yaprak saçağı ve sol-üstten avluya vuran yumuşak gün ışığı demetleri (`sunbeams`).
-  - Geriye dönük tam uyumluluk: `onRenderEntities` tanımlanmadığında motor geleneksel `onCustomRender` + `drawCharacter` akışını kesintisiz sürdürür.
-- **Konsept Sanatıyla Birebir Uyumlu Öğrenci Karakteri (`characterRenderer.ts`)**:
-  - Mercan kırmızı kapüşonlu ceket / fermuarlı üst, güneş sarısı iç tişört, göğüste Selçuklu sekiz köşeli altın yıldız rozeti.
-  - Mavi kot pantolon (denim jeans), kırmızı-beyaz spor ayakkabılar (temiz beyaz burun ve taban).
-  - Turkuaz/mavi çocuk okul sırt çantası.
-  - İki yandan sarkan sevimli atkuyrukları/örgü saçlar (kırmızı toka detaylı).
-  - Çift catchlight ışıltılı canlı badem gözler, sevimli yanak allığı, sıcak gülümseme ve 3.8 saniyede bir göz kırpma animasyonu.
-  - 4 yönlü (`down`, `up`, `left`, `right`) tam tutarlı hareket ve bekleme çizimi.
-- **Mevcut Motor ve Çarpışma Bütünlüğü**:
-  - Yürünebilir yollar, A* yol bulma, AABB çarpışma kutuları, kapı koordinatları ve etkileşim yarıçapları %100 korunmuştur.
-- **Erişilebilirlik ve Performans**:
-  - Bütün çevre animasyonları (su parıltısı, yaprak salınımı, karakter nefes alma) `prefers-reduced-motion` tercihine tam uyumludur.
-  - Harici yazı tipi, CDN, üçüncü taraf izleyici ve harici API isteği sıfırdır.
+## Aşama 4.3 — Sinematik Avlu Dönüşümü (`feat/campus-visual-upgrade`)
+- **Bağımsız Yüksek Kaliteli 2,5B Görsel Varlıklar ve `drawImage` Entegrasyonu**:
+  - Onaylanmış 3D animasyon filmi konsept sanatı referansına (`docs/assets/digital_campus_courtyard_concept.jpg`) sadık kalınarak kampüs avlusunun tüm temel unsurları geometrik Canvas 2D çizimlerinden bağımsız, şeffaf arka planlı PNG görsel varlıklara dönüştürüldü:
+    1. **İngilizce Dünyası Binası** (`public/assets/walkable/building_english.png` - 268×292 px render).
+    2. **Gezi ve Keşif Binası** (`public/assets/walkable/building_discovery.png` - 284×232 px render).
+    3. **Kitap ve Hikâye Dünyası Binası** (`public/assets/walkable/building_library.png` - 276×280 px render).
+    4. **Kampüs Yolculuğum Köşkü** (`public/assets/walkable/pavilion_journey.png` - 235×260 px render).
+    5. **Keşif Görevleri Panosu** (`public/assets/walkable/kiosk_missions.png` - 210×270 px render).
+    6. **Merkez Şadırvan & Fıskiye Havuzu** (`public/assets/walkable/plaza_star_fountain.png` - 250×179 px render).
+    7. **Zarif Servi Ağaçları** (`public/assets/walkable/tree_cypress.png` - 64×218 px render).
+    8. **Geniş Gölgeli Akdeniz Ağaçları** (`public/assets/walkable/tree_shade.png` - 200×185 px render).
+- **Varlık Önbellekleme ve Yükleyici Mimarisi (`assetLoader.ts`)**:
+  - `preloadWalkableAssets` sahne başlangıcında tüm görsel varlıkları tarayıcıda önceden belleğe alır.
+  - Varlıkların yüklenemediği veya headless test durumlarında geriye dönük kusursuz vektörel çizim yedeği (fallback) devreye girer.
+- **Y-Sorting ve Zemin Temas Hizalaması (`courtyardSceneRenderer.ts`)**:
+  - Tüm varlıkların ayak basma/zemin koordinatları (`baseY`) ve AABB çarpışma sınırları korunmuş; görseller tam basamak ve yol hizasına oturtulmuştur.
+  - Karakter yapıların ve ağaçların arkasındayken arkada, önündeyken önünde doğal olarak çizilir.
+  - Etkileşimli kapı ve pano ışımaları (pulsing aura) drawImage üzerine canlı katman olarak bindirilmiştir.
+- **Çarpışma Kutuları (AABB) ve Etkileşim Bütünlüğü**:
+  - Mevcut 6 engel, 1 etkileşim noktası, 5 ana taş yürüyüş yolu ve A* yol bulma sistemi %100 oranında korunmuştur.
+- **Görsel Kabul Kanıtları (`docs/assets/`)**:
+  - `courtyard_overview_before.png` vs `courtyard_overview_after.png`
+  - `building_library_before.png` vs `building_library_after.png`
+  - `building_discovery_before.png` vs `building_discovery_after.png`
+  - `fountain_plaza_before.png` vs `fountain_plaza_after.png`
+  - `kiosk_missions_before.png` vs `kiosk_missions_after.png`
+  - `english_building_before.png` vs `english_building_after.png`
 
 ## Doğrulama Durumu ve Sonraki Adım
-- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [67/67], `npm run build` ve `npm run test:e2e` [10/10 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
+- Tüm doğrulama komutları (`npm run typecheck`, `npm run lint`, `npm run test` [71/71], `npm run build` ve `npm run test:e2e` [10/10 Chromium + Mobile Chrome]) çalıştırıldı ve geçti.
 - Çoklu ekran boyutu denetiminde (`360×740`, `390×844`, `768×1024`, `1280×840`) yatay taşma (`0`) ve mobil `390×844` görünümünde `44×44 px` altı etkileşimli hedef (`0`) doğrulandı.
 - Geliştirmeler `feat/campus-visual-upgrade` dalında tamamlanmış olup kullanıcı onayı için hazırdır.
 

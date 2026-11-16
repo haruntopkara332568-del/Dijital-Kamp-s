@@ -10,7 +10,16 @@
 
 import type { PlayerCharacter } from '../types';
 import { drawCharacter } from './characterRenderer';
-import { getEnglishBuildingAsset } from './assetLoader';
+import {
+  getEnglishBuildingAsset,
+  getDiscoveryBuildingAsset,
+  getLibraryBuildingAsset,
+  getFountainAsset,
+  getMissionsKioskAsset,
+  getJourneyPavilionAsset,
+  getCypressTreeAsset,
+  getShadeTreeAsset,
+} from './assetLoader';
 
 export interface DepthEntity {
   id: string;
@@ -72,12 +81,12 @@ export function renderCourtyardEntities(
     {
       id: 'bldg-library',
       baseY: 100 + 170, // 270
-      draw: (c) => drawLibraryBuilding(c, 580, 100, 240, 170),
+      draw: (c) => drawLibraryBuilding(c, 580, 100, 240, 170, now),
     },
     {
       id: 'bldg-discovery',
       baseY: 140 + 180, // 320
-      draw: (c) => drawDiscoveryBuilding(c, 180, 140, 220, 180),
+      draw: (c) => drawDiscoveryBuilding(c, 180, 140, 220, 180, now),
     },
     {
       id: 'bldg-english',
@@ -87,12 +96,12 @@ export function renderCourtyardEntities(
     {
       id: 'pavilion-journey',
       baseY: 560 + 140, // 700
-      draw: (c) => drawJourneyPavilion(c, 220, 560, 190, 140),
+      draw: (c) => drawJourneyPavilion(c, 220, 560, 190, 140, now),
     },
     {
       id: 'kiosk-missions',
       baseY: 560 + 140, // 700
-      draw: (c) => drawMissionsKiosk(c, 910, 560, 190, 140),
+      draw: (c) => drawMissionsKiosk(c, 910, 560, 190, 140, now),
     },
 
     // MERKEZ ŞADIRVAN & FISKİYE (Merkez havuz mermer çanağı ve su jeti)
@@ -227,10 +236,10 @@ export function renderCourtyardBackground(
 
   drawCentralFountainEntity(ctx, centerX, centerY, now);
   drawEnglishBuilding(ctx, 860, 140, 220, 180, now);
-  drawDiscoveryBuilding(ctx, 180, 140, 220, 180);
-  drawLibraryBuilding(ctx, 580, 100, 240, 170);
-  drawJourneyPavilion(ctx, 220, 560, 190, 140);
-  drawMissionsKiosk(ctx, 910, 560, 190, 140);
+  drawDiscoveryBuilding(ctx, 180, 140, 220, 180, now);
+  drawLibraryBuilding(ctx, 580, 100, 240, 170, now);
+  drawJourneyPavilion(ctx, 220, 560, 190, 140, now);
+  drawMissionsKiosk(ctx, 910, 560, 190, 140, now);
   drawCourtyardLandscape(ctx, now);
 
   // 3. Ön Plan
@@ -383,6 +392,53 @@ function drawCentralFountainEntity(
   cy: number,
   now: number,
 ) {
+  const asset = getFountainAsset();
+  if (asset) {
+    ctx.save();
+    // 1. Zemin Temas Gölgesi
+    ctx.fillStyle = 'rgba(23, 43, 71, 0.22)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 8, 120, 48, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Yüksek Kaliteli 2,5B Görsel Varlık (drawImage)
+    const renderW = 250;
+    const renderH = 179;
+    const renderX = cx - renderW / 2;
+    const renderY = cy - renderH / 2 - 10;
+
+    ctx.drawImage(asset, renderX, renderY, renderW, renderH);
+
+    // 3. Su Parıltısı ve Kristal Su Jeti Animasyonu
+    const wave1 = Math.sin(now / 480) * 2;
+    const wave2 = Math.cos(now / 360) * 1.5;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(cx, cy - 8, 22 + wave1, 0.3, Math.PI * 1.2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy - 8, 14 + wave2, Math.PI * 0.8, Math.PI * 1.9);
+    ctx.stroke();
+
+    const sprayPulse = Math.sin(now / 300) * 2;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy - 42 + sprayPulse * 0.5, 3.5, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#e0f2fe';
+    ctx.beginPath();
+    ctx.arc(cx - 4, cy - 46 + sprayPulse, 1.2, 0, Math.PI * 2);
+    ctx.arc(cx + 4, cy - 45 - sprayPulse, 1.2, 0, Math.PI * 2);
+    ctx.arc(cx, cy - 54, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+    return;
+  }
+
   ctx.save();
   ctx.translate(cx, cy);
 
@@ -729,7 +785,42 @@ function drawDiscoveryBuilding(
   y: number,
   w: number,
   h: number,
+  now: number = 0,
 ) {
+  const asset = getDiscoveryBuildingAsset();
+  if (asset) {
+    ctx.save();
+    // 1. Zemin Temas ve Derinlik Gölgesi
+    ctx.fillStyle = 'rgba(23, 43, 71, 0.28)';
+    ctx.beginPath();
+    ctx.ellipse(x + w / 2, y + h + 8, w / 2 + 18, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Yüksek Kaliteli 2,5B Görsel Varlık (drawImage)
+    const renderW = 284;
+    const renderH = 232;
+    const renderX = x + (w - renderW) / 2;
+    const renderY = y + h - renderH + 12;
+
+    ctx.drawImage(asset, renderX, renderY, renderW, renderH);
+
+    // 3. Etkileşimli Kapı Işıltısı (Öğrenci yaklaşınca parıldayan aura)
+    const portalCenterX = x + w / 2;
+    const doorBottomY = y + h - 18;
+    const pulse = Math.sin(now / 320) * 0.35 + 0.65;
+    ctx.save();
+    ctx.strokeStyle = `rgba(186, 87, 52, ${pulse})`;
+    ctx.lineWidth = 3;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.roundRect(portalCenterX - 28, doorBottomY - 65, 56, 65, [16, 16, 0, 0]);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.restore();
+    return;
+  }
+
   ctx.save();
 
   // Zemin gölgesi
@@ -810,7 +901,42 @@ function drawLibraryBuilding(
   y: number,
   w: number,
   h: number,
+  now: number = 0,
 ) {
+  const asset = getLibraryBuildingAsset();
+  if (asset) {
+    ctx.save();
+    // 1. Zemin Temas ve Derinlik Gölgesi
+    ctx.fillStyle = 'rgba(23, 43, 71, 0.28)';
+    ctx.beginPath();
+    ctx.ellipse(x + w / 2, y + h + 8, w / 2 + 18, 20, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Yüksek Kaliteli 2,5B Görsel Varlık (drawImage)
+    const renderW = 276;
+    const renderH = 280;
+    const renderX = x + (w - renderW) / 2;
+    const renderY = y + h - renderH + 12;
+
+    ctx.drawImage(asset, renderX, renderY, renderW, renderH);
+
+    // 3. Etkileşimli Kapı Işıltısı (Öğrenci yaklaşınca parıldayan aura)
+    const portalCenterX = x + w / 2;
+    const doorBottomY = y + h - 18;
+    const pulse = Math.sin(now / 320) * 0.35 + 0.65;
+    ctx.save();
+    ctx.strokeStyle = `rgba(166, 100, 20, ${pulse})`;
+    ctx.lineWidth = 3;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.roundRect(portalCenterX - 28, doorBottomY - 65, 56, 65, [16, 16, 0, 0]);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.restore();
+    return;
+  }
+
   ctx.save();
 
   // Gölge
@@ -896,7 +1022,41 @@ function drawJourneyPavilion(
   y: number,
   w: number,
   h: number,
+  now: number = 0,
 ) {
+  const asset = getJourneyPavilionAsset();
+  if (asset) {
+    ctx.save();
+    // 1. Zemin Temas Gölgesi
+    ctx.fillStyle = 'rgba(23, 43, 71, 0.24)';
+    ctx.beginPath();
+    ctx.ellipse(x + w / 2, y + h + 6, w / 2 + 14, 18, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Yüksek Kaliteli 2,5B Görsel Varlık (drawImage)
+    const renderW = 235;
+    const renderH = 260;
+    const renderX = x + (w - renderW) / 2;
+    const renderY = y + h - renderH + 12;
+
+    ctx.drawImage(asset, renderX, renderY, renderW, renderH);
+
+    // 3. Etkileşimli Işıltı
+    const portalCenterX = x + w / 2;
+    const pulse = Math.sin(now / 320) * 0.3 + 0.7;
+    ctx.save();
+    ctx.strokeStyle = `rgba(45, 115, 80, ${pulse})`;
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.arc(portalCenterX, y + h - 45, 34, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.restore();
+    return;
+  }
+
   ctx.save();
 
   // Gölge
@@ -955,7 +1115,41 @@ function drawMissionsKiosk(
   y: number,
   w: number,
   h: number,
+  now: number = 0,
 ) {
+  const asset = getMissionsKioskAsset();
+  if (asset) {
+    ctx.save();
+    // 1. Zemin Temas Gölgesi
+    ctx.fillStyle = 'rgba(23, 43, 71, 0.24)';
+    ctx.beginPath();
+    ctx.ellipse(x + w / 2, y + h + 6, w / 2 + 14, 18, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Yüksek Kaliteli 2,5B Görsel Varlık (drawImage)
+    const renderW = 210;
+    const renderH = 270;
+    const renderX = x + (w - renderW) / 2;
+    const renderY = y + h - renderH + 12;
+
+    ctx.drawImage(asset, renderX, renderY, renderW, renderH);
+
+    // 3. Etkileşimli Işıltı
+    const portalCenterX = x + w / 2;
+    const pulse = Math.sin(now / 320) * 0.3 + 0.7;
+    ctx.save();
+    ctx.strokeStyle = `rgba(216, 151, 43, ${pulse})`;
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.roundRect(portalCenterX - 45, y + h - 85, 90, 75, 6);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.restore();
+    return;
+  }
+
   ctx.save();
 
   // Gölge
@@ -1051,6 +1245,32 @@ function drawLushTree(
   scale: number,
   now: number,
 ) {
+  const asset = getShadeTreeAsset();
+  if (asset) {
+    ctx.save();
+    const isReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const sway = isReducedMotion ? 0 : Math.sin((now + x * 5) / 1200) * 2;
+
+    // 1. Zemin Temas Gölgesi
+    ctx.fillStyle = 'rgba(23, 43, 71, 0.24)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + 34 * scale, 42 * scale, 14 * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Geniş Gölgeli Akdeniz Ağacı (drawImage)
+    const renderW = 200 * scale;
+    const renderH = 185 * scale;
+    const renderX = x - renderW / 2 + sway;
+    const renderY = y + 34 * scale - renderH + 6;
+
+    ctx.drawImage(asset, renderX, renderY, renderW, renderH);
+
+    ctx.restore();
+    return;
+  }
+
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scale, scale);
@@ -1211,6 +1431,32 @@ function drawCypressTree(
   scale: number,
   now: number,
 ) {
+  const asset = getCypressTreeAsset();
+  if (asset) {
+    ctx.save();
+    const isReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const sway = isReducedMotion ? 0 : Math.sin((now + x * 3) / 1400) * 1.5;
+
+    // 1. Zemin Temas Gölgesi
+    ctx.fillStyle = 'rgba(23, 43, 71, 0.22)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + 26 * scale, 22 * scale, 8 * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Servi Ağacı (drawImage)
+    const renderW = 64 * scale;
+    const renderH = 218 * scale;
+    const renderX = x - renderW / 2 + sway;
+    const renderY = y + 26 * scale - renderH;
+
+    ctx.drawImage(asset, renderX, renderY, renderW, renderH);
+
+    ctx.restore();
+    return;
+  }
+
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scale, scale);
