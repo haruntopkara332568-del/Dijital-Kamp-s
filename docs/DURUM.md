@@ -1,4 +1,4 @@
-# Proje Durum Raporu — Sürüm 4.5 (Aşama 4.5: Karakter Ölçeği, Animasyon ve Görsel Uyum İyileştirmesi)
+# Proje Durum Raporu — Sürüm 4.7 (Aşama 4.7: Sinematik Sınıf Entegrasyonu)
 
 ## Tamamlanan Bölümler
 - **Mimari Dönüşüm (Vite + React + TypeScript + Tailwind CSS v4 + React Router)**:
@@ -13,6 +13,34 @@
 - **İlk Bütünleşik Görev — "Kapıların Anlattığı Hikâye"**:
   - `KEŞFET → ÖĞREN → ÜRET → PAYLAŞ` aşamalarıyla İlkokul (2–4) ve Ortaokul (5–7) düzeyleri, Çizim Stüdyosu, tarayıcı seslendirme (`speech.ts`) ve tek PNG dışa aktarma (`pngExport.ts`) korundu.
 - **Depolama ve Veri Güvenliği**: `localStorage` (`dek_campus_v1_state`, `schemaVersion: 1`), `IndexedDB` (`dek_campus_db`), bellek yedeği ve iki adımlı `"Verilerimi Sil"` penceresi korundu. Kayıtlar tarayıcı Eş Kaynak Politikası gereği alan adına bağlıdır; alan adı değiştiğinde otomatik taşınmaz (`docs/MIMARI.md` içinde belgelendi).
+
+## Aşama 4.7 — Sinematik Sınıf Entegrasyonu (`feat/campus-visual-upgrade`)
+- **Bağımsız 2,5B Görsel Varlık Mimarisi**:
+  - Onaylanan İngilizce Dünyası sınıf konsept sanatı (`docs/assets/digital_campus_english_classroom_concept.png`) referans alınarak prosedürel düz Canvas çiziminden katmanlı, bağımsız PNG varlıklarına geçildi.
+  - Hazırlanan ve önbelleğe alınan varlıklar (`public/assets/walkable/` ve `src/features/walkable/assets/`):
+    1. `classroom_background.png` (960 × 640 px): Selçuklu mukarnas kemerli duvarlar, pencereler, tavan kirişleri, Selçuklu sekiz köşeli yıldız kakmalı parke zemin ve halı dokusu.
+    2. `classroom_teacher_podium.png` (902 × 641 px): Oyma ahşap öğretmen masası ve kürsüsü, açık defter ve kitap detayları.
+    3. `classroom_bookshelf.png` (882 × 983 px): Selçuklu kemerli kitaplık, renkli dünya hikâye kitapları ve küre.
+    4. `classroom_desk.png` ve `classroom_desk_mirrored.png` (868 × 553 px): İki kişilik öğrenci sıraları, sandalyeler, defterler ve öğrenci gereçleri.
+    5. `smartboard_screen_off.png` (260 × 120 px): Yansımalı obsidyen cam, Selçuklu yıldızı filigranı ve bekleme LED göstergesi.
+    6. `smartboard_screen_powering.png` (260 × 120 px): Turkuaz enerji ışıması, Selçuklu yıldızı ve açılış yükleme çubuğu.
+    7. `smartboard_screen_active.png` (260 × 120 px): Konsept tasarımına uygun "Welcome! Let's Explore!" aktif eğitim arayüzü.
+- **3 Katmanlı Render Mimarisi ve Y-Sorting Derinlik Sıralaması**:
+  - **Katman 1 (Arka Plan)**: `renderClassroomLayeredBackground` ile zemin, duvarlar, pencereler, akıllı tahta (aktif duruma göre ilgili doku) ve avluya çıkış kapısı çizilir.
+  - **Katman 2 (Varlıklar & Y-Sorting)**: `renderClassroomEntities` ile öğretmen kürsüsü (`baseY: 210`), kitaplık (`baseY: 235`), 1. & 2. sıralar (`baseY: 315`), 3. & 4. sıralar (`baseY: 445`) ve öğrenci karakteri (`baseY: player.y + 18`) ayak temas noktalarına göre artan sırada sıralanarak çizilir.
+    - Karakter sıranın kuzeyindeyken sıranın arkasında kalır; güneyine geçtiğinde sıranın önünde çizilir.
+  - **Katman 3 (Ön Plan & Atmosfer)**: `renderClassroomForeground` ile tavandan sarkan iki pirinç Selçuklu feneri (kehribar ışık halesi) ve sabah güneşi huzmelerinde süzülen ortam toz tanecikleri çizilir.
+- **Dünya Koordinatları ve Etkileşim Bütünlüğü**:
+  - Sınıf boyutları (`960 × 640 px`), AABB engelleri ve geniş orta koridor (`x: 340 - 590`) tamamen korundu.
+  - Akıllı Tahta etkileşimi `(480, 160, r: 80)` ve avluya çıkış kapısı `(480, 590, r: 65)` korunarak kesintisiz etkileşim sağlandı.
+- **Aşama 4.7 Görsel Kanıtları (`docs/assets/`)**:
+  - `classroom_overview_before.png` (Eski prosedürel sınıf görünümü)
+  - `classroom_overview_after.png` (Sinematik 2,5B yeni sınıf genel görünümü)
+  - `classroom_student_at_board.png` (Akıllı tahta önünde öğrenci ve etkileşim butonu)
+  - `classroom_smartboard_active.png` (Akıllı tahta aktif durumu ve açılan etkinlik modalı)
+  - `classroom_student_behind_desk.png` (Y-Sorting: Öğrenci sıranın arkasında)
+  - `classroom_student_in_front_desk.png` (Y-Sorting: Öğrenci sıranın önünde)
+  - `classroom_mobile_view.png` (390 × 844 mobil dikey görünüm ve dokunmatik kontroller)
 
 ## Aşama 4.5 — Karakter Ölçeği, Animasyon ve Görsel Uyum (`feat/campus-visual-upgrade`)
 - **Karakter Ölçeği İncelemesi ve Seçimi**:

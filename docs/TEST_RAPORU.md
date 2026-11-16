@@ -3,8 +3,8 @@
 ## 1. Çalıştırıldı ve Geçti
 - **`npm run typecheck` (`tsc --noEmit`)**: Geçti — 0 hata (strict TypeScript).
 - **`npm run lint` (`eslint .`)**: Geçti — 0 hata, 0 uyarı.
-- **`npm run test` (`vitest run`)**: Geçti — **77 / 77 test** (`src/test/walkable.test.tsx` [48 test] + `src/test/campus.test.tsx` [29 test], toplam `3.83 s`):
-  - **Aşama 3, 4 & 4.5 Yürünebilir Kampüs, Karakter ve Görsel Dünya Testleri (`walkable.test.tsx` — 48 Test)**:
+- **`npm run test` (`vitest run`)**: Geçti — **81 / 81 test** (`src/test/walkable.test.tsx` [52 test] + `src/test/campus.test.tsx` [29 test], toplam `4.8 s`):
+  - **Aşama 3, 4, 4.5 & 4.7 Yürünebilir Kampüs, Karakter ve Sınıf Görsel Dünya Testleri (`walkable.test.tsx` — 52 Test)**:
     1. Karakter yön tuşlarıyla ve W, A, S, D ile doğru yönde hareket eder
     2. Çapraz hareket hızı normal hareket hızından fazla olamaz (Normalizasyon)
     3. Karakter bina ve engel sınırlarının içinden geçemez (Çarpışma algılama)
@@ -53,6 +53,10 @@
     46. **Aşama 4.5: Karakter ölçek seçenekleri tanımlıdır ve seçilen %15 ölçek (53x67 px) zemin hizasını (y + 18) korur**
     47. **Aşama 4.5: Çapraz yön hareketinde histerezis eşiği gereksiz satır titremesini (jitter) önler**
     48. **Aşama 4.5: Çok katmanlı temas ve yönlü sabah güneşi gölgeleri çizilir**
+    49. **Aşama 4.7: Sınıf arka planı, kürsü, kitaplık ve sıralar bağımsız PNG varlıklarıyla drawImage ile çizilir**
+    50. **Aşama 4.7: Sınıf içi Y-Sorting derinlik sıralaması: Karakter sıranın kuzeyindeyken arkasında, güneyindeyken önünde çizilir**
+    51. **Aşama 4.7: Akıllı tahtanın 3 bağımsız ekran durumu (kapalı, açılıyor, aktif) ilgili ekran görsel varlığıyla çizilir**
+    52. **Aşama 4.7: Tavandan sarkan Selçuklu pirinç fenerleri ve ışık huzmesi atmosferi (renderClassroomForeground) hatasız çizilir**
   - **Mevcut Kampüs ve Pedagoji Testleri (`campus.test.tsx` — 29 Test)**:
     - 2–7. sınıf başlangıç parametrelerinin (`gradeProfiles.ts`) doğrulaması
     - Onaylı karşılama metni, karma dil seslendirme segmentleri (`tr-TR` / `en-US` / `tr-TR`) ve rehber sorularının harfiyen korunması

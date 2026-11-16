@@ -34,6 +34,14 @@ export const JOURNEY_PAVILION_ASSET_URL = '/assets/walkable/pavilion_journey.png
 export const CYPRESS_TREE_ASSET_URL = '/assets/walkable/tree_cypress.png';
 export const SHADE_TREE_ASSET_URL = '/assets/walkable/tree_shade.png';
 export const STUDENT_CHARACTER_ATLAS_URL = '/assets/walkable/character_student_atlas.png';
+export const CLASSROOM_BACKGROUND_ASSET_URL = '/assets/walkable/classroom_background.png';
+export const CLASSROOM_DESK_ASSET_URL = '/assets/walkable/classroom_desk.png';
+export const CLASSROOM_DESK_MIRRORED_ASSET_URL = '/assets/walkable/classroom_desk_mirrored.png';
+export const CLASSROOM_TEACHER_PODIUM_ASSET_URL = '/assets/walkable/classroom_teacher_podium.png';
+export const CLASSROOM_BOOKSHELF_ASSET_URL = '/assets/walkable/classroom_bookshelf.png';
+export const SMARTBOARD_SCREEN_OFF_ASSET_URL = '/assets/walkable/smartboard_screen_off.png';
+export const SMARTBOARD_SCREEN_POWERING_ASSET_URL = '/assets/walkable/smartboard_screen_powering.png';
+export const SMARTBOARD_SCREEN_ACTIVE_ASSET_URL = '/assets/walkable/smartboard_screen_active.png';
 
 /**
  * Varlık getter fonksiyonları
@@ -74,6 +82,38 @@ export function getStudentCharacterAtlas(): HTMLImageElement | null {
   return getLoadedAsset(STUDENT_CHARACTER_ATLAS_URL);
 }
 
+export function getClassroomBackgroundAsset(): HTMLImageElement | null {
+  return getLoadedAsset(CLASSROOM_BACKGROUND_ASSET_URL);
+}
+
+export function getClassroomDeskAsset(): HTMLImageElement | null {
+  return getLoadedAsset(CLASSROOM_DESK_ASSET_URL);
+}
+
+export function getClassroomDeskMirroredAsset(): HTMLImageElement | null {
+  return getLoadedAsset(CLASSROOM_DESK_MIRRORED_ASSET_URL);
+}
+
+export function getClassroomTeacherPodiumAsset(): HTMLImageElement | null {
+  return getLoadedAsset(CLASSROOM_TEACHER_PODIUM_ASSET_URL);
+}
+
+export function getClassroomBookshelfAsset(): HTMLImageElement | null {
+  return getLoadedAsset(CLASSROOM_BOOKSHELF_ASSET_URL);
+}
+
+export function getSmartBoardScreenOffAsset(): HTMLImageElement | null {
+  return getLoadedAsset(SMARTBOARD_SCREEN_OFF_ASSET_URL);
+}
+
+export function getSmartBoardScreenPoweringAsset(): HTMLImageElement | null {
+  return getLoadedAsset(SMARTBOARD_SCREEN_POWERING_ASSET_URL);
+}
+
+export function getSmartBoardScreenActiveAsset(): HTMLImageElement | null {
+  return getLoadedAsset(SMARTBOARD_SCREEN_ACTIVE_ASSET_URL);
+}
+
 /**
  * Test veya özel durumlar için önbelleğe doğrudan görsel nesnesi ekleme.
  */
@@ -95,6 +135,14 @@ export function preloadWalkableAssets() {
   getLoadedAsset(CYPRESS_TREE_ASSET_URL);
   getLoadedAsset(SHADE_TREE_ASSET_URL);
   getLoadedAsset(STUDENT_CHARACTER_ATLAS_URL);
+  getLoadedAsset(CLASSROOM_BACKGROUND_ASSET_URL);
+  getLoadedAsset(CLASSROOM_DESK_ASSET_URL);
+  getLoadedAsset(CLASSROOM_DESK_MIRRORED_ASSET_URL);
+  getLoadedAsset(CLASSROOM_TEACHER_PODIUM_ASSET_URL);
+  getLoadedAsset(CLASSROOM_BOOKSHELF_ASSET_URL);
+  getLoadedAsset(SMARTBOARD_SCREEN_OFF_ASSET_URL);
+  getLoadedAsset(SMARTBOARD_SCREEN_POWERING_ASSET_URL);
+  getLoadedAsset(SMARTBOARD_SCREEN_ACTIVE_ASSET_URL);
 }
 
 // Modül yüklendiğinde otomatik ön yükleme başlat

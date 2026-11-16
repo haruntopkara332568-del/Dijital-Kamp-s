@@ -7,8 +7,12 @@ import {
   renderCourtyardEntities,
   renderCourtyardForeground,
 } from './engine/courtyardSceneRenderer';
-import { renderClassroomBackground } from './engine/classroomSceneRenderer';
-import { drawCharacter } from './engine/characterRenderer';
+import {
+  renderClassroomBackground,
+  renderClassroomLayeredBackground,
+  renderClassroomEntities,
+  renderClassroomForeground,
+} from './engine/classroomSceneRenderer';
 import { WalkableControlsOverlay } from './components/WalkableControlsOverlay';
 import { SmartBoardModal } from './components/SmartBoardModal';
 import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } from './types';
@@ -203,7 +207,7 @@ export function WalkableCampusView({
         },
         onRenderBackground: (ctx) => {
           if (currentScene === 'classroom') {
-            renderClassroomBackground(
+            renderClassroomLayeredBackground(
               ctx,
               config.width,
               config.height,
@@ -216,13 +220,15 @@ export function WalkableCampusView({
         },
         onRenderEntities: (ctx, player) => {
           if (currentScene === 'classroom') {
-            drawCharacter(ctx, player);
+            renderClassroomEntities(ctx, player, config.width, config.height);
           } else {
             renderCourtyardEntities(ctx, player, config.width, config.height);
           }
         },
         onRenderForeground: (ctx) => {
-          if (currentScene === 'courtyard') {
+          if (currentScene === 'classroom') {
+            renderClassroomForeground(ctx, config.width, config.height);
+          } else {
             renderCourtyardForeground(ctx, config.width, config.height);
           }
         },

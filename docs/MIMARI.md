@@ -190,5 +190,25 @@ Aşama 4.5 kapsamında, 3D animasyon karakterinin kampüsün mimari unsurları, 
    - **Gölge Katmanları**: Sol-üst sabah güneşi açısıyla sağ-alta hafifçe uzanan dış ortam gölgesi (`(1.8, 19)`, `18.5 × 7.8 px`), orta gövde gölgesi (`(1.0, 18.5)`, `12.5 × 5.0 px`) ve ayak tabanı koyu temas gölgesi (`(0, 18)`, `8.0 × 2.8 px`).
    - **Sabah Işığı Uyum Tonlaması**: Sprite üzerine `source-atop` ile uygulanan hafif altın sabah ışıması gradyanı (`rgba(255, 246, 214, 0.08)`) ile karakter sahneyle organik olarak bütünleştirildi.
 
+### 7.7. Aşama 4.7 — Sinematik İngilizce Dünyası Sınıfı Entegrasyon Mimarisi
+Aşama 4.7 kapsamında, onaylanan konsept görseli (`digital_campus_english_classroom_concept.png`) referans alınarak yürünebilir sınıf içi mekân, bağımsız 2,5B görsel varlıklar ve dinamik Y-Sorting katmanlarıyla yenilenmiştir:
+1. **Bağımsız Varlık Mimarisi (`src/features/walkable/assets/` & `public/assets/walkable/`)**:
+   - `classroom_background.png` (960 × 640 px): Mukarnas kemerli Selçuklu duvarları, vitraylı pencereler, ahşap tavan kirişleri ve sekiz köşeli yıldız kakmalı parke zemin.
+   - `classroom_teacher_podium.png` (902 × 641 px, şeffaf RGBA): Oyma ahşap öğretmen kürsüsü ve masası.
+   - `classroom_bookshelf.png` (882 × 983 px, şeffaf RGBA): Taş-ahşap kemerli kütüphane dolabı, dünya hikâye kitapları ve küre.
+   - `classroom_desk.png` ve `classroom_desk_mirrored.png` (868 × 553 px, şeffaf RGBA): İkili öğrenci masaları ve sandalyeleri.
+   - `smartboard_screen_off.png`, `smartboard_screen_powering.png`, `smartboard_screen_active.png` (260 × 120 px): Akıllı tahtanın kapalı (yansımalı obsidyen cam), açılıyor (turkuaz enerji dalgası) ve aktif ("Welcome! Let's Explore!" arayüzü) durumları.
+2. **3 Katmanlı Render Mimarisi (`classroomSceneRenderer.ts`)**:
+   - **Katman 1 (Arka Plan)**: `renderClassroomLayeredBackground(ctx, width, height, isActive, isPoweringOn)`
+     - Zemin dokusu, kuzey duvarı, güneş ışığı huzmeleri, akıllı tahta çerçevesi ve aktif duruma karşılık gelen ekran dokusu (`drawImage`), avluya çıkış kapısı.
+   - **Katman 2 (Varlıklar & Y-Sorting)**: `renderClassroomEntities(ctx, player, width, height)`
+     - Öğretmen kürsüsü (`baseY = 210`), Kitaplık (`baseY = 235`), 1. & 2. Sıra kümeleri (`baseY = 315`), 3. & 4. Sıra kümeleri (`baseY = 445`) ve Öğrenci karakteri (`baseY = player.y + 18`).
+     - Varlıklar her karede `baseY` değerine göre artan sırada sıralanır. Öğrenci sıranın kuzeyindeyken masanın arkasında kalır; güneyine yürüdüğünde masanın önünde çizilir.
+   - **Katman 3 (Ön Plan & Atmosfer)**: `renderClassroomForeground(ctx, width, height)`
+     - Tavandan sarkan iki pirinç Selçuklu feneri (kehribar ışık halesi) ve güneş huzmelerinde süzülen ortam toz tanecikleri.
+3. **Koordinat ve Çarpışma Bütünlüğü**:
+   - `960 × 640 px` dünya boyutu, `(0, 0, 960, 130)` kuzey duvarı engeli, `(670, 160, 100, 50)` kürsü engeli, `(40, 150, 60, 85)` kitaplık engeli, 4 sıra engeli (`190/590, 260/390, 150, 55`) ve 250 px genişliğindeki orta koridor tamamen korunmuştur.
+   - Akıllı tahta etkileşimi `(480, 160, r: 80)` ve güney çıkış kapısı `(480, 590, r: 65)` eksiksiz çalışmaktadır.
+
 
 
