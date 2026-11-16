@@ -2,7 +2,23 @@ import type { PlayerCharacter } from '../types';
 import { getStudentCharacterAtlas } from './assetLoader';
 
 /**
- * Çocuk dostu, 3D animasyon filmi estetiğine sahip öğrenci karakteri çizici (Aşama 4.4).
+ * Karakter ölçek seçenekleri ve referans ölçüleri (Aşama 4.5).
+ * Başlangıç: 46x58 px.
+ * %10 Büyütme: 51x64 px.
+ * %15 Büyütme: 53x67 px (Seçilen en doğal mimari oran).
+ * %20 Büyütme: 55x70 px.
+ */
+export const CHARACTER_SCALES = {
+  original: { width: 46, height: 58, label: 'Orijinal (46x58)' },
+  scale10: { width: 51, height: 64, label: '%10 Büyütme (51x64)' },
+  scale15: { width: 53, height: 67, label: '%15 Büyütme (53x67) - Seçilen' },
+  scale20: { width: 55, height: 70, label: '%20 Büyütme (55x70)' },
+} as const;
+
+export type CharacterScalePreset = keyof typeof CHARACTER_SCALES;
+
+/**
+ * Çocuk dostu, 3D animasyon filmi estetiğine sahip öğrenci karakteri çizici (Aşama 4.4 & 4.5).
  * Bağımsız Sprite Atlas (character_student_atlas.png) üzerinden 4 yönlü (ön, arka, sol, sağ)
  * ve 4 kareli yürüyüş/bekleme döngüsüyle yüksek kaliteli Pixar/Disney estetiğinde çizilir.
  * Görsel yüklenene kadar veya test ortamlarında geriye dönük vektörel çizim yedeği devreye girer.
@@ -17,23 +33,29 @@ export function drawCharacter(ctx: CanvasRenderingContext2D, player: PlayerChara
   const now = isReducedMotion ? 0 : performance.now();
   const isWalking = state === 'walk';
 
-  // 1. Yeni 2,5B Sinematik Sprite Atlas Entegrasyonu (Aşama 4.4)
+  // 1. Yeni 2,5B Sinematik Sprite Atlas Entegrasyonu (Aşama 4.4 & 4.5)
   const atlas = getStudentCharacterAtlas();
   if (atlas) {
     ctx.save();
     ctx.translate(x, y);
 
-    // Zemin Gölgeleri (Katmanlı temas ve ortam gölgesi)
-    // Dış yumuşak gölge
+    // Zemin Gölgeleri (Katmanlı temas, avlu sabah güneşi yönlü ve ortam gölgesi - Aşama 4.5)
+    // 1. Katman: Dış yumuşak ortam gölgesi (Güneş sol-üstten geldiği için sağ-alta hafif yatık)
     ctx.beginPath();
-    ctx.ellipse(0, 18, 16, 7, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(23, 43, 71, 0.14)';
+    ctx.ellipse(1.8, 19, 18.5, 7.8, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(23, 43, 71, 0.15)';
     ctx.fill();
 
-    // İç koyu temas gölgesi (Ayakların tam altına basma hissi verir)
+    // 2. Katman: Gövde izdüşüm gölgesi
     ctx.beginPath();
-    ctx.ellipse(0, 18, 10, 4, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(23, 43, 71, 0.32)';
+    ctx.ellipse(1.0, 18.5, 12.5, 5.0, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(23, 43, 71, 0.28)';
+    ctx.fill();
+
+    // 3. Katman: Ayak tabanı temas gölgesi (Ayakların zemine basma hissini güçlendirir)
+    ctx.beginPath();
+    ctx.ellipse(0, 18, 8.0, 2.8, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(15, 24, 40, 0.48)';
     ctx.fill();
 
     // Yön ve Animasyon Karesi Hesaplama (Sprite Atlas: 4 kolon x 4 satır, hücre: 140x180 px)
@@ -58,29 +80,33 @@ export function drawCharacter(ctx: CanvasRenderingContext2D, player: PlayerChara
 
     let col = 0; // 0: idle
     if (isWalking) {
-      // Yürüyüş döngüsü: frame 1 -> frame 2 -> frame 3 -> frame 2
+      // Yürüyüş döngüsü: frame 1 -> frame 2 -> frame 3 -> frame 2 (Aşama 4.5: Doğrudan adımla senkron)
       const walkCycle = [1, 2, 3, 2];
-      const cycleIndex = Math.floor(walkFrame * 1.2) % walkCycle.length;
+      const cycleIndex = Math.floor(walkFrame) % walkCycle.length;
       col = walkCycle[cycleIndex];
     }
 
-    // Salınım ve Ritim (Bobbing & Sway)
-    const bobY = isWalking
-      ? (isReducedMotion ? 0 : Math.abs(Math.sin(walkFrame * Math.PI)) * -2.2)
-      : (isReducedMotion ? 0 : Math.sin(now / 520) * 0.8);
+    // Salınım ve Ritim (Gereksiz zıplama ve sallantıyı engelleyen yumuşak, doğal zemin teması)
+    // 3D Sprite kareleri bacak adımını zaten içerdiğinden, aşırı gövde zıplaması kaldırıldı.
+    const bobY = isWalking ? 0 : (isReducedMotion ? 0 : Math.sin(now / 520) * 0.7);
+    const swayX = 0;
 
-    const swayX = isWalking && !isReducedMotion ? Math.sin(walkFrame * Math.PI) * 0.6 : 0;
+    // Tuvalde Render Boyutu ve Hizalama (Aşama 4.5: %15 büyütülmüş doğal mimari ölçek 53x67 px)
+    const overrideScale = typeof window !== 'undefined'
+      ? (window as unknown as { __CHARACTER_SCALE_OVERRIDE__?: { width: number; height: number } }).__CHARACTER_SCALE_OVERRIDE__
+      : undefined;
 
-    // Tuvalde Render Boyutu ve Hizalama
-    // Karakterin ayak temas noktası y + 18'dir; baş yukarı uzanır.
-    const renderW = 46;
-    const renderH = 58;
+    const renderW = overrideScale?.width ?? CHARACTER_SCALES.scale15.width;
+    const renderH = overrideScale?.height ?? CHARACTER_SCALES.scale15.height;
     const renderX = -renderW / 2 + swayX;
     const renderY = 18 - renderH + 3 + bobY;
 
     // Sprite Atlas'tan ilgili kareyi çiz
     const srcX = col * CELL_W;
     const srcY = row * CELL_H;
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     ctx.drawImage(
       atlas,
@@ -93,6 +119,25 @@ export function drawCharacter(ctx: CanvasRenderingContext2D, player: PlayerChara
       renderW,
       renderH,
     );
+
+    // Sabah Işığı ve Sıcak Ambiyans Uyum Tonlaması (Aşama 4.5)
+    // Karakterin kampüs avlusundaki sıcak gün ışığı ve Selçuklu taş mimarisiyle bütünleşmesini sağlar
+    if (typeof ctx.createLinearGradient === 'function') {
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-atop';
+      const warmLightGrad = ctx.createLinearGradient(
+        renderX,
+        renderY,
+        renderX + renderW,
+        renderY + renderH,
+      );
+      warmLightGrad.addColorStop(0, 'rgba(255, 246, 214, 0.08)'); // sol-üst sabah güneşi sıcak vurgu
+      warmLightGrad.addColorStop(0.6, 'rgba(255, 235, 180, 0.02)');
+      warmLightGrad.addColorStop(1, 'rgba(24, 34, 52, 0.05)'); // sağ-alt yumuşak gölge
+      ctx.fillStyle = warmLightGrad;
+      ctx.fillRect(renderX, renderY, renderW, renderH);
+      ctx.restore();
+    }
 
     ctx.restore();
     return;

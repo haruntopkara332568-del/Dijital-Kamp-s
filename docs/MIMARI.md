@@ -174,4 +174,21 @@ Aşama 4.4 kapsamında, avludaki görsel devrime paralel olarak öğrenci karakt
 4. **Varlık Önbellekleme ve Fallback**:
    - Atlas, sahne başlangıcında `preloadWalkableAssets` ve `getStudentCharacterAtlas()` ile taranır. Atlas yüklenene kadar veya headless test ortamlarında vektörel yedek (`drawVectorFallbackCharacter`) kesintisiz devreye girer.
 
+### 7.6. Aşama 4.5 — Karakter Ölçeği, Animasyon ve Görsel Uyum Mimarisi
+Aşama 4.5 kapsamında, 3D animasyon karakterinin kampüsün mimari unsurları, ışıklandırması ve yürüyüş akışıyla bütünleşmesi için aşağıdaki teknik iyileştirmeler uygulanmıştır:
+1. **Mimari Ölçek Optimizasyonu (`CHARACTER_SCALES`)**:
+   - `original`: 46 × 58 px (taban başlangıç ölçüsü).
+   - `scale10`: 51 × 64 px (%10 büyütme).
+   - `scale15`: 53 × 67 px (%15 büyütme — seçilen en doğal oran).
+   - `scale20`: 55 × 70 px (%20 büyütme — kapı açıklıklarına göre aşırı iri).
+   - Seçilen `scale15` (53 × 67 px), Selçuklu taç kapısı kemer yüksekliğinin yaklaşık %85'ine oturur, 72–80 px genişliğindeki taş yollarda ferah geçiş sağlar ve mevcut 22 × 28 px AABB çarpışma kutusuyla milimetrik uyumunu sürdürür.
+2. **Animasyon Senkronizasyonu ve Ritim Akıcılığı**:
+   - `WalkableCanvasEngine.ts` ve `characterRenderer.ts` arasındaki `walkFrame` frekansı senkronize edilerek sabit `6.5` fps adım kadansı (`~153 ms/kare`) sağlandı.
+   - 3D sprite atlası anatomik adım salınımını zaten içerdiğinden, dışarıdan uygulanan aşırı zıplama (`bobY = -2.2 px`) ve sallantı etkisi kaldırılarak ayakların zemine sağlam ve doğal basması sağlandı.
+   - Çapraz hareketlerde yön satırları arasında titreşimi önlemek için 1.15 eşikli histerezis ölü bölgesi (`absX > absY * 1.15`) uygulandı.
+3. **Çok Katmanlı Yönlü Temas Gölgesi ve Sabah Ambiyansı**:
+   - **Gölge Katmanları**: Sol-üst sabah güneşi açısıyla sağ-alta hafifçe uzanan dış ortam gölgesi (`(1.8, 19)`, `18.5 × 7.8 px`), orta gövde gölgesi (`(1.0, 18.5)`, `12.5 × 5.0 px`) ve ayak tabanı koyu temas gölgesi (`(0, 18)`, `8.0 × 2.8 px`).
+   - **Sabah Işığı Uyum Tonlaması**: Sprite üzerine `source-atop` ile uygulanan hafif altın sabah ışıması gradyanı (`rgba(255, 246, 214, 0.08)`) ile karakter sahneyle organik olarak bütünleştirildi.
+
+
 

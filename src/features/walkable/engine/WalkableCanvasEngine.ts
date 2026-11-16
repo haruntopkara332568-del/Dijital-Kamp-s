@@ -57,7 +57,7 @@ export class WalkableCanvasEngine {
     }
     this.ctx = context;
     this.config = config;
-    this.callbacks = callbacks;
+    this.callbacks = callbacks ?? {};
 
     const spawnX = initialPosition?.x ?? config.playerSpawn.x;
     const spawnY = initialPosition?.y ?? config.playerSpawn.y;
@@ -352,12 +352,14 @@ export class WalkableCanvasEngine {
       vy = (vy / len) * this.player.speed;
 
       this.player.state = 'walk';
-      this.player.walkFrame += delta * 7.5; // Adım ritmi
+      this.player.walkFrame += delta * 6.5; // Adım ritmi (Aşama 4.5: Yürüyüş hızıyla tam senkron)
 
-      // Yön belirleme
-      if (Math.abs(vx) > Math.abs(vy)) {
+      // Yön belirleme (Aşama 4.5: Çapraz hareketlerde yön titremesini önleyen histerezis eşiği)
+      const absX = Math.abs(vx);
+      const absY = Math.abs(vy);
+      if (absX > absY * 1.15) {
         this.player.direction = (vx > 0 ? 'right' : 'left') as CharacterDirection;
-      } else {
+      } else if (absY > absX * 1.15) {
         this.player.direction = (vy > 0 ? 'down' : 'up') as CharacterDirection;
       }
     } else {

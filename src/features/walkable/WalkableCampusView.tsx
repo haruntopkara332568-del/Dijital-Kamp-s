@@ -245,6 +245,9 @@ export function WalkableCampusView({
 
     engine.start();
     engineRef.current = engine;
+    if (typeof window !== 'undefined') {
+      (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine }).__WALKABLE_ENGINE__ = engine;
+    }
 
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -258,6 +261,9 @@ export function WalkableCampusView({
 
     return () => {
       ro.disconnect();
+      if (typeof window !== 'undefined') {
+        delete (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine }).__WALKABLE_ENGINE__;
+      }
       engine.destroy();
       engineRef.current = null;
     };

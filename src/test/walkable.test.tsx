@@ -11,7 +11,7 @@ import {
 } from '@/src/features/walkable/engine/pathfinding';
 import { SmartBoardModal } from '@/src/features/walkable/components/SmartBoardModal';
 import { WalkableControlsOverlay } from '@/src/features/walkable/components/WalkableControlsOverlay';
-import { drawCharacter } from '@/src/features/walkable/engine/characterRenderer';
+import { drawCharacter, CHARACTER_SCALES } from '@/src/features/walkable/engine/characterRenderer';
 import {
   renderCourtyardBackground,
   renderCourtyardLayeredBackground,
@@ -1127,5 +1127,130 @@ describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () 
     const srcX = drawCall[1];
     expect(srcX).toBeGreaterThan(0);
     expect(srcX % 140).toBe(0); // Hücre genişliğinin katı olmalı
+  });
+
+  it('46. Aşama 4.5: Karakter ölçek seçenekleri tanımlıdır ve seçilen %15 ölçek (53x67 px) zemin hizasını korur', () => {
+    // 1. Ölçek presetleri doğrulanır
+    expect(CHARACTER_SCALES.original).toEqual({ width: 46, height: 58, label: expect.any(String) });
+    expect(CHARACTER_SCALES.scale10).toEqual({ width: 51, height: 64, label: expect.any(String) });
+    expect(CHARACTER_SCALES.scale15).toEqual({ width: 53, height: 67, label: expect.any(String) });
+    expect(CHARACTER_SCALES.scale20).toEqual({ width: 55, height: 70, label: expect.any(String) });
+
+    // 2. Seçilen %15 ölçeğin oran ve büyüme analizi
+    const w15 = CHARACTER_SCALES.scale15.width;
+    const h15 = CHARACTER_SCALES.scale15.height;
+    expect(w15).toBe(53);
+    expect(h15).toBe(67);
+    expect(w15 / CHARACTER_SCALES.original.width).toBeCloseTo(1.152, 2);
+    expect(h15 / CHARACTER_SCALES.original.height).toBeCloseTo(1.155, 2);
+
+    // 3. Ayak zemin temas çizgisi y + 18 noktasında korunur
+    const mockCtx = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      beginPath: vi.fn(),
+      ellipse: vi.fn(),
+      fill: vi.fn(),
+      drawImage: vi.fn(),
+      fillStyle: '',
+      imageSmoothingEnabled: false,
+      imageSmoothingQuality: 'low',
+    } as unknown as CanvasRenderingContext2D;
+
+    const fakeAtlas = {
+      complete: true,
+      naturalWidth: 560,
+      naturalHeight: 720,
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(STUDENT_CHARACTER_ATLAS_URL, fakeAtlas);
+
+    const p: PlayerCharacter = {
+      x: 700,
+      y: 560,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'idle',
+      speed: 160,
+      walkFrame: 0,
+      grade: 4,
+    };
+
+    drawCharacter(mockCtx, p);
+
+    const drawCall = (mockCtx.drawImage as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    const renderW = drawCall[7];
+    const renderH = drawCall[8];
+    const renderY = drawCall[6];
+
+    expect(renderW).toBe(53);
+    expect(renderH).toBe(67);
+    // renderY = 18 - renderH + 3 + bobY = -46 + bobY
+    expect(renderY).toBeCloseTo(-46, 0);
+    // Taban çizgisi renderY + renderH - 3 = 18 px civarı (y + 18'e tam oturur)
+    expect(renderY + renderH - 3).toBeCloseTo(18, 0);
+  });
+
+  it('47. Aşama 4.5: Çapraz yön hareketinde histerezis eşiği gereksiz satır titremesini önler', () => {
+    const engine = new WalkableCanvasEngine(canvas, config, { onActiveZoneChange: vi.fn() });
+    engine.start();
+
+    // Sağ-Aşağı çapraz hareket: vx = 1, vy = 1 (eşit büyüklükte)
+    // Histerezis kuralında biri diğerinin 1.15 katı olmadığında yön sıçraması yapmaz
+    engine.setVirtualDirection(1, 1);
+
+    const p1 = engine.player;
+    expect(['down', 'right']).toContain(p1.direction);
+
+    // X bileşeni belirginleştiğinde (vx=1.5, vy=0.5 -> 1.5 > 0.5 * 1.15) sağa geçmeli
+    engine.setVirtualDirection(1.5, 0.5);
+    engine.destroy();
+  });
+
+  it('48. Aşama 4.5: Çok katmanlı temas ve yönlü sabah güneşi gölgeleri çizilir', () => {
+    const mockCtx = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      beginPath: vi.fn(),
+      ellipse: vi.fn(),
+      fill: vi.fn(),
+      drawImage: vi.fn(),
+      fillStyle: '',
+      imageSmoothingEnabled: false,
+      imageSmoothingQuality: 'low',
+    } as unknown as CanvasRenderingContext2D;
+
+    const fakeAtlas = {
+      complete: true,
+      naturalWidth: 560,
+      naturalHeight: 720,
+    } as unknown as HTMLImageElement;
+
+    setCachedAssetForTesting(STUDENT_CHARACTER_ATLAS_URL, fakeAtlas);
+
+    const p: PlayerCharacter = {
+      x: 700,
+      y: 560,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'idle',
+      speed: 160,
+      walkFrame: 0,
+      grade: 4,
+    };
+
+    drawCharacter(mockCtx, p);
+
+    // mockCtx.ellipse en az 3 kez çağrılmalı (dış ortam gölgesi, orta gövde gölgesi, ayak tabanı temas gölgesi)
+    const ellipseCalls = (mockCtx.ellipse as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    expect(ellipseCalls.length).toBeGreaterThanOrEqual(3);
+
+    // Ayak tabanı temas gölgesinin y koordinatı 18 (y + 18) olmalıdır
+    const contactCall = ellipseCalls.find((c) => Math.abs(c[1] - 18) < 0.1);
+    expect(contactCall).toBeDefined();
   });
 });

@@ -1,4 +1,4 @@
-# Proje Durum Raporu — Sürüm 4.4 (Aşama 4.4: Öğrenci Karakterinin Sinematik Dönüşümü ve Sprite Atlas Entegrasyonu)
+# Proje Durum Raporu — Sürüm 4.5 (Aşama 4.5: Karakter Ölçeği, Animasyon ve Görsel Uyum İyileştirmesi)
 
 ## Tamamlanan Bölümler
 - **Mimari Dönüşüm (Vite + React + TypeScript + Tailwind CSS v4 + React Router)**:
@@ -13,6 +13,38 @@
 - **İlk Bütünleşik Görev — "Kapıların Anlattığı Hikâye"**:
   - `KEŞFET → ÖĞREN → ÜRET → PAYLAŞ` aşamalarıyla İlkokul (2–4) ve Ortaokul (5–7) düzeyleri, Çizim Stüdyosu, tarayıcı seslendirme (`speech.ts`) ve tek PNG dışa aktarma (`pngExport.ts`) korundu.
 - **Depolama ve Veri Güvenliği**: `localStorage` (`dek_campus_v1_state`, `schemaVersion: 1`), `IndexedDB` (`dek_campus_db`), bellek yedeği ve iki adımlı `"Verilerimi Sil"` penceresi korundu. Kayıtlar tarayıcı Eş Kaynak Politikası gereği alan adına bağlıdır; alan adı değiştiğinde otomatik taşınmaz (`docs/MIMARI.md` içinde belgelendi).
+
+## Aşama 4.5 — Karakter Ölçeği, Animasyon ve Görsel Uyum (`feat/campus-visual-upgrade`)
+- **Karakter Ölçeği İncelemesi ve Seçimi**:
+  - Başlangıç boyutu olan 46 × 58 px, %10 (51 × 64 px), %15 (53 × 67 px) ve %20 (55 × 70 px) büyütme seçenekleri gerçek avlu sahnelerinde karşılaştırıldı.
+  - %20 ölçek (55 × 70 px) kapı kemer açıklığına (48–52 px) göre fazla geniş kaldığı ve çocuğu yetişkin mimarisine kıyasla aşırı iri gösterdiği için elendi.
+  - %10 ölçek (51 × 64 px) geniş avluda halen hafif minyatür kaldı.
+  - **%15 Büyütme (53 × 67 px)** en dengeli ve doğal oran olarak seçildi: İngilizce Dünyası taç kapısı portal yüksekliğinin yaklaşık %85'ine oturur, 72–80 px'lik taş yollar üzerinde rahat boşluk bırakır ve 10 yaşındaki ilkokul/ortaokul öğrencisi silüetini mimari çevreyle tam uyumlu kılar.
+- **Zemin Hizalama ve Çarpışma Bütünlüğü**:
+  - Karakterin ayak basma çizgisi tam olarak `y + 18` zemin çizgisine ve temas gölgesi elipsine oturur (`renderY = 18 - 67 + 3 = -46 px`; `renderY + renderH - 3 = 18 px`).
+  - Mevcut AABB çarpışma kutusu (`DEFAULT_HITBOX`: 22 × 28 px) ve A* yol bulma sistemi değiştirilmeden %100 oranında korundu; 53 px'lik görsel genişlik gövde merkezinde 22 px'lik hitbox ile harika bir tampon sağlayarak koridor ve kapılarda takılmasız geçişi sürdürdü.
+- **Animasyon Senkronizasyonu ve Akıcılık**:
+  - `WalkableCanvasEngine.ts` ve `characterRenderer.ts` arasındaki adım ritmi senkronize edildi (`walkFrame += delta * 6.5`). Mismatched frekanslar ve `walkFrame * 1.2` çarpanı kaldırılarak sabit 153 ms'lik pürüzsüz adım kadansı sağlandı.
+  - 3D sprite kareleri anatomik dikey adımı halihazırda içerdiğinden, yürüyüş esnasındaki aşırı dış gövde sekmesi (`bobY = -2.2 px`) ve omuz sallantısı sıfırlanarak gereksiz zıplama/hoplatma etkisi tamamen giderildi.
+  - Durma anında `player.state = 'idle'` ve `col = 0` ile bakılan yöndeki dinlenme duruşuna pürüzsüz geçiş sağlandı. `prefers-reduced-motion` desteği korundu.
+  - Çapraz yön hareketlerinde 1.15 eşikli histerezis (ölü bölge) getirilerek yön satırları arasındaki titreşim (flicker) giderildi.
+- **Görsel Bütünlük, Sabah Işığı ve Zemin Teması**:
+  - **Çok Katmanlı Yönlü Temas Gölgesi**: Sabah güneşi sol-üstten geldiği için sağ-alta hafif yatık dış ortam gölgesi (`(1.8, 19)`, `18.5 × 7.8 px`), orta gövde gölgesi (`(1.0, 18.5)`, `12.5 × 5.0 px`) ve taban temas gölgesi (`(0, 18)`, `8.0 × 2.8 px`, `%48` koyuluk) uygulandı. Ayakların zemine basma hissi kuvvetlendirildi.
+  - **Sabah Işığı ve Ambiyans Uyum Tonlaması**: Sprite üzerine `source-atop` kompozit katmanı ile sol-üstten gelen hafif sıcak altın sabah ışıması (`rgba(255, 246, 214, 0.08)`) ve sağ-alt yumuşak gölge tonu uygulandı; karakterin avlu atmosferine "sonradan yapıştırılmış" hissi kaldırıldı.
+  - `ctx.imageSmoothingEnabled = true` ve `imageSmoothingQuality = 'high'` ile ölçeklenen piksellerin pürüzsüz çizimi sağlandı.
+  - Y-Sorting derinlik sıralaması (`baseY = player.y + 18`) şadırvan ve binalar çevresinde korundu.
+- **Aşama 4.5 Görsel Kanıtları (`docs/assets/`)**:
+  - `student_scale_before_46x58.png` (Orijinal 46 × 58 px ölçek)
+  - `student_scale_10pct_51x64.png` (%10 büyütülmüş ölçek)
+  - `student_scale_after_53x67.png` (%15 büyütülmüş seçilen ölçek)
+  - `student_scale_20pct_55x70.png` (%20 büyütülmüş ölçek)
+  - `student_scale_comparison_options.png` (4 ölçeğin yan yana karşılaştırma paneli)
+  - `student_walk_4directions_cycle.png` (4 yönde yürüyüş döngüsü matrisi)
+  - `student_at_english_door.png` (İngilizce Dünyası kapısı önünde ölçek uyumu)
+  - `student_in_front_of_fountain.png` (Şadırvan önünde Y-Sorting kanıtı)
+  - `student_behind_fountain.png` (Şadırvan arkasında Y-Sorting kanıtı)
+  - `student_walk_in_game.png` (Avlu içi akıcı yürüyüş karesi)
+  - `student_mobile_view.png` (Mobil 390 × 844 görünümü)
 
 ## Aşama 4.4 — Öğrenci Karakterinin Sinematik Dönüşümü (`feat/campus-visual-upgrade`)
 - **Bağımsız Karakter Varlığı ve 3D Animasyon Estetiği**:

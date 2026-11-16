@@ -3,8 +3,8 @@
 ## 1. Çalıştırıldı ve Geçti
 - **`npm run typecheck` (`tsc --noEmit`)**: Geçti — 0 hata (strict TypeScript).
 - **`npm run lint` (`eslint .`)**: Geçti — 0 hata, 0 uyarı.
-- **`npm run test` (`vitest run`)**: Geçti — **74 / 74 test** (`src/test/walkable.test.tsx` [45 test] + `src/test/campus.test.tsx` [29 test], toplam `6.71 s`):
-  - **Aşama 3 & 4 Yürünebilir Kampüs ve Görsel Dünya Testleri (`walkable.test.tsx` — 45 Test)**:
+- **`npm run test` (`vitest run`)**: Geçti — **77 / 77 test** (`src/test/walkable.test.tsx` [48 test] + `src/test/campus.test.tsx` [29 test], toplam `3.83 s`):
+  - **Aşama 3, 4 & 4.5 Yürünebilir Kampüs, Karakter ve Görsel Dünya Testleri (`walkable.test.tsx` — 48 Test)**:
     1. Karakter yön tuşlarıyla ve W, A, S, D ile doğru yönde hareket eder
     2. Çapraz hareket hızı normal hareket hızından fazla olamaz (Normalizasyon)
     3. Karakter bina ve engel sınırlarının içinden geçemez (Çarpışma algılama)
@@ -50,6 +50,9 @@
     43. **Aşama 4.4: Öğrenci karakteri görsel atlası (character_student_atlas.png) yüklendiğinde drawImage ile kırpılarak çizilir**
     44. **Aşama 4.4: Karakter yönleri (down, up, right, left) sprite atlasında doğru satır indeksleriyle (0, 1, 2, 3) eşleşir**
     45. **Aşama 4.4: Karakter yürüme animasyon döngüsü ve bekleme (idle) durumu sprite atlası karelerini doğru sırayla kullanır**
+    46. **Aşama 4.5: Karakter ölçek seçenekleri tanımlıdır ve seçilen %15 ölçek (53x67 px) zemin hizasını (y + 18) korur**
+    47. **Aşama 4.5: Çapraz yön hareketinde histerezis eşiği gereksiz satır titremesini (jitter) önler**
+    48. **Aşama 4.5: Çok katmanlı temas ve yönlü sabah güneşi gölgeleri çizilir**
   - **Mevcut Kampüs ve Pedagoji Testleri (`campus.test.tsx` — 29 Test)**:
     - 2–7. sınıf başlangıç parametrelerinin (`gradeProfiles.ts`) doğrulaması
     - Onaylı karşılama metni, karma dil seslendirme segmentleri (`tr-TR` / `en-US` / `tr-TR`) ve rehber sorularının harfiyen korunması
