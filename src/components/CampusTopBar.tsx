@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
-import { Volume2, VolumeX, SlidersHorizontal, Trash2, Compass } from 'lucide-react';
+import { Volume2, VolumeX, SlidersHorizontal, Trash2, Compass, Footprints } from 'lucide-react';
 import { useCampus } from '@/src/app/CampusProviders';
 import { GRADE_LIST } from '@/src/data/gradeProfiles';
 import type { GradeLevel } from '@/src/types/campus';
@@ -205,6 +205,15 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
                     <Compass className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
                     <span>Kapı ve Karşılamayı Yeniden İzle</span>
                   </button>
+
+                  <Link
+                    to="/yuruyus"
+                    onClick={() => setDrawerOpen(false)}
+                    className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] text-sm font-medium text-[var(--seljuk-navy)] hover:bg-[var(--campus-surface-muted)] inline-flex items-center gap-2 cursor-pointer"
+                  >
+                    <Footprints className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
+                    <span>Yürünebilir Kampüs Avlusu</span>
+                  </Link>
                 </div>
 
                 <button

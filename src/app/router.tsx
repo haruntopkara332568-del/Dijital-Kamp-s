@@ -7,6 +7,7 @@ import {
   LearningAreaRoutePage,
   MissionRoutePage,
   NotFoundRoutePage,
+  WalkableCampusRoutePage,
 } from '@/src/app/CampusPages';
 
 /**
@@ -15,6 +16,7 @@ import {
 export const campusRouter = createBrowserRouter([
   { path: '/', element: <HomeRoutePage /> },
   { path: '/harita', element: <CampusMapRoutePage /> },
+  { path: '/yuruyus', element: <WalkableCampusRoutePage /> },
   { path: '/alan/:id', element: <LearningAreaRoutePage /> },
   { path: '/gorev/:id', element: <MissionRoutePage /> },
   { path: '/yolculugum', element: <JourneyRoutePage /> },

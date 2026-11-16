@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { ArrowRight, Play, RotateCcw } from 'lucide-react';
+import { ArrowRight, Footprints, Play, RotateCcw } from 'lucide-react';
 import { CAMPUS_AREAS, getLearningAreas, getUtilityAreas } from '@/src/data/campusAreas';
 import { getActiveMissions } from '@/src/data/missions';
 import { useCampus } from '@/src/app/CampusProviders';
@@ -148,6 +148,14 @@ export function CampusMapView() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <Link
+              to="/yuruyus"
+              className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-navy)] hover:bg-[var(--seljuk-navy-shade)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-all active:scale-[0.99] shadow-xs"
+            >
+              <Footprints className="w-4 h-4 text-[var(--seljuk-teal)] shrink-0" aria-hidden="true" />
+              <span>Yürüyerek Keşfet</span>
+            </Link>
+
             {unfinished ? (
               <Link
                 to={`/gorev/${unfinished.missionId}`}
