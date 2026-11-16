@@ -3,8 +3,8 @@
 ## 1. Çalıştırıldı ve Geçti
 - **`npm run typecheck` (`tsc --noEmit`)**: Geçti — 0 hata (strict TypeScript).
 - **`npm run lint` (`eslint .`)**: Geçti — 0 hata, 0 uyarı.
-- **`npm run test` (`vitest run`)**: Geçti — **65 / 65 test** (`src/test/walkable.test.tsx` [36 test] + `src/test/campus.test.tsx` [29 test], toplam `3.94 s`):
-  - **Aşama 3 & 4 Yürünebilir Kampüs ve Görsel Dünya Testleri (`walkable.test.tsx` — 36 Test)**:
+- **`npm run test` (`vitest run`)**: Geçti — **67 / 67 test** (`src/test/walkable.test.tsx` [38 test] + `src/test/campus.test.tsx` [29 test], toplam `3.79 s`):
+  - **Aşama 3 & 4 Yürünebilir Kampüs ve Görsel Dünya Testleri (`walkable.test.tsx` — 38 Test)**:
     1. Karakter yön tuşlarıyla ve W, A, S, D ile doğru yönde hareket eder
     2. Çapraz hareket hızı normal hareket hızından fazla olamaz (Normalizasyon)
     3. Karakter bina ve engel sınırlarının içinden geçemez (Çarpışma algılama)
@@ -41,6 +41,8 @@
     34. **Aşama 4: Kampüs avlusu zemin, Selçuklu yıldız meydanı, binalar ve peyzaj unsurları hatasız çizilir**
     35. **Aşama 4: İngilizce sınıfı zemin, pencereler, akıllı tahta (kapalı, açılıyor, açık) ve sıralar hatasız çizilir**
     36. **Aşama 4: Karakterin görsel temas noktası AABB çarpışma kutusu sınırlarıyla (DEFAULT_HITBOX) uyumludur**
+    37. **Aşama 4.2: Katmanlı zemin, Y-Sorting varlıklar ve ön plan saçağı hatasız çizilir**
+    38. **Aşama 4.2: Y-Sorting derinlik sıralaması: Karakter kuzeydeyken varlığın arkasında, güneydeyken önünde çizilir**
   - **Mevcut Kampüs ve Pedagoji Testleri (`campus.test.tsx` — 29 Test)**:
     - 2–7. sınıf başlangıç parametrelerinin (`gradeProfiles.ts`) doğrulaması
     - Onaylı karşılama metni, karma dil seslendirme segmentleri (`tr-TR` / `en-US` / `tr-TR`) ve rehber sorularının harfiyen korunması

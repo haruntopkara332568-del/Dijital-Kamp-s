@@ -88,3 +88,44 @@ Aşama 3 teknik iyileştirme sürümünde (Sürüm 1.1), karakterin engellerin �
 - **Kampüs Avlusunun Mimari Dönüşümü**: `courtyardSceneRenderer.ts` ile Selçuklu mukarnaslı anıtsal taç kapısı, çinili dilimli kubbeler, merkez sekiz köşeli yıldız meydanı, şadırvan havuzunda animasyonlu su parıltısı ve dalgalanma (`water shimmer`), rüzgârda salınan çok katmanlı selviler/bahçe ağaçları, Selçuklu sokak kandilleri, taş oturma bankları ve çiçek tarhları.
 - **İngilizce Sınıfının Mekân Kurgusu**: `classroomSceneRenderer.ts` ile sıcak ahşap parke zemin, kemerli vitray pencerelerden vuran güneş ışığı huzmeleri (sunbeams), Selçuklu çinili duvar bordürü, İngilizce dünya haritası ve kelime posterleri, ahşap-pirinç kakma akıllı tahta (açılış radyal ışık dalgalanması, kapalıyken cam yansıması ve bekleme LED'i), öğretmen kürsüsü, kitaplık ve öğrenci sıraları.
 - **Erişilebilirlik ve Sıfır Ek Bağımlılık**: Bütün çevresel animasyonlar `prefers-reduced-motion` tercihine duyarlıdır; harici ağır oyun motorları (Phaser vb.) yerine hafif Canvas 2D motoru sürdürülmüş ve parça boyutu yalnızca `48.09 kB` (gzip: `13.06 kB`) seviyesinde tutulmuştur. AABB çarpışma sınırları ve kapı koordinatları %100 korunmuştur.
+
+## 7. Aşama 4.2 — Sinematik Görsel Entegrasyon ve Katmanlı Derinlik (Y-Sorting) Mimarisi
+
+### 7.1. Katmanlı Çizim ve Derinlik Sıralaması (Y-Sorting)
+Tek perspektif bir görselin tuvale gerilip üzerine karakter gezdirilmesini engelleyen; gerçek 2,5B animasyon filmi derinliği sunan 3 aşamalı katman mimarisi (`WalkableCanvasEngine.ts`, `courtyardSceneRenderer.ts`):
+1. **Arka Plan Katmanı (`onRenderBackground`)**:
+   - Geometrik taş zemin ızgarası ve degrade ışık geçişi.
+   - Kuzey sınırı Selçuklu taş kemerli surları ve mazgalları.
+   - 5 ana taş döşeli yürüyüş yolu.
+   - Sekiz köşeli Selçuklu yıldız taban mozaiği ve dış mermer bordür.
+   - Zemin çiçek tarhları (lavanta ve gül hatmi).
+2. **Navigasyon Yolu Katmanı (`drawPathOverlay`)**:
+   - Tıklayarak yürümede A* rotası zemin üzerine, fakat dikey varlıkların altına çizilir.
+3. **Varlık ve Karakter Derinlik Sıralaması Katmanı (`onRenderEntities`)**:
+   - Tüm binalar, merkez şadırvan mermer haznesi ve fıskiye su jeti, bahçe bankları, servi ağaçları ve öğrenci karakteri zemin temas çizgilerine (`baseY`) göre anlık olarak sıralanır (`entities.sort((a, b) => a.baseY - b.baseY)`).
+   - Karakter bir şadırvanın veya ağacın kuzeyindeyken (`player.baseY < entity.baseY`) varlığın arkasında, güneyine geçtiğinde ise önünde çizilir.
+4. **Ön Plan ve Sinematik Çerçeve Katmanı (`onRenderForeground`)**:
+   - Tuvalin sol-üst ve sağ-üst köşelerinden sarkan sinematik yaprak saçağı (`drawCanopyBranch`).
+   - Sol-üstten avluya vuran yumuşak gün ışığı demetleri (`drawCinematicSunbeams`).
+
+### 7.2. Konsept Sanatına Tam Uyumlu Karakter Tasarımı
+Onaylanan konsept görseli (`digital_campus_courtyard_concept.jpg`) referans alınarak:
+- Mercan kırmızı fermuarlı kapüşonlu ceket (`#dc2626`, `#ef4444`, `#b91c1c`).
+- Güneş sarısı iç tişört (`#fde047`) üzerinde altın rengi Selçuklu sekiz köşeli yıldız rozeti.
+- Koyu indigo denim kot pantolon (`#2563eb`).
+- Kırmızı-beyaz spor ayakkabılar (temiz beyaz burun ve kauçuk taban).
+- Turkuaz/mavi çocuk okul sırt çantası (`#0284c7`).
+- İki yandan sarkan kırmızı tokalı sevimli örgüler / atkuyrukları.
+- 4 yönlü yürüyüş salınımı ve 3.8 saniyede bir göz kırpan canlı badem gözler.
+
+### 7.3. Modüler Varlık Kütüphanesi (`public/assets/walkable/`)
+SVG formatında üretilen 9 ana varlık dosyası:
+- `building_english.svg` (220×180)
+- `building_library.svg` (240×170)
+- `building_discovery.svg` (220×180)
+- `pavilion_journey.svg` (190×140)
+- `kiosk_missions.svg` (190×140)
+- `plaza_star_fountain.svg` (340×340)
+- `tree_cypress.svg` (70×180)
+- `tree_shade.svg` (120×150)
+- `foliage_canopy.svg` (320×160)

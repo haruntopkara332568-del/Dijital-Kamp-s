@@ -50,27 +50,29 @@ export function drawCharacter(ctx: CanvasRenderingContext2D, player: PlayerChara
   // Göz kırpma döngüsü (Her ~3.8 saniyede bir kısa 130ms göz kırpma)
   const isBlinking = !isWalking && now % 3800 < 130;
 
-  // Renk Paleti (Anadolu–Selçuklu Kimliği)
+  // Renk Paleti (Konsept Görselindeki Öğrenci: Mercan Kırmızı Ceket, Selçuklu Yıldız Rozeti, Mavi Kot, Turkuaz Sırt Çantası)
   const palette = {
-    skin: '#fdf3e7',
-    skinShade: '#f1dfcb',
-    blush: 'rgba(226, 114, 91, 0.38)',
-    hairDark: '#1b2c45',
-    hairMid: '#243b5c',
-    hairLight: '#395782',
-    vestBase: '#0e768a',
-    vestLight: '#1896ae',
-    vestDark: '#085361',
-    shirtCollar: '#fbf7ee',
-    goldTrim: '#d8972b',
-    goldStar: '#f5c35b',
-    pants: '#192b44',
-    pantsFold: '#101e31',
-    shoes: '#422f20',
-    shoesSole: '#6e5138',
-    backpack: '#a84c28',
-    backpackDark: '#813516',
-    backpackPocket: '#bf5930',
+    skin: '#fdf2e9',
+    skinShade: '#f5dfcb',
+    blush: 'rgba(239, 68, 68, 0.32)',
+    hairDark: '#1e1b18',
+    hairMid: '#2d241e',
+    hairLight: '#42342b',
+    hairTie: '#dc2626',
+    jacketBase: '#dc2626', // Mercan Kırmızı Ceket / Kapüşonlu
+    jacketLight: '#ef4444',
+    jacketDark: '#b91c1c',
+    innerShirt: '#fde047', // Güneş Sarısı İç Tişört
+    goldTrim: '#d97706',
+    goldStar: '#fef08a', // Selçuklu Sekiz Köşeli Yıldız Rozeti
+    pants: '#2563eb', // Mavi Kot Pantolon (Denim Jeans)
+    pantsFold: '#1d4ed8',
+    shoes: '#dc2626', // Kırmızı Spor Ayakkabı
+    shoesWhite: '#ffffff', // Beyaz Burun & Taban
+    shoesSole: '#e2e8f0',
+    backpack: '#0284c7', // Turkuaz / Mavi Sırt Çantası
+    backpackDark: '#0369a1',
+    backpackPocket: '#38bdf8',
   };
 
   // 3. AYAKLAR VE BACAKLAR (Alt Katman)
@@ -94,7 +96,8 @@ export function drawCharacter(ctx: CanvasRenderingContext2D, player: PlayerChara
 }
 
 /**
- * Bacaklar ve ayakkabılar: Yürürken doğal ileri-geri açılma, dururken dengeli basış.
+ * Bacaklar ve spor ayakkabılar: Yürürken doğal ileri-geri açılma, dururken dengeli basış.
+ * Konsept görselindeki mavi kot pantolon ve kırmızı-beyaz spor ayakkabıları yansıtır.
  */
 function drawLegs(
   ctx: CanvasRenderingContext2D,
@@ -109,22 +112,26 @@ function drawLegs(
     const leftOffset = legSwing;
     const rightOffset = -legSwing;
 
-    // Sol bacak pantolon
+    // Sol bacak kot pantolon
     ctx.fillStyle = palette.pants;
     ctx.beginPath();
     ctx.roundRect(-8, 9 + (direction === 'down' ? leftOffset * 0.4 : -leftOffset * 0.4), 6, 8, [2, 2, 0, 0]);
     ctx.fill();
 
-    // Sol ayakkabı
+    // Sol ayakkabı (Kırmızı gövde, beyaz burun ve taban)
     ctx.fillStyle = palette.shoes;
     ctx.beginPath();
     ctx.roundRect(-8.5, 14.5 + (direction === 'down' ? leftOffset : -leftOffset), 6.5, 4.5, 2);
     ctx.fill();
+    if (direction === 'down') {
+      ctx.fillStyle = palette.shoesWhite;
+      ctx.fillRect(-8.5, 16.5 + leftOffset, 6.5, 1.5);
+    }
     // Ayakkabı tabanı
     ctx.fillStyle = palette.shoesSole;
     ctx.fillRect(-8.5, 17.5 + (direction === 'down' ? leftOffset : -leftOffset), 6.5, 1.5);
 
-    // Sağ bacak pantolon
+    // Sağ bacak kot pantolon
     ctx.fillStyle = palette.pants;
     ctx.beginPath();
     ctx.roundRect(2, 9 + (direction === 'down' ? rightOffset * 0.4 : -rightOffset * 0.4), 6, 8, [2, 2, 0, 0]);
@@ -135,6 +142,10 @@ function drawLegs(
     ctx.beginPath();
     ctx.roundRect(2, 14.5 + (direction === 'down' ? rightOffset : -rightOffset), 6.5, 4.5, 2);
     ctx.fill();
+    if (direction === 'down') {
+      ctx.fillStyle = palette.shoesWhite;
+      ctx.fillRect(2, 16.5 + rightOffset, 6.5, 1.5);
+    }
     // Ayakkabı tabanı
     ctx.fillStyle = palette.shoesSole;
     ctx.fillRect(2, 17.5 + (direction === 'down' ? rightOffset : -rightOffset), 6.5, 1.5);
@@ -165,6 +176,12 @@ function drawLegs(
     ctx.beginPath();
     ctx.roundRect(-4 + primaryOffset, 14.5, 8, 4.5, 2);
     ctx.fill();
+
+    // Spor ayakkabı beyaz burun kapağı
+    ctx.fillStyle = palette.shoesWhite;
+    const toeX = isLeft ? -4 + primaryOffset : 2 + primaryOffset;
+    ctx.fillRect(toeX, 15, 2, 3);
+
     ctx.fillStyle = palette.shoesSole;
     ctx.fillRect(-4 + primaryOffset, 17.5, 8, 1.5);
   }
@@ -174,11 +191,12 @@ function drawLegs(
 
 /**
  * Sırt Çantası (Yalnızca 'up' yönünde gövdenin arkasında belirginleşir).
+ * Turkuaz/mavi renkli çocuk okul sırt çantası.
  */
 function drawBackpack(ctx: CanvasRenderingContext2D, palette: Record<string, string>) {
   ctx.save();
 
-  // Çanta ana gövdesi (Terracotta deri)
+  // Çanta ana gövdesi
   ctx.fillStyle = palette.backpack;
   ctx.beginPath();
   ctx.roundRect(-8, -2, 16, 14, 4);
@@ -196,7 +214,7 @@ function drawBackpack(ctx: CanvasRenderingContext2D, palette: Record<string, str
   ctx.roundRect(-5.5, 3, 11, 7, 2);
   ctx.fill();
 
-  // Toka ve askı dikişi (Altın sarısı pirinç)
+  // Toka ve fermuar dikişi
   ctx.fillStyle = palette.goldTrim;
   ctx.fillRect(-2, 1, 4, 3);
 
@@ -204,7 +222,7 @@ function drawBackpack(ctx: CanvasRenderingContext2D, palette: Record<string, str
 }
 
 /**
- * Gövde, Selçuklu Turkuaz Yelek ve Yaka Detayları.
+ * Gövde: Mercan Kırmızı Ceket / Kapüşonlu, Güneş Sarısı İç Tişört ve Selçuklu Yıldız Rozeti.
  */
 function drawTorso(
   ctx: CanvasRenderingContext2D,
@@ -214,55 +232,66 @@ function drawTorso(
 ) {
   ctx.save();
 
-  // 1. Beyaz Gömlek / Yaka Tabanı
-  ctx.fillStyle = palette.shirtCollar;
+  // 1. Sarı İç Tişört Tabanı
+  ctx.fillStyle = palette.innerShirt;
   ctx.beginPath();
   ctx.roundRect(-8.5, -4, 17, 14, 4);
   ctx.fill();
 
-  // 2. Selçuklu Turkuaz Yelek Ana Gövdesi
-  ctx.fillStyle = palette.vestBase;
+  // 2. Mercan Kırmızı Ceket Ana Gövdesi
+  ctx.fillStyle = palette.jacketBase;
   ctx.beginPath();
   ctx.roundRect(-9.5, -3, 19, 14.5, 4);
   ctx.fill();
 
-  // Sol-üst Işık Vurgusu (Derinlik katar)
-  ctx.fillStyle = palette.vestLight;
+  // Sol-üst Işık Vurgusu (Hacim ve derinlik katar)
+  ctx.fillStyle = palette.jacketLight;
   ctx.fillRect(-8.5, -2, 4, 12);
 
-  // Yelek Ön Süslemeleri
+  // Kapüşon Omuz Kıvrımı
+  ctx.fillStyle = palette.jacketDark;
+  ctx.beginPath();
+  ctx.roundRect(-9, -4.5, 18, 3.5, [2, 2, 0, 0]);
+  ctx.fill();
+
+  // Ceket Ön Süslemeleri
   if (direction === 'down') {
-    // Gömlek yaka üçgeni
-    ctx.fillStyle = palette.shirtCollar;
+    // İç tişört V yakası
+    ctx.fillStyle = palette.innerShirt;
     ctx.beginPath();
-    ctx.moveTo(0, 3);
+    ctx.moveTo(0, 4);
     ctx.lineTo(-4, -3);
     ctx.lineTo(4, -3);
     ctx.closePath();
     ctx.fill();
 
-    // Altın sarısı yelek kenar bordürleri
-    ctx.strokeStyle = palette.goldTrim;
-    ctx.lineWidth = 1.6;
+    // Ceket fermuar ve kenar çizgileri
+    ctx.strokeStyle = palette.jacketDark;
+    ctx.lineWidth = 1.4;
     ctx.beginPath();
     ctx.moveTo(-4, -3);
     ctx.lineTo(0, 4);
     ctx.lineTo(4, -3);
     ctx.stroke();
 
-    // Orta dikiş hattı
+    // Fermuar hattı
     ctx.beginPath();
     ctx.moveTo(0, 4);
     ctx.lineTo(0, 11);
     ctx.stroke();
 
-    // Göğüste Minik Selçuklu Sekiz Köşeli Yıldız Rozeti
+    // Göğüste Selçuklu Sekiz Köşeli Yıldız Rozeti
     ctx.save();
     ctx.translate(-4.5, 4.5);
+    ctx.fillStyle = palette.goldTrim;
+    for (let i = 0; i < 2; i++) {
+      ctx.rotate((Math.PI / 4) * i);
+      ctx.fillRect(-1.8, -1.8, 3.6, 3.6);
+    }
     ctx.fillStyle = palette.goldStar;
     for (let i = 0; i < 2; i++) {
       ctx.rotate((Math.PI / 4) * i);
-      ctx.fillRect(-1.6, -1.6, 3.2, 3.2);
+      ctx.fillRect(-1.2, -1.2, 2.4, 2.4);
     }
     ctx.restore();
 
@@ -270,12 +299,12 @@ function drawTorso(
     ctx.fillStyle = palette.pantsFold;
     ctx.fillRect(-9, 10, 18, 2);
   } else if (direction === 'left' || direction === 'right') {
-    // Yan görünüm yelek ayrımı
-    ctx.fillStyle = palette.vestDark;
+    // Yan görünüm ceket fermuar ayrımı
+    ctx.fillStyle = palette.jacketDark;
     const splitX = direction === 'left' ? -2 : 2;
     ctx.fillRect(splitX, -3, 2, 14);
 
-    // Yan çanta askısı
+    // Yan çanta askısı (Mavi/turkuaz)
     ctx.fillStyle = palette.backpack;
     ctx.fillRect(direction === 'left' ? 2 : -4, -3, 3, 14);
   }
@@ -297,10 +326,14 @@ function drawArms(
   if (direction === 'down' || direction === 'up') {
     // Sol kol
     const leftArmY = -armSwing * 0.35;
-    ctx.fillStyle = palette.vestBase;
+    ctx.fillStyle = palette.jacketBase;
     ctx.beginPath();
     ctx.roundRect(-13.5, -2 + leftArmY, 4.5, 11, 2.5);
     ctx.fill();
+
+    // Sol kol manşet ışığı
+    ctx.fillStyle = palette.jacketLight;
+    ctx.fillRect(-13.5, 7 + leftArmY, 4.5, 1.5);
 
     // Sol el (Ten)
     ctx.fillStyle = palette.skin;
@@ -310,10 +343,14 @@ function drawArms(
 
     // Sağ kol
     const rightArmY = armSwing * 0.35;
-    ctx.fillStyle = palette.vestBase;
+    ctx.fillStyle = palette.jacketBase;
     ctx.beginPath();
     ctx.roundRect(9, -2 + rightArmY, 4.5, 11, 2.5);
     ctx.fill();
+
+    // Sağ kol manşet ışığı
+    ctx.fillStyle = palette.jacketLight;
+    ctx.fillRect(9, 7 + rightArmY, 4.5, 1.5);
 
     // Sağ el (Ten)
     ctx.fillStyle = palette.skin;
@@ -325,7 +362,7 @@ function drawArms(
     const isLeft = direction === 'left';
     const armX = isLeft ? -7 : 2.5;
 
-    ctx.fillStyle = palette.vestBase;
+    ctx.fillStyle = palette.jacketBase;
     ctx.beginPath();
     ctx.roundRect(armX + (isLeft ? -armSwing * 0.4 : armSwing * 0.4), -1, 5, 11, 2.5);
     ctx.fill();
@@ -341,7 +378,8 @@ function drawArms(
 }
 
 /**
- * Kafa, saç modeli, şık gözler, yanak allığı ve canlı mimik.
+ * Kafa, saç modeli, konsept görselindeki iki yandan atkuyruklu/örgü saçlar,
+ * şık gözler, yanak allığı ve canlı mimik.
  */
 function drawHead(
   ctx: CanvasRenderingContext2D,
@@ -383,8 +421,37 @@ function drawHead(
     ctx.fill();
   }
 
-  // 3. Saç Katmanları ve Yüz İfadesi
+  // 3. Saç Katmanları, İki Yandan Örgüler/Atkuyrukları ve Yüz İfadesi
   if (direction === 'down') {
+    // İki Yandan Sarkan Sevimli Örgüler / Atkuyrukları (Sol & Sağ)
+    // Sol Atkuyruğu
+    ctx.fillStyle = palette.hairTie;
+    ctx.beginPath();
+    ctx.roundRect(-12.5, headY + 2, 3.5, 2.5, 1);
+    ctx.fill();
+    ctx.fillStyle = palette.hairDark;
+    ctx.beginPath();
+    ctx.ellipse(-12, headY + 8, 3.2, 5.2, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = palette.hairMid;
+    ctx.beginPath();
+    ctx.ellipse(-12, headY + 7, 2, 3.5, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Sağ Atkuyruğu
+    ctx.fillStyle = palette.hairTie;
+    ctx.beginPath();
+    ctx.roundRect(9, headY + 2, 3.5, 2.5, 1);
+    ctx.fill();
+    ctx.fillStyle = palette.hairDark;
+    ctx.beginPath();
+    ctx.ellipse(12, headY + 8, 3.2, 5.2, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = palette.hairMid;
+    ctx.beginPath();
+    ctx.ellipse(12, headY + 7, 2, 3.5, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+
     // Saç Tabanı (Üst ve yanlar)
     ctx.fillStyle = palette.hairDark;
     ctx.beginPath();
@@ -462,6 +529,19 @@ function drawHead(
     ctx.arc(0, headY + 3.2, 2.8, 0.2, Math.PI - 0.2);
     ctx.stroke();
   } else if (direction === 'up') {
+    // İki Yandan Atkuyrukları (Arka Görünüm)
+    ctx.fillStyle = palette.hairTie;
+    ctx.beginPath();
+    ctx.roundRect(-12.5, headY + 2, 3.5, 2.5, 1);
+    ctx.roundRect(9, headY + 2, 3.5, 2.5, 1);
+    ctx.fill();
+
+    ctx.fillStyle = palette.hairDark;
+    ctx.beginPath();
+    ctx.ellipse(-12, headY + 8, 3.2, 5.2, 0.2, 0, Math.PI * 2);
+    ctx.ellipse(12, headY + 8, 3.2, 5.2, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+
     // Arka saçlar (Tam hacimli ve katmanlı)
     ctx.fillStyle = palette.hairDark;
     ctx.beginPath();
@@ -482,6 +562,18 @@ function drawHead(
     // Yan Profil (Sol / Sağ)
     const isLeft = direction === 'left';
     const faceDir = isLeft ? -1 : 1;
+
+    // Yan Atkuyruğu (Arkada sallanan pigtail)
+    const pigtailX = -faceDir * 9;
+    ctx.fillStyle = palette.hairTie;
+    ctx.beginPath();
+    ctx.roundRect(pigtailX - 1.5, headY + 2, 3, 2.5, 1);
+    ctx.fill();
+
+    ctx.fillStyle = palette.hairDark;
+    ctx.beginPath();
+    ctx.ellipse(pigtailX, headY + 8, 3, 5.2, -faceDir * 0.2, 0, Math.PI * 2);
+    ctx.fill();
 
     // Saç Arka ve Üst Kısmı
     ctx.fillStyle = palette.hairDark;

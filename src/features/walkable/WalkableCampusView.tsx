@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { WalkableCanvasEngine } from './engine/WalkableCanvasEngine';
-import { renderCourtyardBackground } from './engine/courtyardSceneRenderer';
+import {
+  renderCourtyardBackground,
+  renderCourtyardLayeredBackground,
+  renderCourtyardEntities,
+  renderCourtyardForeground,
+} from './engine/courtyardSceneRenderer';
 import { renderClassroomBackground } from './engine/classroomSceneRenderer';
+import { drawCharacter } from './engine/characterRenderer';
 import { WalkableControlsOverlay } from './components/WalkableControlsOverlay';
 import { SmartBoardModal } from './components/SmartBoardModal';
 import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } from './types';
@@ -194,6 +200,31 @@ export function WalkableCampusView({
         onUnreachableTarget: () => {
           setUnreachableMessage('Oraya ulaşılamıyor, lütfen açık bir yola tıkla.');
           setTimeout(() => setUnreachableMessage(null), 2500);
+        },
+        onRenderBackground: (ctx) => {
+          if (currentScene === 'classroom') {
+            renderClassroomBackground(
+              ctx,
+              config.width,
+              config.height,
+              smartBoardVisualStateRef.current.active,
+              smartBoardVisualStateRef.current.poweringOn,
+            );
+          } else {
+            renderCourtyardLayeredBackground(ctx, config.width, config.height);
+          }
+        },
+        onRenderEntities: (ctx, player) => {
+          if (currentScene === 'classroom') {
+            drawCharacter(ctx, player);
+          } else {
+            renderCourtyardEntities(ctx, player, config.width, config.height);
+          }
+        },
+        onRenderForeground: (ctx) => {
+          if (currentScene === 'courtyard') {
+            renderCourtyardForeground(ctx, config.width, config.height);
+          }
         },
         onCustomRender: (ctx) => {
           if (currentScene === 'classroom') {

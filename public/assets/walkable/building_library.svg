@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 170" width="240" height="170">
+  <defs>
+    <radialGradient id="lib-dome-grad" cx="45%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#b88358" />
+      <stop offset="50%" stop-color="#8c5832" />
+      <stop offset="100%" stop-color="#543118" />
+    </radialGradient>
+    <linearGradient id="lib-wall-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#faf5eb" />
+      <stop offset="50%" stop-color="#ece2d0" />
+      <stop offset="100%" stop-color="#d6c6a7" />
+    </linearGradient>
+    <linearGradient id="glass-rose" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f27d6d" />
+      <stop offset="50%" stop-color="#f5b842" />
+      <stop offset="100%" stop-color="#249ab0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Zemin Gölgesi -->
+  <ellipse cx="120" cy="162" rx="112" ry="8" fill="rgba(23,43,71,0.24)" />
+
+  <!-- Sekizgen Taş Gövde (Perspektif kademeli) -->
+  <!-- Arka Yan Kanatlar -->
+  <polygon points="20,48 55,42 55,154 20,154" fill="#d0c0a2" stroke="#bda885" stroke-width="2" />
+  <polygon points="185,42 220,48 220,154 185,154" fill="#c4b292" stroke="#bda885" stroke-width="2" />
+
+  <!-- Ön Ana Cephe -->
+  <rect x="52" y="38" width="136" height="122" rx="4" fill="url(#lib-wall-grad)" stroke="#bda885" stroke-width="2.5" />
+
+  <!-- Geometrik Taş Kabartma Kuşağı (Selçuklu Kündekâri Bordürü) -->
+  <rect x="18" y="38" width="204" height="14" fill="#a66414" stroke="#7a460b" stroke-width="1.5" />
+  <path d="M 22 45 L 30 38 L 38 45 L 46 38 L 54 45 L 62 38 L 70 45 L 78 38 L 86 45 L 94 38 L 102 45 L 110 38 L 118 45 L 126 38 L 134 45 L 142 38 L 150 45 L 158 38 L 166 45 L 174 38 L 182 45 L 190 38 L 198 45 L 206 38 L 214 45 L 222 38" stroke="#fce49f" stroke-width="2" fill="none" />
+
+  <!-- Bakır / Kümbet Kubbe -->
+  <path d="M 68 38 C 68 0 172 0 172 38 Z" fill="url(#lib-dome-grad)" stroke="#422511" stroke-width="2" />
+  <path d="M 92 38 C 92 6 120 6 120 38 M 148 38 C 148 6 120 6 120 38" stroke="#d49c6e" stroke-width="1.5" stroke-opacity="0.5" fill="none" />
+
+  <!-- Kubbe Alemi -->
+  <rect x="118" y="-14" width="4" height="16" fill="#d8972b" />
+  <path d="M 118 -20 A 6 6 0 1 1 125 -13 A 4.5 4.5 0 1 0 118 -20 Z" fill="#f5c35b" />
+
+  <!-- Vitraylı Selçuklu Kemerli Pencereleri (Görsel referanstaki gül pencereli vitraylar) -->
+  <g transform="translate(64, 58)">
+    <path d="M 0 18 Q 14 0 28 18 L 28 54 L 0 54 Z" fill="url(#glass-rose)" stroke="#523922" stroke-width="2" />
+    <!-- Vitray Taş Bölmeleri -->
+    <circle cx="14" cy="22" r="7" stroke="#332111" stroke-width="1.5" fill="none" />
+    <path d="M 14 0 L 14 54 M 0 34 L 28 34" stroke="#332111" stroke-width="1.5" />
+  </g>
+
+  <g transform="translate(148, 58)">
+    <path d="M 0 18 Q 14 0 28 18 L 28 54 L 0 54 Z" fill="url(#glass-rose)" stroke="#523922" stroke-width="2" />
+    <circle cx="14" cy="22" r="7" stroke="#332111" stroke-width="1.5" fill="none" />
+    <path d="M 14 0 L 14 54 M 0 34 L 28 34" stroke="#332111" stroke-width="1.5" />
+  </g>
+
+  <!-- Orta Selçuklu Kemerli Giriş -->
+  <rect x="98" y="78" width="44" height="82" rx="3" fill="#dfd0b5" stroke="#bda885" stroke-width="2" />
+  <path d="M 103 100 Q 120 84 137 100 L 137 158 L 103 158 Z" fill="#1b3152" stroke="#87500e" stroke-width="2" />
+
+  <!-- Ahşap Kapı -->
+  <rect x="105" y="104" width="14" height="54" fill="#523a26" stroke="#301f11" stroke-width="1" />
+  <rect x="121" y="104" width="14" height="54" fill="#61452e" stroke="#301f11" stroke-width="1" />
+  <circle cx="116" cy="132" r="2" fill="#f5c35b" />
+  <circle cx="124" cy="132" r="2" fill="#f5c35b" />
+
+  <!-- Basamaklar -->
+  <rect x="92" y="156" width="56" height="5" rx="1.5" fill="#fcf7ee" stroke="#bda885" stroke-width="1" />
+  <rect x="88" y="161" width="64" height="5" rx="2" fill="#ece0c9" stroke="#bda885" stroke-width="1" />
+</svg>

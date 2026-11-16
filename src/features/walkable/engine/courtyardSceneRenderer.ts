@@ -8,6 +8,204 @@
  * mevcut motor ve testlerle %100 uyumlu olarak korunmuştur.
  */
 
+import type { PlayerCharacter } from '../types';
+import { drawCharacter } from './characterRenderer';
+
+export interface DepthEntity {
+  id: string;
+  baseY: number;
+  draw: (ctx: CanvasRenderingContext2D) => void;
+}
+
+/**
+ * Katmanlı Zemin ve Arka Plan Çizimi:
+ * Zemin taş dokusu, surlar, Selçuklu sekiz köşeli yıldız taban mozaiği, yollar ve çiçek tarhları.
+ */
+export function renderCourtyardLayeredBackground(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+) {
+  // 1. ZEMİN (Katmanlı Sıcak Taş Meydan & Bahçe Dokusu)
+  drawCourtyardGround(ctx, width, height);
+
+  // 2. ARKA PLAN SINIR DUVARLARI (Selçuklu Taş Kemerli Surlar & Mazgallar)
+  drawPerimeterWall(ctx, width);
+
+  // 3. MERKEZ SEKİZ KÖŞELİ YILDIZ MEYDANI ZEMİN MOZAİĞİ
+  const centerX = width / 2; // 700
+  const centerY = height / 2 + 30; // 480
+  drawCentralStarPlazaGround(ctx, centerX, centerY);
+
+  // 4. TAŞ DÖŞELİ BAĞLANTI YOLLARI (5 Ana Rota)
+  drawStonePathways(ctx, centerX, centerY);
+
+  // 5. ZEMİN ÇİÇEK TARHLARI (Lavanta ve gül hatmi)
+  drawFlowerPatch(ctx, 450, 680);
+  drawFlowerPatch(ctx, 880, 680);
+  drawFlowerPatch(ctx, 520, 480);
+  drawFlowerPatch(ctx, 880, 480);
+}
+
+/**
+ * Y-Sorting Derinlik Sıralı Varlıklar ve Öğrenci Karakteri Çizimi:
+ * Tüm binalar, şadırvan haznesi ve fıskiye jeti, banklar, ağaçlar ve karakter
+ * zemin temas noktasına (baseY) göre sıralanır; arkada kalan önce, önde kalan sonra çizilir.
+ */
+export function renderCourtyardEntities(
+  ctx: CanvasRenderingContext2D,
+  player: PlayerCharacter,
+  width: number,
+  height: number,
+) {
+  const isReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const now = isReducedMotion ? 0 : performance.now();
+
+  const centerX = width / 2; // 700
+  const centerY = height / 2 + 30; // 480
+
+  const entities: DepthEntity[] = [
+    // BİNALAR
+    {
+      id: 'bldg-library',
+      baseY: 100 + 170, // 270
+      draw: (c) => drawLibraryBuilding(c, 580, 100, 240, 170),
+    },
+    {
+      id: 'bldg-discovery',
+      baseY: 140 + 180, // 320
+      draw: (c) => drawDiscoveryBuilding(c, 180, 140, 220, 180),
+    },
+    {
+      id: 'bldg-english',
+      baseY: 140 + 180, // 320
+      draw: (c) => drawEnglishBuilding(c, 860, 140, 220, 180, now),
+    },
+    {
+      id: 'pavilion-journey',
+      baseY: 560 + 140, // 700
+      draw: (c) => drawJourneyPavilion(c, 220, 560, 190, 140),
+    },
+    {
+      id: 'kiosk-missions',
+      baseY: 560 + 140, // 700
+      draw: (c) => drawMissionsKiosk(c, 910, 560, 190, 140),
+    },
+
+    // MERKEZ ŞADIRVAN & FISKİYE (Merkez havuz mermer çanağı ve su jeti)
+    {
+      id: 'fountain',
+      baseY: centerY + 10, // 490
+      draw: (c) => drawCentralFountainEntity(c, centerX, centerY, now),
+    },
+
+    // BAHÇE BANKLARI
+    {
+      id: 'bench-left',
+      baseY: 480 + 16, // 496
+      draw: (c) => drawGardenBench(c, 420, 480),
+    },
+    {
+      id: 'bench-right',
+      baseY: 480 + 16, // 496
+      draw: (c) => drawGardenBench(c, 980, 480),
+    },
+
+    // AĞAÇLAR (Geniş gölgeli ağaçlar)
+    {
+      id: 'tree-1',
+      baseY: 380 + 34, // 414
+      draw: (c) => drawLushTree(c, 120, 380, 1, now),
+    },
+    {
+      id: 'tree-2',
+      baseY: 520 + 34, // 554
+      draw: (c) => drawLushTree(c, 120, 520, 0.95, now),
+    },
+    {
+      id: 'tree-3',
+      baseY: 290 + 34, // 324
+      draw: (c) => drawLushTree(c, 500, 290, 0.9, now),
+    },
+    {
+      id: 'tree-4',
+      baseY: 380 + 34, // 414
+      draw: (c) => drawLushTree(c, 1240, 380, 1, now),
+    },
+    {
+      id: 'tree-5',
+      baseY: 540 + 34, // 574
+      draw: (c) => drawLushTree(c, 1240, 540, 0.95, now),
+    },
+    {
+      id: 'tree-6',
+      baseY: 760 + 34, // 794
+      draw: (c) => drawLushTree(c, 700, 760, 1.05, now),
+    },
+
+    // SERVİ AĞAÇLARI (Selçuklu Avlu Konsept Görselindeki Zarif Serviler)
+    {
+      id: 'cypress-1',
+      baseY: 270,
+      draw: (c) => drawCypressTree(c, 380, 250, 1, now),
+    },
+    {
+      id: 'cypress-2',
+      baseY: 270,
+      draw: (c) => drawCypressTree(c, 1040, 250, 1, now),
+    },
+    {
+      id: 'cypress-3',
+      baseY: 720,
+      draw: (c) => drawCypressTree(c, 160, 700, 1.1, now),
+    },
+    {
+      id: 'cypress-4',
+      baseY: 720,
+      draw: (c) => drawCypressTree(c, 1260, 700, 1.1, now),
+    },
+
+    // ÖĞRENCİ KARAKTERİ (Y-Sorting ile derinlik sırasına dâhil edilir)
+    {
+      id: 'player-character',
+      baseY: player.y + 18, // Ayak temas noktası
+      draw: (c) => drawCharacter(c, player),
+    },
+  ];
+
+  // Derinlik Sıralaması (Y-Sorting): baseY küçük olan (daha kuzeyde/arkada) önce çizilir
+  entities.sort((a, b) => a.baseY - b.baseY);
+
+  for (let i = 0; i < entities.length; i++) {
+    entities[i].draw(ctx);
+  }
+}
+
+/**
+ * Ön Plan ve Sinematik Çerçeve Çizimi:
+ * Üst köşelerden sarkan zengin yaprak saçağı ve yumuşak atmosferik güneş ışığı süzülmesi.
+ */
+export function renderCourtyardForeground(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height?: number,
+) {
+  void height;
+  // 1. Sol Üst Ön Plan Ağaç Dalı ve Yaprak Çerçevesi (Cinematic Foreground Branch)
+  drawCanopyBranch(ctx, 0, 0, false);
+
+  // 2. Sağ Üst Ön Plan Ağaç Dalı ve Yaprak Çerçevesi (Aynalanmış)
+  drawCanopyBranch(ctx, width, 0, true);
+
+  // 3. Atmosferik Sıcak Gün Işığı Demetleri (Cinematic Sunbeams)
+  drawCinematicSunbeams(ctx, width);
+}
+
+/**
+ * Geriye dönük uyumlu tam sahne çizicisi.
+ */
 export function renderCourtyardBackground(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -19,38 +217,23 @@ export function renderCourtyardBackground(
 
   const now = isReducedMotion ? 0 : performance.now();
 
-  // 1. ZEMİN (Katmanlı Sıcak Taş Meydan & Bahçe Dokusu)
-  drawCourtyardGround(ctx, width, height);
+  // 1. Zemin ve Arka Plan
+  renderCourtyardLayeredBackground(ctx, width, height);
 
-  // 2. ARKA PLAN SINIR DUVARLARI (Selçuklu Taş Kemerli Surlar & Mazgallar)
-  drawPerimeterWall(ctx, width);
+  // 2. Binalar ve Peyzaj (Geleneksel tek katman çağrısı)
+  const centerX = width / 2;
+  const centerY = height / 2 + 30;
 
-  // 3. MERKEZ SEKİZ KÖŞELİ YILDIZ MEYDANI VE ŞADIRVAN (Havuz / Fıskiye)
-  const centerX = width / 2; // 700
-  const centerY = height / 2 + 30; // 480
-  drawCentralStarPlaza(ctx, centerX, centerY, now);
-
-  // 4. TAŞ DÖŞELİ BAĞLANTI YOLLARI (5 Ana Rota)
-  drawStonePathways(ctx, centerX, centerY);
-
-  // 5. MİMARİ YAPILAR VE BİNALAR
-  // A. İngilizce Dünyası (Kuzeydoğu — Turkuaz Çinili Anıtsal Taç Kapılı Mektep)
+  drawCentralFountainEntity(ctx, centerX, centerY, now);
   drawEnglishBuilding(ctx, 860, 140, 220, 180, now);
-
-  // B. Gezi ve Keşif (Kuzeybatı — Pişmiş Toprak / Tuğla Kubbeli Medrese)
   drawDiscoveryBuilding(ctx, 180, 140, 220, 180);
-
-  // C. Kitap ve Hikâye Dünyası (Kuzey Merkez — Altın Kumtaşı Kütüphane Kümbeti)
   drawLibraryBuilding(ctx, 580, 100, 240, 170);
-
-  // D. Kampüs Yolculuğum (Güneybatı — Adaçayı Yeşili Kemerli Selçuklu Köşkü)
   drawJourneyPavilion(ctx, 220, 560, 190, 140);
-
-  // E. Keşif Görevleri Panosu (Güneydoğu — Tarihi Kitabe & Pano Köşkü)
   drawMissionsKiosk(ctx, 910, 560, 190, 140);
-
-  // 6. PEYZAJ UNSURLARI (Ağaçlar, Oturma Bankları, Çiçek Tarhları, Selçuklu Sokak Kandilleri)
   drawCourtyardLandscape(ctx, now);
+
+  // 3. Ön Plan
+  renderCourtyardForeground(ctx, width, height);
 }
 
 /**
@@ -131,13 +314,12 @@ function drawPerimeterWall(ctx: CanvasRenderingContext2D, width: number) {
 }
 
 /**
- * Merkez Sekiz Köşeli Selçuklu Yıldız Meydanı ve Şadırvan Havuzu.
+ * Merkez Sekiz Köşeli Selçuklu Yıldız Meydanı Zemin Mozaiği (Arka Plan Zemin Katmanı).
  */
-function drawCentralStarPlaza(
+function drawCentralStarPlazaGround(
   ctx: CanvasRenderingContext2D,
   cx: number,
   cy: number,
-  now: number,
 ) {
   ctx.save();
   ctx.translate(cx, cy);
@@ -187,6 +369,21 @@ function drawCentralStarPlaza(
     ctx.fillRect(-62, -62, 124, 124);
     ctx.restore();
   }
+
+  ctx.restore();
+}
+
+/**
+ * Merkez Mermer Şadırvan ve Fıskiye Varlığı (Y-Sorting ile derinlik sıralı).
+ */
+function drawCentralFountainEntity(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  now: number,
+) {
+  ctx.save();
+  ctx.translate(cx, cy);
 
   // 3. Merkez Mermer Şadırvan / Havuz Kaidesi
   // Havuz dış gölgesi
@@ -240,7 +437,36 @@ function drawCentralStarPlaza(
   ctx.lineWidth = 2;
   ctx.stroke();
 
+  // Yükselen Su Jeti ve Parıltı (Konsept görselindeki zarif fıskiye su spreyi)
+  ctx.save();
+  const sprayPulse = Math.sin(now / 300) * 2;
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+  ctx.beginPath();
+  ctx.ellipse(0, -14 + sprayPulse * 0.5, 3.5, 9, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Kristal su damlaları
+  ctx.fillStyle = '#e0f2fe';
+  ctx.beginPath();
+  ctx.arc(-4, -18 + sprayPulse, 1.2, 0, Math.PI * 2);
+  ctx.arc(4, -17 - sprayPulse, 1.2, 0, Math.PI * 2);
+  ctx.arc(0, -26, 1.8, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
+
+  ctx.restore();
+}
+
+/**
+ * Geriye dönük uyumluluk için birleşik meydan çizimi.
+ */
+export function drawCentralStarPlaza(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  now: number,
+) {
+  drawCentralStarPlazaGround(ctx, cx, cy);
+  drawCentralFountainEntity(ctx, cx, cy, now);
 }
 
 /**
@@ -916,6 +1142,154 @@ function drawLantern(
   ctx.moveTo(x + 0.5, y - 4);
   ctx.lineTo(x + 6, y);
   ctx.lineTo(x - 5, y);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/**
+ * Zarif Servi Ağacı (Konsept görselindeki Selçuklu avlu servileri).
+ */
+function drawCypressTree(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  scale: number,
+  now: number,
+) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+
+  const isReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const sway = isReducedMotion ? 0 : Math.sin((now + x * 3) / 1400) * 1.2;
+
+  // Zemin gölgesi
+  ctx.fillStyle = 'rgba(23, 43, 71, 0.22)';
+  ctx.beginPath();
+  ctx.ellipse(0, 26, 20, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Gövde
+  ctx.fillStyle = '#3e2723';
+  ctx.fillRect(-2, 10, 4, 16);
+
+  // Servi Tacı Katmanları
+  ctx.save();
+  ctx.translate(sway, 0);
+
+  // Alt katman
+  ctx.fillStyle = '#14532d';
+  ctx.beginPath();
+  ctx.moveTo(0, -50);
+  ctx.quadraticCurveTo(-14, -20, -10, 12);
+  ctx.quadraticCurveTo(0, 16, 10, 12);
+  ctx.quadraticCurveTo(14, -20, 0, -50);
+  ctx.fill();
+
+  // Orta aydınlık katman (Soldan güneş)
+  ctx.fillStyle = '#16a34a';
+  ctx.beginPath();
+  ctx.moveTo(0, -52);
+  ctx.quadraticCurveTo(-11, -22, -7, 10);
+  ctx.quadraticCurveTo(0, 12, 6, 10);
+  ctx.quadraticCurveTo(10, -22, 0, -52);
+  ctx.fill();
+
+  // Sol aydınlık güneş vurgusu
+  ctx.strokeStyle = '#86efac';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-1, -48);
+  ctx.quadraticCurveTo(-7, -20, -5, 6);
+  ctx.stroke();
+
+  ctx.restore();
+  ctx.restore();
+}
+
+/**
+ * Sinematik Ön Plan Ağaç Dalı ve Yaprak Saçağı.
+ */
+function drawCanopyBranch(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  mirrored: boolean,
+) {
+  ctx.save();
+  ctx.translate(x, y);
+  if (mirrored) {
+    ctx.scale(-1, 1);
+  }
+
+  // Kalın Ana Dal (Koyu ahşap dokusu)
+  ctx.fillStyle = '#2d1810';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.bezierCurveTo(40, 12, 100, 28, 160, 24);
+  ctx.bezierCurveTo(220, 20, 260, 48, 290, 78);
+  ctx.bezierCurveTo(260, 68, 220, 52, 170, 42);
+  ctx.bezierCurveTo(110, 32, 50, 36, 0, 26);
+  ctx.closePath();
+  ctx.fill();
+
+  // Yan dal
+  ctx.fillStyle = '#2d1810';
+  ctx.beginPath();
+  ctx.moveTo(130, 32);
+  ctx.quadraticCurveTo(160, 60, 178, 102);
+  ctx.lineTo(172, 104);
+  ctx.quadraticCurveTo(154, 62, 126, 36);
+  ctx.closePath();
+  ctx.fill();
+
+  // Sarkan Yaprak Kümeleri (Konsept görselindeki zengin ön plan hissi)
+  const leafClusters = [
+    { cx: 70, cy: 24, r: 30, color: '#14532d' },
+    { cx: 120, cy: 38, r: 28, color: '#166534' },
+    { cx: 170, cy: 42, r: 32, color: '#15803d' },
+    { cx: 220, cy: 56, r: 28, color: '#16a34a' },
+    { cx: 270, cy: 78, r: 26, color: '#22c55e' },
+    { cx: 180, cy: 96, r: 22, color: '#16a34a' },
+    { cx: 146, cy: 70, r: 24, color: '#15803d' },
+  ];
+
+  for (let i = 0; i < leafClusters.length; i++) {
+    const leaf = leafClusters[i];
+    ctx.fillStyle = leaf.color;
+    ctx.beginPath();
+    ctx.arc(leaf.cx, leaf.cy, leaf.r, 0, Math.PI * 2);
+    ctx.fill();
+    // Güneş Işığı Vurgusu
+    ctx.fillStyle = 'rgba(187, 247, 208, 0.4)';
+    ctx.beginPath();
+    ctx.arc(leaf.cx - 5, leaf.cy - 6, leaf.r * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+/**
+ * Atmosferik Sıcak Gün Işığı Demetleri (Cinematic Sunbeams).
+ */
+function drawCinematicSunbeams(ctx: CanvasRenderingContext2D, width: number) {
+  ctx.save();
+  const beamGrad = ctx.createLinearGradient(0, 0, width * 0.7, 700);
+  beamGrad.addColorStop(0, 'rgba(254, 243, 199, 0.09)');
+  beamGrad.addColorStop(0.4, 'rgba(253, 230, 138, 0.04)');
+  beamGrad.addColorStop(1, 'rgba(253, 230, 138, 0)');
+
+  ctx.fillStyle = beamGrad;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(width * 0.5, 0);
+  ctx.lineTo(width * 0.8, 900);
+  ctx.lineTo(0, 700);
   ctx.closePath();
   ctx.fill();
 

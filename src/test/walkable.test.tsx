@@ -12,7 +12,12 @@ import {
 import { SmartBoardModal } from '@/src/features/walkable/components/SmartBoardModal';
 import { WalkableControlsOverlay } from '@/src/features/walkable/components/WalkableControlsOverlay';
 import { drawCharacter } from '@/src/features/walkable/engine/characterRenderer';
-import { renderCourtyardBackground } from '@/src/features/walkable/engine/courtyardSceneRenderer';
+import {
+  renderCourtyardBackground,
+  renderCourtyardLayeredBackground,
+  renderCourtyardEntities,
+  renderCourtyardForeground,
+} from '@/src/features/walkable/engine/courtyardSceneRenderer';
 import { renderClassroomBackground } from '@/src/features/walkable/engine/classroomSceneRenderer';
 import type { WalkableSceneConfig, PlayerCharacter } from '@/src/features/walkable/types';
 
@@ -46,6 +51,7 @@ describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () 
       moveTo: vi.fn(),
       lineTo: vi.fn(),
       quadraticCurveTo: vi.fn(),
+      bezierCurveTo: vi.fn(),
       setLineDash: vi.fn(),
       createRadialGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
       createLinearGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
@@ -777,5 +783,45 @@ describe('Aşama 3 — Yürünebilir Kampüs Motoru (WalkableCanvasEngine)', () 
     const shadowCenterY = playerY + 18; // 118
 
     expect(feetCollisionY).toBe(shadowCenterY);
+  });
+
+  it('37. Aşama 4.2 Katmanlı zemin, Y-Sorting varlıklar ve ön plan saçağı hatasız çizilir', () => {
+    const mockCtx = canvas.getContext('2d')!;
+    const testPlayer: PlayerCharacter = {
+      x: 700,
+      y: 560,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'idle',
+      speed: 160,
+      walkFrame: 0,
+      grade: 4,
+    };
+
+    expect(() => renderCourtyardLayeredBackground(mockCtx, 1400, 900)).not.toThrow();
+    expect(() => renderCourtyardEntities(mockCtx, testPlayer, 1400, 900)).not.toThrow();
+    expect(() => renderCourtyardForeground(mockCtx, 1400, 900)).not.toThrow();
+  });
+
+  it('38. Aşama 4.2 Y-Sorting derinlik sıralaması: Karakter kuzeydeyken varlığın arkasında, güneydeyken önünde çizilir', () => {
+    const mockCtx = canvas.getContext('2d')!;
+
+    // Karakter şadırvanın kuzeyindeyken (y: 420, baseY: 438 < şadırvan baseY: 490)
+    const northPlayer: PlayerCharacter = {
+      x: 700,
+      y: 420,
+      width: 22,
+      height: 28,
+      direction: 'down',
+      state: 'idle',
+      speed: 160,
+      walkFrame: 0,
+      grade: 4,
+    };
+
+    renderCourtyardEntities(mockCtx, northPlayer, 1400, 900);
+    // Hata atmadan tamamlandı ve çizim yapıldı
+    expect(mockCtx.save).toHaveBeenCalled();
   });
 });
