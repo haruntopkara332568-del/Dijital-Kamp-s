@@ -121,23 +121,32 @@ test.describe('3. Sınıf Keşfet Masası — Sinematik "Hello! Tanışma Bahçe
     await expect(page.getByText('Sen', { exact: true })).toBeVisible();
     await expect(page.getByText(/Karakterler: Elif, Can, Sen \(3 kişi\)/i)).toBeVisible();
 
+    // KURAL KONTROLÜ: Telaffuz butonları ve okunuş kılavuzu
+    const listenNormalBtn = page.getByRole('button', { name: /İngilizce cümleyi dinle/i });
+    const listenSlowBtn = page.getByRole('button', { name: /İngilizce cümleyi yavaş ve hece vurgulu dinle/i });
+    await expect(listenNormalBtn).toBeVisible();
+    await expect(listenSlowBtn).toBeVisible();
+    await expect(page.getByText('he-LO', { exact: true })).toBeVisible();
+
     await page.screenshot({ path: 'docs/assets/grade3_hello_garden_modal.png' });
 
-    // 7. Adım 1: Elif'in Selamlaşmasına Karşılık Ver
-    await expect(page.getByText(/"Hello! Welcome to our garden\."/i)).toBeVisible();
-    const opt1 = page.getByRole('button', { name: /"Hello! I am glad to be here\."/i });
+    // 7. Adım 1: Elif'in Selamlaşmasına Karşılık Ver ("Hello!")
+    await expect(page.getByText('"Hello!"').first()).toBeVisible();
+    const opt1 = page.getByRole('button', { name: /"Hello!"/i });
     await expect(opt1).toBeVisible();
     await opt1.click();
 
-    // 8. Adım 2: Can Adını Sorar
-    await expect(page.getByText(/"What is your name\?"/i)).toBeVisible();
+    // 8. Adım 2: Can Adını Sorar ("What is your name?")
+    await expect(page.getByText('"What is your name?"', { exact: true })).toBeVisible();
+    await expect(page.getByText('UOT iz yor NEYM', { exact: true })).toBeVisible();
     const opt2 = page.getByRole('button', { name: /"I am Deniz\."/i });
     await expect(opt2).toBeVisible();
     await opt2.click();
 
-    // 9. Adım 3: Elif ve Can Tanışmaktan Memnun Olur
-    await expect(page.getByText(/"Nice to meet you! Let's explore together\."/i)).toBeVisible();
-    const opt3 = page.getByRole('button', { name: /"Nice to meet you too!"/i });
+    // 9. Adım 3: Elif & Can Memnun Olur ("Nice to meet you.")
+    await expect(page.getByText('"Nice to meet you."').first()).toBeVisible();
+    await expect(page.getByText('NAYS tu MİT yu', { exact: true })).toBeVisible();
+    const opt3 = page.getByRole('button', { name: /"Nice to meet you\."/i });
     await expect(opt3).toBeVisible();
     await opt3.click();
 
@@ -145,7 +154,7 @@ test.describe('3. Sınıf Keşfet Masası — Sinematik "Hello! Tanışma Bahçe
     await expect(
       page.getByRole('heading', { name: /Harika! Tanışma Bahçesi'ni Keşfettin!/i }),
     ).toBeVisible();
-    await expect(page.getByText(/Öğrendiğin İfadeler/i)).toBeVisible();
+    await expect(page.getByText(/Öğrendiğin Tanışma Kalıpları/i)).toBeVisible();
     await page.screenshot({ path: 'docs/assets/grade3_hello_garden_completed.png' });
 
     // 11. Masadan Kalk / Sınıfa Dön

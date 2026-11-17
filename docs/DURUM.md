@@ -1,3 +1,32 @@
+# Proje Durum Raporu — Sürüm 5.1.2 (3. Sınıf Keşfet Masası: Sinematik "Hello! Tanışma Bahçesi" Görsel, Konuşma Dili ve Çift Hızlı Telaffuz İyileştirmesi)
+
+## 3. Sınıf Keşfet Masası — "Hello! Tanışma Bahçesi" Kapsamlı Düzeltme (`feat/english-four-learning-tables`)
+- **Kapsam ve İzolasyon Kuralı**:
+  - Yalnızca 3. sınıf Keşfet Masası ("Hello! Tanışma Bahçesi") iyileştirildi.
+  - `main` dalı, diğer sınıf düzeyleri (2, 4, 5, 6, 7), diğer masalar (Öğren, Üret, Paylaş), akıllı tahta koruması, avlu mimarisi, giriş kapısı, veri modeli ve `localStorage` / `IndexedDB` anahtarları kesinlikle değiştirilmedi.
+- **1. Görsel Düzeltmeler (Sinematik 2.5D Sahne)**:
+  - Basit modal görünümü bütünüyle kaldırıldı. Yerine 2.5D animasyon filmi estetiğinde, sıcak, çocuk dostu bir açık hava bahçe sahnesi entegre edildi.
+  - Güneş ışıkları huzmesi (`sunGlow`), sabah gökyüzü degradeleri, uzakta Selçuklu sivri taş kemer silüeti, servi ve zeytin ağaçları, kıvrımlı taş yol ve renkli çiçek detayları eklendi.
+  - Sahne üzerinde 3 karakter (Elif, Can, Sen) stilize ve canlı vektör çizimleriyle yerleştirildi; konuşan karaktere aktif dalga animasyonu ve odak vurgusu verildi.
+- **2. Konuşma Dili Düzeltmeleri (3. Sınıf Seviyesine İndirgeme)**:
+  - Karmaşık veya yetişkin üslubundaki ifadeler temizlendi; MEB 3. sınıf İngilizce müfredatına birebir uygun, 3 adımlı doğal tanışma akışı kurgulandı:
+    - **1. Adım**: Elif karşılar: *"Hello!"* (he-LO) — Öğrenci seçenekleri: *"Hello!"* veya *"Good morning!"*.
+    - **2. Adım**: Can adını sorar: *"What is your name?"* (UOT iz yor NEYM) — Öğrenci seçenekleri: *"I am Deniz."*, *"I am a student."*, *"I am an Explorer."*.
+    - **3. Adım**: Elif & Can memnun olur: *"Nice to meet you."* (NAYS tu MİT yu) — Öğrenci seçenekleri: *"Nice to meet you."*, *"Let's explore!"*.
+    - **Tamamlama Ekranı**: Sade özet kartı (`Hello!`, `What is your name?`, `Nice to meet you.`), *"Öğren Masasına Git (2. Masa)"* ve *"Masadan Kalk / Sınıfa Dön"* butonları. Öğrenci masadan kalktığında sınıfta masanın yanında kalır.
+- **3. Telaffuz Ayarları ve Çift Hızlı Dinleme Desteği**:
+  - Web Speech API tabanlı iki ayrı dinleme butonu konuşma balonuna yerleştirildi:
+    - **[🔊 Dinle]**: 3. sınıf çocuk pedagojisine uygun `rate: 0.82`, `pitch: 1.06` doğal konuşma hızı.
+    - **[🐢 Yavaş Dinle]**: Hece vurgularını kaçırmayan, net ve yavaş `rate: 0.62`, `pitch: 1.0` çalışma hızı.
+  - Ses çalarken konuşma balonuna turkuaz ışıma ve aktif durum halkası (`isCurrentSentenceSpeaking`) eklendi.
+  - Karmaşık IPA alfabeleri yerine 3. sınıf öğrencisinin rahat okuyacağı sade heceleme kılavuzu eklendi (`he-LO`, `UOT iz yor NEYM`, `NAYS tu MİT yu`).
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 97 / 97 birim testi geçti (64 walkable + 33 campus).
+  - `npm run build`: Başarılı (1.49s).
+  - Playwright E2E (`e2e/grade3_hello_garden.spec.ts`): Chromium ve Mobile-Chrome başarıyla geçti (18.2s).
+
 # Proje Durum Raporu — Sürüm 5.1.1 (3. Sınıf Keşfet Masası: "Hello! Tanışma Bahçesi" Prototipi)
 
 ## 3. Sınıf Keşfet Masası — "Hello! Tanışma Bahçesi" Prototipi (`feat/english-four-learning-tables`)

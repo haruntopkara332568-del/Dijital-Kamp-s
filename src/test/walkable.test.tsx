@@ -1739,7 +1739,7 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Hello! Tanışma Bahçesi/i);
     });
 
-    it('63. "Hello! Tanışma Bahçesi": En fazla 3 karakter (Elif, Can, Sen) ve 3 adımlı sade tanışma akışı sunar', async () => {
+    it('63. "Hello! Tanışma Bahçesi": En fazla 3 karakter (Elif, Can, Sen), Dinle + Yavaş Dinle ve okunuş yardımlı 3 adımlı akış sunar', async () => {
       await clearAllCampusData();
       saveStudentState({
         ...createInitialStudentState(),
@@ -1766,33 +1766,39 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
       expect(screen.getByText('Sen')).toBeInTheDocument();
       expect(screen.getByText(/Karakterler: Elif, Can, Sen \(3 kişi\)/i)).toBeInTheDocument();
 
-      // 2. Adım 1: Elif selam verir
-      expect(screen.getByText(/Elif konuşuyor/i)).toBeInTheDocument();
-      expect(screen.getByText(/"Hello! Welcome to our garden\."/i)).toBeInTheDocument();
+      // 2. Telaffuz butonları ve okunuş yardımı mevcuttur
+      expect(screen.getByRole('button', { name: /İngilizce cümleyi dinle/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /İngilizce cümleyi yavaş ve hece vurgulu dinle/i })).toBeInTheDocument();
+      expect(screen.getAllByText(/he-LO/i).length).toBeGreaterThan(0);
 
-      // Öğrenci 1. cevabı seçer ("Hello! I am glad to be here.")
-      const opt1 = screen.getByRole('button', { name: /"Hello! I am glad to be here\."/i });
+      // 3. Adım 1: Elif selam verir ("Hello!")
+      expect(screen.getByText(/Elif konuşuyor/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/"Hello!"/i).length).toBeGreaterThan(0);
+
+      // Öğrenci 1. cevabı seçer ("Hello!")
+      const opt1 = screen.getByRole('button', { name: /"Hello!"/i });
       fireEvent.click(opt1);
 
-      // 3. Adım 2: Can adını sorar
+      // 4. Adım 2: Can adını sorar ("What is your name?")
       expect(screen.getByText(/Can konuşuyor/i)).toBeInTheDocument();
       expect(screen.getByText(/"What is your name\?"/i)).toBeInTheDocument();
+      expect(screen.getByText(/UOT iz yor NEYM/i)).toBeInTheDocument();
 
       // Öğrenci 2. cevabı seçer ("I am Deniz.")
       const opt2 = screen.getByRole('button', { name: /"I am Deniz\."/i });
       fireEvent.click(opt2);
 
-      // 4. Adım 3: Elif ve Can tanışmaktan memnun olur
+      // 5. Adım 3: Elif ve Can tanışmaktan memnun olur ("Nice to meet you.")
       expect(screen.getByText(/Elif & Can konuşuyor/i)).toBeInTheDocument();
-      expect(screen.getByText(/"Nice to meet you! Let's explore together\."/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/"Nice to meet you\."/i).length).toBeGreaterThan(0);
 
-      // Öğrenci 3. cevabı seçer ("Nice to meet you too!")
-      const opt3 = screen.getByRole('button', { name: /"Nice to meet you too!"/i });
+      // Öğrenci 3. cevabı seçer ("Nice to meet you.")
+      const opt3 = screen.getByRole('button', { name: /"Nice to meet you\."/i });
       fireEvent.click(opt3);
 
-      // 5. Görev başarıyla tamamlanır
+      // 6. Görev başarıyla tamamlanır
       expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(/Harika! Tanışma Bahçesi'ni Keşfettin!/i);
-      expect(screen.getByText(/Öğrendiğin İfadeler/i)).toBeInTheDocument();
+      expect(screen.getByText(/Öğrendiğin Tanışma Kalıpları/i)).toBeInTheDocument();
 
       // Sonraki masaya git butonu
       const nextBtn = screen.getByRole('button', { name: /Öğren Masasına Git \(2\. Masa\)/i });

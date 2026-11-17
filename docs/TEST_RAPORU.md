@@ -1,3 +1,27 @@
+# Test ve Kalite Güvence Raporu — Sürüm 5.1.2 (3. Sınıf Keşfet Masası: "Hello! Tanışma Bahçesi" Görsel, Konuşma Dili ve Telaffuz Desteği)
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (strict TypeScript).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **97 / 97 test** (`src/test/walkable.test.tsx` [64 test] + `src/test/campus.test.tsx` [33 test], `7.2s`):
+  - 62. 3. Sınıf Keşfet Masası: "Hello! Tanışma Bahçesi" prototip başlığını ve özel prototip rozetini açar.
+  - 63. "Hello! Tanışma Bahçesi": En fazla 3 karakter (Elif, Can, Sen), çift hızlı telaffuz (`Dinle` & `Yavaş Dinle`), hece kılavuzu ve 3 adımlı sade tanışma akışı sunar.
+  - 64. Diğer sınıflar veya diğer masalar Tanışma Bahçesi prototipinden etkilenmez, orijinal akışlarını korur.
+- **`npx playwright test e2e/grade3_hello_garden.spec.ts --workers=1`**: Geçti — **2 / 2 test** (`chromium` [6.3s] + `mobile-chrome` [7.6s], toplam `18.2s`):
+  - 1. Kapıdan girildi -> Avluya varıldı -> İngilizce sınıfına girildi.
+  - 2. Sınıf Seçim Panosu'ndan 3. Sınıf seçildi.
+  - 3. 1. Keşfet Masası'na yüründü ve oturuldu.
+  - 4. "Hello! Tanışma Bahçesi" sinematik sahnesi açıldı; Elif, Can ve Sen karakterleri, `Dinle` ve `Yavaş Dinle` butonları, okunuş kılavuzu (`he-LO`) doğrulandı (`grade3_hello_garden_modal.png`).
+  - 5. 3 adımlı sade diyalog tamamlandı: `Hello!`, `What is your name?`, `Nice to meet you.`.
+  - 6. Tamamlama ekranı ve öğrenilen ifadeler özet kartı doğrulandı (`grade3_hello_garden_completed.png`).
+  - 7. "Masadan Kalk / Sınıfa Dön" butonuna basıldığında modal kapandı ve öğrencinin sınıfta, masanın yanında kaldığı doğrulandı (`grade3_hello_garden_return_classroom.png`).
+- **`npm run build` (`vite build`)**: Geçti — **1.49s** içinde hatasız üretim derlemesi oluşturuldu.
+
+## 2. Test Kanıt Ekran Görüntüleri (`docs/assets/`):
+- `grade3_hello_garden_modal.png`: 3. Sınıf Keşfet Masası "Hello! Tanışma Bahçesi" 2.5D bahçe sahnesi, 3 karakter, çift hızlı ses dinleme düğmeleri ve okunuş kılavuzu.
+- `grade3_hello_garden_completed.png`: Tanışma Bahçesi tamamlama ve öğrenilen ifadeler özet kartı.
+- `grade3_hello_garden_return_classroom.png`: Masadan kalkıldığında öğrencinin sınıfta, masanın hemen yanında kaldığını kanıtlayan ekran görüntüsü.
+
 # Test ve Kalite Güvence Raporu — Sürüm 5.1.1 (3. Sınıf Keşfet Masası: "Hello! Tanışma Bahçesi" Prototipi)
 
 ## 1. Çalıştırıldı ve Geçti
