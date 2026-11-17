@@ -1,3 +1,29 @@
+# Proje Durum Raporu — Sürüm 6.1.0 (Aşama 6.1: 3. Sınıf Keşfet Masası — "Greetings / Selamlaşma" Görsel Destekli Öğrenme ve Eşleştirme)
+
+## 3. Sınıf Keşfet Masası — Görsel Destekli Öğrenme ve Eşleştirme Etkinliği (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu ve Dokunulmayan Sistemler**:
+  - `main` dalı, üretim ortamı, Selçuklu Taç Kapı, yürünebilir avlu mimarisi, karakter ve kamera kontrol altyapısı, İngilizce sınıfı mimarisi, 4 masanın yerleşimi, Sınıf Panosu, Akıllı Tahta kilidi ve koruma mantığı, diğer masalar (Öğren, Üret, Paylaş), diğer sınıf seviyeleri (2, 4, 5, 6, 7), veri modeli ve depolama anahtarları (`dek_campus_v1_state`) %100 korunmuştur.
+- **1. Pedagojik Öğrenme İçeriği (Yalnızca 4 Temel İfade)**:
+  - **Hello!** (Merhaba!): El sallayarak neşeyle selam veren çocuk illüstrasyonu.
+  - **Good morning!** (Günaydın!): Sabah güneşi, pırıl pırıl gökyüzü ve güne başlayan çocuk illüstrasyonu.
+  - **Goodbye!** (Hoşça kal!): Ayrılırken el sallayan çocuk illüstrasyonu.
+  - **Good night!** (İyi geceler!): Gece göğü, hilal ay, yıldızlar ve uykuya hazırlanan sevimli çocuk illüstrasyonu.
+  - Müfredat dışı hiçbir yabancı ifade veya karmaşık gramer kuralı eklenmemiştir.
+- **2. İki Aşamalı Etkileşim Akışı**:
+  - **Bölüm A — Keşfet & Dinle**: 4 büyük, canlı, çocuk dostu kart. Tıklandığında kart öne çıkar; İngilizce ifade, Türkçe anlam desteği ve iki ayrı seslendirme butonu (**[🔊 Dinle]** 0.85x ve **[🐢 Yavaş Dinle]** 0.65x) sunulur. 4 ifadenin tamamı dinlenip keşfedilmeden Bölüm B kilidi açılmaz (ilerleme göstergesi: `x / 4 Keşfedildi`).
+  - **Bölüm B — Eşleştir**: 4 görsel kart solda, 4 karışık İngilizce ifade sağda yer alır. Sürükle-bırak zorunluluğu olmadan tıklayarak eşleştirme sağlanır. Doğru eşleşmede yeşil ışıma, başarı onayı ve kilitlenme; yanlış eşleşmede pedagojik ipucu (`"Bu görsel günaydın selamını anlatıyor..."`), Türkçe anlam hatırlatması ve anında cezasız yeniden deneme imkânı sunulur.
+- **3. Tamamlama ve Sınıfta Kalma Bütünlüğü**:
+  - Eşleştirmeler tamamlandığında tebrik rozeti ve 4 ifadenin mini sözlük özeti gösterilir.
+  - Öğrencinin `kesfet` aşaması `dek_campus_v1_state` üzerine kalıcı olarak kaydedilir.
+  - **"Öğren Masasına Git" doğrudan ışınlanma butonu kaldırılmıştır.**
+  - Tek aksiyon olarak **[Masadan Kalk / Sınıfa Dön]** butonu sunulur. Öğrenci masadan kalktığında Keşfet Masası'nın yanında, sınıfta kalır; klavye ve dokunmatik hareket kontrolleri yeniden etkinleşir.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 97 / 97 birim testi geçti (64 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_hello_garden.spec.ts`): Hem Chromium (Masaüstü) hem Mobile Chrome (Dokunmatik) geçti (2 / 2).
+  - `npm run build`: 1.19s içinde hatasız üretim derlemesi üretildi.
+
 # Proje Durum Raporu — Sürüm 5.1.3 (Aşama 5.1.3: 3. Sınıf Keşfet Masası — Gerçek Sinematik 2.5D Canlı Bahçe Simülasyonu)
 
 ## 3. Sınıf Keşfet Masası — "Hello! Tanışma Bahçesi" Canlı Minyatür Simülasyonu (`feat/english-four-learning-tables`)

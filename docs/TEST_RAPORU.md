@@ -1,3 +1,34 @@
+# Test ve Kalite Güvence Raporu — Sürüm 6.1.0 (Aşama 6.1: 3. Sınıf Keşfet Masası — "Greetings / Selamlaşma" Görsel Destekli Öğrenme ve Eşleştirme)
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (strict TypeScript).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **97 / 97 test** (`src/test/walkable.test.tsx` [64 test] + `src/test/campus.test.tsx` [33 test], `4.8s`):
+  - 62. 3. Sınıf Keşfet Masası: "GREETINGS (SELAMLAŞMA)" istasyon başlığı ve özel rozetini açar.
+  - 63. "Greetings (Selamlaşma)": Bölüm A Keşfet (4 kart, Dinle/Yavaş), Bölüm B Eşleştir (ipucu, hata toleransı) ve sınıfa dönüş sunar.
+  - 64. Diğer sınıflar veya diğer masalar bu akıştan etkilenmez, orijinal durumlarını korur.
+- **`npx playwright test e2e/grade3_hello_garden.spec.ts --workers=1`**: Geçti — **2 / 2 test** (`chromium` [11.2s] + `mobile-chrome` [10.4s], toplam `26.8s`):
+  - 1. Selçuklu Taç Kapı açıldı -> Yürünebilir Kampüs Avlusu'na girildi -> İngilizce Dünyası binasına girildi.
+  - 2. Sınıf Seçim Panosu'ndan 3. Sınıf seçildi.
+  - 3. 1. Keşfet Masası'na yüründü ve oturuldu.
+  - 4. Bölüm A (Keşfet): 4 büyük çocuk dostu SVG görsel kartı (Hello, Good morning, Goodbye, Good night) görüntülendi (`docs/assets/grade3_greetings_desktop_modal.png` / `docs/assets/grade3_greetings_mobile_modal.png`).
+  - 5. 4 kart tek tek dinlendi ([Dinle] ve [Yavaş Dinle] çift hızlı telaffuz desteği doğrulandı) ve Bölüm B kilidi açıldı.
+  - 6. Bölüm B (Eşleştir): Karışık sırada sunulan İngilizce ifadeler ile görseller eşleştirildi; yanlış eşleşmede pedagojik ipucu ("Bu görsel günaydın selamını anlatıyor...") gösterildi, doğru eşleşmede kartlar kilitlendi.
+  - 7. Tamamlama ekranı ve 4 ifadenin özet tablosu doğrulandı (`docs/assets/grade3_greetings_desktop_completed.png` / `docs/assets/grade3_greetings_mobile_completed.png`).
+  - 8. "Öğren Masasına Git" doğrudan ışınlanma butonunun kaldırıldığı ve tek aksiyonun "Masadan Kalk / Sınıfa Dön" olduğu doğrulandı.
+  - 9. Masadan kalkıldığında öğrencinin sınıfta, Keşfet Masası'nın hemen yanında kaldığı ve avluya/başka yere fırlatılmadığı doğrulandı (`docs/assets/grade3_greetings_desktop_return_classroom.png` / `docs/assets/grade3_greetings_mobile_return_classroom.png`).
+- **`npm run build` (`vite build`)**: Geçti — **1.19s** içinde hatasız üretim derlemesi üretildi.
+
+## 2. Kanıt Ekran Görüntüleri (`docs/assets/`):
+- **Masaüstü (Chromium)**:
+  - `grade3_greetings_desktop_modal.png`: 4 kartlı görsel keşif ve telaffuz ekranı.
+  - `grade3_greetings_desktop_completed.png`: Eşleştirme sonrası başarı ve tamamlama ekranı.
+  - `grade3_greetings_desktop_return_classroom.png`: Masadan kalkış sonrası sınıfta Keşfet Masası'nın yanında kalış.
+- **Mobil Dokunmatik (Mobile Chrome)**:
+  - `grade3_greetings_mobile_modal.png`: Dokunmatik ekranda 4 kartlı görsel keşif arayüzü.
+  - `grade3_greetings_mobile_completed.png`: Dokunmatik tamamlama ve pekiştirme kartı.
+  - `grade3_greetings_mobile_return_classroom.png`: Mobilde sınıfta kalış durumu.
+
 # Test ve Kalite Güvence Raporu — Sürüm 5.1.3 (Aşama 5.1.3: 3. Sınıf Keşfet Masası — Gerçek Sinematik 2.5D Canlı Bahçe Simülasyonu)
 
 ## 1. Çalıştırıldı ve Geçti

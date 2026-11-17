@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('3. Sınıf Keşfet Masası — "Hello! Tanışma Bahçesi" 2.5D Canlı Bahçe Simülasyonu', () => {
-  test('3. Sınıf Seçimi -> Keşfet Masasına Otur -> 4 Etkileşimli Canlı Bahçe -> Hata Geri Bildirimi -> Sayı Etkileşimi -> Tamamlama -> Sınıfta Kalma', async ({
+test.describe('3. Sınıf Keşfet Masası — "Greetings (Selamlaşma)" Görsel Destekli Öğrenme ve Eşleştirme', () => {
+  test('3. Sınıf Seçimi -> Keşfet Masasına Otur -> Bölüm A (4 Kartı Dinle) -> Bölüm B (Eşleştir) -> Hata İpucu -> Tamamlama -> Sınıfta Kalma', async ({
     page,
     isMobile,
   }) => {
@@ -97,7 +97,7 @@ test.describe('3. Sınıf Keşfet Masası — "Hello! Tanışma Bahçesi" 2.5D C
     await page.waitForTimeout(300);
     await expect(page.getByText(/Keşfet Masası'na Otur/i)).toBeVisible();
 
-    // Masaya Otur -> "Hello! Tanışma Bahçesi" Minyatür Simülasyonu Açılır
+    // Masaya Otur -> Keşfet Masası Modalı Açılır
     await page.evaluate(() => {
       const engine = (
         window as unknown as {
@@ -110,83 +110,92 @@ test.describe('3. Sınıf Keşfet Masası — "Hello! Tanışma Bahçesi" 2.5D C
     const tableDialog = page.getByRole('dialog');
     await expect(tableDialog).toBeVisible();
 
-    // KURAL KONTROLÜ: 3. Sınıf Keşfet Masasında özel Tanışma Bahçesi başlığı olmalı
+    // KURAL KONTROLÜ: 3. Sınıf Keşfet Masasında Selamlaşma başlığı olmalı
     await expect(tableDialog.locator('#table-station-title')).toHaveText(
-      /HELLO! TANIŞMA BAHÇESİ/i,
+      /GREETINGS \(SELAMLAŞMA\)/i,
     );
-    await expect(page.getByText(/3\. Sınıf Keşfet Masası Minyatür Simülasyonu/i)).toBeVisible();
 
-    // KURAL KONTROLÜ: Bahçede 3 çocuk karakter bulunmalı (Ali, Ece, Can)
-    await expect(page.getByRole('button', { name: /Ali ile konuş/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Ece ile konuş/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Can ile konuş/i })).toBeVisible();
+    // KURAL KONTROLÜ: 4 Görsel Kart Bölüm A'da mevcut olmalı
+    await expect(page.getByText('Hello!')).toBeVisible();
+    await expect(page.getByText('Good morning!')).toBeVisible();
+    await expect(page.getByText('Goodbye!')).toBeVisible();
+    await expect(page.getByText('Good night!')).toBeVisible();
 
-    // KURAL KONTROLÜ: Telaffuz butonları (Dinle + Yavaş Dinle)
-    const listenNormalBtn = page.getByRole('button', { name: /Ali'nin selamını dinle/i });
-    const listenSlowBtn = page.getByRole('button', { name: /Ali'nin selamını yavaş dinle/i });
-    await expect(listenNormalBtn).toBeVisible();
-    await expect(listenSlowBtn).toBeVisible();
-
-    const prefix = isMobile ? 'grade3_hello_garden_mobile' : 'grade3_hello_garden_desktop';
+    // Ekran Görüntüsü — Bölüm A (Masaüstü ve Mobil)
+    const prefix = isMobile ? 'grade3_greetings_mobile' : 'grade3_greetings_desktop';
     await page.screenshot({ path: `docs/assets/${prefix}_modal.png` });
     if (!isMobile) {
       await page.screenshot({ path: 'docs/assets/grade3_hello_garden_modal.png' });
     }
 
-    // 7. ETKİLEŞİM 1: SELAMLAŞMA (ALİ)
-    // Yanlış cevap ("Goodbye!") verilirse ilerlememeli ve geri bildirim sunulmalı
-    const wrongGoodbyeBtn = page.getByRole('button', { name: /"Goodbye!"/i });
-    await expect(wrongGoodbyeBtn).toBeVisible();
-    await wrongGoodbyeBtn.click();
-    await expect(page.getByRole('alert')).toContainText(/Henüz yeni karşılaştık/i);
+    // 7. BÖLÜM A: Dört kartın dinleme butonlarına basılır
+    const playHello = page.getByRole('button', { name: /"Hello!" ifadesini dinle/i });
+    const playMorning = page.getByRole('button', { name: /"Good morning!" ifadesini dinle/i });
+    const playGoodbye = page.getByRole('button', { name: /"Goodbye!" ifadesini dinle/i });
+    const playNight = page.getByRole('button', { name: /"Good night!" ifadesini dinle/i });
 
-    // Doğru cevap ("Hello!") ile selamlaşılır
-    const correctHelloBtn = page.getByRole('button', { name: /"Hello!"/i });
-    await expect(correctHelloBtn).toBeVisible();
-    await correctHelloBtn.click();
+    await playHello.click();
+    await playMorning.click();
+    await playGoodbye.click();
+    await playNight.click();
 
-    // 8. ETKİLEŞİM 2: TANIŞMA (ECE)
-    // Ece'nin adını sorma ("What's your name?")
-    const askNameBtn = page.getByRole('button', { name: /"What's your name\?"/i });
-    await expect(askNameBtn).toBeVisible({ timeout: 5000 });
-    await askNameBtn.click();
+    // 8. "Eşleştirme Bölümüne Geç" düğmesine tıklanır
+    const startMatchBtn = page.getByRole('button', { name: /Bölüm B Eşleştirme aşamasına geç/i });
+    await expect(startMatchBtn).toBeEnabled();
+    await startMatchBtn.click();
 
-    // Ece "My name is Ece." cevabını verir -> Öğrenci kendini tanıtır ("My name is Deniz.")
-    const introduceBtn = page.getByRole('button', { name: /"My name is Deniz\."/i });
-    await expect(introduceBtn).toBeVisible({ timeout: 5000 });
-    await introduceBtn.click();
+    // 9. BÖLÜM B: EŞLEŞTİRME EKRANI
+    await expect(page.getByText(/1\. Görseller/i)).toBeVisible();
+    await expect(page.getByText(/2\. İngilizce İfadeler/i)).toBeVisible();
 
-    // 9. ETKİLEŞİM 3: YAŞ SORMA (CAN)
-    // Can'ın yaşını sorma ("How old are you?")
-    const askAgeBtn = page.getByRole('button', { name: /"How old are you\?"/i });
-    await expect(askAgeBtn).toBeVisible({ timeout: 5000 });
-    await askAgeBtn.click();
+    // 10. Hatalı Eşleştirme Testi: Sabah Güneşi görseli seçilip "Goodbye!" seçilirse ipucu verir
+    const morningVisual = page.getByRole('button', { name: /Sabah Güneşi ve Çocuk görselini seç/i });
+    await morningVisual.click();
+    const goodbyePhrase = page.getByRole('button', { name: /"Goodbye!" ifadesini seç/i });
+    await goodbyePhrase.click();
 
-    // Can "I'm nine." der -> Bahçedeki interaktif sayı tabelasından 9 sayısı seçilir
-    const number9Btn = page.getByRole('button', { name: /Sayı 9/i });
-    await expect(number9Btn).toBeVisible({ timeout: 5000 });
-    await number9Btn.click();
+    // İpucu uyarısının çıktığı doğrulanır
+    await expect(page.getByRole('alert')).toContainText(/Tekrar dene!/i);
 
-    // 10. ETKİLEŞİM 4: VEDALAŞMA (TÜM ARKADAŞLAR)
-    const farewellBtn = page.getByRole('button', { name: /"Goodbye!"/i });
-    await expect(farewellBtn).toBeVisible({ timeout: 5000 });
-    await farewellBtn.click();
+    // 11. Doğru Eşleştirmeler:
+    // A) Good morning
+    await morningVisual.click();
+    const morningPhrase = page.getByRole('button', { name: /"Good morning!" ifadesini seç/i });
+    await morningPhrase.click();
 
-    // 11. TAMAMLAMA EKRANI VE PEDAGOJİK ÖZET
+    // B) Hello
+    const helloVisual = page.getByRole('button', { name: /Selam Veren Çocuk görselini seç/i });
+    await helloVisual.click();
+    const helloPhrase = page.getByRole('button', { name: /"Hello!" ifadesini seç/i });
+    await helloPhrase.click();
+
+    // C) Goodbye
+    const goodbyeVisual = page.getByRole('button', { name: /Ayrılan Çocuk görselini seç/i });
+    await goodbyeVisual.click();
+    await goodbyePhrase.click();
+
+    // D) Good night
+    const nightVisual = page.getByRole('button', { name: /Gece ve Uyuyan Çocuk görselini seç/i });
+    await nightVisual.click();
+    const nightPhrase = page.getByRole('button', { name: /"Good night!" ifadesini seç/i });
+    await nightPhrase.click();
+
+    // 12. TAMAMLAMA EKRANI VE ÖZET
     await expect(
-      page.getByRole('heading', { name: /Harika! Tanışma Bahçesi Simülasyonunu Tamamladın!/i }),
+      page.getByRole('heading', { name: /Harika! 4 Selamlaşma İfadesini Başarıyla Eşleştirdin!/i }),
     ).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText(/Öğrendiğin 4 Temel İfade/i)).toBeVisible();
+    await expect(page.getByText(/Öğrendiğin Selamlaşma İfadeleri:/i)).toBeVisible();
 
-    // KESİN KURAL: "Öğren Masasına Git" butonu kesinlikle olmamalıdır!
+    // KESİN KURAL: "Öğren Masasına Git" butonu bulunmamalıdır!
     await expect(page.getByRole('button', { name: /Öğren Masasına Git/i })).not.toBeVisible();
 
+    // Ekran Görüntüsü — Tamamlama Ekranı
     await page.screenshot({ path: `docs/assets/${prefix}_completed.png` });
     if (!isMobile) {
       await page.screenshot({ path: 'docs/assets/grade3_hello_garden_completed.png' });
     }
 
-    // 12. Masadan Kalk / Sınıfa Dön
+    // 13. Masadan Kalk / Sınıfa Dön
     const exitBtn = tableDialog.getByRole('button', { name: /Masadan kalk/i }).first();
     await expect(exitBtn).toBeVisible();
     await exitBtn.click();
@@ -194,6 +203,8 @@ test.describe('3. Sınıf Keşfet Masası — "Hello! Tanışma Bahçesi" 2.5D C
     // KURAL KONTROLÜ: Öğrenci masadan kalkınca sınıfta, masanın yanında kalmalıdır!
     await expect(tableDialog).not.toBeVisible();
     await expect(page.getByRole('button', { name: /Avluya dön/i })).toBeVisible();
+
+    // Ekran Görüntüsü — Sınıfa Dönüş
     await page.screenshot({ path: `docs/assets/${prefix}_return_classroom.png` });
     if (!isMobile) {
       await page.screenshot({ path: 'docs/assets/grade3_hello_garden_return_classroom.png' });

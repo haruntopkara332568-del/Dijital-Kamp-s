@@ -1733,13 +1733,12 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
         </MemoryRouter>,
       );
 
-      // Başlıkta Hello! Tanışma Bahçesi görünmelidir
-      expect(document.getElementById('table-station-title')).toHaveTextContent(/HELLO! TANIŞMA BAHÇESİ/i);
-      expect(screen.getByText(/3\. Sınıf Keşfet Masası Minyatür Simülasyonu/i)).toBeInTheDocument();
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Hello! Tanışma Bahçesi/i);
+      // Başlıkta Greetings (Selamlaşma) görünmelidir
+      expect(document.getElementById('table-station-title')).toHaveTextContent(/GREETINGS \(SELAMLAŞMA\)/i);
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/1\. KEŞFET MASASI: GREETINGS/i);
     });
 
-    it('63. "Hello! Tanışma Bahçesi": 3 karakter (Ali, Ece, Can), Dinle + Yavaş Dinle, hata geri bildirimi ve 4 etkileşimli minyatür bahçe simülasyonu sunar', async () => {
+    it('63. "Greetings (Selamlaşma)": Bölüm A Keşfet (4 kart, Dinle/Yavaş), Bölüm B Eşleştir (ipucu, hata toleransı) ve sınıfa dönüş sunar', async () => {
       await clearAllCampusData();
       saveStudentState({
         ...createInitialStudentState(),
@@ -1758,51 +1757,59 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
         </MemoryRouter>,
       );
 
-      // 1. Üç karakterin rozetleri mevcuttur (Ali, Ece, Can)
-      expect(screen.getAllByText(/Ali/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/Ece/i).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/Can/i).length).toBeGreaterThan(0);
+      // 1. Bölüm A: Dört kart mevcuttur (Hello!, Good morning!, Goodbye!, Good night!)
+      expect(screen.getByText('Hello!')).toBeInTheDocument();
+      expect(screen.getByText('Good morning!')).toBeInTheDocument();
+      expect(screen.getByText('Goodbye!')).toBeInTheDocument();
+      expect(screen.getByText('Good night!')).toBeInTheDocument();
 
-      // 2. Telaffuz butonları mevcuttur (Dinle + Yavaş Dinle)
-      expect(screen.getByRole('button', { name: /Ali'nin selamını dinle/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Ali'nin selamını yavaş dinle/i })).toBeInTheDocument();
+      // 2. Dinle ve Yavaş Dinle butonları mevcuttur
+      expect(screen.getByRole('button', { name: /"Hello!" ifadesini dinle/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /"Hello!" ifadesini yavaş dinle/i })).toBeInTheDocument();
 
-      // 3. Etkileşim 1: Selamlaşma (Ali)
-      // Yanlış cevap seçilirse (Goodbye!) hata geri bildirimi verilir ve ilerlemez
-      const wrongGoodbyeBtn = screen.getByRole('button', { name: /"Goodbye!"/i });
-      fireEvent.click(wrongGoodbyeBtn);
-      expect(screen.getByRole('alert')).toHaveTextContent(/Henüz yeni karşılaştık/i);
+      // 3. Kartlar incelenir (tıklanır)
+      fireEvent.click(screen.getByRole('button', { name: /"Hello!" ifadesini dinle/i }));
+      fireEvent.click(screen.getByRole('button', { name: /"Good morning!" ifadesini dinle/i }));
+      fireEvent.click(screen.getByRole('button', { name: /"Goodbye!" ifadesini dinle/i }));
+      fireEvent.click(screen.getByRole('button', { name: /"Good night!" ifadesini dinle/i }));
 
-      // Doğru cevap ("Hello!") seçilir
-      const correctHelloBtn = screen.getByRole('button', { name: /"Hello!"/i });
-      fireEvent.click(correctHelloBtn);
+      // 4. "Eşleştirme Bölümüne Geç" düğmesi aktifleşir ve tıklanır
+      const startMatchBtn = screen.getByRole('button', { name: /Bölüm B Eşleştirme aşamasına geç/i });
+      expect(startMatchBtn).not.toBeDisabled();
+      fireEvent.click(startMatchBtn);
 
-      // 4. Etkileşim 2: Tanışma (Ece)
-      // Ad sorma aşaması
-      const askNameBtn = await screen.findByRole('button', { name: /"What's your name\?"/i });
-      fireEvent.click(askNameBtn);
+      // 5. Bölüm B: Eşleştirme Ekranı
+      expect(screen.getByText(/1\. Görseller/i)).toBeInTheDocument();
+      expect(screen.getByText(/2\. İngilizce İfadeler/i)).toBeInTheDocument();
 
-      // Kendini tanıtma aşaması ("My name is Deniz.")
-      const introduceBtn = await screen.findByRole('button', { name: /"My name is Deniz\."/i });
-      fireEvent.click(introduceBtn);
+      // 6. Hatalı eşleştirme testi: "Sabah Güneşi ve Çocuk" seçilip "Goodbye!" seçilirse ipucu verir
+      const morningVisual = screen.getByRole('button', { name: /Sabah Güneşi ve Çocuk görselini seç/i });
+      fireEvent.click(morningVisual);
+      const goodbyePhrase = screen.getByRole('button', { name: /"Goodbye!" ifadesini seç/i });
+      fireEvent.click(goodbyePhrase);
+      expect(screen.getByRole('alert')).toHaveTextContent(/Tekrar dene!/i);
 
-      // 5. Etkileşim 3: Yaş Sorma (Can)
-      // Yaş sorma sorusu ("How old are you?")
-      const askAgeBtn = await screen.findByRole('button', { name: /"How old are you\?"/i });
-      fireEvent.click(askAgeBtn);
+      // 7. Doğru eşleştirmeler:
+      // A) Good morning
+      fireEvent.click(screen.getByRole('button', { name: /Sabah Güneşi ve Çocuk görselini seç/i }));
+      fireEvent.click(screen.getByRole('button', { name: /"Good morning!" ifadesini seç/i }));
 
-      // Bahçede 9 sayısını seçme
-      const number9Btn = await screen.findByRole('button', { name: /Sayı 9/i });
-      fireEvent.click(number9Btn);
+      // B) Hello
+      fireEvent.click(screen.getByRole('button', { name: /Selam Veren Çocuk görselini seç/i }));
+      fireEvent.click(screen.getByRole('button', { name: /"Hello!" ifadesini seç/i }));
 
-      // 6. Etkileşim 4: Vedalaşma (Tüm Arkadaşlar)
-      const farewellBtn = await screen.findByRole('button', { name: /"Goodbye!"/i });
-      fireEvent.click(farewellBtn);
+      // C) Goodbye
+      fireEvent.click(screen.getByRole('button', { name: /Ayrılan Çocuk görselini seç/i }));
+      fireEvent.click(screen.getByRole('button', { name: /"Goodbye!" ifadesini seç/i }));
 
-      // 7. Görev başarıyla tamamlanır
+      // D) Good night
+      fireEvent.click(screen.getByRole('button', { name: /Gece ve Uyuyan Çocuk görselini seç/i }));
+      fireEvent.click(screen.getByRole('button', { name: /"Good night!" ifadesini seç/i }));
+
+      // 8. Etkinlik Başarıyla Tamamlanır
       const completedHeading = await screen.findByRole('heading', { level: 2 });
-      expect(completedHeading).toHaveTextContent(/Harika! Tanışma Bahçesi Simülasyonunu Tamamladın!/i);
-      expect(screen.getByText(/Öğrendiğin 4 Temel İfade/i)).toBeInTheDocument();
+      expect(completedHeading).toHaveTextContent(/Harika! 4 Selamlaşma İfadesini Başarıyla Eşleştirdin!/i);
+      expect(screen.getByText(/Öğrendiğin Selamlaşma İfadeleri:/i)).toBeInTheDocument();
 
       // KESİN KURAL: "Öğren Masasına Git" butonu bulunmamalıdır!
       expect(screen.queryByRole('button', { name: /Öğren Masasına Git/i })).not.toBeInTheDocument();

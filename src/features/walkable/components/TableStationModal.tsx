@@ -165,9 +165,9 @@ export function TableStationModal({
   const currentConfig = STAGE_CONFIG[stage] ?? STAGE_CONFIG.kesfet;
   const StageIcon = currentConfig.icon;
 
-  const headerTitle = isGrade3HelloGarden ? '1. KEŞFET MASASI — HELLO! TANIŞMA BAHÇESİ' : currentConfig.title;
+  const headerTitle = isGrade3HelloGarden ? '1. KEŞFET MASASI — GREETINGS (SELAMLAŞMA)' : currentConfig.title;
   const headerSubtitle = isGrade3HelloGarden
-    ? 'Bahçedeki Arkadaşlarınla Selamlaş, İngilizce Tanışma İfadelerini Keşfet'
+    ? 'Dört Temel Selamlaşma İfadesini Keşfet, Dinle ve Görselleriyle Eşleştir'
     : currentConfig.subtitle;
 
   return (
