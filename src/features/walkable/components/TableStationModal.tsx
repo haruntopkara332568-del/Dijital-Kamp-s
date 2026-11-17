@@ -3,6 +3,7 @@ import { Compass, BookOpen, Palette, Share2, ArrowLeft } from 'lucide-react';
 import { MissionRunnerView } from '@/src/features/missions/MissionRunnerView';
 import { HelloGardenView } from '@/src/features/missions/HelloGardenView';
 import { Grade3OgrenStationView } from '@/src/features/missions/Grade3OgrenStationView';
+import { Grade3UretStationView } from '@/src/features/missions/Grade3UretStationView';
 import { useOptionalCampus } from '@/src/app/CampusProviders';
 import type { MissionStageId } from '@/src/types/campus';
 
@@ -92,6 +93,7 @@ export function TableStationModal({
   const selectedGrade = campus?.state.selectedGrade ?? null;
   const isGrade3HelloGarden = selectedGrade === 3 && stage === 'kesfet';
   const isGrade3OgrenStation = selectedGrade === 3 && stage === 'ogren';
+  const isGrade3UretStation = selectedGrade === 3 && stage === 'uret';
 
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
@@ -171,12 +173,16 @@ export function TableStationModal({
     ? '1. KEŞFET MASASI — GREETINGS (SELAMLAŞMA)'
     : isGrade3OgrenStation
       ? '2. ÖĞREN MASASI — GREETINGS (DİNLE VE ANLA)'
-      : currentConfig.title;
+      : isGrade3UretStation
+        ? '3. ÜRET MASASI — GREETINGS (CÜMLEMİ OLUŞTUR)'
+        : currentConfig.title;
   const headerSubtitle = isGrade3HelloGarden
     ? 'Dört Temel Selamlaşma İfadesini Keşfet, Dinle ve Görselleriyle Eşleştir'
     : isGrade3OgrenStation
       ? 'Dört Temel Selamlaşma İfadesini Dinle, Görseli Bul ve Sesleri Ayırt Et'
-      : currentConfig.subtitle;
+      : isGrade3UretStation
+        ? 'Dört Temel Selamlaşma İfadesini Kartlarla Oluştur ve Görsellerle Pekiştir'
+        : currentConfig.subtitle;
 
   return (
     <div
@@ -243,6 +249,12 @@ export function TableStationModal({
             />
           ) : isGrade3OgrenStation ? (
             <Grade3OgrenStationView
+              missionId={missionId}
+              onExitToClassroom={onClose}
+              onAdvanceToNextTable={onAdvanceToStage}
+            />
+          ) : isGrade3UretStation ? (
+            <Grade3UretStationView
               missionId={missionId}
               onExitToClassroom={onClose}
               onAdvanceToNextTable={onAdvanceToStage}

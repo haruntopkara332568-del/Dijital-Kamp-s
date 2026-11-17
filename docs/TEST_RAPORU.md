@@ -1,3 +1,38 @@
+# Test ve Kalite Güvence Raporu — Sürüm 6.3.0 (Aşama 6.3: 3. Sınıf Üret Masası — "Greetings / Cümlemi Oluştur" Kelimeleri Birleştir & Doğru Cümleyi Bul)
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (strict TypeScript).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **101 / 101 test** (`src/test/walkable.test.tsx` [68 test] + `src/test/campus.test.tsx` [33 test], `4.6s`):
+  - 67. 3. Sınıf Üret Masası: "GREETINGS (CÜMLEMİ OLUŞTUR)" başlığını ve yeşil istasyon temasını açar.
+  - 68. 3. Sınıf Üret Masası: Etkinlik A (Cümlemi Oluştur: 4 görev, kelime seçimi, geri alma, otomatik noktalama, ipucu), Etkinlik B (Doğru Cümleyi Bul: 2 seçenek), uret aşaması kaydı ve sınıfa dönüş sunar.
+  - 64. Diğer sınıflar veya diğer masalar bu akıştan etkilenmez, orijinal durumlarını korur.
+- **`npx playwright test e2e/grade3_uret_table.spec.ts --workers=1`**: Geçti — **2 / 2 test** (`chromium` + `mobile-chrome` dokunmatik, `32.9s`):
+  - 1. Selçuklu Taç Kapı açıldı -> Yürünebilir Kampüs Avlusu'na girildi -> İngilizce Dünyası binasına girildi.
+  - 2. 3. Sınıf seçildi ve Keşfet & Öğren başarıları sonrası 3. Üret Masası'na (x: 265, y: 418) yüründü.
+  - 3. 3. ÜRET MASASI — GREETINGS (CÜMLEMİ OLUŞTUR) modalı açıldı.
+  - 4. [Dinle] (0.85x) ve [Yavaş Dinle] (0.65x) düğmeleri test edildi.
+  - 5. Etkinlik A (Cümlemi Oluştur): 4 görev boyunca kelime kartları seçildi, yanlış sıralamada geri alma test edildi, doğru sıralama onaylandı ve seslendirildi.
+  - 6. Ara geçiş ekranı ("Cümlelerini Başarıyla Oluşturdun! ✏️ / 2. Etkinliğe Başla") doğrulandı.
+  - 7. Etkinlik B (Doğru Cümleyi Bul): 4 tur boyunca 2 seçenek arasından görsele uyan ifade seçildi; yanlış seçimde tolerans sağlandı.
+  - 8. Tamamlama ekranı ve 4 ifadenin görsel mini sözlük özeti doğrulandı.
+  - 9. "Paylaş Masasına Git" doğrudan ışınlanma butonunun OLMADIĞI ve tek çıkışın "Masadan Kalk / Sınıfa Dön" olduğu doğrulandı.
+  - 10. Masadan kalkıldığında öğrencinin sınıfta, Üret Masası'nın yanında kaldığı doğrulandı.
+  - 11. `localStorage` üzerinde `dek_campus_v1_state` içinde `"uret"` aşamasının kalıcı olarak kaydedildiği ve sıradaki aşamanın `"paylas"` olduğu doğrulandı.
+- **`npx playwright test e2e/grade3_hello_garden.spec.ts --workers=1`**: Geçti — **2 / 2 test** (Keşfet Masası'nın bozulmadığı doğrulandı).
+- **`npx playwright test e2e/grade3_ogren_table.spec.ts --workers=1`**: Geçti — **2 / 2 test** (Öğren Masası'nın bozulmadığı doğrulandı).
+- **`npm run build` (`vite build`)**: Geçti — **1.16s** içinde hatasız üretim derlemesi üretildi.
+
+## 2. Kanıt Ekran Görüntüleri (`docs/assets/`):
+- **Masaüstü (Chromium)**:
+  - `grade3_uret_desktop_modal.png`: 3. Üret Masası Cümlemi Oluştur arayüzü, zümrüt yeşili teması, [Dinle] ve [Yavaş Dinle] butonları, kelime blokları.
+  - `grade3_uret_desktop_completed.png`: İki etkinlik tamamlandıktan sonraki başarı ekranı ve 4 ifadenin mini sözlük özeti.
+  - `grade3_uret_desktop_return_classroom.png`: Masadan kalkış sonrası sınıfta Üret Masası'nın yanında kalış.
+- **Mobil Dokunmatik (Mobile Chrome)**:
+  - `grade3_uret_mobile_modal.png`: Mobil dokunmatik arayüzde Cümlemi Oluştur paneli.
+  - `grade3_uret_mobile_completed.png`: Mobilde başarı ve tamamlama ekranı.
+  - `grade3_uret_mobile_return_classroom.png`: Mobilde masadan kalkış sonrası sınıfta kalma durumu.
+
 # Test ve Kalite Güvence Raporu — Sürüm 6.2.0 (Aşama 6.2: 3. Sınıf Öğren Masası — "Greetings / Dinle ve Anla" Dinle-Bul & Sesleri Ayırt Et)
 
 ## 1. Çalıştırıldı ve Geçti

@@ -13,7 +13,7 @@ import { SmartBoardModal } from '@/src/features/walkable/components/SmartBoardMo
 import { GradeBoardModal } from '@/src/features/walkable/components/GradeBoardModal';
 import { TableStationModal } from '@/src/features/walkable/components/TableStationModal';
 import { HelloGardenView } from '@/src/features/missions/HelloGardenView';
-import { saveStudentState, createInitialStudentState, clearAllCampusData } from '@/src/services/storage';
+import { saveStudentState, loadStudentState, createInitialStudentState, clearAllCampusData } from '@/src/services/storage';
 import { WalkableControlsOverlay } from '@/src/features/walkable/components/WalkableControlsOverlay';
 import { drawCharacter, CHARACTER_SCALES } from '@/src/features/walkable/engine/characterRenderer';
 import {
@@ -1937,5 +1937,130 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
       fireEvent.click(exitBtn);
       expect(handleExit).toHaveBeenCalledTimes(1);
     });
+
+    it('67. Aşama 6.3: 3. Sınıf Üret Masası: "GREETINGS (CÜMLEMİ OLUŞTUR)" başlığını ve yeşil istasyon temasını açar', async () => {
+      await clearAllCampusData();
+      saveStudentState({
+        ...createInitialStudentState(),
+        selectedGrade: 3,
+      });
+
+      render(
+        <MemoryRouter>
+          <CampusProviders>
+            <TableStationModal
+              isOpen={true}
+              stage="uret"
+              onClose={vi.fn()}
+              onAdvanceToStage={vi.fn()}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      const titleEl = document.getElementById('table-station-title');
+      expect(titleEl).toBeInTheDocument();
+      expect(titleEl).toHaveTextContent(/3\. ÜRET MASASI — GREETINGS \(CÜMLEMİ OLUŞTUR\)/i);
+      expect(screen.getByText(/Etkinlik A — Cümlemi Oluştur/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /ifadesini dinle/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /ifadesini yavaş dinle/i })).toBeInTheDocument();
+    });
+
+    it('68. Aşama 6.3: 3. Sınıf Üret Masası: Etkinlik A (Cümlemi Oluştur), Etkinlik B (Doğru Cümleyi Bul), uret kaydı ve sınıfa dönüş sunar', async () => {
+      await clearAllCampusData();
+      saveStudentState({
+        ...createInitialStudentState(),
+        selectedGrade: 3,
+      });
+
+      const handleExit = vi.fn();
+
+      render(
+        <MemoryRouter>
+          <CampusProviders>
+            <TableStationModal
+              isOpen={true}
+              stage="uret"
+              onClose={handleExit}
+              onAdvanceToStage={vi.fn()}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      // --- ETKİNLİK A (Cümlemi Oluştur) ---
+      // Görev 1: Good morning! (morning, Good)
+      // Önce yanlış sıra ile deneyelim: 'morning' -> İpucu kontrolü
+      const morningBtn = screen.getByRole('button', { name: /"morning" kelimesini seç/i });
+      fireEvent.click(morningBtn);
+      // Geri Al butonunu dene
+      const undoBtn = screen.getByRole('button', { name: /Kelimeleri temizle/i });
+      expect(undoBtn).toBeInTheDocument();
+      fireEvent.click(undoBtn);
+
+      // Doğru sıra: 'Good' sonra 'morning'
+      const goodBtn = screen.getByRole('button', { name: /"Good" kelimesini seç/i });
+      fireEvent.click(goodBtn);
+      fireEvent.click(screen.getByRole('button', { name: /"morning" kelimesini seç/i }));
+
+      // Görev 2: Good night! (night, Good)
+      // Task 2'nin yüklenmesini bekle
+      await screen.findByText(/Cümlemi Oluştur \(2\/4\)/i, {}, { timeout: 3000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Good" kelimesini seç/i }));
+      fireEvent.click(screen.getByRole('button', { name: /"night" kelimesini seç/i }));
+
+      // Görev 3: Hello! (Goodbye!, Hello!)
+      await screen.findByText(/Cümlemi Oluştur \(3\/4\)/i, {}, { timeout: 3000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Hello!" kelimesini seç/i }));
+
+      // Görev 4: Goodbye! (Hello!, Goodbye!)
+      await screen.findByText(/Cümlemi Oluştur \(4\/4\)/i, {}, { timeout: 3000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Goodbye!" kelimesini seç/i }));
+
+      // --- ARA GEÇİŞ EKRANI ---
+      const startEtkinlikBBtn = await screen.findByRole('button', { name: /2\. Etkinliğe Başla/i }, { timeout: 3000 });
+      expect(startEtkinlikBBtn).toBeInTheDocument();
+      fireEvent.click(startEtkinlikBBtn);
+
+      // --- ETKİNLİK B (Doğru Cümleyi Bul) ---
+      // Tur 1: Good morning! vs Good night! (Sabah karşılaşması)
+      // Yanlış seçim dene: Good night!
+      const wrongOpt1 = await screen.findByRole('button', { name: /"Good night!" ifadesini seç/i });
+      fireEvent.click(wrongOpt1);
+      expect(await screen.findByText(/Farklı bir ifade seçtin\. İpucu:/i)).toBeInTheDocument();
+
+      // Doğru seçim: Good morning!
+      const correctOpt1 = screen.getByRole('button', { name: /"Good morning!" ifadesini seç/i });
+      fireEvent.click(correctOpt1);
+
+      // Tur 2: Hello! vs Goodbye! (Arkadaşla Karşılaşma)
+      await screen.findByText(/Doğru Cümleyi Bul \(2\/4\)/i, {}, { timeout: 3000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Hello!" ifadesini seç/i }));
+
+      // Tur 3: Goodbye! vs Hello! (Okul Çıkışında Vedalaşma)
+      await screen.findByText(/Doğru Cümleyi Bul \(3\/4\)/i, {}, { timeout: 3000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Goodbye!" ifadesini seç/i }));
+
+      // Tur 4: Good night! vs Good morning! (Gece Yatmaya Hazırlanma)
+      await screen.findByText(/Doğru Cümleyi Bul \(4\/4\)/i, {}, { timeout: 3000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Good night!" ifadesini seç/i }));
+
+      // --- TAMAMLANDI EKRANI ---
+      expect(await screen.findByText(/Tebrikler! Üret Masası Görevini Tamamladın!/i, {}, { timeout: 3000 })).toBeInTheDocument();
+
+      // KESİN KURAL: "Paylaş Masasına Git" doğrudan ışınlanma butonu bulunmamalıdır!
+      expect(screen.queryByRole('button', { name: /Paylaş Masasına Git/i })).not.toBeInTheDocument();
+
+      // İlerleme dek_campus_v1_state içinde uret tamamlandı olarak kaydedilmiş olmalı
+      const savedState = loadStudentState();
+      const progress = savedState.missionProgressByKey['kapilarin-anlattigi-hikaye::grade-3'];
+      expect(progress?.completedStages).toContain('uret');
+      expect(progress?.currentStage).toBe('paylas');
+
+      // Masadan kalk ve sınıfa dön
+      const exitBtns = screen.getAllByRole('button', { name: /Masadan kalk ve sınıfa dön/i });
+      fireEvent.click(exitBtns[0]);
+      expect(handleExit).toHaveBeenCalledTimes(1);
+    }, 25000);
   });
 });

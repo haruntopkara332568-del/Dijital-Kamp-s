@@ -1,3 +1,35 @@
+# Proje Durum Raporu — Sürüm 6.3.0 (Aşama 6.3: 3. Sınıf Üret Masası — "Greetings / Cümlemi Oluştur" Kelimeleri Birleştir & Doğru Cümleyi Bul)
+
+## 3. Sınıf Üret Masası — Cümlemi Oluştur ve Doğru Cümleyi Bul Etkinliği (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu ve Dokunulmayan Sistemler**:
+  - `main` dalı ve üretim ortamı, Selçuklu Taç Kapı, yürünebilir avlu mimarisi, karakter ve kamera kontrol altyapısı, İngilizce sınıfı mimarisi, 4 masanın yerleşimi, Sınıf Panosu, onaylanan Aşama 6.1 Keşfet Masası ve Aşama 6.2 Öğren Masası, Paylaş Masası, Akıllı Tahta koruma sistemi, diğer sınıf düzeyleri (2, 4, 5, 6, 7), veri modeli ve depolama anahtarları (`dek_campus_v1_state`) %100 korunmuştur.
+- **1. Pedagojik Öğrenme İçeriği (Yalnızca 4 Temel İfade)**:
+  - **Hello!** (Merhaba!) — Karşılaşan ve selam veren çocuk illüstrasyonu.
+  - **Good morning!** (Günaydın!) — Sabah güneşi ve uyanan çocuk illüstrasyonu.
+  - **Goodbye!** (Hoşça kal!) — Ayrılan ve vedalaşan çocuk illüstrasyonu.
+  - **Good night!** (İyi geceler!) — Gece, ay ve uykuya hazırlanan çocuk illüstrasyonu.
+  - Yeni ifade, yabancı gramer veya sınav mantığı eklenmemiştir.
+- **2. İki Aşamalı Öğrenme ve Üretim Akışı**:
+  - **Etkinlik A — Kelimeleri Birleştir / Cümlemi Oluştur (4 Görev)**: Öğrenci ekrandaki sevimli durum görselini inceler ve alttaki karışık kelime kartlarına dokunarak ifadeyi oluşturur (Örn: `[Good]` + `[morning]` -> `Good morning!`). Kartlara tıklandığında üst kutuya sırayla yerleşir, cümle bitiminde ünlem (!) otomatik eklenir. Geri al / temizle butonu cezasızdır. Yanlış sırada cezasız rehber ipucu verilir. Doğru oluşturulduğunda İngilizce seslendirme otomatik çalışır, yeşil ışıma ile onaylanır.
+  - **Ara Geçiş Ekranı**: 1. Etkinlik bitiminde tebrik ve 2. etkinliğe geçiş butonu sunulur (`"Cümlelerini Başarıyla Oluşturdun! ✏️ / 2. Etkinliğe Başla"`).
+  - **Etkinlik B — Görsele Uygun İfadeyi Seç / Doğru Cümleyi Bul (4 Tur)**: Ekranda durum görseli ve başlığı gösterilir. Öğrenci en fazla 2 büyük seçenek kartı arasından görsele uyan ifadeyi seçer. Yanlış seçimde pedagojik ipucu verilir ve ifade sesli hatırlatılır. Doğru seçimde onay ve sesli pekiştirme sağlanır.
+- **3. Telaffuz ve Çocuk Dostu Yeşil İstasyon Tasarımı**:
+  - Zümrüt yeşili / nane yeşili ve Selçuklu ahşap bordürlü masa kimliği (kalem ve defter motifleri).
+  - Her aşamada [Dinle] (0.85x) ve [Yavaş Dinle] (0.65x) telaffuz butonları.
+  - Web Speech API ile `en-US` / `en-GB` doğal telaffuz; yapay Türkçe okunuş kılavuzu eklenmemiştir.
+  - Mikrofon veya ses kaydı izni istenmez.
+- **4. İlerleme Kaydı ve Sınıfta Kalma**:
+  - Her iki etkinlik tamamlandığında `uret` aşaması `dek_campus_v1_state` üzerine kalıcı olarak işlenir (`completedStages: ['kesfet', 'ogren', 'uret']`, `currentStage: 'paylas'`).
+  - Tamamlama ekranında 4 ifadenin görsel mini sözlük kartları ve tebrik rozeti yer alır.
+  - **"Paylaş Masasına Git" doğrudan ışınlanma butonu kaldırılmıştır.**
+  - Tek aksiyon olarak **[Masadan Kalk / Sınıfa Dön]** butonu ve **[Tekrar Oyna]** seçeneği sunulur. Öğrenci masadan kalktığında sınıfta, 3. Üret Masası'nın yanında kalır.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 101 / 101 test geçti (68 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_uret_table.spec.ts`): 2 / 2 test geçti (Desktop Chromium ve Mobile Chrome dokunmatik).
+  - `npm run build`: 1.16s içinde hatasız üretim derlemesi üretildi.
+
 # Proje Durum Raporu — Sürüm 6.2.0 (Aşama 6.2: 3. Sınıf Öğren Masası — "Greetings / Dinle ve Anla" Dinle-Bul & Sesleri Ayırt Et)
 
 ## 3. Sınıf Öğren Masası — Dinle-Bul ve Sesleri Ayırt Et Etkinliği (`feat/english-four-learning-tables`)
