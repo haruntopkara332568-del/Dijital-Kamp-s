@@ -1,3 +1,22 @@
+# Test ve Kalite Güvence Raporu — Sürüm 5.1.1 (3. Sınıf Keşfet Masası: "Hello! Tanışma Bahçesi" Prototipi)
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (strict TypeScript).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **97 / 97 test** (`src/test/walkable.test.tsx` [64 test] + `src/test/campus.test.tsx` [33 test], toplam `5.6 s`):
+  - 62. 3. Sınıf Keşfet Masası: "Hello! Tanışma Bahçesi" prototip başlığını ve özel prototip rozetini açar.
+  - 63. "Hello! Tanışma Bahçesi": En fazla 3 karakter (Elif, Can, Sen) ve 3 adımlı sade tanışma akışı sunar.
+  - 64. Diğer sınıflar veya diğer masalar Tanışma Bahçesi prototipinden etkilenmez, orijinal akışlarını korur.
+- **`npx playwright test e2e/grade3_hello_garden.spec.ts e2e/stage51_tables.spec.ts --workers=1`**: Geçti — **4 / 4 test**:
+  - `grade3_hello_garden.spec.ts` (chromium & mobile-chrome): 3. sınıf panodan seçildi, Keşfet Masasına oturuldu, 3 karakterli diyalog tamamlandı, başarı ekranı görüntülendi ve sınıfa dönüldü (`grade3_hello_garden_modal.png`, `grade3_hello_garden_completed.png`, `grade3_hello_garden_return_classroom.png`).
+  - `stage51_tables.spec.ts` (chromium & mobile-chrome): 4 masa genel döngüsü, akıllı tahta koruması ve dış kapı çıkış akışı tam korundu.
+- **`npm run build` (`vite build`)**: Geçti — **1.10s** içinde hatasız üretim derlemesi oluşturuldu.
+
+## 2. 3. Sınıf "Hello! Tanışma Bahçesi" Test Kanıt Ekran Görüntüleri (`docs/assets/`):
+- `grade3_hello_garden_modal.png`: 3. Sınıf Keşfet Masası "Hello! Tanışma Bahçesi" 3 karakterli diyalog modalı.
+- `grade3_hello_garden_completed.png`: Tanışma Bahçesi tamamlama ve öğrenilen ifadeler özet ekranı.
+- `grade3_hello_garden_return_classroom.png`: Masadan kalkıldığında sınıfta, masanın yanında kalındığını kanıtlayan ekran görüntüsü.
+
 # Test ve Kalite Güvence Raporu — Sürüm 5.1.0 (Aşama 5.1: İngilizce Sınıfında Dört Etkileşimli Masa ve Akıllı Tahta Koruması)
 
 ## 1. Çalıştırıldı ve Geçti

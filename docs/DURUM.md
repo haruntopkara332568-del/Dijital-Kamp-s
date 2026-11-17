@@ -1,3 +1,27 @@
+# Proje Durum Raporu — Sürüm 5.1.1 (3. Sınıf Keşfet Masası: "Hello! Tanışma Bahçesi" Prototipi)
+
+## 3. Sınıf Keşfet Masası — "Hello! Tanışma Bahçesi" Prototipi (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu**: Yalnızca 3. sınıf Keşfet Masası için sinematik "Hello! Tanışma Bahçesi" prototipi geliştirildi. Diğer sınıflar (2, 4, 5, 6, 7), diğer masalar (Öğren, Üret, Paylaş), akıllı tahta, mimari, karakter hareketleri ve depolama kayıt sistemi (`CampusStudentState`) kesinlikle değiştirilmedi.
+- **Karakter ve Sahne Kuralı**:
+  - En fazla 3 karakter yer alır: **Elif** (Akran öğrenci), **Can** (Meraklı kampüs arkadaşı) ve **Sen** (Öğrenci / Kâşif).
+  - Görsel olarak Selçuklu kemer silüeti, servi ağaçları ve güneşli kampüs avlu bahçesi atmosferi sunulur.
+- **Diyalog ve Bilgi Yükü İlkesi**:
+  - Bilgi yığını oluşturulmadan, 3. sınıf düzeyine tam uygun (en çok 10 kelimelik kısa cümleler, TDK onaylı Türkçe ipuçları, Web Speech API sesli dinleme desteği):
+    - **1. Adım**: Elif karşılar: *"Hello! Welcome to our garden."* -> 2 sade seçenek (`Hello! I am glad to be here.` / `Good morning!`).
+    - **2. Adım**: Can adını sorar: *"What is your name?"* -> 3 hazır seçenek (`I am Deniz.` / `I am a student.` / `I am an Explorer.`) — *kişisel veri istenmez*.
+    - **3. Adım**: Elif & Can ortak neşeyle yanıtlar: *"Nice to meet you! Let's explore together."* -> 2 sade seçenek (`Nice to meet you too!` / `Thank you! Let's explore!`).
+  - **Tamamlama Ekranı**:
+    - Öğrenilen üç temel kalıp (`Hello!`, `What is your name?`, `Nice to meet you!`) kısa özet kartında pekiştirilir.
+    - `kesfet` aşaması mevcut kayıt API'si üzerinden tamamlandı olarak kaydedilir.
+    - Düğmeler: *"Öğren Masasına Git (2. Masa)"* veya *"Masadan Kalk / Sınıfa Dön"*.
+    - Masadan kalkıldığında öğrenci doğrudan sınıfta, masanın yanında kalır.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 97 / 97 birim testi geçti (64 walkable + 33 campus).
+  - `npm run build`: Başarılı (1.10s).
+  - Playwright E2E (`e2e/grade3_hello_garden.spec.ts` & `e2e/stage51_tables.spec.ts`): 4 / 4 test geçti.
+
 # Proje Durum Raporu — Sürüm 5.1.0 (Aşama 5.1: İngilizce Sınıfında Dört Etkileşimli Masa ve Akıllı Tahta Koruması)
 
 ## Aşama 5.1 — İngilizce Sınıfında Dört Etkileşimli Masa (`feat/english-four-learning-tables`)

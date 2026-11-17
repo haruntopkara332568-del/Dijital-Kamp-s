@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Compass, BookOpen, Palette, Share2, ArrowLeft } from 'lucide-react';
 import { MissionRunnerView } from '@/src/features/missions/MissionRunnerView';
+import { HelloGardenView } from '@/src/features/missions/HelloGardenView';
+import { useOptionalCampus } from '@/src/app/CampusProviders';
 import type { MissionStageId } from '@/src/types/campus';
 
 export interface TableStationModalProps {
@@ -85,6 +87,10 @@ export function TableStationModal({
   missionId = 'kapilarin-anlattigi-hikaye',
   onAdvanceToStage,
 }: TableStationModalProps) {
+  const campus = useOptionalCampus();
+  const selectedGrade = campus?.state.selectedGrade ?? null;
+  const isGrade3HelloGarden = selectedGrade === 3 && stage === 'kesfet';
+
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
 
@@ -159,6 +165,11 @@ export function TableStationModal({
   const currentConfig = STAGE_CONFIG[stage] ?? STAGE_CONFIG.kesfet;
   const StageIcon = currentConfig.icon;
 
+  const headerTitle = isGrade3HelloGarden ? '1. KEŞFET MASASI — HELLO! TANIŞMA BAHÇESİ' : currentConfig.title;
+  const headerSubtitle = isGrade3HelloGarden
+    ? 'Bahçedeki Arkadaşlarınla Selamlaş, İngilizce Tanışma İfadelerini Keşfet'
+    : currentConfig.subtitle;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
@@ -188,17 +199,17 @@ export function TableStationModal({
                   id="table-station-title"
                   className="text-xs sm:text-sm font-bold tracking-wide text-[#fef08a] font-serif"
                 >
-                  {currentConfig.title}
+                  {headerTitle}
                 </h2>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/90 border border-white/20 hidden sm:inline-block">
-                  Öğrenme İstasyonu
+                  {isGrade3HelloGarden ? 'Özel Prototip' : 'Öğrenme İstasyonu'}
                 </span>
               </div>
               <p
                 id="table-station-desc"
                 className="text-[10px] text-[var(--stone-cream)] opacity-90 hidden sm:block"
               >
-                {currentConfig.subtitle}
+                {headerSubtitle}
               </p>
             </div>
           </div>
@@ -216,12 +227,20 @@ export function TableStationModal({
 
         {/* Görev İstasyonu İçeriği */}
         <div className="flex-1 overflow-y-auto">
-          <MissionRunnerView
-            missionId={missionId}
-            focusedStage={stage}
-            onExitToClassroom={onClose}
-            onAdvanceToNextTable={onAdvanceToStage}
-          />
+          {isGrade3HelloGarden ? (
+            <HelloGardenView
+              missionId={missionId}
+              onExitToClassroom={onClose}
+              onAdvanceToNextTable={onAdvanceToStage}
+            />
+          ) : (
+            <MissionRunnerView
+              missionId={missionId}
+              focusedStage={stage}
+              onExitToClassroom={onClose}
+              onAdvanceToNextTable={onAdvanceToStage}
+            />
+          )}
         </div>
       </div>
     </div>

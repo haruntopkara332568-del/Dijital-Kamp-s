@@ -12,6 +12,8 @@ import {
 import { SmartBoardModal } from '@/src/features/walkable/components/SmartBoardModal';
 import { GradeBoardModal } from '@/src/features/walkable/components/GradeBoardModal';
 import { TableStationModal } from '@/src/features/walkable/components/TableStationModal';
+import { HelloGardenView } from '@/src/features/missions/HelloGardenView';
+import { saveStudentState, createInitialStudentState, clearAllCampusData } from '@/src/services/storage';
 import { WalkableControlsOverlay } from '@/src/features/walkable/components/WalkableControlsOverlay';
 import { drawCharacter, CHARACTER_SCALES } from '@/src/features/walkable/engine/characterRenderer';
 import {
@@ -1709,6 +1711,142 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
       const closeBtn = screen.getByRole('button', { name: /Akıllı tahtayı kapat ve sınıfa dön/i });
       fireEvent.click(closeBtn);
       expect(handleClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('62. 3. Sınıf Keşfet Masası: "Hello! Tanışma Bahçesi" prototip başlığını ve özel prototip rozetini açar', async () => {
+      await clearAllCampusData();
+      saveStudentState({
+        ...createInitialStudentState(),
+        selectedGrade: 3,
+      });
+
+      render(
+        <MemoryRouter>
+          <CampusProviders>
+            <TableStationModal
+              isOpen={true}
+              stage="kesfet"
+              onClose={vi.fn()}
+              onAdvanceToStage={vi.fn()}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      // Başlıkta Hello! Tanışma Bahçesi görünmelidir
+      expect(document.getElementById('table-station-title')).toHaveTextContent(/HELLO! TANIŞMA BAHÇESİ/i);
+      expect(screen.getByText(/3\. Sınıf Keşfet Masası • Özel Prototip/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Hello! Tanışma Bahçesi/i);
+    });
+
+    it('63. "Hello! Tanışma Bahçesi": En fazla 3 karakter (Elif, Can, Sen) ve 3 adımlı sade tanışma akışı sunar', async () => {
+      await clearAllCampusData();
+      saveStudentState({
+        ...createInitialStudentState(),
+        selectedGrade: 3,
+      });
+
+      const handleAdvance = vi.fn();
+      const handleExit = vi.fn();
+
+      render(
+        <MemoryRouter>
+          <CampusProviders>
+            <HelloGardenView
+              onExitToClassroom={handleExit}
+              onAdvanceToNextTable={handleAdvance}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      // 1. Üç karakterin rozetleri mevcuttur
+      expect(screen.getByText('Elif')).toBeInTheDocument();
+      expect(screen.getByText('Can')).toBeInTheDocument();
+      expect(screen.getByText('Sen')).toBeInTheDocument();
+      expect(screen.getByText(/Karakterler: Elif, Can, Sen \(3 kişi\)/i)).toBeInTheDocument();
+
+      // 2. Adım 1: Elif selam verir
+      expect(screen.getByText(/Elif konuşuyor/i)).toBeInTheDocument();
+      expect(screen.getByText(/"Hello! Welcome to our garden\."/i)).toBeInTheDocument();
+
+      // Öğrenci 1. cevabı seçer ("Hello! I am glad to be here.")
+      const opt1 = screen.getByRole('button', { name: /"Hello! I am glad to be here\."/i });
+      fireEvent.click(opt1);
+
+      // 3. Adım 2: Can adını sorar
+      expect(screen.getByText(/Can konuşuyor/i)).toBeInTheDocument();
+      expect(screen.getByText(/"What is your name\?"/i)).toBeInTheDocument();
+
+      // Öğrenci 2. cevabı seçer ("I am Deniz.")
+      const opt2 = screen.getByRole('button', { name: /"I am Deniz\."/i });
+      fireEvent.click(opt2);
+
+      // 4. Adım 3: Elif ve Can tanışmaktan memnun olur
+      expect(screen.getByText(/Elif & Can konuşuyor/i)).toBeInTheDocument();
+      expect(screen.getByText(/"Nice to meet you! Let's explore together\."/i)).toBeInTheDocument();
+
+      // Öğrenci 3. cevabı seçer ("Nice to meet you too!")
+      const opt3 = screen.getByRole('button', { name: /"Nice to meet you too!"/i });
+      fireEvent.click(opt3);
+
+      // 5. Görev başarıyla tamamlanır
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(/Harika! Tanışma Bahçesi'ni Keşfettin!/i);
+      expect(screen.getByText(/Öğrendiğin İfadeler/i)).toBeInTheDocument();
+
+      // Sonraki masaya git butonu
+      const nextBtn = screen.getByRole('button', { name: /Öğren Masasına Git \(2\. Masa\)/i });
+      fireEvent.click(nextBtn);
+      expect(handleAdvance).toHaveBeenCalledWith('ogren');
+    });
+
+    it('64. Diğer sınıflar veya diğer masalar Tanışma Bahçesi prototipinden etkilenmez, orijinal akışlarını korur', async () => {
+      await clearAllCampusData();
+      // 5. Sınıf Keşfet Masası
+      saveStudentState({
+        ...createInitialStudentState(),
+        selectedGrade: 5,
+      });
+
+      const { rerender } = render(
+        <MemoryRouter>
+          <CampusProviders>
+            <TableStationModal
+              isOpen={true}
+              stage="kesfet"
+              onClose={vi.fn()}
+              onAdvanceToStage={vi.fn()}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      // 5. Sınıfta Tanışma Bahçesi değil, orijinal kapı keşfi başlığı olmalıdır
+      expect(document.getElementById('table-station-title')).toHaveTextContent(/1\. KEŞFET MASASI/i);
+      expect(screen.queryByText(/Hello! Tanışma Bahçesi/i)).not.toBeInTheDocument();
+
+      // 3. Sınıf Öğren Masası
+      saveStudentState({
+        ...createInitialStudentState(),
+        selectedGrade: 3,
+      });
+
+      rerender(
+        <MemoryRouter>
+          <CampusProviders>
+            <TableStationModal
+              isOpen={true}
+              stage="ogren"
+              onClose={vi.fn()}
+              onAdvanceToStage={vi.fn()}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      // 3. Sınıfın Öğren Masasında Tanışma Bahçesi değil, standart Öğren Masası olmalıdır
+      expect(document.getElementById('table-station-title')).toHaveTextContent(/2\. ÖĞREN MASASI/i);
+      expect(screen.queryByText(/Hello! Tanışma Bahçesi/i)).not.toBeInTheDocument();
     });
   });
 });
