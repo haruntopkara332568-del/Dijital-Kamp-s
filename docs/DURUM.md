@@ -1,3 +1,40 @@
+# Proje Durum Raporu — Sürüm 5.1.0 (Aşama 5.1: İngilizce Sınıfında Dört Etkileşimli Masa ve Akıllı Tahta Koruması)
+
+## Aşama 5.1 — İngilizce Sınıfında Dört Etkileşimli Masa (`feat/english-four-learning-tables`)
+- **1. Dört Etkileşimli Masaya Taşınan Öğrenme İstasyonları**:
+  - Mevcut "Kapıların Anlattığı Hikâye" 4 aşamalı öğrenme akışı, sınıftaki dört fiziksel öğrenci masasına taşındı:
+    1. **1. KEŞFET MASASI (Sol Ön / Kuzeybatı)**: Görevin "Keşfet" aşaması (`table-kesfet`).
+    2. **2. ÖĞREN MASASI (Sağ Ön / Kuzeydoğu)**: Görevin "Öğren" aşaması (`table-ogren`).
+    3. **3. ÜRET MASASI (Sol Arka / Güneybatı)**: Görevin "Üret" aşaması (`table-uret`).
+    4. **4. PAYLAŞ MASASI (Sağ Arka / Güneydoğu)**: Görevin "Paylaş" aşaması (`table-paylas`).
+  - Görev içerikleri, diyaloglar, sınıf düzeyine göre farklılaşan kelime/görev yapıları (`gradeProfiles.ts`) ve depolama mekanizması (`dek_campus_v1_state`) %100 korundu; yeni içerik veya gereksiz bağımlılık eklenmedi.
+- **2. Masa Tasarımı ve Selçuklu Levhaları**:
+  - Mevcut dört masanın konumu, boyutları (150x55) ve sinematik 3B sprite görünümleri korundu.
+  - Masaların üzerine Selçuklu mimarisine uygun masif sedir ağacı kaide, sivri kemerli mukarnas formu, turkuaz çini bordürü (`#0e768a`) ve altın varak süslemeli okunaklı isim levhaları (`drawTablePlaque`) işlendi:
+    `1. KEŞFET MASASI`, `2. ÖĞREN MASASI`, `3. ÜRET MASASI`, `4. PAYLAŞ MASASI`.
+  - Masalara yaklaşıldığında aşama durumuna göre dinamik etkileşim ipucu açılır: `Keşfet Masası'na Otur [E]`.
+- **3. Sıralı İlerleme ve Sınıf Seçimi Koruması (Gating)**:
+  - Henüz sınıf seçilmemişse masalara yaklaşıldığında etkileşim ipucu `Önce Sınıfını Seç` olarak görünür; etkileşime girildiğinde `Önce Sınıf Seçim Panosu'ndan sınıfını seç.` uyarısı verilir.
+  - Önceki aşamalar tamamlanmadan sonraki masaya oturulamaz:
+    - Keşfet tamamlanmadan Öğren masasına gidildiğinde: `Önce Keşfet Masası'ndaki etkinliği tamamlamalısın.`
+    - Öğren tamamlanmadan Üret masasına gidildiğinde: `Önce Öğren Masası'ndaki etkinliği tamamlamalısın.`
+    - Üret tamamlanmadan Paylaş masasına gidildiğinde: `Önce Üret Masası'ndaki etkinliği tamamlamalısın.`
+- **4. İstasyon Modalı (`TableStationModal`) ve Sınıfa Dönüş**:
+  - Her masa yalnızca kendisine ait aşamayı izole biçimde açar (`TableStationModal`).
+  - Masadan kalkıldığında (Escape tuşu veya "Masadan Kalk / Sınıfa Dön" düğmesi) öğrenci doğrudan sınıfta, masanın hemen yanında kalır.
+  - Aşama tamamlandığında sonraki masaya yönlendiren butonlar yer alır: `Keşfet Adımını Tamamla (Öğren Masasına Git)`.
+- **5. Akıllı Tahta Koruması**:
+  - Akıllı tahtanın görsel tasarımı, konumu ve 600ms açılış ışığı/güç animasyonu eksiksiz korundu.
+  - Akıllı tahtaya etkileşime girildiğinde eski görev akışı açılmaz; etkinliklerin 4 masaya taşındığı ve tahtanın yakında gerçek yaşam uygulama alanı olarak açılacağı rehber mesajı gösterilir:
+    `Öğrenme etkinlikleri sınıftaki dört masaya (Keşfet, Öğren, Üret, Paylaş) taşınmıştır. Akıllı tahta yakında gerçek yaşam uygulama alanı olarak açılacaktır.`
+  - `SmartBoardModal` teknik kodu korunmuştur.
+- **6. Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 94 / 94 test başarıyla geçti (`walkable.test.tsx` [61 test] + `campus.test.tsx` [33 test]).
+  - `npm run build`: Başarılı (902ms).
+  - Playwright E2E (`e2e/stage51_tables.spec.ts`): Chromium ve Mobile-Chrome tam döngüyü doğruladı (8 adet kanıt ekran görüntüsü `docs/assets/stage51_*.png`).
+
 # Proje Durum Raporu — Sürüm 5.0.4 (Tek Görevli Düzeltme: Sınıf Seçim Panosu, Akıllı Tahta Kilidi ve Dış Kapı Çıkış Döngüsü)
 
 ## Tek Görevli Düzeltme — Sınıf Seçim Panosu, Akıllı Tahta Kilidi ve Dış Kapı Çıkışı (`feat/single-entry-walkable-campus`)

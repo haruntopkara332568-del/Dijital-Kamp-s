@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { WalkableCanvasEngine } from './engine/WalkableCanvasEngine';
 import {
@@ -16,8 +16,10 @@ import {
 import { WalkableControlsOverlay } from './components/WalkableControlsOverlay';
 import { SmartBoardModal } from './components/SmartBoardModal';
 import { GradeBoardModal } from './components/GradeBoardModal';
+import { TableStationModal } from './components/TableStationModal';
 import { useOptionalCampus } from '../../app/CampusProviders';
 import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } from './types';
+import type { MissionStageId } from '@/src/types/campus';
 
 export interface WalkableCampusViewProps {
   initialScene?: 'courtyard' | 'classroom';
@@ -36,6 +38,20 @@ export function WalkableCampusView({
   const selectedGradeRef = useRef<number | null>(selectedGrade);
   const onExitToGateRef = useRef(onExitToGate);
   const campusRef = useRef(campus);
+
+  const currentMissionProgress =
+    campus && selectedGrade
+      ? campus.getMissionProgress('kapilarin-anlattigi-hikaye', selectedGrade)
+      : null;
+  const completedStages = useMemo(
+    () => currentMissionProgress?.completedStages ?? [],
+    [currentMissionProgress?.completedStages],
+  );
+  const completedStagesRef = useRef<string[]>(completedStages);
+
+  useEffect(() => {
+    completedStagesRef.current = completedStages;
+  }, [completedStages]);
 
   useEffect(() => {
     selectedGradeRef.current = selectedGrade;
@@ -62,6 +78,8 @@ export function WalkableCampusView({
   const [unreachableMessage, setUnreachableMessage] = useState<string | null>(null);
   const [isSmartBoardModalOpen, setIsSmartBoardModalOpen] = useState(false);
   const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
+  const [activeTableStage, setActiveTableStage] = useState<MissionStageId | null>(null);
+  const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [isSmartBoardPoweringOn, setIsSmartBoardPoweringOn] = useState(false);
   const [isSmartBoardActive, setIsSmartBoardActive] = useState(false);
 
@@ -97,11 +115,11 @@ export function WalkableCampusView({
           { id: 'podium', name: 'Öğretmen Kürsüsü', x: 670, y: 160, width: 100, height: 50 },
           // Kitaplık
           { id: 'bookshelf', name: 'Kitaplık', x: 40, y: 150, width: 60, height: 85 },
-          // Öğrenci sıraları
-          { id: 'desk-1', name: 'Öğrenci Sırası 1', x: 190, y: 260, width: 150, height: 55 },
-          { id: 'desk-2', name: 'Öğrenci Sırası 2', x: 590, y: 260, width: 150, height: 55 },
-          { id: 'desk-3', name: 'Öğrenci Sırası 3', x: 190, y: 390, width: 150, height: 55 },
-          { id: 'desk-4', name: 'Öğrenci Sırası 4', x: 590, y: 390, width: 150, height: 55 },
+          // Öğrenci sıraları (Dört Öğrenme Masası)
+          { id: 'desk-1', name: 'Keşfet Masası', x: 190, y: 260, width: 150, height: 55 },
+          { id: 'desk-2', name: 'Öğren Masası', x: 590, y: 260, width: 150, height: 55 },
+          { id: 'desk-3', name: 'Üret Masası', x: 190, y: 390, width: 150, height: 55 },
+          { id: 'desk-4', name: 'Paylaş Masası', x: 590, y: 390, width: 150, height: 55 },
         ];
 
         const interactiveZones: InteractiveZone[] = [
@@ -119,22 +137,129 @@ export function WalkableCampusView({
           {
             id: 'smart-board',
             name: 'Akıllı Tahta',
-            prompt: selectedGradeRef.current ? 'Akıllı Tahtayı Aç' : 'Önce Sınıfını Seç',
+            prompt: !selectedGradeRef.current
+              ? 'Önce Sınıfını Seç'
+              : 'Akıllı Tahta (Yakında)',
             x: 480,
             y: 160,
             radius: 80,
             action: () => {
               if (!selectedGradeRef.current) {
-                setUnreachableMessage('Önce sınıfını seç.');
+                setUnreachableMessage("Önce Sınıf Seçim Panosu'ndan sınıfını seç.");
                 setTimeout(() => setUnreachableMessage(null), 3000);
                 return;
               }
+              // Görsel açılış animasyonunu koru; görevi masalara yönlendir
               setIsSmartBoardPoweringOn(true);
               setTimeout(() => {
                 setIsSmartBoardPoweringOn(false);
                 setIsSmartBoardActive(true);
-                setIsSmartBoardModalOpen(true);
+                setUnreachableMessage(
+                  'Öğrenme etkinlikleri sınıftaki dört masaya (Keşfet, Öğren, Üret, Paylaş) taşınmıştır. Akıllı tahta yakında gerçek yaşam uygulama alanı olarak açılacaktır.',
+                );
+                setTimeout(() => setUnreachableMessage(null), 4000);
               }, 600);
+            },
+          },
+          // 1. KEŞFET MASASI (Sol Ön)
+          {
+            id: 'table-kesfet',
+            name: 'Keşfet Masası',
+            prompt: !selectedGradeRef.current
+              ? 'Önce Sınıfını Seç'
+              : "Keşfet Masası'na Otur",
+            x: 265,
+            y: 288,
+            radius: 75,
+            action: () => {
+              if (!selectedGradeRef.current) {
+                setUnreachableMessage("Önce Sınıf Seçim Panosu'ndan sınıfını seç.");
+                setTimeout(() => setUnreachableMessage(null), 3000);
+                return;
+              }
+              setActiveTableStage('kesfet');
+              setIsTableModalOpen(true);
+            },
+          },
+          // 2. ÖĞREN MASASI (Sağ Ön)
+          {
+            id: 'table-ogren',
+            name: 'Öğren Masası',
+            prompt: !selectedGradeRef.current
+              ? 'Önce Sınıfını Seç'
+              : !completedStagesRef.current.includes('kesfet')
+                ? 'Önce Keşfet Masası'
+                : "Öğren Masası'na Otur",
+            x: 665,
+            y: 288,
+            radius: 75,
+            action: () => {
+              if (!selectedGradeRef.current) {
+                setUnreachableMessage("Önce Sınıf Seçim Panosu'ndan sınıfını seç.");
+                setTimeout(() => setUnreachableMessage(null), 3000);
+                return;
+              }
+              if (!completedStagesRef.current.includes('kesfet')) {
+                setUnreachableMessage("Önce Keşfet Masası'ndaki etkinliği tamamlamalısın.");
+                setTimeout(() => setUnreachableMessage(null), 3000);
+                return;
+              }
+              setActiveTableStage('ogren');
+              setIsTableModalOpen(true);
+            },
+          },
+          // 3. ÜRET MASASI (Sol Arka)
+          {
+            id: 'table-uret',
+            name: 'Üret Masası',
+            prompt: !selectedGradeRef.current
+              ? 'Önce Sınıfını Seç'
+              : !completedStagesRef.current.includes('ogren')
+                ? 'Önce Öğren Masası'
+                : "Üret Masası'na Otur",
+            x: 265,
+            y: 418,
+            radius: 75,
+            action: () => {
+              if (!selectedGradeRef.current) {
+                setUnreachableMessage("Önce Sınıf Seçim Panosu'ndan sınıfını seç.");
+                setTimeout(() => setUnreachableMessage(null), 3000);
+                return;
+              }
+              if (!completedStagesRef.current.includes('ogren')) {
+                setUnreachableMessage("Önce Öğren Masası'ndaki etkinliği tamamlamalısın.");
+                setTimeout(() => setUnreachableMessage(null), 3000);
+                return;
+              }
+              setActiveTableStage('uret');
+              setIsTableModalOpen(true);
+            },
+          },
+          // 4. PAYLAŞ MASASI (Sağ Arka)
+          {
+            id: 'table-paylas',
+            name: 'Paylaş Masası',
+            prompt: !selectedGradeRef.current
+              ? 'Önce Sınıfını Seç'
+              : !completedStagesRef.current.includes('uret')
+                ? 'Önce Üret Masası'
+                : "Paylaş Masası'na Otur",
+            x: 665,
+            y: 418,
+            radius: 75,
+            action: () => {
+              if (!selectedGradeRef.current) {
+                setUnreachableMessage("Önce Sınıf Seçim Panosu'ndan sınıfını seç.");
+                setTimeout(() => setUnreachableMessage(null), 3000);
+                return;
+              }
+              if (!completedStagesRef.current.includes('uret')) {
+                setUnreachableMessage("Önce Üret Masası'ndaki etkinliği tamamlamalısın.");
+                setTimeout(() => setUnreachableMessage(null), 3000);
+                return;
+              }
+              setActiveTableStage('paylas');
+              setIsTableModalOpen(true);
             },
           },
           {
@@ -296,6 +421,16 @@ export function WalkableCampusView({
     [],
   );
 
+  // Sınıf seçimi veya aşama tamamlanma durumunda etkileşim bölgelerini (prompt ve kilitleri) dinamik güncelle
+  useEffect(() => {
+    selectedGradeRef.current = selectedGrade;
+    completedStagesRef.current = completedStages;
+    if (engineRef.current && currentScene === 'classroom') {
+      const config = getSceneConfig('classroom');
+      engineRef.current.updateInteractiveZones(config.interactiveZones);
+    }
+  }, [selectedGrade, completedStages, currentScene, getSceneConfig]);
+
   // Motor başlatma ve sahne yükleme (Yalnızca sahne değiştiğinde çalışır, React durum güncellemelerinde motor sıfırlanmaz)
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -352,7 +487,13 @@ export function WalkableCampusView({
         },
         onRenderEntities: (ctx, player) => {
           if (currentScene === 'classroom') {
-            renderClassroomEntities(ctx, player, config.width, config.height);
+            renderClassroomEntities(
+              ctx,
+              player,
+              config.width,
+              config.height,
+              completedStagesRef.current,
+            );
           } else {
             renderCourtyardEntities(ctx, player, config.width, config.height);
           }
@@ -411,23 +552,23 @@ export function WalkableCampusView({
     };
   }, [currentScene, getSceneConfig]);
 
-  // Sınıf seviyesi değiştiğinde sınıf etkileşim bölgelerini güncelle
+  // Sınıf seviyesi veya tamamlanan aşamalar değiştiğinde sınıf etkileşim bölgelerini güncelle
   useEffect(() => {
     if (engineRef.current && currentScene === 'classroom') {
       const config = getSceneConfig('classroom');
       engineRef.current.updateInteractiveZones(config.interactiveZones);
     }
-  }, [currentScene, getSceneConfig, selectedGrade]);
+  }, [currentScene, getSceneConfig, selectedGrade, completedStages]);
 
-  // Akıllı Tahta veya Sınıf Panosu modalı açıldığında motoru duraklat
+  // Modallar açıldığında motoru duraklat
   useEffect(() => {
     if (!engineRef.current) return;
-    if (isSmartBoardModalOpen || isGradeModalOpen) {
+    if (isSmartBoardModalOpen || isGradeModalOpen || isTableModalOpen) {
       engineRef.current.pause();
     } else {
       engineRef.current.resume();
     }
-  }, [isSmartBoardModalOpen, isGradeModalOpen]);
+  }, [isSmartBoardModalOpen, isGradeModalOpen, isTableModalOpen]);
 
   const handleVirtualDirection = (vx: number, vy: number) => {
     if (engineRef.current) {
@@ -486,6 +627,19 @@ export function WalkableCampusView({
           campus?.setGrade(grade);
         }}
       />
+
+      {/* Dört Öğrenme Masası İstasyon Modalı */}
+      {activeTableStage && (
+        <TableStationModal
+          isOpen={isTableModalOpen}
+          stage={activeTableStage}
+          missionId="kapilarin-anlattigi-hikaye"
+          onClose={() => setIsTableModalOpen(false)}
+          onAdvanceToStage={(nextStage) => {
+            setActiveTableStage(nextStage);
+          }}
+        />
+      )}
     </div>
   );
 }

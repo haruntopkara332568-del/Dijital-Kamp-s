@@ -89,10 +89,12 @@ export function renderClassroomEntities(
   player: PlayerCharacter,
   width?: number,
   height?: number,
+  completedStages?: string[],
 ) {
   void width;
   void height;
 
+  const now = typeof performance !== 'undefined' ? performance.now() : 0;
   const podiumAsset = getClassroomTeacherPodiumAsset();
   const bookshelfAsset = getClassroomBookshelfAsset();
   const deskAsset = getClassroomDeskAsset();
@@ -137,7 +139,7 @@ export function renderClassroomEntities(
       },
     },
 
-    // 3. ÖĞRENCİ SIRASI 1 — Sol Ön (Engel: 190, 260, 150, 55 -> alt taban baseY: 315)
+    // 3. 1. KEŞFET MASASI — Sol Ön (Engel: 190, 260, 150, 55 -> alt taban baseY: 315)
     {
       id: 'desk-1',
       baseY: 315,
@@ -151,12 +153,21 @@ export function renderClassroomEntities(
           c.drawImage(deskAsset, 175, 210, 180, 115);
           c.restore();
         } else {
-          drawStudentDesk(c, 190, 260, '1. Sıra (Sol)', '#d87a32');
+          drawStudentDesk(c, 190, 260, '1. Keşfet Masası', '#0e768a');
         }
+        drawTablePlaque(
+          c,
+          265,
+          246,
+          '1. KEŞFET MASASI',
+          completedStages?.includes('kesfet'),
+          !completedStages?.includes('kesfet'),
+          now,
+        );
       },
     },
 
-    // 4. ÖĞRENCİ SIRASI 2 — Sağ Ön (Engel: 590, 260, 150, 55 -> alt taban baseY: 315)
+    // 4. 2. ÖĞREN MASASI — Sağ Ön (Engel: 590, 260, 150, 55 -> alt taban baseY: 315)
     {
       id: 'desk-2',
       baseY: 315,
@@ -171,12 +182,21 @@ export function renderClassroomEntities(
           c.drawImage(sprite, 575, 210, 180, 115);
           c.restore();
         } else {
-          drawStudentDesk(c, 590, 260, '1. Sıra (Sağ)', '#249ab0');
+          drawStudentDesk(c, 590, 260, '2. Öğren Masası', '#249ab0');
         }
+        drawTablePlaque(
+          c,
+          665,
+          246,
+          '2. ÖĞREN MASASI',
+          completedStages?.includes('ogren'),
+          completedStages?.includes('kesfet') && !completedStages?.includes('ogren'),
+          now,
+        );
       },
     },
 
-    // 5. ÖĞRENCİ SIRASI 3 — Sol Arka (Engel: 190, 390, 150, 55 -> alt taban baseY: 445)
+    // 5. 3. ÜRET MASASI — Sol Arka (Engel: 190, 390, 150, 55 -> alt taban baseY: 445)
     {
       id: 'desk-3',
       baseY: 445,
@@ -190,12 +210,21 @@ export function renderClassroomEntities(
           c.drawImage(deskAsset, 175, 340, 180, 115);
           c.restore();
         } else {
-          drawStudentDesk(c, 190, 390, '2. Sıra (Sol)', '#2d7350');
+          drawStudentDesk(c, 190, 390, '3. Üret Masası', '#d97706');
         }
+        drawTablePlaque(
+          c,
+          265,
+          376,
+          '3. ÜRET MASASI',
+          completedStages?.includes('uret'),
+          completedStages?.includes('ogren') && !completedStages?.includes('uret'),
+          now,
+        );
       },
     },
 
-    // 6. ÖĞRENCİ SIRASI 4 — Sağ Arka (Engel: 590, 390, 150, 55 -> alt taban baseY: 445)
+    // 6. 4. PAYLAŞ MASASI — Sağ Arka (Engel: 590, 390, 150, 55 -> alt taban baseY: 445)
     {
       id: 'desk-4',
       baseY: 445,
@@ -210,8 +239,17 @@ export function renderClassroomEntities(
           c.drawImage(sprite, 575, 340, 180, 115);
           c.restore();
         } else {
-          drawStudentDesk(c, 590, 390, '2. Sıra (Sağ)', '#b25938');
+          drawStudentDesk(c, 590, 390, '4. Paylaş Masası', '#059669');
         }
+        drawTablePlaque(
+          c,
+          665,
+          376,
+          '4. PAYLAŞ MASASI',
+          completedStages?.includes('paylas'),
+          completedStages?.includes('uret') && !completedStages?.includes('paylas'),
+          now,
+        );
       },
     },
 
@@ -1001,6 +1039,113 @@ function drawBookshelf(ctx: CanvasRenderingContext2D, x: number, y: number) {
   ctx.strokeStyle = '#d8972b';
   ctx.lineWidth = 1.5;
   ctx.stroke();
+
+  ctx.restore();
+}
+
+/**
+ * Dört Öğrenme Masası Selçuklu Ahşap & Çini İsim Levhası:
+ * Ahşap oyma kaide, sivri Selçuklu kemeri, turkuaz çini bordür, altın yaldızlı başlık ve durum rozeti.
+ */
+export function drawTablePlaque(
+  ctx: CanvasRenderingContext2D,
+  centerX: number,
+  topY: number,
+  title: string,
+  isCompleted: boolean = false,
+  isNext: boolean = false,
+  now: number = 0,
+) {
+  const w = 118;
+  const h = 26;
+  const x = centerX - w / 2;
+  const y = topY;
+
+  ctx.save();
+
+  // 1. Zemin Yumuşak Masa Üstü Gölgesi
+  ctx.fillStyle = 'rgba(23, 43, 71, 0.28)';
+  ctx.beginPath();
+  ctx.ellipse(centerX, y + h + 2, w / 2 + 4, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 2. Selçuklu Masif Ahşap Kaide / Pano Gövdesi
+  ctx.fillStyle = '#2b1b11';
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x, y, w, h, 5);
+  } else {
+    ctx.rect(x, y, w, h);
+  }
+  ctx.fill();
+
+  // 3. Selçuklu Altın Yaldızlı Ahşap Çerçeve
+  ctx.strokeStyle = isNext ? '#f59e0b' : '#a67c52';
+  ctx.lineWidth = isNext ? 2 : 1.5;
+  ctx.stroke();
+
+  // 4. Turkuaz Çini İç Bordür
+  ctx.strokeStyle = '#0e768a';
+  ctx.lineWidth = 1.2;
+  ctx.strokeRect(x + 3, y + 3, w - 6, h - 6);
+
+  // 5. Üst Sivri Kemer Mukarnas Süsü
+  ctx.fillStyle = '#0e768a';
+  ctx.beginPath();
+  ctx.moveTo(centerX - 16, y);
+  if (ctx.quadraticCurveTo) {
+    ctx.quadraticCurveTo(centerX, y - 7, centerX + 16, y);
+  } else {
+    ctx.lineTo(centerX, y - 7);
+    ctx.lineTo(centerX + 16, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#d8972b';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Mini Selçuklu rozeti
+  ctx.fillStyle = '#fef08a';
+  ctx.beginPath();
+  ctx.arc(centerX, y - 2, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 6. Masa İsim Yazısı (Altın Yaldızlı & Okunaklı)
+  ctx.fillStyle = isCompleted ? '#86efac' : isNext ? '#fef08a' : '#fbf2df';
+  ctx.font = 'bold 9px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+  ctx.shadowBlur = 3;
+  ctx.shadowOffsetY = 1;
+  ctx.fillText(title, centerX, y + h / 2 + 1);
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+
+  // 7. Durum Rozeti (Sağ üst köşe)
+  if (isCompleted) {
+    ctx.fillStyle = '#10b981';
+    ctx.beginPath();
+    ctx.arc(x + w - 6, y + 6, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 7px sans-serif';
+    ctx.fillText('✓', x + w - 6, y + 6.5);
+  } else if (isNext) {
+    const pulse = Math.sin(now / 220) * 0.35 + 0.65;
+    ctx.fillStyle = `rgba(245, 158, 11, ${pulse})`;
+    ctx.beginPath();
+    ctx.arc(x + w - 6, y + 6, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fef08a';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
 
   ctx.restore();
 }

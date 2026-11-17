@@ -1,3 +1,36 @@
+# Test ve Kalite Güvence Raporu — Sürüm 5.1.0 (Aşama 5.1: İngilizce Sınıfında Dört Etkileşimli Masa ve Akıllı Tahta Koruması)
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (strict TypeScript).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **94 / 94 test** (`src/test/walkable.test.tsx` [61 test] + `src/test/campus.test.tsx` [33 test], toplam `4.6 s`):
+  - 58. `TableStationModal` dört aşama için doğru Selçuklu başlığını ve masa adını görüntüler.
+  - 59. `TableStationModal` Escape tuşu ve masadan kalk düğmesi ile sınıfa döner.
+  - 60. `classroomSceneRenderer` dört masa için Selçuklu levhalarını çizer.
+  - 61. Akıllı tahta modalı sınıfa dönme işlevini ve başlığını korur.
+- **`npx playwright test e2e/stage51_tables.spec.ts`**: Geçti — **2 / 2 test** (`chromium` [9.0s] + `mobile-chrome` [10.0s]):
+  - 1. Sinematik Selçuklu giriş kapısı açıldı (`stage51_1_gate.png`).
+  - 2. Avluda yürünebilir sinematik avlu ve binalar açıldı (`stage51_2_courtyard.png`).
+  - 3. İngilizce sınıfına girildi; 4 masa Selçuklu levhalarıyla doğrulandı (`stage51_3_classroom_tables.png`).
+  - 4. Sınıf seçimi yapılmadan önce Keşfet Masası'na yaklaşıldığında "Önce Sınıf Seçim Panosu'ndan sınıfını seç." uyarısı verildi.
+  - 5. Sınıf Seçim Panosundan 5. sınıf seçildi ve kaydedildi.
+  - 6. Keşfet Masası'na oturuldu, `1. KEŞFET MASASI` başlığıyla istasyon modalı açıldı (`stage51_4_table_kesfet.png`).
+  - 7. Keşfet tamamlanmadan Öğren Masası'na gidildiğinde "Önce Keşfet Masası'ndaki etkinliği tamamlamalısın." uyarısı ile sıralı ilerleme kuralı korundu (`stage51_5_table_ogren_gated.png`).
+  - 8. Akıllı tahtaya yaklaşıldığında eski görev akışı açılmadı, açılış ışığı sonrası etkinliklerin sınıftaki 4 masaya taşındığı bilgisi gösterildi (`stage51_6_smartboard_protected.png`).
+  - 9. Sınıftan avluya dönüldü (`stage51_7_return_courtyard.png`).
+  - 10. Avludan güney dış kapıya yürünerek kampüsten çıkış ve ilk giriş kapısı sahnesine tam döngüsel varış doğrulandı (`stage51_8_full_cycle_at_gate.png`).
+- **`npm run build` (`vite build`)**: Geçti — **902ms** içinde hatasız üretim derlemesi oluşturuldu.
+
+## 2. Aşama 5.1 Test Kanıt Ekran Görüntüleri (`docs/assets/`):
+- `stage51_1_gate.png`: Sinematik Selçuklu Taç Kapı başlangıcı.
+- `stage51_2_courtyard.png`: Sinematik yürünebilir avlu ve yönlendirmeler.
+- `stage51_3_classroom_tables.png`: İngilizce sınıfı ve Selçuklu levhalı 4 masa.
+- `stage51_4_table_kesfet.png`: 1. Keşfet Masası istasyon modalı.
+- `stage51_5_table_ogren_gated.png`: Sıralı ilerleme kuralı (Önce Keşfet Masası uyarısı).
+- `stage51_6_smartboard_protected.png`: Akıllı tahta koruma mesajı (Etkinlikler masalara taşındı).
+- `stage51_7_return_courtyard.png`: Sınıftan avluya dönüş.
+- `stage51_8_full_cycle_at_gate.png`: Dış kapıdan çıkış sonrası giriş kapısına tam döngü.
+
 # Test ve Kalite Güvence Raporu — Sürüm 5.0.4 (Tek Görevli Düzeltme: Sınıf Seçim Panosu, Akıllı Tahta Kilidi ve Dış Kapı Çıkış Döngüsü)
 
 ## 1. Çalıştırıldı ve Geçti

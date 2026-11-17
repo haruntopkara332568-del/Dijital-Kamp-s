@@ -11,6 +11,7 @@ import {
 } from '@/src/features/walkable/engine/pathfinding';
 import { SmartBoardModal } from '@/src/features/walkable/components/SmartBoardModal';
 import { GradeBoardModal } from '@/src/features/walkable/components/GradeBoardModal';
+import { TableStationModal } from '@/src/features/walkable/components/TableStationModal';
 import { WalkableControlsOverlay } from '@/src/features/walkable/components/WalkableControlsOverlay';
 import { drawCharacter, CHARACTER_SCALES } from '@/src/features/walkable/engine/characterRenderer';
 import {
@@ -1552,5 +1553,162 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
 
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(handleClose).toHaveBeenCalledTimes(1);
+  });
+
+  describe('Aşama 5.1 — İngilizce Sınıfında Dört Etkileşimli Masa', () => {
+    it('58. Aşama 5.1: TableStationModal dört aşama için doğru Selçuklu başlığını ve masa adını görüntüler', () => {
+      const { rerender } = render(
+        <MemoryRouter>
+          <CampusProviders>
+            <TableStationModal
+              isOpen={true}
+              stage="kesfet"
+              onClose={vi.fn()}
+              onAdvanceToStage={vi.fn()}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      expect(document.getElementById('table-station-title')).toHaveTextContent(/1\. KEŞFET MASASI/i);
+      expect(document.getElementById('table-station-desc')).toHaveTextContent(/Keşfet/i);
+
+      rerender(
+        <MemoryRouter>
+          <CampusProviders>
+            <TableStationModal
+              isOpen={true}
+              stage="ogren"
+              onClose={vi.fn()}
+              onAdvanceToStage={vi.fn()}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+      expect(document.getElementById('table-station-title')).toHaveTextContent(/2\. ÖĞREN MASASI/i);
+
+      rerender(
+        <MemoryRouter>
+          <CampusProviders>
+            <TableStationModal
+              isOpen={true}
+              stage="uret"
+              onClose={vi.fn()}
+              onAdvanceToStage={vi.fn()}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+      expect(document.getElementById('table-station-title')).toHaveTextContent(/3\. ÜRET MASASI/i);
+
+      rerender(
+        <MemoryRouter>
+          <CampusProviders>
+            <TableStationModal
+              isOpen={true}
+              stage="paylas"
+              onClose={vi.fn()}
+              onAdvanceToStage={vi.fn()}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+      expect(document.getElementById('table-station-title')).toHaveTextContent(/4\. PAYLAŞ MASASI/i);
+    });
+
+    it('59. Aşama 5.1: TableStationModal Escape tuşu ve masadan kalk düğmesi ile sınıfa döner', () => {
+      const handleClose = vi.fn();
+
+      render(
+        <MemoryRouter>
+          <CampusProviders>
+            <TableStationModal
+              isOpen={true}
+              stage="kesfet"
+              onClose={handleClose}
+              onAdvanceToStage={vi.fn()}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      // Escape tuşu ile kapanma
+      fireEvent.keyDown(window, { key: 'Escape' });
+      expect(handleClose).toHaveBeenCalledTimes(1);
+
+      // Kapatma düğmesi ile kapanma
+      const closeBtn = screen.getByRole('button', { name: /Masadan kalk ve sınıfa dön/i });
+      fireEvent.click(closeBtn);
+      expect(handleClose).toHaveBeenCalledTimes(2);
+    });
+
+    it('60. Aşama 5.1: classroomSceneRenderer dört masa için Selçuklu levhalarını çizer', () => {
+      const ctx = {
+        save: vi.fn(),
+        restore: vi.fn(),
+        beginPath: vi.fn(),
+        closePath: vi.fn(),
+        moveTo: vi.fn(),
+        lineTo: vi.fn(),
+        quadraticCurveTo: vi.fn(),
+        bezierCurveTo: vi.fn(),
+        fill: vi.fn(),
+        stroke: vi.fn(),
+        fillText: vi.fn(),
+        strokeText: vi.fn(),
+        measureText: vi.fn(() => ({ width: 60 })),
+        drawImage: vi.fn(),
+        rect: vi.fn(),
+        fillRect: vi.fn(),
+        strokeRect: vi.fn(),
+        arc: vi.fn(),
+        ellipse: vi.fn(),
+        translate: vi.fn(),
+        scale: vi.fn(),
+        rotate: vi.fn(),
+        setLineDash: vi.fn(),
+        createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+        createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      } as unknown as CanvasRenderingContext2D;
+
+      const player: PlayerCharacter = {
+        x: 480,
+        y: 400,
+        width: 22,
+        height: 28,
+        direction: 'down',
+        state: 'idle',
+        speed: 160,
+        walkFrame: 0,
+        grade: 5,
+      };
+
+      expect(() => {
+        renderClassroomEntities(ctx, player, 1000, 700, ['kesfet']);
+      }).not.toThrow();
+
+      // fillText should be called for table plaque labels
+      expect(ctx.fillText).toHaveBeenCalled();
+    });
+
+    it('61. Aşama 5.1: Akıllı tahta modalı sınıfa dönme işlevini ve başlığını korur', () => {
+      const handleClose = vi.fn();
+      render(
+        <MemoryRouter>
+          <CampusProviders>
+            <SmartBoardModal
+              isOpen={true}
+              onClose={handleClose}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      // Başlık ve tahta mevcuttur
+      expect(document.getElementById('smartboard-title')).toHaveTextContent(/İngilizce Sınıfı — Etkileşimli Akıllı Tahta/i);
+      const closeBtn = screen.getByRole('button', { name: /Akıllı tahtayı kapat ve sınıfa dön/i });
+      fireEvent.click(closeBtn);
+      expect(handleClose).toHaveBeenCalledTimes(1);
+    });
   });
 });
