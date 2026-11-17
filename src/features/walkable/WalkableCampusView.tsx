@@ -15,18 +15,40 @@ import {
 } from './engine/classroomSceneRenderer';
 import { WalkableControlsOverlay } from './components/WalkableControlsOverlay';
 import { SmartBoardModal } from './components/SmartBoardModal';
+import { GradeBoardModal } from './components/GradeBoardModal';
+import { useOptionalCampus } from '../../app/CampusProviders';
 import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } from './types';
 
 export interface WalkableCampusViewProps {
   initialScene?: 'courtyard' | 'classroom';
   onBackToMap?: () => void;
+  onExitToGate?: () => void;
 }
 
 export function WalkableCampusView({
   initialScene = 'courtyard',
   onBackToMap,
+  onExitToGate,
 }: WalkableCampusViewProps) {
   const navigate = useNavigate();
+  const campus = useOptionalCampus();
+  const selectedGrade = campus?.state.selectedGrade ?? null;
+  const selectedGradeRef = useRef<number | null>(selectedGrade);
+  const onExitToGateRef = useRef(onExitToGate);
+  const campusRef = useRef(campus);
+
+  useEffect(() => {
+    selectedGradeRef.current = selectedGrade;
+  }, [selectedGrade]);
+
+  useEffect(() => {
+    onExitToGateRef.current = onExitToGate;
+  }, [onExitToGate]);
+
+  useEffect(() => {
+    campusRef.current = campus;
+  }, [campus]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<WalkableCanvasEngine | null>(null);
@@ -39,6 +61,7 @@ export function WalkableCampusView({
   const [activeZone, setActiveZone] = useState<InteractiveZone | null>(null);
   const [unreachableMessage, setUnreachableMessage] = useState<string | null>(null);
   const [isSmartBoardModalOpen, setIsSmartBoardModalOpen] = useState(false);
+  const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
   const [isSmartBoardPoweringOn, setIsSmartBoardPoweringOn] = useState(false);
   const [isSmartBoardActive, setIsSmartBoardActive] = useState(false);
 
@@ -83,13 +106,29 @@ export function WalkableCampusView({
 
         const interactiveZones: InteractiveZone[] = [
           {
+            id: 'grade-board',
+            name: 'Sınıf Seçim Panosu',
+            prompt: 'Sınıfını Seç / Değiştir',
+            x: 270,
+            y: 160,
+            radius: 80,
+            action: () => {
+              setIsGradeModalOpen(true);
+            },
+          },
+          {
             id: 'smart-board',
             name: 'Akıllı Tahta',
-            prompt: 'Akıllı Tahtayı Aç',
+            prompt: selectedGradeRef.current ? 'Akıllı Tahtayı Aç' : 'Önce Sınıfını Seç',
             x: 480,
             y: 160,
             radius: 80,
             action: () => {
+              if (!selectedGradeRef.current) {
+                setUnreachableMessage('Önce sınıfını seç.');
+                setTimeout(() => setUnreachableMessage(null), 3000);
+                return;
+              }
               setIsSmartBoardPoweringOn(true);
               setTimeout(() => {
                 setIsSmartBoardPoweringOn(false);
@@ -228,6 +267,22 @@ export function WalkableCampusView({
             setTimeout(() => setUnreachableMessage(null), 3500);
           },
         },
+        // 7. Kampüs Giriş/Çıkış Kapısı (Dış Kapı Çıkışı)
+        {
+          id: 'exit-gate',
+          name: 'Kampüs Giriş Kapısı',
+          prompt: 'Kampüsten Çık',
+          x: 700,
+          y: 840,
+          radius: 85,
+          action: () => {
+            if (onExitToGateRef.current) {
+              onExitToGateRef.current();
+            } else if (campusRef.current) {
+              campusRef.current.replayWelcomeFlow();
+            }
+          },
+        },
       ];
 
       return {
@@ -289,6 +344,7 @@ export function WalkableCampusView({
               config.height,
               smartBoardVisualStateRef.current.active,
               smartBoardVisualStateRef.current.poweringOn,
+              selectedGradeRef.current,
             );
           } else {
             renderCourtyardLayeredBackground(ctx, config.width, config.height);
@@ -316,6 +372,7 @@ export function WalkableCampusView({
               config.height,
               smartBoardVisualStateRef.current.active,
               smartBoardVisualStateRef.current.poweringOn,
+              selectedGradeRef.current,
             );
           } else {
             renderCourtyardBackground(ctx, config.width, config.height);
@@ -354,15 +411,23 @@ export function WalkableCampusView({
     };
   }, [currentScene, getSceneConfig]);
 
-  // Akıllı Tahta modalı açıldığında motoru duraklat
+  // Sınıf seviyesi değiştiğinde sınıf etkileşim bölgelerini güncelle
+  useEffect(() => {
+    if (engineRef.current && currentScene === 'classroom') {
+      const config = getSceneConfig('classroom');
+      engineRef.current.updateInteractiveZones(config.interactiveZones);
+    }
+  }, [currentScene, getSceneConfig, selectedGrade]);
+
+  // Akıllı Tahta veya Sınıf Panosu modalı açıldığında motoru duraklat
   useEffect(() => {
     if (!engineRef.current) return;
-    if (isSmartBoardModalOpen) {
+    if (isSmartBoardModalOpen || isGradeModalOpen) {
       engineRef.current.pause();
     } else {
       engineRef.current.resume();
     }
-  }, [isSmartBoardModalOpen]);
+  }, [isSmartBoardModalOpen, isGradeModalOpen]);
 
   const handleVirtualDirection = (vx: number, vy: number) => {
     if (engineRef.current) {
@@ -410,6 +475,16 @@ export function WalkableCampusView({
         isOpen={isSmartBoardModalOpen}
         onClose={() => setIsSmartBoardModalOpen(false)}
         missionId="kapilarin-anlattigi-hikaye"
+      />
+
+      {/* Sınıf Seçim Panosu Modal Penceresi */}
+      <GradeBoardModal
+        isOpen={isGradeModalOpen}
+        onClose={() => setIsGradeModalOpen(false)}
+        selectedGrade={selectedGrade}
+        onSelectGrade={(grade) => {
+          campus?.setGrade(grade);
+        }}
       />
     </div>
   );

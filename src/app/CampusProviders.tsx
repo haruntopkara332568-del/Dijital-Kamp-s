@@ -80,7 +80,7 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
       ...prev,
       hasSeenGate: true,
       hasCompletedOnboarding: true,
-      selectedGrade: prev.selectedGrade ?? 5,
+      selectedGrade: prev.selectedGrade,
     }));
   }, [updateAndPersist]);
 

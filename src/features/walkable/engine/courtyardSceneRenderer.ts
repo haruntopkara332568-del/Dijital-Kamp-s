@@ -37,6 +37,11 @@ export function renderCourtyardLayeredBackground(
   width: number,
   height: number,
 ) {
+  const isReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const now = isReducedMotion ? 0 : typeof performance !== 'undefined' ? performance.now() : 0;
+
   // 1. ZEMİN (Katmanlı Sıcak Taş Meydan & Bahçe Dokusu)
   drawCourtyardGround(ctx, width, height);
 
@@ -54,8 +59,11 @@ export function renderCourtyardLayeredBackground(
   const centerY = height / 2 + 30; // 480
   drawCentralStarPlazaGround(ctx, centerX, centerY);
 
-  // 4. TAŞ DÖŞELİ BAĞLANTI YOLLARI (5 Ana Rota)
+  // 4. TAŞ DÖŞELİ BAĞLANTI YOLLARI (5 Ana Rota + Dış Kapı Çıkış Yolu)
   drawStonePathways(ctx, centerX, centerY);
+
+  // 4a. KAMPÜS DIŞ KAPI ÇIKIŞ EŞİĞİ VE MASİF AHŞAP KANATLAR
+  drawSouthEntrancePortal(ctx, centerX, 860, now);
 
   // 4b. YÖNLENDİRİCİ ZEMİN MOZAİK OKLARI (İngilizce Dünyasına yönlendiren taş kakmalar)
   drawPathwayGuidanceArrows(ctx);
@@ -579,7 +587,7 @@ export function drawCentralStarPlaza(
 }
 
 /**
- * 5 Ana Yürüyüş Yolu: Dokulu kesme taş döşeme ve kumtaşı bordürler.
+ * Ana Yürüyüş Yolları: Dokulu kesme taş döşeme, kumtaşı bordürler ve güney dış kapı rotası.
  */
 function drawStonePathways(ctx: CanvasRenderingContext2D, cx: number, cy: number) {
   const paths = [
@@ -588,6 +596,7 @@ function drawStonePathways(ctx: CanvasRenderingContext2D, cx: number, cy: number
     { x: 960, y: 340 }, // İngilizce Dünyası
     { x: 340, y: 640 }, // Yolculuğum
     { x: 980, y: 640 }, // Görev Panosu
+    { x: 700, y: 860 }, // Kampüs Dış Kapı Çıkışı
   ];
 
   ctx.save();
@@ -622,6 +631,126 @@ function drawStonePathways(ctx: CanvasRenderingContext2D, cx: number, cy: number
     ctx.lineTo(p.x, p.y);
     ctx.stroke();
   }
+
+  ctx.restore();
+}
+
+/**
+ * Kampüs Güney Giriş / Çıkış Kapısı Eşiği (700, 860).
+ * Avludan dış kapıya dönüşü görsel ve işlevsel kılan Selçuklu taş kemer eşiği.
+ */
+function drawSouthEntrancePortal(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  now: number,
+) {
+  ctx.save();
+
+  // 1. Zemin Temas ve Eşik Gölgesi
+  ctx.fillStyle = 'rgba(23, 43, 71, 0.3)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + 12, 110, 24, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 2. Mermer Taş Eşik (Selçuklu Kesme Taş Kaide)
+  ctx.fillStyle = '#ede3cf';
+  ctx.strokeStyle = '#bda888';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(cx - 90, cy - 8, 180, 28, 6);
+  } else {
+    ctx.rect(cx - 90, cy - 8, 180, 28);
+  }
+  ctx.fill();
+  ctx.stroke();
+
+  // Turkuaz Çini Kakma Eşik Şeridi
+  ctx.fillStyle = '#0e768a';
+  ctx.fillRect(cx - 75, cy - 2, 150, 6);
+
+  // 3. Masif Ahşap Selçuklu Kapı Kanatları (İki yana açık kanatlar)
+  // Sol Kapı Kanadı
+  ctx.save();
+  ctx.translate(cx - 85, cy - 10);
+  ctx.rotate(-0.15);
+  ctx.fillStyle = '#4a3319';
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(0, -60, 24, 66, [4, 0, 0, 4]);
+  } else {
+    ctx.rect(0, -60, 24, 66);
+  }
+  ctx.fill();
+  ctx.strokeStyle = '#d8972b';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  // Pirinç kabara çivileri
+  ctx.fillStyle = '#fef08a';
+  ctx.beginPath();
+  ctx.arc(12, -45, 2, 0, Math.PI * 2);
+  ctx.arc(12, -25, 2, 0, Math.PI * 2);
+  ctx.arc(12, -5, 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Sağ Kapı Kanadı
+  ctx.save();
+  ctx.translate(cx + 61, cy - 10);
+  ctx.rotate(0.15);
+  ctx.fillStyle = '#4a3319';
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(0, -60, 24, 66, [0, 4, 4, 0]);
+  } else {
+    ctx.rect(0, -60, 24, 66);
+  }
+  ctx.fill();
+  ctx.strokeStyle = '#d8972b';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  // Pirinç çiviler
+  ctx.fillStyle = '#fef08a';
+  ctx.beginPath();
+  ctx.arc(12, -45, 2, 0, Math.PI * 2);
+  ctx.arc(12, -25, 2, 0, Math.PI * 2);
+  ctx.arc(12, -5, 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // 4. Eşik Etkileşim Işıltısı (Öğrenci yaklaşırken parıldayan dış kapı aurası)
+  const pulse = Math.sin(now / 300) * 0.3 + 0.7;
+  ctx.strokeStyle = `rgba(216, 151, 43, ${pulse})`;
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([5, 4]);
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + 4, 75, 18, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 5. Tabelacık / Rozet: KAMPÜSTEN ÇIK
+  ctx.fillStyle = '#172b47';
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(cx - 55, cy - 32, 110, 20, 4);
+  } else {
+    ctx.rect(cx - 55, cy - 32, 110, 20);
+  }
+  ctx.fill();
+  ctx.strokeStyle = '#d8972b';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 9px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('⇩ KAMPÜSTEN ÇIK', cx, cy - 22);
+
+  // Yan Fenerler (Selçuklu Kandilleri)
+  drawLantern(ctx, cx - 88, cy - 28, now);
+  drawLantern(ctx, cx + 88, cy - 28, now);
 
   ctx.restore();
 }
@@ -766,11 +895,13 @@ function drawCourtyardGrassParterres(
 function drawPathwayGuidanceArrows(ctx: CanvasRenderingContext2D) {
   ctx.save();
 
-  // Merkez meydan (700, 480) ile İngilizce Dünyası (960, 340) arasındaki yol oku noktaları
+  // Merkez meydan (700, 480) ile İngilizce Dünyası (960, 340) ve Güney Dış Kapı (700, 860) arasındaki yol oku noktaları
   const arrowPoints = [
     { x: 775, y: 440, angle: -0.49 },
     { x: 840, y: 405, angle: -0.49 },
     { x: 905, y: 370, angle: -0.49 },
+    { x: 700, y: 660, angle: Math.PI / 2 },
+    { x: 700, y: 770, angle: Math.PI / 2 },
   ];
 
   for (const pt of arrowPoints) {
@@ -1033,6 +1164,30 @@ function drawDirectionalSignpost(
   ctx.font = 'bold 7px sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('YAKINDA', 85, 8.5);
+  ctx.restore();
+
+  // 8. Yön Levhası 4: Dış Kapı [Çıkış] (Güneye bakan levha)
+  ctx.save();
+  ctx.translate(x - 2, y - 6);
+
+  ctx.fillStyle = '#1e293b';
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 1.4;
+
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(-92, 0, 92, 16, 3);
+  } else {
+    ctx.rect(-92, 0, 92, 16);
+  }
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = 'bold 8px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('⇩ Dış Kapı (Çıkış)', -46, 8);
   ctx.restore();
 
   ctx.restore();

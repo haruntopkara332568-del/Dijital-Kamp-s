@@ -41,7 +41,7 @@ function RouteLoadingFallback() {
 }
 
 export function HomeRoutePage() {
-  const { hydrated, state, markGateSeen } = useCampus();
+  const { hydrated, state, markGateSeen, replayWelcomeFlow } = useCampus();
 
   if (!hydrated) {
     return (
@@ -63,10 +63,9 @@ export function HomeRoutePage() {
   }
 
   // 2. Kapı görüldükten sonra doğrudan Sinematik Yürünebilir Kampüs Avlusu açılır.
-  // Karşılama, rehberlik ve sınıf seçimi, WalkableCampusView avlusu üzerinde modal olarak çalışır.
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
-      <WalkableCampusView />
+      <WalkableCampusView onExitToGate={replayWelcomeFlow} />
     </Suspense>
   );
 }

@@ -10,6 +10,7 @@ import {
   DEFAULT_HITBOX,
 } from '@/src/features/walkable/engine/pathfinding';
 import { SmartBoardModal } from '@/src/features/walkable/components/SmartBoardModal';
+import { GradeBoardModal } from '@/src/features/walkable/components/GradeBoardModal';
 import { WalkableControlsOverlay } from '@/src/features/walkable/components/WalkableControlsOverlay';
 import { drawCharacter, CHARACTER_SCALES } from '@/src/features/walkable/engine/characterRenderer';
 import {
@@ -1277,6 +1278,8 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
     closePath: vi.fn(),
     moveTo: vi.fn(),
     lineTo: vi.fn(),
+    quadraticCurveTo: vi.fn(),
+    bezierCurveTo: vi.fn(),
     arc: vi.fn(),
     ellipse: vi.fn(),
     rect: vi.fn(),
@@ -1433,7 +1436,7 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
     expect(mockCtx.restore).toHaveBeenCalled();
   });
 
-  it('53. Aşama 5.0: Ekran üstü kontrollerde Sınıf Seçimi ve Ayarlar menüsü çalışır, eski çift giriş butonları bulunmaz', () => {
+  it('53. Aşama 5.0.2: Avluda sınıf seçimi bulunmaz, eski çift giriş butonları yer almaz', () => {
     const handleExitClassroom = vi.fn();
     render(
       <MemoryRouter>
@@ -1455,23 +1458,13 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
     expect(screen.queryByText(/Doğrudan Sınıfa Gir/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Kuşbakışı Harita/i)).not.toBeInTheDocument();
 
-    // Sınıf Seçimi ve Ayarlar düğmesi mevcuttur
-    const settingsBtn = screen.getByLabelText(/Sınıf seçimi ve kampüs ayarları/i);
-    expect(settingsBtn).toBeInTheDocument();
-
-    // Menüyü aç
-    fireEvent.click(settingsBtn);
-    expect(screen.getByRole('heading', { name: /Sınıf Düzeyi ve Ayarlar/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^2\. Sınıf/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^7\. Sınıf/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Sesli anlatımı/i })).toBeInTheDocument();
-
-    // Sınıf değiştirme (seçim yapıldığında ayarlar paneli kapanır)
-    fireEvent.click(screen.getByRole('button', { name: /^6\. Sınıf/i }));
-    expect(screen.queryByRole('heading', { name: /Sınıf Düzeyi ve Ayarlar/i })).not.toBeInTheDocument();
+    // Avluda sınıf seçimi butonu ve menüsü bulunmaz (yalnızca İngilizce sınıfı içinde fiziksel pano üzerinden seçilir)
+    expect(screen.queryByLabelText(/Sınıf seçimi ve kampüs ayarları/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Yürünebilir Kampüs Avlusu/i)).toBeInTheDocument();
+    expect(screen.getByText(/Kampüs Rehberi/i)).toBeInTheDocument();
   });
 
-  it('54. Aşama 5.0: Yürünebilir kampüs avlusundaki 6 etkileşimli alanın (binalar, pavyon, kiosk, havuz) yapılandırması eksiksizdir', () => {
+  it('54. Aşama 5.0.2: Yürünebilir kampüs avlusundaki 7 etkileşimli alanın (binalar, pavyon, kiosk, havuz, dış kapı) yapılandırması eksiksizdir', () => {
     const zones = [
       { id: 'enter-english', target: 'classroom' },
       { id: 'enter-discovery', target: '/alan/gezi-ve-kesif' },
@@ -1479,15 +1472,17 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
       { id: 'enter-journey', target: '/yolculugum' },
       { id: 'enter-kiosk', target: '/alan/gorev-panosu' },
       { id: 'fountain-rest', target: 'dialogue' },
+      { id: 'exit-gate', target: 'gate' },
     ];
 
-    expect(zones).toHaveLength(6);
+    expect(zones).toHaveLength(7);
     expect(zones.map((z) => z.id)).toContain('enter-english');
     expect(zones.map((z) => z.id)).toContain('enter-discovery');
     expect(zones.map((z) => z.id)).toContain('enter-library');
     expect(zones.map((z) => z.id)).toContain('enter-journey');
     expect(zones.map((z) => z.id)).toContain('enter-kiosk');
     expect(zones.map((z) => z.id)).toContain('fountain-rest');
+    expect(zones.map((z) => z.id)).toContain('exit-gate');
   });
 
   it('55. Aşama 5.0: Sınıf içindeyken "Avluya Dön" düğmesi görünür ve tetiklenir', () => {
@@ -1512,5 +1507,50 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
     expect(exitBtn).toBeInTheDocument();
     fireEvent.click(exitBtn);
     expect(handleExitClassroom).toHaveBeenCalledTimes(1);
+  });
+
+  it('56. Aşama 5.0.2: Sınıf Seçim Panosu modalı (GradeBoardModal) 2-7. sınıfları listeler ve seçim kaydeder', () => {
+    const handleSelectGrade = vi.fn();
+    const handleClose = vi.fn();
+
+    render(
+      <GradeBoardModal
+        isOpen={true}
+        onClose={handleClose}
+        selectedGrade={null}
+        onSelectGrade={handleSelectGrade}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(/SINIF SEÇİM PANOSU/i);
+    // İlkokul ve Ortaokul grupları
+    expect(screen.getByText(/İlkokul Kademesi/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ortaokul Kademesi/i)).toBeInTheDocument();
+
+    // 2, 3, 4, 5, 6, 7 sınıfları mevcut
+    expect(screen.getByRole('button', { name: /2\. Sınıf/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /5\. Sınıf/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /7\. Sınıf/i })).toBeInTheDocument();
+
+    // Sınıf seç (öğrencinin kolay seçimi için doğrudan tıklandığında kaydeder)
+    fireEvent.click(screen.getByRole('button', { name: /5\. Sınıf/i }));
+    expect(handleSelectGrade).toHaveBeenCalledWith(5);
+    expect(screen.getByText(/Sınıfın başarıyla kaydedildi/i)).toBeInTheDocument();
+  });
+
+  it('57. Aşama 5.0.2: Sınıf Seçim Panosu Escape tuşu ile kapanır', () => {
+    const handleClose = vi.fn();
+
+    render(
+      <GradeBoardModal
+        isOpen={true}
+        onClose={handleClose}
+        selectedGrade={4}
+        onSelectGrade={vi.fn()}
+      />,
+    );
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(handleClose).toHaveBeenCalledTimes(1);
   });
 });

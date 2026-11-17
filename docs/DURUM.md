@@ -1,4 +1,25 @@
-# Proje Durum Raporu — Sürüm 5.0.3 (Tek Görevli Düzeltme: Giriş Sonrası Doğrudan Yürünebilir Sinematik Avlu)
+# Proje Durum Raporu — Sürüm 5.0.4 (Tek Görevli Düzeltme: Sınıf Seçim Panosu, Akıllı Tahta Kilidi ve Dış Kapı Çıkış Döngüsü)
+
+## Tek Görevli Düzeltme — Sınıf Seçim Panosu, Akıllı Tahta Kilidi ve Dış Kapı Çıkışı (`feat/single-entry-walkable-campus`)
+- **1. Sınıf Seçimi — Yalnızca İngilizce Sınıfının İçinde**:
+  - Sınıf seçimi avludan ve avlu ekran üstü kontrollerinden tamamen kaldırıldı. Avlu kontrollerinde sınıf seçici ve ayar butonu yer almaz; avlu bütünüyle serbest keşfe odaklıdır.
+  - Sınıf seçimi yalnızca İngilizce Dünyası sınıfının içine taşındı: Akıllı tahtanın sol tarafına Selçuklu mimarisine uygun taş ve ahşap dokulu, sivri kemerli mukarnas taçlı, turkuaz bordürlü ve pirinç levhalı "Sınıf Seçim Panosu" (`drawClassroomGradeBoard`) yerleştirildi.
+  - Panonun yanına gelindiğinde `Sınıfını Seç / Değiştir` etkileşim ipucu açılır.
+  - Etkileşime girildiğinde Selçuklu mimari ahşap/taş dokulu `GradeBoardModal` modal penceresi açılır. Modal yalnızca 2., 3., 4. (İlkokul) ve 5., 6., 7. (Ortaokul) sınıf seviyelerini listeler.
+  - Seçilen sınıf durumu (`CampusStudentState.selectedGrade`) kalıcı olarak güncellenir ve öğrenci istediğinde panoya dönerek sınıfını değiştirebilir.
+  - **Akıllı Tahta Kilidi**: Akıllı tahtanın yanına gidildiğinde, henüz sınıf seçilmediyse etkileşim ipucu `Önce Sınıfını Seç` olarak görünür; tıklandığında veya boşluk/E tuşuna basıldığında `Önce sınıfını seç.` uyarısı verilir ve tahta açılmaz. Sınıf seçildikten sonra akıllı tahta (`Akıllı Tahtayı Aç`) normal şekilde açılır ve etkinlikler başlar.
+- **2. Dış Kapıya Çıkış — Avluda**:
+  - Avludan güneye (giriş kapısına doğru) uzanan taş yol ve Selçuklu dış kapı portali (`drawSouthEntrancePortal`) görünür ve mimari olarak inşa edildi.
+  - Öğrenci avludayken güneye yürüdüğünde portal eşiğinde `Kampüsten Çık` etkileşim ipucu açılır.
+  - Etkileşim tetiklendiğinde öğrenci ilk giriş kapısı sahnesine (`CampusGateView`) döner.
+  - Akış döngüsel ve kesintisiz çalışır: **Giriş Kapısı -> Avlu -> İngilizce Sınıfı -> Avlu -> Dış Kapı -> Giriş Kapısı**.
+  - Tarayıcıdan çıkılmaz, beyaz ekran oluşmaz, yönlendirme bozulmaz.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 90 / 90 test başarıyla geçti (`walkable.test.tsx` [57 test], `campus.test.tsx` [33 test]).
+  - `npm run build`: Başarılı (886ms).
+  - Playwright E2E (`e2e/stage502_verify.spec.ts`): Chromium ve Mobile-Chrome testleri tam döngüyü doğruladı (11 adet kanıt ekran görüntüsü `docs/assets/` altında saklandı).
 
 ## Tek Görevli Düzeltme — Giriş Sonrası Doğrudan Yürünebilir Sinematik Avlu (`feat/single-entry-walkable-campus`)
 - **Doğrudan Avlu Geçişi ve Rehbersiz/Modalsız Giriş**:

@@ -188,6 +188,14 @@ export class WalkableCanvasEngine {
     this.updateCamera(true);
   }
 
+  /**
+   * Etkileşim bölgelerini günceller ve mevcut aktif bölgeyi yeniler.
+   */
+  public updateInteractiveZones(zones: InteractiveZone[]) {
+    this.config.interactiveZones = zones;
+    this.checkInteractiveZones();
+  }
+
   private isInputFocused(): boolean {
     const el = document.activeElement;
     if (!el) return false;
@@ -483,7 +491,7 @@ export class WalkableCanvasEngine {
       }
     }
 
-    if (nearest?.id !== this.activeZone?.id) {
+    if (nearest?.id !== this.activeZone?.id || nearest?.prompt !== this.activeZone?.prompt) {
       this.activeZone = nearest;
       this.callbacks.onActiveZoneChange(nearest);
     }
