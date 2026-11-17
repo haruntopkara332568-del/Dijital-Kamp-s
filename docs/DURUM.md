@@ -1,3 +1,34 @@
+# Proje Durum Raporu — Sürüm 6.2.0 (Aşama 6.2: 3. Sınıf Öğren Masası — "Greetings / Dinle ve Anla" Dinle-Bul & Sesleri Ayırt Et)
+
+## 3. Sınıf Öğren Masası — Dinle-Bul ve Sesleri Ayırt Et Etkinliği (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu ve Dokunulmayan Sistemler**:
+  - `main` dalı ve üretim ortamı, Selçuklu Taç Kapı, yürünebilir avlu mimarisi, karakter ve kamera kontrol altyapısı, İngilizce sınıfı mimarisi, 4 masanın yerleşimi, Sınıf Panosu, onaylanan Aşama 6.1 Keşfet Masası, Üret ve Paylaş masaları, Akıllı Tahta koruma sistemi, diğer sınıf düzeyleri (2, 4, 5, 6, 7), veri modeli ve depolama anahtarları (`dek_campus_v1_state`) %100 korunmuştur.
+- **1. Pedagojik Öğrenme İçeriği (Yalnızca 4 Temel İfade)**:
+  - **Hello!** (Merhaba!)
+  - **Good morning!** (Günaydın!)
+  - **Goodbye!** (Hoşça kal!)
+  - **Good night!** (İyi geceler!)
+  - Yeni ifade, yabancı gramer veya sınav mantığı eklenmemiştir.
+- **2. İki Aşamalı Öğrenme Akışı**:
+  - **Etkinlik A — Dinle ve Bul (4 Tur)**: Öğrenci [Dinle] (0.85x) ve [Yavaş Dinle] (0.65x) düğmeleriyle ifadeyi dinler; 4 büyük çocuk dostu görsel arasından duyduğu ifadeye karşılık geleni seçer. Yanlış cevapta cezalandırmadan pedagojik ipucu (`"Tekrar dene! İpucu: Bu ifade..."`) gösterilir, sınırsız yeniden deneme hakkı tanınır; doğru cevapta yeşil onay rozetiyle tebrik edilir.
+  - **Ara Geçiş Ekranı**: 1. Etkinlik bitiminde tebrik ve 2. etkinliğe geçiş butonu sunulur.
+  - **Etkinlik B — Sesleri Ayırt Et (4 Tur)**: İngilizce ifade seslendirilir; öğrenci iki büyük yazılı seçenek kartı arasından duyduğunu seçer. Yanlış cevapta doğru ifade sesli ve görsel olarak hatırlatılır.
+- **3. Telaffuz ve Çocuk Dostu Tasarım**:
+  - Sarı / altın sarısı ve Selçuklu ahşap bordürlü masa kimliği (kulaklık ve tablet motifleri).
+  - Web Speech API ile `en-US` / `en-GB` doğal telaffuz; Türkçe okunuş kılavuzu eklenmemiştir.
+  - Mikrofon veya ses kaydı izni istenmez; ses desteği olmayan cihazlarda yazılı/görsel olarak %100 çalışır.
+- **4. İlerleme Kaydı ve Sınıfta Kalma**:
+  - Her iki etkinlik tamamlandığında `ogren` aşaması `dek_campus_v1_state` üzerine kalıcı olarak işlenir (`completedStages: ['kesfet', 'ogren']`, `currentStage: 'uret'`).
+  - Tamamlama ekranında 4 ifadenin görsel mini sözlük kartları ve tebrik rozeti yer alır.
+  - **"Üret Masasına Git" doğrudan ışınlanma butonu kaldırılmıştır.**
+  - Tek aksiyon olarak **[Masadan Kalk / Sınıfa Dön]** butonu ve **[Tekrar Oyna]** seçeneği sunulur. Öğrenci masadan kalktığında sınıfta, 2. Öğren Masası'nın yanında kalır.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 99 / 99 test geçti (66 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_ogren_table.spec.ts` & `e2e/grade3_hello_garden.spec.ts`): 4 / 4 test geçti (Desktop Chromium ve Mobile Chrome dokunmatik).
+  - `npm run build`: 855ms içinde hatasız üretim derlemesi üretildi.
+
 # Proje Durum Raporu — Sürüm 6.1.0 (Aşama 6.1: 3. Sınıf Keşfet Masası — "Greetings / Selamlaşma" Görsel Destekli Öğrenme ve Eşleştirme)
 
 ## 3. Sınıf Keşfet Masası — Görsel Destekli Öğrenme ve Eşleştirme Etkinliği (`feat/english-four-learning-tables`)

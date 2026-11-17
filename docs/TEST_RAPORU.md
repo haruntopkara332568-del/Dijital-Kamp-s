@@ -1,3 +1,37 @@
+# Test ve Kalite Güvence Raporu — Sürüm 6.2.0 (Aşama 6.2: 3. Sınıf Öğren Masası — "Greetings / Dinle ve Anla" Dinle-Bul & Sesleri Ayırt Et)
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (strict TypeScript).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **99 / 99 test** (`src/test/walkable.test.tsx` [66 test] + `src/test/campus.test.tsx` [33 test], `4.6s`):
+  - 65. 3. Sınıf Öğren Masası: "GREETINGS (DİNLE VE ANLA)" başlığını ve sarı istasyon temasını açar.
+  - 66. 3. Sınıf Öğren Masası: Etkinlik A (Dinle ve Bul: 4 görsel, ipucu, hata toleransı), Etkinlik B (Sesleri Ayırt Et: 2 seçenek), ilerleme kaydı ve sınıfa dönüş sunar.
+  - 64. Diğer sınıflar veya diğer masalar bu akıştan etkilenmez, orijinal durumlarını korur.
+- **`npx playwright test e2e/grade3_ogren_table.spec.ts --workers=1`**: Geçti — **2 / 2 test** (`chromium` [17.0s] + `mobile-chrome` [17.2s], toplam `37.4s`):
+  - 1. Selçuklu Taç Kapı açıldı -> Yürünebilir Kampüs Avlusu'na girildi -> İngilizce Dünyası binasına girildi.
+  - 2. 3. Sınıf seçildi ve Keşfet Masası başarısı sonrası 2. Öğren Masası'na (x: 665, y: 288) yüründü.
+  - 3. 2. ÖĞREN MASASI — GREETINGS (DİNLE VE ANLA) modalı açıldı (`docs/assets/grade3_ogren_desktop_modal.png` / `docs/assets/grade3_ogren_mobile_modal.png`).
+  - 4. [Dinle] (0.85x) ve [Yavaş Dinle] (0.65x) düğmeleri test edildi.
+  - 5. Etkinlik A (Dinle ve Bul): 4 tur boyunca sesler dinlenip 4 görsel arasından doğru olan seçildi; yanlış seçimde pedagojik ipucu ("Tekrar dene! İpucu: ...") gösterildi.
+  - 6. Ara geçiş ekranı ("Harika Başardın! 🎉 / 2. Etkinliğe Başla") doğrulandı.
+  - 7. Etkinlik B (Sesleri Ayırt Et): 4 tur boyunca sesler dinlenip 2 yazılı seçenek arasından doğru olan seçildi; yanlış seçimde telafi sağlandı.
+  - 8. Tamamlama ekranı ve 4 ifadenin görsel mini sözlük özeti doğrulandı (`docs/assets/grade3_ogren_desktop_completed.png` / `docs/assets/grade3_ogren_mobile_completed.png`).
+  - 9. "Üret Masasına Git" doğrudan ışınlanma butonunun OLMADIĞI ve tek çıkışın "Masadan Kalk / Sınıfa Dön" olduğu doğrulandı.
+  - 10. Masadan kalkıldığında öğrencinin sınıfta, Öğren Masası'nın yanında kaldığı doğrulandı (`docs/assets/grade3_ogren_desktop_return_classroom.png` / `docs/assets/grade3_ogren_mobile_return_classroom.png`).
+  - 11. `localStorage` üzerinde `dek_campus_v1_state` içinde `"ogren"` aşamasının kalıcı olarak kaydedildiği doğrulandı.
+- **`npx playwright test e2e/grade3_hello_garden.spec.ts --workers=1`**: Geçti — **2 / 2 test** (`chromium` [7.9s] + `mobile-chrome` [7.7s]): Keşfet Masası'nın bozulmadan %100 çalıştığı doğrulandı.
+- **`npm run build` (`vite build`)**: Geçti — **855ms** içinde hatasız üretim derlemesi üretildi.
+
+## 2. Kanıt Ekran Görüntüleri (`docs/assets/`):
+- **Masaüstü (Chromium)**:
+  - `grade3_ogren_desktop_modal.png`: 2. Öğren Masası Dinle ve Bul arayüzü, sarı/altın teması, [Dinle] ve [Yavaş Dinle] butonları.
+  - `grade3_ogren_desktop_completed.png`: İki etkinlik tamamlandıktan sonraki başarı ekranı ve 4 ifadenin özeti.
+  - `grade3_ogren_desktop_return_classroom.png`: Masadan kalkış sonrası sınıfta Öğren Masası'nın yanında kalış.
+- **Mobil Dokunmatik (Mobile Chrome)**:
+  - `grade3_ogren_mobile_modal.png`: Mobil dokunmatik arayüzde Dinle ve Bul paneli.
+  - `grade3_ogren_mobile_completed.png`: Mobilde başarı ve tamamlama ekranı.
+  - `grade3_ogren_mobile_return_classroom.png`: Mobilde masadan kalkış sonrası sınıfta kalma durumu.
+
 # Test ve Kalite Güvence Raporu — Sürüm 6.1.0 (Aşama 6.1: 3. Sınıf Keşfet Masası — "Greetings / Selamlaşma" Görsel Destekli Öğrenme ve Eşleştirme)
 
 ## 1. Çalıştırıldı ve Geçti

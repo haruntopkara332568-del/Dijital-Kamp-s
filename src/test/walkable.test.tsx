@@ -1845,10 +1845,10 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
       expect(document.getElementById('table-station-title')).toHaveTextContent(/1\. KEŞFET MASASI/i);
       expect(screen.queryByText(/Hello! Tanışma Bahçesi/i)).not.toBeInTheDocument();
 
-      // 3. Sınıf Öğren Masası
+      // 4. Sınıf Öğren Masası
       saveStudentState({
         ...createInitialStudentState(),
-        selectedGrade: 3,
+        selectedGrade: 4,
       });
 
       rerender(
@@ -1864,9 +1864,78 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
         </MemoryRouter>,
       );
 
-      // 3. Sınıfın Öğren Masasında Tanışma Bahçesi değil, standart Öğren Masası olmalıdır
+      // 4. Sınıfın Öğren Masasında 3. sınıf istasyonu değil, standart Öğren Masası olmalıdır
       expect(document.getElementById('table-station-title')).toHaveTextContent(/2\. ÖĞREN MASASI/i);
-      expect(screen.queryByText(/Hello! Tanışma Bahçesi/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/GREETINGS \(DİNLE VE ANLA\)/i)).not.toBeInTheDocument();
+    });
+
+    it('65. Aşama 6.2: 3. Sınıf Öğren Masası: "GREETINGS (DİNLE VE ANLA)" başlığını ve sarı istasyon temasını açar', async () => {
+      await clearAllCampusData();
+      saveStudentState({
+        ...createInitialStudentState(),
+        selectedGrade: 3,
+      });
+
+      render(
+        <MemoryRouter>
+          <CampusProviders>
+            <TableStationModal
+              isOpen={true}
+              stage="ogren"
+              onClose={vi.fn()}
+              onAdvanceToStage={vi.fn()}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      const titleEl = document.getElementById('table-station-title');
+      expect(titleEl).toBeInTheDocument();
+      expect(titleEl).toHaveTextContent(/2\. ÖĞREN MASASI — GREETINGS \(DİNLE VE ANLA\)/i);
+      expect(screen.getByText(/Etkinlik A — Dinle ve Bul/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /normal hızda dinle/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /yavaş hızda dinle/i })).toBeInTheDocument();
+    });
+
+    it('66. Aşama 6.2: 3. Sınıf Öğren Masası: Etkinlik A (Dinle ve Bul), Etkinlik B (Sesleri Ayırt Et), ilerleme kaydı ve sınıfa dönüş sunar', async () => {
+      await clearAllCampusData();
+      saveStudentState({
+        ...createInitialStudentState(),
+        selectedGrade: 3,
+      });
+
+      const handleExit = vi.fn();
+
+      render(
+        <MemoryRouter>
+          <CampusProviders>
+            <TableStationModal
+              isOpen={true}
+              stage="ogren"
+              onClose={handleExit}
+              onAdvanceToStage={vi.fn()}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      // 1. Etkinlik A: Hedef "Hello!" görselini seç (Selam Veren Çocuk)
+      const helloVisualBtn = screen.getByRole('button', { name: /Selam Veren Çocuk görselini seç/i });
+      expect(helloVisualBtn).toBeInTheDocument();
+
+      // Yanlış görsel seçildiğinde hata toleransı ve cezasız ipucu
+      const wrongVisualBtn = screen.getByRole('button', { name: /Gece ve Uyuyan Çocuk görselini seç/i });
+      fireEvent.click(wrongVisualBtn);
+      expect(await screen.findByText(/Tekrar dene! İpucu:/i)).toBeInTheDocument();
+
+      // Doğru görseli seç
+      fireEvent.click(helloVisualBtn);
+      expect(await screen.findByText(/Harika! "Hello!" görselini doğru buldun!/i)).toBeInTheDocument();
+
+      // Sınıfa dönüş butonu her an tıklanabilir
+      const exitBtn = screen.getByRole('button', { name: /Masadan kalk ve sınıfa dön/i });
+      fireEvent.click(exitBtn);
+      expect(handleExit).toHaveBeenCalledTimes(1);
     });
   });
 });
