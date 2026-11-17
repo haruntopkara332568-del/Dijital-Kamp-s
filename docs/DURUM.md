@@ -1,3 +1,35 @@
+# Proje Durum Raporu — Sürüm 5.1.3 (Aşama 5.1.3: 3. Sınıf Keşfet Masası — Gerçek Sinematik 2.5D Canlı Bahçe Simülasyonu)
+
+## 3. Sınıf Keşfet Masası — "Hello! Tanışma Bahçesi" Canlı Minyatür Simülasyonu (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu ve Değiştirilmeyen Sistemler**:
+  - `main` dalı, üretim dağıtımı, Taç Kapı, avlu mimarisi, yürünebilir karakter ve kamera altyapısı, İngilizce sınıfı mimarisi, 4 masanın konumu ve isimleri, Sınıf Panosu, Akıllı Tahta açılış animasyonu ve koruma sistemi, Öğren/Üret/Paylaş masaları, diğer sınıf seviyeleri (2, 4, 5, 6, 7), veri modeli ve depolama anahtarları (`CampusStudentState`) %100 korunmuştur.
+- **1. Gerçek Sinematik 2.5D Minyatür Bahçe Simülasyonu**:
+  - Statik modal veya düz diyalog formu kaldırıldı. Masaya yaklaşıldığında kameranın sinematik biçimde masaya odaklandığı (`perspective-1200`, yumuşak ölçeklenme) canlı bir 2.5D minyatür bahçe sahnesi inşa edildi.
+  - Sahnede masif ahşap masa çerçevesi, Selçuklu çini bordürü, kıvrımlı taş yürüyüş yolu (`stepping stones`), minyatür ahşap bahçe kapısı, servi ve zeytin ağaçları, çiçek tarhları ve doğrudan seçilebilir 3 çocuk karakter bulunmaktadır.
+- **2. Yaşayan ve Canlı Tepki Veren Karakterler**:
+  - Karakterler yalnızca sabit SVG çizimi değildir; öğrenci tıklayarak doğrudan konuşmak istediği karakteri seçebilir.
+  - Karakter seçildiğinde öğrenciye döner, canlı el sallama/selamlama animasyonu sergiler ve konuşur.
+  - Cevaplara göre karakterin duygu ve davranışı değişir (doğru cevapta neşeli tebrik/zıplama, yanlış cevapta baş eğme ve hafif şaşkınlık animasyonu).
+- **3. Dört Pedagojik Etkileşim ve Hata Geri Bildirimi**:
+  - **1. Selamlaşma (Ali)**: Ali kapı yanında karşılar: *"Hello!"*. Öğrenci selamlaşır (`"Hello!"` / `"Hi!"`). Yanlış cevapta (`"Goodbye!"`) görev ilerlemez, nazik geri bildirim verilir ve tekrar denetilir.
+  - **2. Tanışma (Ece)**: Ece çiçeklerin yanında bekler. Öğrenci adını sorar (`"What's your name?"`). Ece *"My name is Ece."* der. Öğrenci hazır kâşif kimliğini tanıtır (`"My name is Deniz."`). Ece *"Nice to meet you!"* der.
+  - **3. Yaş Sorma ve Sayı Etkileşimi (Can)**: Öğrenci Can'ın yaşını sorar (`"How old are you?"`). Can *"I'm nine."* der. Öğrenci bahçe zeminindeki interaktif ahşap tabelalardan 9 sayısını bularak tıklar. Yanlış sayıda (7, 8, 10) ipucu verilir; 9 seçildiğinde Can sevinçle kutlar.
+  - **4. Vedalaşma (Tüm Arkadaşlar)**: Üç arkadaş bir araya gelir. Öğrenci *"Goodbye!"* der; üç karakter birden el sallayarak uğurlar.
+- **4. Telaffuz ve Ses Kalitesi Düzenlemesi**:
+  - Türkçe harflerle yazılmış uydurma fonetik kılavuzlar (`he-LO` vb.) tamamen kaldırıldı; doğru İngilizce yazım korundu.
+  - **[🔊 Dinle]** (doğal hız: 0.85) ve **[🐢 Yavaş Dinle]** (kelime anlaşılırlığı: 0.65) butonları korundu.
+  - `en-US` / `en-GB` sesleri önceliklendirildi. Konuşma sırasında balon turkuaz ışımayla vurgulanır. Ses kapatıldığında veya modal kapandığında ses durdurulur. Ses motoru olmasa dahi simülasyon %100 yazılı olarak çalışır.
+- **5. Sınıfa Dönüş ve Masa İlerleme Kuralı**:
+  - Dört etkileşim bitmeden ilerleme kaydedilmez; tamamlandığında `kesfet` aşaması kalıcı olarak kaydedilir.
+  - **"Öğren Masasına Git" butonu kesinlikle kaldırılmıştır.** Öğrenci otomatik başka masaya ışınlanmaz.
+  - "Masadan Kalk / Sınıfa Dön" butonuyla öğrenci Keşfet Masası'nın hemen yanında sınıfa döner; yürüyüş kontrolü yeniden etkinleşir ve öğrenci 2. Öğren Masası'na kendi karakterini yürüterek gider.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 97 / 97 birim testi geçti (64 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_hello_garden.spec.ts` & `e2e/stage51_tables.spec.ts`): Geçti. Hem Masaüstü (Chromium) hem Mobil (Mobile Chrome) kanıt ekran görüntüleri üretildi.
+  - `npm run build`: Başarılı (1.37s).
+
 # Proje Durum Raporu — Sürüm 5.1.2 (3. Sınıf Keşfet Masası: Sinematik "Hello! Tanışma Bahçesi" Görsel, Konuşma Dili ve Çift Hızlı Telaffuz İyileştirmesi)
 
 ## 3. Sınıf Keşfet Masası — "Hello! Tanışma Bahçesi" Kapsamlı Düzeltme (`feat/english-four-learning-tables`)

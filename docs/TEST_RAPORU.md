@@ -1,3 +1,38 @@
+# Test ve Kalite Güvence Raporu — Sürüm 5.1.3 (Aşama 5.1.3: 3. Sınıf Keşfet Masası — Gerçek Sinematik 2.5D Canlı Bahçe Simülasyonu)
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (strict TypeScript).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **97 / 97 test** (`src/test/walkable.test.tsx` [64 test] + `src/test/campus.test.tsx` [33 test], `10.9s`):
+  - 62. 3. Sınıf Keşfet Masası: "Hello! Tanışma Bahçesi" minyatür simülasyon başlığını ve özel rozetini açar.
+  - 63. "Hello! Tanışma Bahçesi": 3 karakter (Ali, Ece, Can), Dinle + Yavaş Dinle, hata geri bildirimi ve 4 etkileşimli minyatür bahçe simülasyonu sunar (Ali ile selamlaşma, Ece ile ad sorma & kendini tanıtma, Can ile yaş sorma & bahçede 9 sayısını seçme, vedalaşma ve sınıfa dönüş).
+  - 64. Diğer sınıflar veya diğer masalar Tanışma Bahçesi prototipinden etkilenmez, orijinal akışlarını korur.
+- **`npx playwright test e2e/grade3_hello_garden.spec.ts --workers=1`**: Geçti — **2 / 2 test** (`chromium` [11.4s] + `mobile-chrome` [10.6s], toplam `27.5s`):
+  - 1. Kapıdan girildi -> Avluya varıldı -> İngilizce sınıfına girildi.
+  - 2. Sınıf Seçim Panosu'ndan 3. Sınıf seçildi.
+  - 3. 1. Keşfet Masası'na yüründü ve oturuldu.
+  - 4. Masanın üzerinde sinematik 2.5D minyatür bahçe açıldı; taş yol, kemer kapı, ağaçlar, çiçekler ve 3 canlı çocuk karakter doğrulandı (`grade3_hello_garden_desktop_modal.png` / `grade3_hello_garden_mobile_modal.png`).
+  - 5. Karakterler doğrudan seçilebilir: Ali, Ece ve Can.
+  - 6. 1. Selamlaşma: Ali ile konuşuldu; yanlış cevap ("Goodbye!") verilince hata geri bildirimi alındı; doğru cevap ("Hello!") ile ilerlendi.
+  - 7. 2. Tanışma: Ece ile ad sorma ("What's your name?") ve hazır kâşif kimliğini tanıtma ("My name is Deniz.") tamamlandı.
+  - 8. 3. Yaş Sorma ve Sayı Etkileşimi: Can "I'm nine." dedi; bahçedeki 9 sayısı belirlendi ve Can tebrik etti.
+  - 9. 4. Vedalaşma: Karakterlerle "Goodbye!" denilerek vedalaşıldı; karakterler el sallayarak uğurladı.
+  - 10. Tamamlama ekranı ve 4 temel ifadenin özeti doğrulandı (`grade3_hello_garden_desktop_completed.png` / `grade3_hello_garden_mobile_completed.png`).
+  - 11. "Öğren Masasına Git" butonu bulunmadığı doğrulandı.
+  - 12. "Masadan Kalk / Sınıfa Dön" butonuna basıldığında modal kapandı ve öğrencinin sınıfta, Keşfet Masası'nın hemen yanında kaldığı doğrulandı (`grade3_hello_garden_desktop_return_classroom.png` / `grade3_hello_garden_mobile_return_classroom.png`).
+- **`npx playwright test e2e/stage51_tables.spec.ts --project=chromium`**: Geçti — **1 / 1 test** (`chromium` [11.6s]): Diğer 4 masa genel döngüsü, akıllı tahta koruma sistemi ve dış kapı çıkış akışının bozulmadan çalıştığı doğrulandı.
+- **`npm run build` (`vite build`)**: Geçti — **1.37s** içinde hatasız üretim derlemesi oluşturuldu.
+
+## 2. Test Kanıt Ekran Görüntüleri (`docs/assets/`):
+- **Masaüstü Kanıtları**:
+  - `grade3_hello_garden_desktop_modal.png`: 2.5D minyatür bahçe sahnesi, 3 çocuk karakter (Ali, Ece, Can), ahşap masa çerçevesi, Dinle & Yavaş Dinle butonları.
+  - `grade3_hello_garden_desktop_completed.png`: 4 etkileşim tamamlandıktan sonraki tamamlama ekranı ve pedagojik özet.
+  - `grade3_hello_garden_desktop_return_classroom.png`: Masadan kalkıldığında öğrencinin sınıfta Keşfet Masası'nın yanında kalışı.
+- **Mobil Dokunmatik Kanıtları**:
+  - `grade3_hello_garden_mobile_modal.png`: Mobil ekran boyutunda 2.5D minyatür bahçe simülasyonu ve dokunmatik etkileşim butonları.
+  - `grade3_hello_garden_mobile_completed.png`: Mobil tamamlama ve başarı ekranı.
+  - `grade3_hello_garden_mobile_return_classroom.png`: Mobilde masadan kalkış sonrası sınıfta kalma durumu.
+
 # Test ve Kalite Güvence Raporu — Sürüm 5.1.2 (3. Sınıf Keşfet Masası: "Hello! Tanışma Bahçesi" Görsel, Konuşma Dili ve Telaffuz Desteği)
 
 ## 1. Çalıştırıldı ve Geçti
