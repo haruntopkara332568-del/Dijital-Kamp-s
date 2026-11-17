@@ -1,3 +1,24 @@
+# Test ve Kalite Güvence Raporu — Sürüm 6.3.1 (Aşama 6.3.1: 3. Sınıf Üret Masası Hata Düzeltmesi — Kelime Seçim ve İlerleme)
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (strict TypeScript).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **104 / 104 test** (`src/test/walkable.test.tsx` [71 test] + `src/test/campus.test.tsx` [33 test], `30.7s`):
+  - 71. Aşama 6.3.1: 3. Sınıf Üret Masası hata düzeltmesi: Senaryo A (doğru sıralama ile otomatik ilerleme), Senaryo B (yanlış sıralamada açık uyarı, ipucu ve Yeniden Dene düğmesi ile tek tıkla kurtarma), Senaryo C (tek kelimelik 3. ve 4. görevlerde yanlış seçim sonrası anında düzeltme ve takılmama).
+  - 68. Aşama 6.3: 3. Sınıf Üret Masası: Etkinlik A (Cümlemi Oluştur), Etkinlik B (Doğru Cümleyi Bul), uret kaydı ve sınıfa dönüş.
+  - 63, 66, 70: Keşfet, Öğren ve Paylaş masaları tam regülasyon uyumuyla korundu.
+- **`npx playwright test e2e/grade3_uret_table.spec.ts --workers=1`**: Geçti — **2 / 2 test** (`chromium` [30.7s] + `mobile-chrome` [30.5s], toplam `1.1m`):
+  - Senaryo B: Görev 1'de öğrenci önce "morning" sonra "Good" seçtiğinde yanlış sıralama uyarısı ve pedagojik ipucu gösterildi; belirgin [Yeniden Dene] butonuna basıldığında seçim ve uyarının anında temizlendiği doğrulandı.
+  - Senaryo A: Görev 1'de "Good" ve ardından "morning" seçildiğinde doğru kabul edildi, sesli okuma tetiklendi ve 1200ms sonra öğrenci müdahalesine gerek kalmadan 2. göreve ("Good night!") geçildiği doğrulandı. Hızlı çift tıklamanın çift geçişe yol açmadığı doğrulandı.
+  - Senaryo C: Görev 3'te ("Hello!") öğrenci yanlışlıkla "Goodbye!" seçtiğinde uyarı verildi; ardından doğrudan doğru "Hello!" kartına dokunduğunda takılmadan seçimin yenilendiği ve görevin tamamlandığı doğrulandı.
+  - 4 görevin tamamlanması -> Ara geçiş ekranı -> Etkinlik B (4 tur) -> Başarı ekranı -> [Tekrar Oyna] sıfırlaması -> [Masadan Kalk / Sınıfa Dön] ile öğrencinin sınıfta kalması başarıyla doğrulandı.
+- **`npx playwright test e2e/grade3_hello_garden.spec.ts e2e/grade3_ogren_table.spec.ts e2e/grade3_paylas_table.spec.ts --workers=1`**: Geçti — **6 / 6 test** (`1.5m`):
+  - Keşfet Masası (2 / 2 test geçti).
+  - Öğren Masası (2 / 2 test geçti).
+  - Paylaş Masası (2 / 2 test geçti).
+  - Sıfır regresyon sağlandı.
+- **`npm run build` (`vite build`)**: Geçti — **853ms** içinde hatasız üretim derlemesi üretildi.
+
 # Test ve Kalite Güvence Raporu — Sürüm 6.4.0 (Aşama 6.4: 3. Sınıf Paylaş Masası — "Greetings / Birlikte Konuşalım" Karşılık Ver & Sen Başlat)
 
 ## 1. Çalıştırıldı ve Geçti

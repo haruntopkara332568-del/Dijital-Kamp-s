@@ -1,3 +1,27 @@
+# Proje Durum Raporu — Sürüm 6.3.1 (Aşama 6.3.1: 3. Sınıf Üret Masası Hata Düzeltmesi — Kelime Seçim ve İlerleme)
+
+## 3. Sınıf Üret Masası — Kelime Seçim ve İlerleme Hata Düzeltmesi (`feat/english-four-learning-tables`)
+- **Tespit Edilen Kök Neden ve Çözüm**:
+  - **Sorun 1 (Yanlış Sıralamada Kilitlenme)**: `BUILD_TASKS` ilk görevinde kartlar `['morning', 'Good']` şeklinde sunulurken öğrenci yanlışlıkla `morning` ardından `Good` seçtiğinde seçimler ekranda kalıyor, 8 yaşındaki öğrenci geri almayı veya düzeltmeyi bilemediği için takılıyordu.
+    - *Çözüm*: Yanlış sıralamada öğrenciye açık, anlaşılır bir uyarı ve pedagojik ipucu (`"Kelimelerin sırası karıştı. Bir daha deneyelim! İpucu: ...'Good' ile başlarız: 'Good morning!'"`) gösterilir, telaffuz yavaş çalışır; 1800ms sonra seçimler otomatik temizlenir ve öğrenci yeni bir kelime kartına bastığında hatalı seçim anında temizlenerek yeni seçimle başlanır.
+  - **Sorun 2 (Yeniden Dene Düğmesi)**: Geri alma butonunun adı ve amacı çocuk dostu hale getirilerek belirgin bir `[Yeniden Dene]` butonu (`aria-label="Kelimeleri temizle"`) eklenmiş, hatalı durumda tek tıkla seçimi sıfırlama imkânı sağlanmıştır.
+  - **Sorun 3 (Tek Kelimelik Görev Kilitlenmesi - Görev 3 & 4)**: Görev 3 (`Hello!`) ve Görev 4 (`Goodbye!`) tek kelimelik görevlerken öğrenci yanlış karta bastığında, ikinci bir karta basıldığında seçim uzunluğu 2 olup hedef uzunluk 1 ile uyuşmadığı için doğrulama tetiklenemiyordu.
+    - *Çözüm*: `handleSelectWordA` içinde hata durumunda veya seçim sayısı ulaştığında yeni karta tıklama anında eski seçimi silip tek tıklamayla yeni seçimi doğrulamaktadır.
+  - **Sorun 4 (Asenkron State ve Çift Tıklama Koruması)**: Geçiş sırasında `useRef` tabanlı senkron kilit (`isTaskLockedRef.current = true`) devreye sokulmuş, setTimeout React setState pure fonksiyonu dışına çıkarılarak temiz DOM döngüsü sağlanmıştır.
+- **Kapsam İzolasyonu ve Dokunulmayan Sistemler**:
+  - `main` dalı ve canlı sürüm, Selçuklu Taç Kapı, yürünebilir avlu mimarisi, İngilizce sınıfı mimarisi, akıllı tahta kilit ve senaryoları, Keşfet, Öğren ve Paylaş masaları, diğer sınıf düzeyleri (2, 4, 5, 6, 7), veri modelleri ve depolama anahtarları %100 korunmuştur.
+- **Değiştirilen Dosyalar**:
+  - `src/features/missions/Grade3UretStationView.tsx`: `handleSelectWordA`, `checkSelectionA`, `handleClearSelectionA`, `isTaskLockedRef`, `timerRef` ve remounting kart anahtarları.
+  - `src/test/walkable.test.tsx`: Test 71 (Senaryo A, B, C tam kapsamlı doğrulama).
+  - `e2e/grade3_uret_table.spec.ts`: Senaryo A, B, C, hızlı tıklama koruması, ara geçiş ve sınıfta kalma E2E testi.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata (strict TypeScript).
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 104 / 104 test geçti (71 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_uret_table.spec.ts`): 2 / 2 test geçti (Chromium [30.7s] + Mobile Chrome [30.5s]).
+  - Regresyon E2E (`e2e/grade3_hello_garden.spec.ts`, `e2e/grade3_ogren_table.spec.ts`, `e2e/grade3_paylas_table.spec.ts`): 6 / 6 test geçti (1.5m).
+  - `npm run build`: 853ms içinde hatasız üretim derlemesi üretildi.
+
 # Proje Durum Raporu — Sürüm 6.4.0 (Aşama 6.4: 3. Sınıf Paylaş Masası — "Greetings / Birlikte Konuşalım" Karşılık Ver & Sen Başlat)
 
 ## 3. Sınıf Paylaş Masası — Karşılıklı Konuşma ve Konuşmayı Başlatma Etkinliği (`feat/english-four-learning-tables`)

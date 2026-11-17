@@ -2178,5 +2178,79 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
       fireEvent.click(exitBtns[0]);
       expect(handleExit).toHaveBeenCalledTimes(1);
     }, 25000);
+
+    it('71. Aşama 6.3.1: 3. Sınıf Üret Masası hata düzeltmesi: Senaryo A (doğru sıralama), Senaryo B (yanlış sıralama ve ipucu ile telafi), Senaryo C (tek kelimelik görevde takılmama)', async () => {
+      await clearAllCampusData();
+      saveStudentState({
+        ...createInitialStudentState(),
+        selectedGrade: 3,
+      });
+
+      render(
+        <MemoryRouter>
+          <CampusProviders>
+            <TableStationModal
+              isOpen={true}
+              stage="uret"
+              onClose={vi.fn()}
+              onAdvanceToStage={vi.fn()}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      // --- SENARYO B: Görev 1'de Yanlış Sıralama Testi (Önce 'morning', sonra 'Good') ---
+      const morningBtn = screen.getByRole('button', { name: /"morning" kelimesini seç/i });
+      const goodBtn = screen.getByRole('button', { name: /"Good" kelimesini seç/i });
+
+      // 1. Öğrenci yanlışlıkla önce 'morning' seçti
+      fireEvent.click(morningBtn);
+      // 2. Ardından 'Good' seçti
+      fireEvent.click(goodBtn);
+
+      // 3. Yanlış sıralama kontrolü: "Kelimelerin sırası karıştı" uyarısı ve ipucu gösterilmeli
+      expect(
+        await screen.findByText(/Kelimelerin sırası karıştı\. Bir daha deneyelim! İpucu:/i, {}, { timeout: 3000 }),
+      ).toBeInTheDocument();
+
+      // 4. "Yeniden Dene" butonu görünür olmalı ve tek tıkla seçimi temizlemeli
+      const retryBtn = screen.getByRole('button', { name: /Kelimeleri temizle/i });
+      expect(retryBtn).toBeInTheDocument();
+      expect(retryBtn).toHaveTextContent(/Yeniden Dene/i);
+      fireEvent.click(retryBtn);
+
+      // 5. Seçim temizlendi, şimdi doğru sıralama ile seç: 'Good' -> 'morning'
+      fireEvent.click(screen.getByRole('button', { name: /"Good" kelimesini seç/i }));
+      fireEvent.click(screen.getByRole('button', { name: /"morning" kelimesini seç/i }));
+
+      // --- SENARYO A: Doğru sıralama sonrası otomatik 2. göreve geçiş ---
+      await screen.findByText(/Cümlemi Oluştur \(2\/4\)/i, {}, { timeout: 3000 });
+
+      // Görev 2: Good night! ('Good' -> 'night')
+      fireEvent.click(screen.getByRole('button', { name: /"Good" kelimesini seç/i }));
+      fireEvent.click(screen.getByRole('button', { name: /"night" kelimesini seç/i }));
+
+      // --- SENARYO C: Görev 3'te Tek Kelimelik Seçimde Takılmama Testi ---
+      await screen.findByText(/Cümlemi Oluştur \(3\/4\)/i, {}, { timeout: 3000 });
+      // Öğrenci önce yanlışlıkla "Goodbye!" seçti
+      fireEvent.click(screen.getByRole('button', { name: /"Goodbye!" kelimesini seç/i }));
+      expect(
+        await screen.findByText(/Kelimelerin sırası karıştı\. Bir daha deneyelim!/i, {}, { timeout: 3000 }),
+      ).toBeInTheDocument();
+
+      // Öğrenci takılmadan doğrudan "Hello!" kartına bastığında önceki hata sıfırlanıp doğru kabul edilmeli
+      fireEvent.click(screen.getByRole('button', { name: /"Hello!" kelimesini seç/i }));
+
+      // Görev 4'e başarıyla geçildiğini doğrula
+      await screen.findByText(/Cümlemi Oluştur \(4\/4\)/i, {}, { timeout: 3000 });
+
+      // Görev 4: Goodbye!
+      fireEvent.click(screen.getByRole('button', { name: /"Goodbye!" kelimesini seç/i }));
+
+      // Dört görev bitince Ara Geçiş Ekranı açılmalıdır
+      expect(
+        await screen.findByRole('button', { name: /2\. Etkinliğe Başla/i }, { timeout: 3000 }),
+      ).toBeInTheDocument();
+    }, 25000);
   });
 });

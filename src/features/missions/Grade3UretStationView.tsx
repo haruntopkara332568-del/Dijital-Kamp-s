@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useId } from 'react';
+import { useState, useEffect, useCallback, useRef, useId } from 'react';
 import {
   Volume2,
   Sparkles,
@@ -157,14 +157,27 @@ export function Grade3UretStationView({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [activeSpeed, setActiveSpeed] = useState<'normal' | 'slow' | null>(null);
 
-  // Sayfa kapandığında sesi durdur
+  // Zamanlayıcı ve kilit referansları (çift tıklama ve güvenli temizleme için)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTaskLockedRef = useRef(false);
+  const isRoundLockedRef = useRef(false);
+
+  const clearPendingTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  // Sayfa kapandığında sesi ve bekleyen zamanlayıcıları durdur
   useEffect(() => {
     return () => {
+      clearPendingTimer();
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
     };
-  }, []);
+  }, [clearPendingTimer]);
 
   /**
    * Web Speech API ile doğal İngilizce telaffuz
@@ -214,13 +227,90 @@ export function Grade3UretStationView({
   const currentRoundB = VISUAL_CHOICE_ROUNDS[roundIndexB] ?? VISUAL_CHOICE_ROUNDS[0];
 
   /**
+   * ETKİNLİK A: Seçilen Kelimeleri Değerlendir ve Kontrol Et
+   */
+  const checkSelectionA = useCallback((selection: number[]) => {
+    const builtWords = selection.map((idx) => currentTaskA.availableCards[idx]);
+    const isCorrect = builtWords.every((w, i) => w === currentTaskA.expectedWords[i]);
+
+    if (isCorrect) {
+      // Doğru Cümle Oluşturuldu!
+      isTaskLockedRef.current = true;
+      setIsTaskLockedA(true);
+      clearPendingTimer();
+
+      setFeedbackA({
+        text: `Harika! "${currentTaskA.finalSentence}" doğru oluşturuldu! 🎉`,
+        isError: false,
+      });
+
+      playSpeech(currentTaskA.finalSentence, 'normal');
+
+      timerRef.current = setTimeout(() => {
+        isTaskLockedRef.current = false;
+        setIsTaskLockedA(false);
+        setSelectedWordIndicesA([]);
+        setFeedbackA(null);
+
+        setTaskIndexA((prevIndex) => {
+          const nextIndex = prevIndex + 1;
+          if (nextIndex < BUILD_TASKS.length) {
+            return nextIndex;
+          } else {
+            // Etkinlik A bitti, ara geçişe geç
+            setActiveStep('transition');
+            return prevIndex;
+          }
+        });
+      }, 1200);
+    } else {
+      // Yanlış Sıralama: Kısa ve net uyarı + hangi kelimeyle başlanması gerektiği ipucu
+      setFeedbackA({
+        text: `Kelimelerin sırası karıştı. Bir daha deneyelim! İpucu: ${currentTaskA.hint}`,
+        isError: true,
+      });
+
+      playSpeech(currentTaskA.finalSentence, 'slow');
+
+      // Yanlış seçilmiş kelimeleri 1800ms sonra otomatik temizle (öğrenci takılmasın)
+      clearPendingTimer();
+      timerRef.current = setTimeout(() => {
+        setSelectedWordIndicesA([]);
+        setFeedbackA(null);
+        isTaskLockedRef.current = false;
+        setIsTaskLockedA(false);
+      }, 1800);
+    }
+  }, [currentTaskA, clearPendingTimer, playSpeech]);
+
+  /**
    * ETKİNLİK A: Kelime Kartına Tıklama
    */
   const handleSelectWordA = (cardIndex: number) => {
-    if (isTaskLockedA) return;
+    // Doğru cevap onaylanmış ve sonraki göreve geçiş bekleniyorsa tıklamayı anında engelle
+    if (isTaskLockedRef.current) return;
+
+    // Eğer önceki deneme hatalıysa veya seçim sayısı zaten beklenen sayıya ulaşmışsa,
+    // yeni karta tıklandığında eski hatalı seçimi sıfırlayıp yeni tıklamayla başlat
+    if (feedbackA?.isError || selectedWordIndicesA.length >= currentTaskA.expectedWords.length) {
+      clearPendingTimer();
+      setFeedbackA(null);
+      isTaskLockedRef.current = false;
+      setIsTaskLockedA(false);
+
+      const newSelection = [cardIndex];
+      setSelectedWordIndicesA(newSelection);
+
+      // Eğer görev tek kelimelikse (Hello! veya Goodbye!) hemen kontrol et
+      if (currentTaskA.expectedWords.length === 1) {
+        checkSelectionA(newSelection);
+      }
+      return;
+    }
 
     // Eğer zaten seçilmişse seçimden kaldır (Geri Al / Toggle)
     if (selectedWordIndicesA.includes(cardIndex)) {
+      clearPendingTimer();
       setSelectedWordIndicesA((prev) => prev.filter((idx) => idx !== cardIndex));
       setFeedbackA(null);
       return;
@@ -232,61 +322,37 @@ export function Grade3UretStationView({
 
     // Eğer beklenen kelime sayısına ulaşıldıysa kontrol et!
     if (nextSelection.length === currentTaskA.expectedWords.length) {
-      const builtWords = nextSelection.map((idx) => currentTaskA.availableCards[idx]);
-      const isCorrect = builtWords.every((w, i) => w === currentTaskA.expectedWords[i]);
-
-      if (isCorrect) {
-        // Doğru Cümle Oluşturuldu!
-        setIsTaskLockedA(true);
-        setFeedbackA({
-          text: `Harika! "${currentTaskA.finalSentence}" doğru oluşturuldu! 🎉`,
-          isError: false,
-        });
-
-        playSpeech(currentTaskA.finalSentence, 'normal');
-
-        setTimeout(() => {
-          if (taskIndexA < BUILD_TASKS.length - 1) {
-            setTaskIndexA((prev) => prev + 1);
-            setSelectedWordIndicesA([]);
-            setFeedbackA(null);
-            setIsTaskLockedA(false);
-          } else {
-            // Etkinlik A bitti, ara geçişe geç
-            setActiveStep('transition');
-            setFeedbackA(null);
-            setIsTaskLockedA(false);
-          }
-        }, 1200);
-      } else {
-        // Yanlış Sıralama: Cezasız ipucu ver
-        setFeedbackA({
-          text: `Tekrar dene! İpucu: ${currentTaskA.hint}`,
-          isError: true,
-        });
-      }
+      checkSelectionA(nextSelection);
     }
   };
 
   /**
-   * ETKİNLİK A: Seçimi Temizle
+   * ETKİNLİK A: Seçimi Temizle / Yeniden Dene
    */
   const handleClearSelectionA = () => {
-    if (isTaskLockedA) return;
+    // Doğru cevap geçiş sürecinde temizlemeye izin verme
+    if (isTaskLockedRef.current) return;
+
+    clearPendingTimer();
     setSelectedWordIndicesA([]);
     setFeedbackA(null);
+    isTaskLockedRef.current = false;
+    setIsTaskLockedA(false);
   };
 
   /**
    * ETKİNLİK B: Görsele Uygun İfadeyi Seç
    */
   const handleSelectOptionB = (option: { id: GreetingId; text: string; isCorrect: boolean }) => {
-    if (isRoundLockedB) return;
+    if (isRoundLockedRef.current) return;
     setSelectedOptionB(option.id);
 
     if (option.isCorrect) {
       // Doğru Seçim!
+      isRoundLockedRef.current = true;
       setIsRoundLockedB(true);
+      clearPendingTimer();
+
       setFeedbackB({
         text: `Tebrikler! "${option.text}" doğru ifade! 🌟`,
         isError: false,
@@ -294,52 +360,59 @@ export function Grade3UretStationView({
 
       playSpeech(option.text, 'normal');
 
-      setTimeout(() => {
-        if (roundIndexB < VISUAL_CHOICE_ROUNDS.length - 1) {
-          setRoundIndexB((prev) => prev + 1);
-          setSelectedOptionB(null);
-          setFeedbackB(null);
-          setIsRoundLockedB(false);
-        } else {
-          // ETKİNLİK B BİTTİ — ÜRET AŞAMASINI KAYDET
-          if (campus) {
-            const existing = campus.getMissionProgress(missionId, 3);
-            const prev = existing?.completedStages ?? [];
-            const completedStages: MissionStageId[] = prev.includes('uret')
-              ? prev
-              : [...prev, 'uret'];
+      timerRef.current = setTimeout(() => {
+        setRoundIndexB((prevIndex) => {
+          const nextIndex = prevIndex + 1;
+          if (nextIndex < VISUAL_CHOICE_ROUNDS.length) {
+            setSelectedOptionB(null);
+            setFeedbackB(null);
+            isRoundLockedRef.current = false;
+            setIsRoundLockedB(false);
+            return nextIndex;
+          } else {
+            // ETKİNLİK B BİTTİ — ÜRET AŞAMASINI KAYDET
+            if (campus) {
+              const existing = campus.getMissionProgress(missionId, 3);
+              const prev = existing?.completedStages ?? [];
+              const completedStages: MissionStageId[] = prev.includes('uret')
+                ? prev
+                : [...prev, 'uret'];
 
-            const nextProgress: MissionProgress = {
-              missionId,
-              missionVersion: existing?.missionVersion ?? '1.0.0',
-              grade: 3,
-              currentStage: 'paylas',
-              completedStages,
-              selections: existing?.selections ?? {
-                selectedDoorIds: ['greetings-table'],
-                inspectedCampusGate: true,
-                observationNotes: {},
-                matchedVocabularyIds: ['vocab-hello', 'vocab-morning', 'vocab-goodbye', 'vocab-night'],
-                matchedExampleSentence: true,
-                doorName: 'Selamlaşma Masası',
-                writtenText: 'Hello! Good morning! Goodbye! Good night!',
-                usedEnglishWords: ['Hello', 'Good morning', 'Goodbye', 'Good night'],
-              },
-              draftArtifactId: existing?.draftArtifactId ?? null,
-              savedArtifactId: existing?.savedArtifactId ?? null,
-              artifactSavedAt: existing?.artifactSavedAt ?? null,
-              selfEvaluation: existing?.selfEvaluation ?? null,
-              completed: existing?.completed ?? false,
-              completedAt: existing?.completedAt ?? null,
-              updatedAt: new Date().toISOString(),
-            };
-            campus.saveMissionProgress(nextProgress);
+              const nextProgress: MissionProgress = {
+                missionId,
+                missionVersion: existing?.missionVersion ?? '1.0.0',
+                grade: 3,
+                currentStage: 'paylas',
+                completedStages,
+                selections: existing?.selections ?? {
+                  selectedDoorIds: ['greetings-table'],
+                  inspectedCampusGate: true,
+                  observationNotes: {},
+                  matchedVocabularyIds: ['vocab-hello', 'vocab-morning', 'vocab-goodbye', 'vocab-night'],
+                  matchedExampleSentence: true,
+                  doorName: 'Selamlaşma Masası',
+                  writtenText: 'Hello! Good morning! Goodbye! Good night!',
+                  usedEnglishWords: ['Hello', 'Good morning', 'Goodbye', 'Good night'],
+                },
+                draftArtifactId: existing?.draftArtifactId ?? null,
+                savedArtifactId: existing?.savedArtifactId ?? null,
+                artifactSavedAt: existing?.artifactSavedAt ?? null,
+                selfEvaluation: existing?.selfEvaluation ?? null,
+                completed: existing?.completed ?? false,
+                completedAt: existing?.completedAt ?? null,
+                updatedAt: new Date().toISOString(),
+              };
+              campus.saveMissionProgress(nextProgress);
+            }
+
+            setActiveStep('completed');
+            setSelectedOptionB(null);
+            setFeedbackB(null);
+            isRoundLockedRef.current = false;
+            setIsRoundLockedB(false);
+            return prevIndex;
           }
-
-          setActiveStep('completed');
-          setFeedbackB(null);
-          setIsRoundLockedB(false);
-        }
+        });
       }, 1200);
     } else {
       // Yanlış Seçim: Cezasız ipucu ver ve tekrar denet
@@ -355,15 +428,18 @@ export function Grade3UretStationView({
    * Baştan Başla / Tekrar Oyna
    */
   const handleRestart = () => {
+    clearPendingTimer();
     setActiveStep('activityA');
     setTaskIndexA(0);
     setSelectedWordIndicesA([]);
     setFeedbackA(null);
+    isTaskLockedRef.current = false;
     setIsTaskLockedA(false);
 
     setRoundIndexB(0);
     setSelectedOptionB(null);
     setFeedbackB(null);
+    isRoundLockedRef.current = false;
     setIsRoundLockedB(false);
   };
 
@@ -492,15 +568,19 @@ export function Grade3UretStationView({
                   <span>Yavaş Dinle</span>
                 </button>
 
-                {selectedWordIndicesA.length > 0 && !isTaskLockedA && (
+                {(selectedWordIndicesA.length > 0 || feedbackA?.isError) && !isTaskLockedA && (
                   <button
                     type="button"
                     onClick={handleClearSelectionA}
-                    className="min-h-[40px] px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer ml-auto"
+                    className={`min-h-[40px] px-3.5 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer ml-auto ${
+                      feedbackA?.isError
+                        ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-bold shadow-xs'
+                        : 'bg-rose-50 hover:bg-rose-100 text-rose-700'
+                    }`}
                     aria-label="Kelimeleri temizle"
                   >
                     <Undo2 className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>Geri Al</span>
+                    <span>{feedbackA?.isError ? 'Yeniden Dene' : 'Geri Al'}</span>
                   </button>
                 )}
               </div>
@@ -533,7 +613,7 @@ export function Grade3UretStationView({
 
               return (
                 <button
-                  key={index}
+                  key={`${currentTaskA.id}-${index}`}
                   type="button"
                   onClick={() => handleSelectWordA(index)}
                   disabled={isTaskLockedA}

@@ -1,10 +1,11 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('3. Sınıf Üret Masası — "Greetings (Cümlemi Oluştur)" Cümle Kurma & Doğru Cümleyi Bul', () => {
-  test('3. Sınıf Seçimi -> Keşfet ve Öğren Tamamlanmış -> Üret Masasına Yürüyüş -> Etkinlik A -> Etkinlik B -> Tamamlama -> Sınıfta Kalma', async ({
+  test('3. Sınıf Seçimi -> Keşfet ve Öğren Tamamlanmış -> Üret Masasına Yürüyüş -> Senaryo A, B, C Doğrulama -> Etkinlik B -> Tekrar Oyna -> Tamamlama -> Sınıfta Kalma', async ({
     page,
     isMobile,
   }) => {
+    test.setTimeout(60000);
     // 1. Temiz başlangıç ve 3. Sınıf Keşfet & Öğren Masaları Tamamlanmış Başlangıç Durumu
     await page.goto('/');
     await page.evaluate(() => {
@@ -131,58 +132,87 @@ test.describe('3. Sınıf Üret Masası — "Greetings (Cümlemi Oluştur)" Cüm
     await slowListenBtn.click();
     await page.waitForTimeout(200);
 
-    // 8. ETKİNLİK A (CÜMLEMİ OLUŞTUR): 4 GÖREV
-    // Görev 1: Good morning! (morning, Good)
-    // Önce yanlış sıra veya geri almayı deneyelim
-    const morningBtn = tableDialog.getByRole('button', { name: /"morning" kelimesini seç/i });
-    await morningBtn.click();
-    const clearBtn = tableDialog.getByRole('button', { name: /Kelimeleri temizle/i });
-    await expect(clearBtn).toBeVisible();
-    await clearBtn.click();
+    // ==========================================
+    // 8. ETKİNLİK A (CÜMLEMİ OLUŞTUR) HATA VE GEÇİŞ TESTLERİ
+    // ==========================================
 
-    // Doğru sıra: Good -> morning
+    // --- SENARYO B: Görev 1 Yanlış Sıralama Testi ---
+    // Kartlar: ['morning', 'Good']. Öğrenci önce 'morning' ardından 'Good' seçer.
+    const morningBtn = tableDialog.getByRole('button', { name: /"morning" kelimesini seç/i });
     const goodBtn = tableDialog.getByRole('button', { name: /"Good" kelimesini seç/i });
+
+    await morningBtn.click();
+    await goodBtn.click();
+
+    // 1. Yanlış sıralamanın doğru kabul edilmediğini ve açık uyarı gösterildiğini doğrula
+    await expect(
+      tableDialog.getByText(/Kelimelerin sırası karıştı\. Bir daha deneyelim! İpucu:/i),
+    ).toBeVisible({ timeout: 5000 });
+
+    // 2. "Yeniden Dene" butonunun görünür olduğunu ve tek tıkla temizlediğini doğrula
+    const retryBtn = tableDialog.getByRole('button', { name: /Kelimeleri temizle/i });
+    await expect(retryBtn).toBeVisible();
+    await expect(retryBtn).toHaveText(/Yeniden Dene/i);
+    await retryBtn.click();
+
+    // Seçimlerin ve hatanın temizlendiğini doğrula
+    await expect(tableDialog.getByText(/Aşağıdaki kelime kartlarına dokun/i)).toBeVisible();
+
+    // --- SENARYO A: Görev 1 Doğru Sıralama Testi ---
+    // Önce 'Good', ardından 'morning' seçilir
     await goodBtn.click();
     await morningBtn.click();
-    await page.waitForTimeout(1400);
 
-    // Görev 2: Good night! (night, Good)
+    // Hızlı çift tıklama testi (ikinci tıklama çift geçişe yol açmamalı)
+    await morningBtn.click({ timeout: 200 }).catch(() => {});
+
+    // Doğru kabul edildiğini ve öğrenci müdahalesi olmadan otomatik olarak 2. göreve geçildiğini doğrula
     const task2Heading = tableDialog.getByText(/Cümlemi Oluştur \(2\/4\)/i);
     await expect(task2Heading).toBeVisible({ timeout: 5000 });
+
+    // --- Görev 2: Good night! (night, Good) ---
     const goodBtn2 = tableDialog.getByRole('button', { name: /"Good" kelimesini seç/i });
     const nightBtn = tableDialog.getByRole('button', { name: /"night" kelimesini seç/i });
     await goodBtn2.click();
     await nightBtn.click();
-    await page.waitForTimeout(1400);
 
-    // Görev 3: Hello! (Goodbye!, Hello!)
+    // --- SENARYO C: Görev 3 Hello! (Goodbye!, Hello!) Tek Kelimelik Görevde Takılmama Testi ---
     const task3Heading = tableDialog.getByText(/Cümlemi Oluştur \(3\/4\)/i);
     await expect(task3Heading).toBeVisible({ timeout: 5000 });
+
+    // Öğrenci yanlışlıkla "Goodbye!" seçer
+    const goodbyeBtnInTask3 = tableDialog.getByRole('button', { name: /"Goodbye!" kelimesini seç/i });
+    await goodbyeBtnInTask3.click();
+    await expect(
+      tableDialog.getByText(/Kelimelerin sırası karıştı\. Bir daha deneyelim!/i),
+    ).toBeVisible();
+
+    // Öğrenci doğrudan "Hello!" kartına bastığında takılmadan seçim sıfırlanıp doğru kabul edilmeli
     const helloBtn = tableDialog.getByRole('button', { name: /"Hello!" kelimesini seç/i });
     await helloBtn.click();
-    await page.waitForTimeout(1400);
 
-    // Görev 4: Goodbye! (Hello!, Goodbye!)
+    // --- Görev 4: Goodbye! (Hello!, Goodbye!) ---
     const task4Heading = tableDialog.getByText(/Cümlemi Oluştur \(4\/4\)/i);
     await expect(task4Heading).toBeVisible({ timeout: 5000 });
     const goodbyeBtn = tableDialog.getByRole('button', { name: /"Goodbye!" kelimesini seç/i });
     await goodbyeBtn.click();
-    await page.waitForTimeout(1400);
 
+    // ==========================================
     // 9. ARA GEÇİŞ EKRANI (Etkinlik A Tamamlandı -> Etkinlik B)
+    // ==========================================
     const startSectionBBtn = tableDialog.getByRole('button', { name: /2\. Etkinliğe Başla/i });
     await expect(startSectionBBtn).toBeVisible({ timeout: 5000 });
     await startSectionBBtn.click();
     await page.waitForTimeout(400);
 
+    // ==========================================
     // 10. ETKİNLİK B (DOĞRU CÜMLEYİ BUL): 4 TUR
+    // ==========================================
     // Tur 1: Hedef "Good morning!" vs "Good night!"
-    // Yanlış seçeneği seçip toleransı görelim
     const wrongOption1 = tableDialog.getByRole('button', { name: /"Good night!" ifadesini seç/i });
     await wrongOption1.click();
     await expect(tableDialog.getByText(/Farklı bir ifade seçtin/i)).toBeVisible();
 
-    // Doğru seçeneği seçelim
     const correctOption1 = tableDialog.getByRole('button', { name: /"Good morning!" ifadesini seç/i });
     await correctOption1.click();
     await page.waitForTimeout(1400);
@@ -205,8 +235,10 @@ test.describe('3. Sınıf Üret Masası — "Greetings (Cümlemi Oluştur)" Cüm
     await correctOption4.click();
     await page.waitForTimeout(1400);
 
-    // 11. TAMAMLANDI EKRANI DOĞRULAMASI
-    await expect(tableDialog.getByText(/Üret Masası Görevini Tamamladın!/i)).toBeVisible({ timeout: 5000 });
+    // ==========================================
+    // 11. TAMAMLANDI EKRANI VE TEKRAR OYNA DOĞRULAMASI
+    // ==========================================
+    await expect(tableDialog.getByText(/Tebrikler! Üret Masası Görevini Tamamladın!/i)).toBeVisible({ timeout: 5000 });
 
     // Dört ifadenin özetinin göründüğü doğrulanır
     await expect(tableDialog.getByText('Hello!').first()).toBeVisible();
@@ -221,7 +253,46 @@ test.describe('3. Sınıf Üret Masası — "Greetings (Cümlemi Oluştur)" Cüm
     // Ekran Görüntüsü Kaydı: Tamamlama
     await page.screenshot({ path: `docs/assets/${prefix}_completed.png` });
 
+    // "Tekrar Oyna" Butonunun Testi: Görevleri ve Kilitleri Sıfırlamalıdır
+    const restartBtn = tableDialog.getByRole('button', { name: /Üret masası etkinliğini tekrar oyna/i });
+    await expect(restartBtn).toBeVisible();
+    await restartBtn.click();
+
+    // Tekrar 1. Göreve dönüldüğünü doğrula
+    await expect(tableDialog.getByText(/Cümlemi Oluştur \(1\/4\)/i)).toBeVisible({ timeout: 5000 });
+
+    // Tekrar oynarken hızlıca çözerek tamamlamaya geri dön
+    await tableDialog.getByRole('button', { name: /"Good" kelimesini seç/i }).click();
+    await tableDialog.getByRole('button', { name: /"morning" kelimesini seç/i }).click();
+
+    await expect(tableDialog.getByText(/Cümlemi Oluştur \(2\/4\)/i)).toBeVisible({ timeout: 5000 });
+    await tableDialog.getByRole('button', { name: /"Good" kelimesini seç/i }).click();
+    await tableDialog.getByRole('button', { name: /"night" kelimesini seç/i }).click();
+
+    await expect(tableDialog.getByText(/Cümlemi Oluştur \(3\/4\)/i)).toBeVisible({ timeout: 5000 });
+    await tableDialog.getByRole('button', { name: /"Hello!" kelimesini seç/i }).click();
+
+    await expect(tableDialog.getByText(/Cümlemi Oluştur \(4\/4\)/i)).toBeVisible({ timeout: 5000 });
+    await tableDialog.getByRole('button', { name: /"Goodbye!" kelimesini seç/i }).click();
+
+    const startB2 = tableDialog.getByRole('button', { name: /2\. Etkinliğe Başla/i });
+    await expect(startB2).toBeVisible({ timeout: 5000 });
+    await startB2.click();
+
+    // Etkinlik B turları
+    await tableDialog.getByRole('button', { name: /"Good morning!" ifadesini seç/i }).click();
+    await page.waitForTimeout(1400);
+    await tableDialog.getByRole('button', { name: /"Hello!" ifadesini seç/i }).click();
+    await page.waitForTimeout(1400);
+    await tableDialog.getByRole('button', { name: /"Goodbye!" ifadesini seç/i }).click();
+    await page.waitForTimeout(1400);
+    await tableDialog.getByRole('button', { name: /"Good night!" ifadesini seç/i }).click();
+
+    await expect(tableDialog.getByText(/Tebrikler! Üret Masası Görevini Tamamladın!/i)).toBeVisible({ timeout: 5000 });
+
+    // ==========================================
     // 12. MASADAN KALK VE SINIFTA KALMA DOĞRULAMASI
+    // ==========================================
     const leaveTableBtn = tableDialog.getByRole('button', { name: /Masadan kalk ve sınıfa dön/i }).first();
     await expect(leaveTableBtn).toBeVisible();
     await leaveTableBtn.click();
