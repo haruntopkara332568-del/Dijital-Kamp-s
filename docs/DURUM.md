@@ -1,3 +1,49 @@
+# Proje Durum Raporu — Sürüm 6.4.0 (Aşama 6.4: 3. Sınıf Paylaş Masası — "Greetings / Birlikte Konuşalım" Karşılık Ver & Sen Başlat)
+
+## 3. Sınıf Paylaş Masası — Karşılıklı Konuşma ve Konuşmayı Başlatma Etkinliği (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu ve Dokunulmayan Sistemler**:
+  - `main` dalı ve üretim ortamı, Selçuklu Taç Kapı, yürünebilir avlu mimarisi, karakter ve kamera kontrol altyapısı, İngilizce sınıfı mimarisi, 4 masanın yerleşimi, Sınıf Panosu, onaylanan Aşama 6.1 Keşfet Masası, Aşama 6.2 Öğren Masası, Aşama 6.3 Üret Masası, Akıllı Tahta koruma sistemi, diğer sınıf düzeyleri (2, 4, 5, 6, 7), veri modeli ve depolama anahtarları (`dek_campus_v1_state`) %100 korunmuştur.
+- **1. Pedagojik Öğrenme İçeriği (Yalnızca 4 Temel İfade)**:
+  - **Hello!** (Merhaba!) — Karşılaşan ve el sallayarak selam veren çocuk illüstrasyonu.
+  - **Good morning!** (Günaydın!) — Sabah güneşi ve uyanan çocuk illüstrasyonu.
+  - **Goodbye!** (Hoşça kal!) — Ayrılan ve vedalaşan çocuk illüstrasyonu.
+  - **Good night!** (İyi geceler!) — Gece, ay ve uykuya hazırlanan çocuk illüstrasyonu.
+  - Yeni kelime listesi, gramer anlatımı veya yazılı sınav mantığı eklenmemiştir.
+- **2. İki Aşamalı İletişimsel Öğrenme Akışı**:
+  - **Etkinlik A — Arkadaşım Ne Söylüyor? / Karşılık Ver (4 Durum)**:
+    - Durum 1: Sabah okul bahçesinde karşılaşma — Ali "Good morning!" diyor. Öğrenci "Good morning!" ile karşılık verir. (Yanlış seçenek: "Good night!").
+    - Durum 2: Bahçede karşılaşma — Zeynep "Hello!" diyor. Öğrenci "Hello!" ile karşılık verir. (Yanlış seçenek: "Goodbye!").
+    - Durum 3: Okul çıkışında vedalaşma — Emir "Goodbye!" diyor. Öğrenci "Goodbye!" ile karşılık verir. (Yanlış seçenek: "Hello!").
+    - Durum 4: Gece uyku vakti — Annesi "Good night!" diyor. Öğrenci "Good night!" ile karşılık verir. (Yanlış seçenek: "Good morning!").
+    - Karakter konuşma balonu ve çift hızlı [Dinle] (0.85x) / [Yavaş Dinle] (0.65x) desteği.
+    - Yanlış cevapta cezasız pedagojik Türkçe ipucu ve anında yeniden deneme imkânı.
+  - **Ara Geçiş Ekranı**: 1. Etkinlik bitiminde tebrik ve 2. etkinliğe geçiş butonu sunulur (`"Karşılıklı Konuşmaları Başarıyla Tamamladın! 💬 / 2. Etkinliğe Başla (Şimdi Sen Konuş!)"`).
+  - **Etkinlik B — Şimdi Sen Konuş! / Sen Başlat (4 Tur)**:
+    - Tur 1: Sabah güneşi altında arkadaşını gördün -> Öğrenci durumu değerlendirir ve konuşmayı "Good morning!" ile başlatır; arkadaşı sevinçle karşılık verir.
+    - Tur 2: Bahçede oyun alanında arkadaşını gördün -> Öğrenci konuşmayı "Hello!" ile başlatır.
+    - Tur 3: Dersler bitti, eve dönerken arkadaşına veda -> Öğrenci "Goodbye!" ile başlatır.
+    - Tur 4: Gece uyku saati geldiğinde ailene iyi uykular dile -> Öğrenci "Good night!" ile başlatır.
+    - İletişimsel bağlam odaklı, 2 net seçenek kartı ve her seçimde sesli geri bildirim.
+- **3. Çocuk Dostu Pembe/Gül İstasyon Tasarımı & Telaffuz**:
+  - Pembe / gül rengi (`rose-600` / `rose-100`) ve Selçuklu masif ahşap çerçeveli 4. istasyon teması (soru ve onay konuşma balonları motifleri).
+  - Doğal Web Speech API (`en-US`/`en-GB`) telaffuz desteği.
+  - Mikrofon, kamera veya klavye girişi zorunluluğu yoktur; çocuk dostu dokunmatik/tıklamalı seçenekler.
+- **4. Dört İstasyonun Tamamlanması ve Sınıfta Kalma**:
+  - Her iki etkinlik de tamamlandığında `dek_campus_v1_state` içinde öğrencinin ilerlemesi kalıcı olarak güncellenir:
+    `completedStages: ['kesfet', 'ogren', 'uret', 'paylas']`, `completed: true`.
+  - Başarı ekranında tam talimat metni yer alır: `"Harika! Dört öğrenme masasını da tamamladın. Artık Büyük Görev'e hazırsın! 🏆"`
+  - 4 selamlaşma ifadesinin mini sözlük kartları ve rozeti sergilenir.
+  - **Akıllı tahtaya otomatik ışınlanma YOKTUR.**
+  - Aksiyonlar: **[Masadan Kalk / Sınıfa Dön]** ve **[Tekrar Oyna]**.
+  - Masadan kalkıldığında öğrenci sınıfta, 4. Paylaş Masası'nın yanında (`desk-4`, `x: 665, y: 418`) kalır.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata (strict TypeScript).
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 103 / 103 test geçti (70 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_paylas_table.spec.ts`): 2 / 2 test geçti (Desktop Chromium [19.2s] ve Mobile Chrome [19.6s]).
+  - Regresyon E2E (`grade3_hello_garden.spec.ts`, `grade3_ogren_table.spec.ts`, `grade3_uret_table.spec.ts`): 6 / 6 test geçti (1.5m).
+  - `npm run build`: 1.00s içinde hatasız üretim derlemesi üretildi.
+
 # Proje Durum Raporu — Sürüm 6.3.0 (Aşama 6.3: 3. Sınıf Üret Masası — "Greetings / Cümlemi Oluştur" Kelimeleri Birleştir & Doğru Cümleyi Bul)
 
 ## 3. Sınıf Üret Masası — Cümlemi Oluştur ve Doğru Cümleyi Bul Etkinliği (`feat/english-four-learning-tables`)

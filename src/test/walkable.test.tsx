@@ -2062,5 +2062,121 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
       fireEvent.click(exitBtns[0]);
       expect(handleExit).toHaveBeenCalledTimes(1);
     }, 25000);
+
+    it('69. Aşama 6.4: 3. Sınıf Paylaş Masası: "GREETINGS (BİRLİKTE KONUŞALIM)" başlığını ve pembe/rose istasyon temasını açar', async () => {
+      await clearAllCampusData();
+      saveStudentState({
+        ...createInitialStudentState(),
+        selectedGrade: 3,
+      });
+
+      render(
+        <MemoryRouter>
+          <CampusProviders>
+            <TableStationModal
+              isOpen={true}
+              stage="paylas"
+              onClose={vi.fn()}
+              onAdvanceToStage={vi.fn()}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      const titleEl = document.getElementById('table-station-title');
+      expect(titleEl).toBeInTheDocument();
+      expect(titleEl).toHaveTextContent(/4\. PAYLAŞ MASASI — GREETINGS \(BİRLİKTE KONUŞALIM\)/i);
+      expect(screen.getByText(/Etkinlik A — Arkadaşım Ne Söylüyor\?/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /ifadesini dinle/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /ifadesini yavaş dinle/i })).toBeInTheDocument();
+    });
+
+    it('70. Aşama 6.4: 3. Sınıf Paylaş Masası: Etkinlik A (Arkadaşım Ne Söylüyor?), Etkinlik B (Şimdi Sen Konuş!), 4 aşama tamamlama kaydı ve sınıfa dönüş sunar', async () => {
+      await clearAllCampusData();
+      saveStudentState({
+        ...createInitialStudentState(),
+        selectedGrade: 3,
+      });
+
+      const handleExit = vi.fn();
+
+      render(
+        <MemoryRouter>
+          <CampusProviders>
+            <TableStationModal
+              isOpen={true}
+              stage="paylas"
+              onClose={handleExit}
+              onAdvanceToStage={vi.fn()}
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      // --- ETKİNLİK A (Arkadaşım Ne Söylüyor? - Karşılık Ver) ---
+      // Durum 1: Ali "Good morning!" diyor. Seçenekler: Good morning! vs Good night!
+      // Yanlış cevap dene: Good night!
+      const wrongOpt1 = screen.getByRole('button', { name: /"Good night!" ifadesini seç/i });
+      fireEvent.click(wrongOpt1);
+      expect(await screen.findByText(/Farklı bir karşılık seçtin\. İpucu:/i)).toBeInTheDocument();
+
+      // Doğru cevap: Good morning!
+      fireEvent.click(screen.getByRole('button', { name: /"Good morning!" ifadesini seç/i }));
+
+      // Durum 2: Zeynep "Hello!" diyor. Seçenekler: Hello! vs Goodbye!
+      await screen.findByText(/Karşılık Ver \(2\/4\)/i, {}, { timeout: 3000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Hello!" ifadesini seç/i }));
+
+      // Durum 3: Emir "Goodbye!" diyor. Seçenekler: Goodbye! vs Hello!
+      await screen.findByText(/Karşılık Ver \(3\/4\)/i, {}, { timeout: 3000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Goodbye!" ifadesini seç/i }));
+
+      // Durum 4: Annesi "Good night!" diyor. Seçenekler: Good night! vs Good morning!
+      await screen.findByText(/Karşılık Ver \(4\/4\)/i, {}, { timeout: 3000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Good night!" ifadesini seç/i }));
+
+      // --- ARA GEÇİŞ EKRANI ---
+      const startEtkinlikBBtn = await screen.findByRole('button', { name: /2\. Etkinliğe Başla/i }, { timeout: 3000 });
+      expect(startEtkinlikBBtn).toBeInTheDocument();
+      fireEvent.click(startEtkinlikBBtn);
+
+      // --- ETKİNLİK B (Şimdi Sen Konuş! - Sen Başlat) ---
+      // Tur 1: Sabah güneşi altında arkadaşını gördün -> Good morning!
+      // Yanlış seçim dene: Good night!
+      const wrongOptB1 = await screen.findByRole('button', { name: /"Good night!" ifadesini seç/i });
+      fireEvent.click(wrongOptB1);
+      expect(await screen.findByText(/Farklı bir ifade seçtin\. İpucu:/i)).toBeInTheDocument();
+
+      // Doğru seçim: Good morning!
+      fireEvent.click(screen.getByRole('button', { name: /"Good morning!" ifadesini seç/i }));
+
+      // Tur 2: Bahçede arkadaşını selamla -> Hello!
+      await screen.findByText(/Sen Başlat \(2\/4\)/i, {}, { timeout: 3000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Hello!" ifadesini seç/i }));
+
+      // Tur 3: Ayrılırken veda et -> Goodbye!
+      await screen.findByText(/Sen Başlat \(3\/4\)/i, {}, { timeout: 3000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Goodbye!" ifadesini seç/i }));
+
+      // Tur 4: Gece iyi uykular dile -> Good night!
+      await screen.findByText(/Sen Başlat \(4\/4\)/i, {}, { timeout: 3000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Good night!" ifadesini seç/i }));
+
+      // --- TAMAMLANDI EKRANI ---
+      expect(
+        await screen.findByText(/Harika! Dört öğrenme masasını da tamamladın\. Artık Büyük Görev'e hazırsın!/i, {}, { timeout: 3000 }),
+      ).toBeInTheDocument();
+
+      // Dört aşamanın tamamı dek_campus_v1_state içinde tamamlanmış olarak kaydedilmiş olmalı
+      const savedState = loadStudentState();
+      const progress = savedState.missionProgressByKey['kapilarin-anlattigi-hikaye::grade-3'];
+      expect(progress?.completedStages).toEqual(expect.arrayContaining(['kesfet', 'ogren', 'uret', 'paylas']));
+      expect(progress?.completed).toBe(true);
+
+      // Masadan kalk ve sınıfa dön
+      const exitBtns = screen.getAllByRole('button', { name: /Masadan kalk ve sınıfa dön/i });
+      fireEvent.click(exitBtns[0]);
+      expect(handleExit).toHaveBeenCalledTimes(1);
+    }, 25000);
   });
 });

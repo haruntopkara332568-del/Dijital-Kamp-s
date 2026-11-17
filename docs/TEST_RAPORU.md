@@ -1,3 +1,42 @@
+# Test ve Kalite Güvence Raporu — Sürüm 6.4.0 (Aşama 6.4: 3. Sınıf Paylaş Masası — "Greetings / Birlikte Konuşalım" Karşılık Ver & Sen Başlat)
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (strict TypeScript).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **103 / 103 test** (`src/test/walkable.test.tsx` [70 test] + `src/test/campus.test.tsx` [33 test], `25.7s`):
+  - 69. 3. Sınıf Paylaş Masası: "GREETINGS (BİRLİKTE KONUŞALIM)" başlığını ve pembe/rose istasyon temasını açar.
+  - 70. 3. Sınıf Paylaş Masası: Etkinlik A (Arkadaşım Ne Söylüyor?: 4 durum, karakter balonu, karşılık seçimi, ipucu), Etkinlik B (Şimdi Sen Konuş!: 4 tur, durum değerlendirme, sen başlat, arkadaş cevabı), 4 aşama tamamlama kaydı ve sınıfa dönüş sunar.
+  - 64. Diğer sınıflar veya diğer masalar bu akıştan etkilenmez, orijinal durumlarını korur.
+- **`npx playwright test e2e/grade3_paylas_table.spec.ts --workers=1`**: Geçti — **2 / 2 test** (`chromium` [19.2s] + `mobile-chrome` [19.6s], toplam `41.7s`):
+  - 1. Selçuklu Taç Kapı açıldı -> Yürünebilir Kampüs Avlusu'na girildi -> İngilizce Dünyası binasına girildi.
+  - 2. 3. Sınıf seçildi ve Keşfet, Öğren ve Üret başarıları sonrası 4. Paylaş Masası'na (x: 665, y: 418) yüründü.
+  - 3. 4. PAYLAŞ MASASI — GREETINGS (BİRLİKTE KONUŞALIM) modalı açıldı (`docs/assets/grade3_paylas_desktop_modal.png` / `docs/assets/grade3_paylas_mobile_modal.png`).
+  - 4. [Dinle] (0.85x) ve [Yavaş Dinle] (0.65x) düğmeleri test edildi.
+  - 5. Etkinlik A (Arkadaşım Ne Söylüyor?): 4 durum boyunca arkadaşların selamlarına doğru karşılıklar seçildi; yanlış seçimde tolerans ve cezasız Türkçe ipucu sağlandı.
+  - 6. Ara geçiş ekranı ("Karşılıklı Konuşmaları Başarıyla Tamamladın! 💬 / 2. Etkinliğe Başla (Şimdi Sen Konuş!)") doğrulandı.
+  - 7. Etkinlik B (Şimdi Sen Konuş!): 4 tur boyunca durum değerlendirilip konuşma başlatıldı; arkadaşın sevinçli karşılık vermesi doğrulandı.
+  - 8. Tamamlama ekranı: Dört selamlaşma ifadesinin görsel mini sözlük kartları ve rozeti doğrulandı (`docs/assets/grade3_paylas_desktop_completed.png` / `docs/assets/grade3_paylas_mobile_completed.png`).
+  - 9. Tamamlama metninin tam olarak `"Harika! Dört öğrenme masasını da tamamladın. Artık Büyük Görev'e hazırsın! 🏆"` olduğu doğrulandı.
+  - 10. **Akıllı tahtaya otomatik ışınlanmanın OLMADIĞI** doğrulandı.
+  - 11. Masadan kalkıldığında öğrencinin sınıfta, 4. Paylaş Masası'nın yanında (`desk-4`, `x: 665, y: 418`) kaldığı doğrulandı (`docs/assets/grade3_paylas_desktop_return_classroom.png` / `docs/assets/grade3_paylas_mobile_return_classroom.png`).
+  - 12. `localStorage` üzerinde `dek_campus_v1_state` içinde 4 aşamanın tamamlandığı (`completedStages: ['kesfet', 'ogren', 'uret', 'paylas']`) ve `completed: true` olarak işlendiği doğrulandı.
+- **`npx playwright test e2e/grade3_hello_garden.spec.ts e2e/grade3_ogren_table.spec.ts e2e/grade3_uret_table.spec.ts --workers=1`**: Geçti — **6 / 6 test** (`1.5m`):
+  - Keşfet Masası (2 / 2 test geçti).
+  - Öğren Masası (2 / 2 test geçti).
+  - Üret Masası (2 / 2 test geçti).
+  - Sıfır regresyon sağlandı.
+- **`npm run build` (`vite build`)**: Geçti — **1.00s** içinde hatasız üretim derlemesi üretildi.
+
+## 2. Kanıt Ekran Görüntüleri (`docs/assets/`):
+- **Masaüstü (Chromium)**:
+  - `grade3_paylas_desktop_modal.png`: 4. Paylaş Masası Karşılık Ver arayüzü, gül/pembe teması, [Dinle] ve [Yavaş Dinle] butonları, karakter konuşma balonu.
+  - `grade3_paylas_desktop_completed.png`: İki etkinlik tamamlandıktan sonraki 4 aşama tamamlama başarı ekranı ve 4 ifadenin özeti.
+  - `grade3_paylas_desktop_return_classroom.png`: Masadan kalkış sonrası sınıfta 4. Paylaş Masası'nın yanında kalış.
+- **Mobil Dokunmatik (Mobile Chrome)**:
+  - `grade3_paylas_mobile_modal.png`: Mobil dokunmatik arayüzde Arkadaşım Ne Söylüyor? paneli.
+  - `grade3_paylas_mobile_completed.png`: Mobilde 4 aşama başarı ve tamamlama ekranı.
+  - `grade3_paylas_mobile_return_classroom.png`: Mobilde masadan kalkış sonrası sınıfta kalma durumu.
+
 # Test ve Kalite Güvence Raporu — Sürüm 6.3.0 (Aşama 6.3: 3. Sınıf Üret Masası — "Greetings / Cümlemi Oluştur" Kelimeleri Birleştir & Doğru Cümleyi Bul)
 
 ## 1. Çalıştırıldı ve Geçti
