@@ -15,6 +15,8 @@ import {
 } from './engine/classroomSceneRenderer';
 import { WalkableControlsOverlay } from './components/WalkableControlsOverlay';
 import { SmartBoardModal } from './components/SmartBoardModal';
+import { useOptionalCampus } from '@/src/app/CampusProviders';
+import { CourtyardWelcomeView } from '../courtyard/CourtyardWelcomeView';
 import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } from './types';
 
 export interface WalkableCampusViewProps {
@@ -41,6 +43,11 @@ export function WalkableCampusView({
   const [isSmartBoardModalOpen, setIsSmartBoardModalOpen] = useState(false);
   const [isSmartBoardPoweringOn, setIsSmartBoardPoweringOn] = useState(false);
   const [isSmartBoardActive, setIsSmartBoardActive] = useState(false);
+
+  const campus = useOptionalCampus();
+  const isOnboardingActive =
+    currentScene === 'courtyard' &&
+    Boolean(campus?.state && (!campus.state.hasCompletedOnboarding || campus.state.selectedGrade === null));
 
   // Akıllı tahta animasyon durumunu ref üzerinden aktararak motorun gereksiz sıfırlanmasını önle
   const smartBoardVisualStateRef = useRef({
@@ -345,15 +352,16 @@ export function WalkableCampusView({
     };
   }, [currentScene, getSceneConfig]);
 
-  // Akıllı Tahta modalı açıldığında oyun motorunu duraklat, kapandığında güvenle devam ettir (Section 5)
+  // Akıllı Tahta modalı açıldığında motoru duraklat; Karşılama/Sınıf Seçimi açıkken hareketi ve etkileşimleri güvenle devre dışı bırak
   useEffect(() => {
     if (!engineRef.current) return;
+    engineRef.current.setInputDisabled(isOnboardingActive);
     if (isSmartBoardModalOpen) {
       engineRef.current.pause();
     } else {
       engineRef.current.resume();
     }
-  }, [isSmartBoardModalOpen]);
+  }, [isSmartBoardModalOpen, isOnboardingActive]);
 
   const handleVirtualDirection = (vx: number, vy: number) => {
     if (engineRef.current) {
@@ -378,23 +386,25 @@ export function WalkableCampusView({
         className="w-full h-full block cursor-crosshair touch-none"
       />
 
-      {/* Ekran Üstü Kontroller ve İpuçları */}
-      <WalkableControlsOverlay
-        activeZone={activeZone}
-        onTriggerInteraction={handleTriggerInteraction}
-        onVirtualDirection={handleVirtualDirection}
-        onBackToMap={handleBackToMap}
-        onExitClassroom={
-          currentScene === 'classroom'
-            ? () => {
-                lastCourtyardPosRef.current = { x: 970, y: 350 };
-                setCurrentScene('courtyard');
-              }
-            : undefined
-        }
-        unreachableMessage={unreachableMessage}
-        currentScene={currentScene}
-      />
+      {/* Ekran Üstü Kontroller ve İpuçları (Karşılama paneli tamamlanana kadar gizlenir) */}
+      {!isOnboardingActive && (
+        <WalkableControlsOverlay
+          activeZone={activeZone}
+          onTriggerInteraction={handleTriggerInteraction}
+          onVirtualDirection={handleVirtualDirection}
+          onBackToMap={handleBackToMap}
+          onExitClassroom={
+            currentScene === 'classroom'
+              ? () => {
+                  lastCourtyardPosRef.current = { x: 970, y: 350 };
+                  setCurrentScene('courtyard');
+                }
+              : undefined
+          }
+          unreachableMessage={unreachableMessage}
+          currentScene={currentScene}
+        />
+      )}
 
       {/* Akıllı Tahta Modal Penceresi */}
       <SmartBoardModal
@@ -402,6 +412,25 @@ export function WalkableCampusView({
         onClose={() => setIsSmartBoardModalOpen(false)}
         missionId="kapilarin-anlattigi-hikaye"
       />
+
+      {/* Karşılama, Rehber ve Sınıf Seçimi Paneli (Sinematik Avlu Üzerinde Modal) */}
+      {isOnboardingActive && (
+        <CourtyardWelcomeView
+          initialPhase={
+            campus?.state.discoveryPreference === 'guided' &&
+            campus.state.selectedGrade !== null &&
+            !campus.state.hasCompletedGuidedTour
+              ? 'guided-tour'
+              : 'welcome-choice'
+          }
+          onFinishToMap={() => {
+            campus?.completeOnboarding();
+          }}
+          onReplayGate={() => {
+            campus?.replayWelcomeFlow();
+          }}
+        />
+      )}
     </div>
   );
 }

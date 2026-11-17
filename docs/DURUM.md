@@ -1,4 +1,17 @@
-# Proje Durum Raporu — Sürüm 5.0 (Aşama 5.0: Tek Girişli Yürünebilir Kampüs Deneyimi)
+# Proje Durum Raporu — Sürüm 5.0.2 (Aşama 5.0.2: Giriş Sonrası Yanlış Ekran Hatasının Kesin Çözümü)
+
+## Aşama 5.0.2 — Giriş Sonrası Yanlış Ekran Hatasının Kesin Çözümü (`feat/single-entry-walkable-campus`)
+- **Hata Teşhisi ve Kesin Çözümü**:
+  - Giriş kapısında "Kapıyı Aç ve İçeri Gir" tıklandığında, `CampusPages.tsx` içindeki ara yönlendirme (`!hasCompletedOnboarding`) nedeniyle eski SVG sahnesini barındıran `CourtyardWelcomeView` bağımsız bir sayfa olarak açılıyor ve içindeki `CourtyardSceneSvg` eski şematik haritayı çiziyordu.
+  - `CourtyardSceneSvg` aktif giriş akışından ve `CourtyardWelcomeView` içinden tamamen çıkarıldı.
+  - `CampusPages.tsx` içerisindeki ara sayfa katmanı kaldırıldı; kapı aralandığı andan itibaren **doğrudan onaylı sinematik `WalkableCampusView` avlusunun açılması** sağlandı: **GİRİŞ KAPISI → SİNEMATİK YÜRÜNEBİLİR AVLU → KARŞILAMA VE SINIF SEÇİMİ → SERBEST YÜRÜYÜŞ**.
+  - Karşılama, akran rehber diyalog kartı ve sınıf seçimi adımları gerçek sinematik avlu üzerinde hafif yarı saydam (`bg-black/30 backdrop-blur-[2px]`) bir modal pencere olarak sunuldu.
+  - Karşılama ve sınıf seçimi tamamlanana kadar öğrenci hareketi (`engine.setInputDisabled(true)`) ve bina etkileşimleri güvenle devre dışı bırakıldı; arka planda 60fps render döngüsü çalışarak sinematik avlunun tüm bağımsız 2,5B varlıklarıyla yüklenmesi sağlandı.
+  - Sınıf seçimi tamamlandığında panel kapandı, hareket serbest bırakıldı (`engine.setInputDisabled(false)`) ve öğrenci aynı avluda kesintisiz yürümeye başladı.
+- **Görsel Doğrulama ve Ekran Görüntüleri (`docs/assets/`)**:
+  - `stage502_gate_screen.png`: Sinematik Selçuklu Taç Kapı.
+  - `stage502_desktop_welcome_overlay.png` ve `stage502_mobile_welcome_overlay.png`: Sinematik avlu üzerinde karşılama modalı (arka planda Selçuklu binaları ve avlu görünür).
+  - `stage502_desktop_free_walk.png` ve `stage502_mobile_free_walk.png`: Karşılama sonrası serbest yürüyüş görünümü (Selçuklu yıldız havuzu, binalar, pavyon, kiosk, karakter).
 
 ## Aşama 5.0 — Tek Girişli Yürünebilir Kampüs Deneyimi (`feat/single-entry-walkable-campus`)
 - **Giriş ve Navigasyon Sadeleştirmesi (Tek Giriş Akışı)**:

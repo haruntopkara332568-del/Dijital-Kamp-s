@@ -1,10 +1,19 @@
-# Test ve Kalite Güvence Raporu — Sürüm 5.0 (Aşama 5.0: Tek Girişli Yürünebilir Kampüs)
+# Test ve Kalite Güvence Raporu — Sürüm 5.0.2 (Aşama 5.0.2: Giriş Sonrası Yanlış Ekran Çözümü)
 
 ## 1. Çalıştırıldı ve Geçti
 - **`npm run typecheck` (`tsc --noEmit`)**: Geçti — 0 hata (strict TypeScript).
 - **`npm run lint` (`eslint .`)**: Geçti — 0 hata, 0 uyarı.
-- **`npm run test` (`vitest run`)**: Geçti — **88 / 88 test** (`src/test/walkable.test.tsx` [55 test] + `src/test/campus.test.tsx` [33 test], toplam `6.6 s`):
-  - **Aşama 5.0 Tek Girişli Yürünebilir Kampüs & Navigasyon Testleri (`campus.test.tsx` — 33 Test)**:
+- **`npm run test` (`vitest run`)**: Geçti — **88 / 88 test** (`src/test/walkable.test.tsx` [55 test] + `src/test/campus.test.tsx` [33 test], toplam `6.8 s`):
+- **`npx playwright test e2e/stage502_verify.spec.ts`**: Geçti — **2 / 2 test** (`chromium` [6.1s] + `mobile-chrome` [6.1s]):
+  - 1. Sinematik giriş kapısı açıldı ve doğrulandı.
+  - 2. Eski SVG haritası hiçbir aşamada gösterilmedi (`CourtyardSceneSvg`DOM'da 0 adet).
+  - 3. Onaylanan sinematik yürünebilir avlu açıldı (`canvas[data-testid="walkable-canvas"]` görünür).
+  - 4. Karşılama ve sınıf seçimi aynı avlunun üzerinde modal olarak çalıştı.
+  - 5. Karşılama tamamlandığında panel kapandı ve öğrenci avluda serbestçe hareket etti.
+- **`npm run build` (`vite build`)**: Geçti — 1.26s içinde derlendi.
+
+### Birim ve Entegrasyon Test Detayları:
+  - **Aşama 5.0 & 5.0.2 Tek Girişli Yürünebilir Kampüs & Navigasyon Testleri (`campus.test.tsx` — 33 Test)**:
     1. Sinematik Taç Kapı Giriş Sahnesi: Aksaray Sultanhanı esinli görsel ve animasyonu atla düğmesi içerir
     2. Tek Giriş Akışı: İlk girişte Taç Kapı -> Karşılama/Sınıf Seçimi -> Yürünebilir Kampüs (çift giriş ve kuşbakışı harita butonları kaldırıldı)
     3. `/harita` adresi yönlendirme döngüsü veya 404 olmadan doğrudan anasayfaya (`/`) yönlendirir

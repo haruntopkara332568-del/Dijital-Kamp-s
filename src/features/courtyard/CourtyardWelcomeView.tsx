@@ -10,7 +10,6 @@ import {
 import { getCampusAreaById } from '@/src/data/campusAreas';
 import type { DiscoveryPreference, GradeLevel } from '@/src/types/campus';
 import { GuideDialogueCard } from '@/src/features/guide/GuideDialogueCard';
-import { CourtyardSceneSvg } from '@/src/components/svg/CourtyardSceneSvg';
 import { CampusBuildingSvg } from '@/src/components/svg/CampusBuildingSvg';
 
 type CourtyardPhase = 'welcome-choice' | 'grade-select' | 'guided-tour';
@@ -61,39 +60,40 @@ export function CourtyardWelcomeView({
     : null;
 
   return (
-    <main className="min-h-dvh bg-gradient-to-b from-[var(--sky-warm-top)]/35 via-[var(--campus-canvas)] to-[var(--stone-light)]/45 px-3 sm:px-6 py-4 sm:py-6">
-      <div className="max-w-5xl mx-auto space-y-4">
-        {/* Avlu Sahnesi + Alt Bilgi Kartını Bütünleştiren Kampüs Çerçevesi */}
-        <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] shadow-sm overflow-hidden">
-          <div
-            aria-hidden="true"
-            className="h-1.5 w-full bg-gradient-to-r from-[var(--seljuk-navy)] via-[var(--seljuk-teal)] to-[var(--courtyard-sage)]"
-          />
-          <div className="p-4 sm:p-6 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold text-[var(--courtyard-sage)]">
-                  Karşılama Avlusu
-                </p>
-                <h1 className="text-xl sm:text-2xl font-bold text-[var(--seljuk-navy)]">
-                  Kampüs Avlusuna Hoş Geldin
-                </h1>
-              </div>
-
-              <button
-                type="button"
-                onClick={onReplayGate}
-                className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-2 cursor-pointer transition-colors"
-              >
-                <RotateCcw className="w-3.5 h-3.5 text-[var(--seljuk-teal)]" aria-hidden="true" />
-                <span>Kapı Girişini Yeniden İzle</span>
-              </button>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="courtyard-welcome-heading"
+      className="fixed inset-0 z-40 flex items-center justify-center p-3 sm:p-6 bg-black/30 backdrop-blur-[2px] overflow-y-auto animate-in fade-in duration-200"
+    >
+      <div className="w-full max-w-2xl bg-[var(--campus-surface)] rounded-2xl border-2 border-[var(--seljuk-teal)] shadow-2xl overflow-hidden my-auto animate-in zoom-in-95 duration-200">
+        <div
+          aria-hidden="true"
+          className="h-1.5 w-full bg-gradient-to-r from-[var(--seljuk-navy)] via-[var(--seljuk-teal)] to-[var(--courtyard-sage)]"
+        />
+        <div className="p-4 sm:p-6 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--campus-border)] pb-3">
+            <div>
+              <p className="text-xs font-semibold text-[var(--courtyard-sage)]">
+                Karşılama ve Hazırlık
+              </p>
+              <h1 id="courtyard-welcome-heading" className="text-lg sm:text-xl font-bold text-[var(--seljuk-navy)]">
+                Kampüs Avlusuna Hoş Geldin
+              </h1>
             </div>
 
-            <CourtyardSceneSvg />
+            <button
+              type="button"
+              onClick={onReplayGate}
+              className="min-h-[40px] px-3 py-1.5 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-[var(--seljuk-teal)]" aria-hidden="true" />
+              <span>Kapı Girişini Yeniden İzle</span>
+            </button>
+          </div>
 
-            {/* Aşama 1: Sahneyle Bütünleşik Onaylı Karşılama ve Keşif Tercihi */}
-            {phase === 'welcome-choice' && (
+          {/* Aşama 1: Sahneyle Bütünleşik Onaylı Karşılama ve Keşif Tercihi */}
+          {phase === 'welcome-choice' && (
               <GuideDialogueCard dialogue={WELCOME_DIALOGUE} mood="welcoming">
                 <div className="pt-2 flex flex-col sm:flex-row gap-3">
                   <button
@@ -249,9 +249,8 @@ export function CourtyardWelcomeView({
                 </GuideDialogueCard>
               </div>
             )}
-          </div>
-        </section>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }

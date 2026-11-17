@@ -6,11 +6,6 @@ import { CampusTopBar } from '@/src/components/CampusTopBar';
 const CampusGateView = lazy(() =>
   import('@/src/features/entrance/CampusGateView').then((m) => ({ default: m.CampusGateView })),
 );
-const CourtyardWelcomeView = lazy(() =>
-  import('@/src/features/courtyard/CourtyardWelcomeView').then((m) => ({
-    default: m.CourtyardWelcomeView,
-  })),
-);
 const LearningAreaView = lazy(() =>
   import('@/src/features/learning-areas/LearningAreaView').then((m) => ({
     default: m.LearningAreaView,
@@ -46,7 +41,7 @@ function RouteLoadingFallback() {
 }
 
 export function HomeRoutePage() {
-  const { hydrated, state, markGateSeen, replayWelcomeFlow, completeOnboarding } = useCampus();
+  const { hydrated, state, markGateSeen } = useCampus();
 
   if (!hydrated) {
     return (
@@ -67,29 +62,8 @@ export function HomeRoutePage() {
     );
   }
 
-  // 2. Kapı görüldü ancak sınıf seçilmediyse veya karşılama tamamlanmadıysa: Karşılama & Sınıf Seçimi
-  if (!state.hasCompletedOnboarding || state.selectedGrade === null) {
-    const initialPhase =
-      state.discoveryPreference === 'guided' &&
-      state.selectedGrade !== null &&
-      !state.hasCompletedGuidedTour
-        ? 'guided-tour'
-        : 'welcome-choice';
-
-    return (
-      <Suspense fallback={<RouteLoadingFallback />}>
-        <CourtyardWelcomeView
-          initialPhase={initialPhase}
-          onFinishToMap={() => {
-            completeOnboarding();
-          }}
-          onReplayGate={replayWelcomeFlow}
-        />
-      </Suspense>
-    );
-  }
-
-  // 3. Karşılama ve sınıf seçimi tamamlandı: Tek Girişli Yürünebilir Kampüs Avlusu
+  // 2. Kapı görüldükten sonra doğrudan Sinematik Yürünebilir Kampüs Avlusu açılır.
+  // Karşılama, rehberlik ve sınıf seçimi, WalkableCampusView avlusu üzerinde modal olarak çalışır.
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
       <WalkableCampusView />

@@ -41,6 +41,7 @@ export class WalkableCanvasEngine {
 
   private isRunning: boolean = false;
   private isPaused: boolean = false;
+  private isInputDisabled: boolean = false;
   private animFrameId: number | null = null;
   private lastTime: number = 0;
 
@@ -129,6 +130,7 @@ export class WalkableCanvasEngine {
     this.clearPath();
     this.player.state = 'idle';
     this.player.walkFrame = 0;
+    this.render();
   }
 
   /**
@@ -146,6 +148,21 @@ export class WalkableCanvasEngine {
 
   public getIsPaused(): boolean {
     return this.isPaused;
+  }
+
+  public setInputDisabled(disabled: boolean) {
+    this.isInputDisabled = disabled;
+    if (disabled) {
+      this.keysDown.clear();
+      this.virtualMovement = { x: 0, y: 0 };
+      this.clearPath();
+      this.player.state = 'idle';
+      this.player.walkFrame = 0;
+    }
+  }
+
+  public getInputDisabled(): boolean {
+    return this.isInputDisabled;
   }
 
   public isAnimFrameActive(): boolean {
@@ -180,7 +197,7 @@ export class WalkableCanvasEngine {
 
   private handleKeyDown = (e: KeyboardEvent) => {
     // Modal açıkken veya metin kutusundayken girdileri işleme
-    if (this.isPaused || this.isInputFocused()) return;
+    if (this.isPaused || this.isInputDisabled || this.isInputFocused()) return;
 
     const key = e.key.toLowerCase();
 
@@ -202,13 +219,13 @@ export class WalkableCanvasEngine {
   };
 
   private handleKeyUp = (e: KeyboardEvent) => {
-    if (this.isPaused) return;
+    if (this.isPaused || this.isInputDisabled) return;
     const key = e.key.toLowerCase();
     this.keysDown.delete(key);
   };
 
   private handlePointerDown = (e: PointerEvent) => {
-    if (this.isPaused || e.button !== 0) return; // Yalnızca sol tık ve aktif durumda
+    if (this.isPaused || this.isInputDisabled || e.button !== 0) return; // Yalnızca sol tık ve aktif durumda
 
     const rect = this.canvas.getBoundingClientRect();
     const rectW = rect.width || this.canvas.width || 800;
@@ -271,7 +288,7 @@ export class WalkableCanvasEngine {
   }
 
   public setVirtualDirection(vx: number, vy: number) {
-    if (this.isPaused) return;
+    if (this.isPaused || this.isInputDisabled) return;
     this.virtualMovement = { x: vx, y: vy };
     if (vx !== 0 || vy !== 0) {
       this.clearPath();
@@ -279,7 +296,7 @@ export class WalkableCanvasEngine {
   }
 
   public triggerActiveInteraction() {
-    if (this.isPaused) return;
+    if (this.isPaused || this.isInputDisabled) return;
     if (this.activeZone) {
       this.activeZone.action();
     }
@@ -290,6 +307,7 @@ export class WalkableCanvasEngine {
     this.isRunning = true;
     this.isPaused = false;
     this.lastTime = performance.now();
+    this.render();
     if (this.animFrameId === null) {
       this.animFrameId = requestAnimationFrame(this.loop);
     }
@@ -311,6 +329,12 @@ export class WalkableCanvasEngine {
   };
 
   private update(delta: number) {
+    if (this.isInputDisabled) {
+      this.player.state = 'idle';
+      this.player.walkFrame = 0;
+      return;
+    }
+
     let vx = 0;
     let vy = 0;
 
