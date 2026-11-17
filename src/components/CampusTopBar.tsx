@@ -47,7 +47,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
   };
 
   const navItems = [
-    { href: '/harita', label: 'Kampüs Haritası' },
+    { href: '/', label: 'Kampüs Avlusu' },
     { href: '/alan/gorev-panosu', label: 'Görev Panosu' },
     { href: '/yolculugum', label: 'Yolculuğum' },
   ];
@@ -64,8 +64,8 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 sm:gap-8">
           {/* Bölge 1: Tek satırlık başlık */}
           <Link
-            to="/harita"
-            onClick={(e) => handleNavClick(e, '/harita')}
+            to="/"
+            onClick={(e) => handleNavClick(e, '/')}
             className="min-h-[44px] inline-flex items-center text-base sm:text-lg font-bold tracking-tight text-[var(--seljuk-navy)] whitespace-nowrap shrink-0 hover:text-[var(--seljuk-teal)] transition-colors"
           >
             Dijital Eğitim Kampüsü

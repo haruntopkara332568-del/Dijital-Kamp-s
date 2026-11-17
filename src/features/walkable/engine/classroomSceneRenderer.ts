@@ -32,6 +32,7 @@ export function renderClassroomLayeredBackground(
   height: number,
   isSmartBoardActive: boolean,
   isSmartBoardPoweringOn: boolean,
+  selectedGrade?: number | null,
 ) {
   const isReducedMotion =
     typeof window !== 'undefined' &&
@@ -66,6 +67,9 @@ export function renderClassroomLayeredBackground(
     isSmartBoardPoweringOn,
     now,
   );
+
+  // 4b. SELÇUKLU SINIF SEÇİM PANOSU (Akıllı Tahtanın Solunda Fiziksel Pano)
+  drawClassroomGradeBoard(ctx, 215, 26, 110, 118, selectedGrade ?? null, now);
 
   // 5. AVLUYA ÇIKIŞ KAPISI (Güney Duvarı — 480, 590 Etkileşim Noktası)
   drawExitDoor(ctx, width, height);
@@ -282,6 +286,7 @@ export function renderClassroomBackground(
   height: number,
   isSmartBoardActive: boolean,
   isSmartBoardPoweringOn: boolean,
+  selectedGrade?: number | null,
 ) {
   renderClassroomLayeredBackground(
     ctx,
@@ -289,6 +294,7 @@ export function renderClassroomBackground(
     height,
     isSmartBoardActive,
     isSmartBoardPoweringOn,
+    selectedGrade,
   );
 
   const dummyPlayer: PlayerCharacter = {
@@ -578,6 +584,169 @@ function drawSmartBoard(
       drawVectorOffScreen(ctx, x, y, w, h, now);
     }
   }
+
+  ctx.restore();
+}
+
+/**
+ * Selçuklu Mimari Sınıf Seçim Panosu (Akıllı Tahtanın Sol Tarafında Fiziksel Pano).
+ * Ahşap oymalı, sivri kemerli, turkuaz çinili ve Selçuklu yıldız bezemeli fiziksel pano.
+ */
+export function drawClassroomGradeBoard(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  selectedGrade: number | null,
+  now: number = 0,
+) {
+  ctx.save();
+
+  // 1. Zemin Derinlik Gölgesi
+  ctx.fillStyle = 'rgba(23, 43, 71, 0.35)';
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x + 3, y + 4, w, h, 6);
+  } else {
+    ctx.rect(x + 3, y + 4, w, h);
+  }
+  ctx.fill();
+
+  // 2. Taş / Ahşap Kaide Çerçevesi (Ceviz Ahşap & Kumtaşı)
+  ctx.fillStyle = '#2f1f14';
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x, y, w, h, 6);
+  } else {
+    ctx.rect(x, y, w, h);
+  }
+  ctx.fill();
+  ctx.strokeStyle = '#bca888';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // 3. Selçuklu Sivri Kemer Tepeliği (Mukarnas Taç)
+  ctx.fillStyle = '#0e768a';
+  ctx.beginPath();
+  ctx.moveTo(x + 8, y + 24);
+  if (ctx.quadraticCurveTo) {
+    ctx.quadraticCurveTo(x + w / 2, y - 10, x + w - 8, y + 24);
+  } else {
+    ctx.lineTo(x + w / 2, y - 10);
+    ctx.lineTo(x + w - 8, y + 24);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#d8972b';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Kemer Tepesinde Selçuklu Sekiz Köşeli Yıldız / Rozet
+  ctx.fillStyle = '#fef08a';
+  ctx.beginPath();
+  ctx.arc(x + w / 2, y + 8, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 4. Turkuaz Çini Bordür Çizgisi
+  ctx.strokeStyle = '#249ab0';
+  ctx.lineWidth = 1.2;
+  ctx.strokeRect(x + 5, y + 24, w - 10, h - 29);
+
+  // 5. Pano Başlık Levhası (Pirinç Plaka)
+  ctx.fillStyle = '#172b47';
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x + 10, y + 27, w - 20, 18, 4);
+  } else {
+    ctx.rect(x + 10, y + 27, w - 20, 18);
+  }
+  ctx.fill();
+  ctx.strokeStyle = '#d8972b';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#fef08a';
+  ctx.font = 'bold 8.5px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('SINIF PANOSU', x + w / 2, y + 36);
+
+  // 6. Pano İç Levhası (Taş Oyma Doku)
+  ctx.fillStyle = '#1b120c';
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x + 10, y + 48, w - 20, h - 55, 4);
+  } else {
+    ctx.rect(x + 10, y + 48, w - 20, h - 55);
+  }
+  ctx.fill();
+  ctx.strokeStyle = '#5c4532';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // 7. Seçili Sınıf Durumu veya Seçim Çağrısı
+  if (selectedGrade) {
+    // Sınıf Seçili Durum
+    ctx.fillStyle = '#fef08a';
+    ctx.font = 'bold 15px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${selectedGrade}. SINIF`, x + w / 2, y + 68);
+
+    // Yeşil onay rozeti
+    ctx.fillStyle = '#10b981';
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(x + w / 2 - 28, y + 84, 56, 14, 3);
+    } else {
+      ctx.rect(x + w / 2 - 28, y + 84, 56, 14);
+    }
+    ctx.fill();
+
+    ctx.fillStyle = '#052e16';
+    ctx.font = 'bold 7.5px sans-serif';
+    ctx.fillText('● AKTİF', x + w / 2, y + 91);
+  } else {
+    // Sınıf Henüz Seçilmedi — Dikkat Çeken Canlı Davet
+    const pulse = Math.sin(now / 280) * 0.35 + 0.65;
+    ctx.fillStyle = `rgba(239, 68, 68, ${pulse * 0.25 + 0.15})`;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(x + 12, y + 52, w - 24, 32, 4);
+    } else {
+      ctx.rect(x + 12, y + 52, w - 24, 32);
+    }
+    ctx.fill();
+
+    ctx.fillStyle = '#fca5a5';
+    ctx.font = 'bold 8.5px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SEÇİM YAPIN', x + w / 2, y + 64);
+
+    ctx.fillStyle = `rgba(254, 240, 138, ${pulse})`;
+    ctx.font = 'bold 8px sans-serif';
+    ctx.fillText('➜ Sınıfını Seç', x + w / 2, y + 78);
+
+    // Dışarıya doğru yanıp sönen altın aura
+    ctx.strokeStyle = `rgba(216, 151, 43, ${pulse})`;
+    ctx.lineWidth = 1.8;
+    ctx.strokeRect(x + 8, y + 25, w - 16, h - 31);
+  }
+
+  // 8. Altın Asılı Kandil / Fener (Panonun solunda)
+  const lampGlow = Math.sin(now / 320) * 0.2 + 0.8;
+  ctx.fillStyle = `rgba(253, 230, 138, ${0.4 * lampGlow})`;
+  ctx.beginPath();
+  ctx.arc(x - 5, y + 50, 12, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#d8972b';
+  ctx.fillRect(x - 7, y + 36, 4, 16);
+  ctx.beginPath();
+  ctx.arc(x - 5, y + 54, 3.5, 0, Math.PI * 2);
+  ctx.fill();
 
   ctx.restore();
 }

@@ -1,10 +1,47 @@
-# Test ve Kalite Güvence Raporu
+# Test ve Kalite Güvence Raporu — Sürüm 5.0.4 (Tek Görevli Düzeltme: Sınıf Seçim Panosu, Akıllı Tahta Kilidi ve Dış Kapı Çıkış Döngüsü)
 
 ## 1. Çalıştırıldı ve Geçti
-- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — 0 hata (strict TypeScript).
-- **`npm run lint` (`eslint .`)**: Geçti — 0 hata, 0 uyarı.
-- **`npm run test` (`vitest run`)**: Geçti — **81 / 81 test** (`src/test/walkable.test.tsx` [52 test] + `src/test/campus.test.tsx` [29 test], toplam `4.8 s`):
-  - **Aşama 3, 4, 4.5 & 4.7 Yürünebilir Kampüs, Karakter ve Sınıf Görsel Dünya Testleri (`walkable.test.tsx` — 52 Test)**:
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (strict TypeScript).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **90 / 90 test** (`src/test/walkable.test.tsx` [57 test] + `src/test/campus.test.tsx` [33 test], toplam `4.5 s`):
+- **`npx playwright test e2e/stage502_verify.spec.ts`**: Geçti — **2 / 2 test** (`chromium` [8.9s] + `mobile-chrome` [11.7s]):
+  - 1. Sinematik Selçuklu giriş kapısı açıldı (`stage502_1_gate_initial.png`).
+  - 2. Avluda sınıf seçimi kontrolü olmadığı (`toHaveCount(0)`) ve avlunun serbest keşfe hazır olduğu doğrulandı (`stage502_2_courtyard_nograde.png`).
+  - 3. İngilizce Dünyası binası önüne gelinip "İngilizce Sınıfına Gir" tetiklendi (`stage502_3_enter_english_prompt.png`).
+  - 4. İngilizce sınıfına girildi (`stage502_4_classroom_initial.png`).
+  - 5. Henüz sınıf seçilmemişken akıllı tahtaya yaklaşıldığında "Önce Sınıfını Seç" ipucu ve tıklandığında "Önce sınıfını seç." uyarısı verilerek tahta açılması engellendi (`stage502_5_smartboard_locked_warning.png`).
+  - 6. Akıllı tahtanın solundaki Selçuklu Sınıf Seçim Panosu'na yaklaşıldığında "Sınıfını Seç / Değiştir" ipucu açıldı (`stage502_6_grade_board_prompt.png`).
+  - 7. Panoyla etkileşime girilip Selçuklu mimari ahşap/taş dokulu modalda 5. sınıf seçildi, başarıyla kaydedildi (`stage502_7_grade_board_modal.png`).
+  - 8. Sınıf seçildikten sonra akıllı tahtaya yaklaşıldığında "Akıllı Tahtayı Aç" ipucu göründü ve tahta sorunsuz açıldı (`stage502_8_smartboard_opened.png`).
+  - 9. Tahta kapatılıp "Avluya Dön" ile avluya dönüldü (`stage502_9_back_in_courtyard.png`).
+  - 10. Avluda güneye dış kapıya yürünerek "Kampüsten Çık" etkileşim ipucu açıldı (`stage502_10_exit_gate_prompt.png`).
+  - 11. Dış kapıdan çıkıldığında beyaz ekran veya bozulma olmadan giriş kapısı sahnesine dönüldü (`stage502_11_cycle_completed_at_gate.png`).
+- **`npm run build` (`vite build`)**: Geçti — **886ms** içinde hatasız derlendi.
+
+## 2. Test Kanıt Ekran Görüntüleri (`docs/assets/`):
+- `stage502_1_gate_initial.png`: Sinematik Selçuklu Taç Kapı başlangıcı.
+- `stage502_2_courtyard_nograde.png`: Avluda sınıf seçimi butonunun bulunmadığı ve serbest avlu görünümü.
+- `stage502_3_enter_english_prompt.png`: İngilizce Dünyası kapısında etkileşim ipucu.
+- `stage502_4_classroom_initial.png`: İngilizce sınıfı iç görünümü.
+- `stage502_5_smartboard_locked_warning.png`: Sınıf seçilmeden akıllı tahta kilidi ve uyarısı.
+- `stage502_6_grade_board_prompt.png`: Akıllı tahtanın solundaki Sınıf Seçim Panosu etkileşimi.
+- `stage502_7_grade_board_modal.png`: Selçuklu mimari ahşap/taş dokulu Sınıf Seçim Panosu modalı.
+- `stage502_8_smartboard_opened.png`: Sınıf seçimi sonrası akıllı tahtanın başarıyla açılışı.
+- `stage502_9_back_in_courtyard.png`: Sınıftan avluya geri dönüş.
+- `stage502_10_exit_gate_prompt.png`: Avluda güney dış kapı portalı ve "Kampüsten Çık" etkileşimi.
+- `stage502_11_cycle_completed_at_gate.png`: Dış kapıdan çıkış sonrası giriş kapısı sahnesine döngüsel varış.
+
+### Birim ve Entegrasyon Test Detayları:
+  - **Aşama 5.0 & 5.0.2 Tek Girişli Yürünebilir Kampüs & Navigasyon Testleri (`campus.test.tsx` — 33 Test)**:
+    1. Sinematik Taç Kapı Giriş Sahnesi: Aksaray Sultanhanı esinli görsel ve animasyonu atla düğmesi içerir
+    2. Tek Giriş Akışı: İlk girişte Taç Kapı -> Karşılama/Sınıf Seçimi -> Yürünebilir Kampüs (çift giriş ve kuşbakışı harita butonları kaldırıldı)
+    3. `/harita` adresi yönlendirme döngüsü veya 404 olmadan doğrudan anasayfaya (`/`) yönlendirir
+    4. Öğrenme alanları ve gezinme bileşenlerindeki geri dönüş düğmeleri "Kampüs Avlusuna Dön" (`/`) hedefini korur
+  - **Aşama 5.0 Ekran Üstü Kontroller ve Avlu Etkileşimi (`walkable.test.tsx` — 55 Test)**:
+    53. Ekran üstü kontrollerde Sınıf Seçimi ve Ayarlar menüsü çalışır (2–7. sınıf geçişi, sesli anlatım açma/kapama), eski çift giriş butonları bulunmaz
+    54. Yürünebilir kampüs avlusundaki 6 etkileşimli alanın (3 bina, pavyon, kiosk, şadırvan) yapılandırması eksiksizdir
+    55. Sınıf içindeyken "Avluya Dön" hızlı çıkış düğmesi görünür ve tetiklenir
+  - **Aşama 3, 4, 4.5 & 4.7 Yürünebilir Kampüs, Karakter ve Sınıf Görsel Dünya Testleri (52 Test)**:
     1. Karakter yön tuşlarıyla ve W, A, S, D ile doğru yönde hareket eder
     2. Çapraz hareket hızı normal hareket hızından fazla olamaz (Normalizasyon)
     3. Karakter bina ve engel sınırlarının içinden geçemez (Çarpışma algılama)

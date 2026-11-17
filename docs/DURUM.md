@@ -1,6 +1,92 @@
-# Proje Durum Raporu — Sürüm 4.7 (Aşama 4.7: Sinematik Sınıf Entegrasyonu)
+# Proje Durum Raporu — Sürüm 5.0.4 (Tek Görevli Düzeltme: Sınıf Seçim Panosu, Akıllı Tahta Kilidi ve Dış Kapı Çıkış Döngüsü)
 
-## Tamamlanan Bölümler
+## Tek Görevli Düzeltme — Sınıf Seçim Panosu, Akıllı Tahta Kilidi ve Dış Kapı Çıkışı (`feat/single-entry-walkable-campus`)
+- **1. Sınıf Seçimi — Yalnızca İngilizce Sınıfının İçinde**:
+  - Sınıf seçimi avludan ve avlu ekran üstü kontrollerinden tamamen kaldırıldı. Avlu kontrollerinde sınıf seçici ve ayar butonu yer almaz; avlu bütünüyle serbest keşfe odaklıdır.
+  - Sınıf seçimi yalnızca İngilizce Dünyası sınıfının içine taşındı: Akıllı tahtanın sol tarafına Selçuklu mimarisine uygun taş ve ahşap dokulu, sivri kemerli mukarnas taçlı, turkuaz bordürlü ve pirinç levhalı "Sınıf Seçim Panosu" (`drawClassroomGradeBoard`) yerleştirildi.
+  - Panonun yanına gelindiğinde `Sınıfını Seç / Değiştir` etkileşim ipucu açılır.
+  - Etkileşime girildiğinde Selçuklu mimari ahşap/taş dokulu `GradeBoardModal` modal penceresi açılır. Modal yalnızca 2., 3., 4. (İlkokul) ve 5., 6., 7. (Ortaokul) sınıf seviyelerini listeler.
+  - Seçilen sınıf durumu (`CampusStudentState.selectedGrade`) kalıcı olarak güncellenir ve öğrenci istediğinde panoya dönerek sınıfını değiştirebilir.
+  - **Akıllı Tahta Kilidi**: Akıllı tahtanın yanına gidildiğinde, henüz sınıf seçilmediyse etkileşim ipucu `Önce Sınıfını Seç` olarak görünür; tıklandığında veya boşluk/E tuşuna basıldığında `Önce sınıfını seç.` uyarısı verilir ve tahta açılmaz. Sınıf seçildikten sonra akıllı tahta (`Akıllı Tahtayı Aç`) normal şekilde açılır ve etkinlikler başlar.
+- **2. Dış Kapıya Çıkış — Avluda**:
+  - Avludan güneye (giriş kapısına doğru) uzanan taş yol ve Selçuklu dış kapı portali (`drawSouthEntrancePortal`) görünür ve mimari olarak inşa edildi.
+  - Öğrenci avludayken güneye yürüdüğünde portal eşiğinde `Kampüsten Çık` etkileşim ipucu açılır.
+  - Etkileşim tetiklendiğinde öğrenci ilk giriş kapısı sahnesine (`CampusGateView`) döner.
+  - Akış döngüsel ve kesintisiz çalışır: **Giriş Kapısı -> Avlu -> İngilizce Sınıfı -> Avlu -> Dış Kapı -> Giriş Kapısı**.
+  - Tarayıcıdan çıkılmaz, beyaz ekran oluşmaz, yönlendirme bozulmaz.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 90 / 90 test başarıyla geçti (`walkable.test.tsx` [57 test], `campus.test.tsx` [33 test]).
+  - `npm run build`: Başarılı (886ms).
+  - Playwright E2E (`e2e/stage502_verify.spec.ts`): Chromium ve Mobile-Chrome testleri tam döngüyü doğruladı (11 adet kanıt ekran görüntüsü `docs/assets/` altında saklandı).
+
+## Tek Görevli Düzeltme — Giriş Sonrası Doğrudan Yürünebilir Sinematik Avlu (`feat/single-entry-walkable-campus`)
+- **Doğrudan Avlu Geçişi ve Rehbersiz/Modalsız Giriş**:
+  - Giriş kapısında "Kapıyı Aç ve İçeri Gir" tıklandığında öğrenci hiçbir modal, rehber karakter, rehberli tur veya ara seçim ekranı ile karşılaşmadan **doğrudan yürünebilir sinematik avluya** geçiş yapar.
+  - Avluda yürüyen karakter öğrenci karakteridir; rehber karakter veya yönlendirici diyaloglar giriş akışından tamamen arındırılmıştır.
+  - Sınıf seçimi varsayılan (5. sınıf) olarak ayarlanmış olup öğrenci dilediğinde ekran üzeri ayar düğmesinden değiştirebilir.
+- **Tek Aktif Sınıf İlkesi**:
+  - Bu aşamada yalnızca **İngilizce Dünyası** sınıfı aktiftir (kapı hizasına gelindiğinde "İngilizce Sınıfına Gir" etkileşimi açılır ve yürünebilir sinematik sınıfa geçilir).
+  - Diğer binalar (Gezi ve Keşif, Kitap Dünyası, Kampüs Yolculuğum, Görev Panosu) görsel olarak avluda korunmuş olup yaklaşıldığında "Yakında Açılacak" geri bildirimi sunar.
+- **Çevresel Yönlendirme (Environmental Orientation)**:
+  - **Mimari Bina Tabelaları ve Durum Rozetleri**: İngilizce Dünyası üzerinde yeşil parıltılı `İNGİLİZCE DÜNYASI [● AÇIK]` tabelası; diğer binalar üzerinde `[YAKINDA]` rozetli Selçuklu mimari tabelaları konumlandırıldı.
+  - **Merkez Meydan Yönlendirici Totemi**: Sekiz köşeli yıldız meydanının doğu kenarında sedir ağacından oyma, Selçuklu pirinç alemli yön levhası yerleştirildi. İngilizce Dünyası'na giden yönü (`➜ İngilizce Dünyası [AÇIK]`) canlı parıltıyla vurgularken, diğer kolları (`⇦ Gezi ve Keşif [YAKINDA]`, `⇧ Kitap Dünyası [YAKINDA]`) net biçimde gösterir.
+  - **Zemin Mozaik Kakma Okları**: Merkez meydandan İngilizce Dünyası'na uzanan taş yolda turkuaz çinili ve altın kakmalı yönlendirici ok motifleri zemin döşemesine işlendi.
+- **Doğal Çevre ve Zenginleştirilmiş Ağaç Atmosferi**:
+  - Giriş kapısı portalından görünen ağaç atmosferi avlunun kuzey sur duvarı ardına ufuk ağaç kuşağı olarak yansıtıldı (`drawPerimeterBackdropTrees`).
+  - Avlu içerisine köşe, yan bahçe ve giriş aksı servi ve gölgeli ağaçları eklenerek Y-sorting derinlik sıralamasına bağlandı.
+  - Yürüme yollarının kenarlarına kumtaşı bordürlü ve dokulu yeşil çim parterler (`drawCourtyardGrassParterres`) entegre edildi.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 88 / 88 test başarıyla geçti.
+  - `npm run build`: Başarılı (1.15s).
+  - Playwright E2E (`e2e/stage502_verify.spec.ts`): Chromium ve Mobile-Chrome testleri 0 modal ve 0 rehber ile doğrudan yürünebilir avlu açılışını doğruladı (`stage502_direct_walkable_courtyard.png`, `stage502_courtyard_freewalk_verified.png`).
+
+## Aşama 5.0.2 — Giriş Sonrası Yanlış Ekran Hatasının Kesin Çözümü (`feat/single-entry-walkable-campus`)
+- **Hata Teşhisi ve Kesin Çözümü**:
+  - Giriş kapısında "Kapıyı Aç ve İçeri Gir" tıklandığında, `CampusPages.tsx` içindeki ara yönlendirme (`!hasCompletedOnboarding`) nedeniyle eski SVG sahnesini barındıran `CourtyardWelcomeView` bağımsız bir sayfa olarak açılıyor ve içindeki `CourtyardSceneSvg` eski şematik haritayı çiziyordu.
+  - `CourtyardSceneSvg` aktif giriş akışından ve `CourtyardWelcomeView` içinden tamamen çıkarıldı.
+  - `CampusPages.tsx` içerisindeki ara sayfa katmanı kaldırıldı; kapı aralandığı andan itibaren **doğrudan onaylı sinematik `WalkableCampusView` avlusunun açılması** sağlandı: **GİRİŞ KAPISI → SİNEMATİK YÜRÜNEBİLİR AVLU → KARŞILAMA VE SINIF SEÇİMİ → SERBEST YÜRÜYÜŞ**.
+  - Karşılama, akran rehber diyalog kartı ve sınıf seçimi adımları gerçek sinematik avlu üzerinde hafif yarı saydam (`bg-black/30 backdrop-blur-[2px]`) bir modal pencere olarak sunuldu.
+  - Karşılama ve sınıf seçimi tamamlanana kadar öğrenci hareketi (`engine.setInputDisabled(true)`) ve bina etkileşimleri güvenle devre dışı bırakıldı; arka planda 60fps render döngüsü çalışarak sinematik avlunun tüm bağımsız 2,5B varlıklarıyla yüklenmesi sağlandı.
+  - Sınıf seçimi tamamlandığında panel kapandı, hareket serbest bırakıldı (`engine.setInputDisabled(false)`) ve öğrenci aynı avluda kesintisiz yürümeye başladı.
+- **Görsel Doğrulama ve Ekran Görüntüleri (`docs/assets/`)**:
+  - `stage502_gate_screen.png`: Sinematik Selçuklu Taç Kapı.
+  - `stage502_desktop_welcome_overlay.png` ve `stage502_mobile_welcome_overlay.png`: Sinematik avlu üzerinde karşılama modalı (arka planda Selçuklu binaları ve avlu görünür).
+  - `stage502_desktop_free_walk.png` ve `stage502_mobile_free_walk.png`: Karşılama sonrası serbest yürüyüş görünümü (Selçuklu yıldız havuzu, binalar, pavyon, kiosk, karakter).
+
+## Aşama 5.0 — Tek Girişli Yürünebilir Kampüs Deneyimi (`feat/single-entry-walkable-campus`)
+- **Giriş ve Navigasyon Sadeleştirmesi (Tek Giriş Akışı)**:
+  - Eski iki başlı gezinme yöntemi (kuşbakışı SVG harita `/harita` ve doğrudan sınıf kısayolları) kaldırılarak öğrencinin kampüse giriş ve öğrenme alanlarına erişim yöntemi tek ve bütünleşik yürünebilir kampüs deneyimine dönüştürüldü.
+  - Doğrusal ve kesintisiz akış: **GİRİŞ KAPISI → KARŞILAMA → SINIF SEÇİMİ → YÜRÜNEBİLİR KAMPÜS → BİNA GİRİŞİ → ÖĞRENME ETKİNLİĞİ**.
+  - Eski `/harita` rotası doğrudan anasayfaya (`/`) yönlendirildi (`<Navigate to="/" replace />`); 404 hatası ve yönlendirme döngüleri engellendi.
+- **Sinematik 3D Selçuklu Taç Kapı Görseli (`CampusGateView`)**:
+  - Aksaray Sultanhanı Kervansarayı monumental taç kapısı ve onaylı kampüs avlusu estetiğine uygun sinematik 3D görsel varlık üretildi ve entegre edildi (`public/assets/entrance/campus_portal_gate.jpg` ve `docs/assets/campus_portal_gate_concept.jpg`).
+  - Mukarnas, taş oyma kabartma ve geometrik rozet detaylarıyla donatılmış taç kapı aralanarak güneş ışığı huzmeleriyle kampüs avlusuna adım atma animasyonu sağlandı.
+  - "Kapıyı Aç ve İçeri Gir", "Animasyonu Atla", `prefers-reduced-motion` desteği, odaklanabilir klavye kontrolleri ve sıfır kişisel veri gizlilik güvencesi korundu.
+- **Bütünleşik Avlu Etkileşimi (3 Öğrenme Alanı + 2 Yardımcı İşlev + Şadırvan)**:
+  - Kampüs avlusundaki tüm mimari öğeler yürünebilir ve etkileşimli hale getirildi:
+    1. **İngilizce Dünyası**: Kapı etkileşimi yürünebilir sınıfa (`classroom`) geçiş yapar; akıllı tahta üzerinden "Kapıların Anlattığı Hikâye" görevine bağlanır.
+    2. **Gezi ve Keşif**: Kapı etkileşimi `/alan/gezi-ve-kesif` sayfasına yönlendirir; Aksaray Kültürel Miras Rotası ve Kapıların Hikâyesi keşfedilir.
+    3. **Kitap ve Hikâye Dünyası**: Kapı etkileşimi `/alan/kitap-ve-hikaye-dunyasi` sayfasına yönlendirir.
+    4. **Kampüs Yolculuğum (Güneybatı Köşk)**: Etkileşim `/yolculugum` sayfasına yönlendirir; öğrencinin görev ilerlemesi ve çizimleri listelenir.
+    5. **Keşif Görevleri Panosu (Güneydoğu Kiosk)**: Etkileşim `/alan/gorev-panosu` sayfasına yönlendirir.
+    6. **Selçuklu Yıldız Havuzu (Şadırvan)**: Etkileşim alanında dinlenme ve bilgilendirici akran rehber diyalog kartı açılır.
+- **Konum Sürekliliği (Spatial Persistence)**:
+  - Öğrenci bir binaya girdiğinde veya bir öğrenme alanına yöneldiğinde avludaki son koordinatı saklanır. Geri dönüş bağlantısına ("Kampüs Avlusuna Dön") tıklandığında öğrenci doğrudan ayrıldığı binanın kapı hizasında yeniden konumlanır.
+- **Kampüs İçi Sınıf Değiştirme ve Ayarlar Paneli**:
+  - `WalkableControlsOverlay` içinden "Doğrudan Sınıfa Gir" ve "Kuşbakışı Harita" butonları tamamen kaldırıldı.
+  - Yerine kampüsten çıkmadan sınıf seviyesini (2., 3., 4., 5., 6., 7. sınıf) değiştirebilen, seslendirmeyi açıp kapatabilen ve taç kapıyı yeniden izletebilen `SlidersHorizontal` ayarlar paneli eklendi.
+  - Işınlanma yapmayan bilgilendirici "Kampüs Rehberi" pusula kartı eklendi.
+  - Sınıf içindeyken tek tıkla avluya dönmeyi sağlayan "Avluya Dön" hızlı çıkış butonu eklendi.
+- **Geri Dönüş Bağlantılarının Sadeleştirilmesi**:
+  - `LearningAreaView`, `MissionRunnerView`, `JourneyView` ve `CampusTopBar` bileşenlerindeki eski `/harita` bağlantıları `/` ("Kampüs Avlusu") olarak güncellendi.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck` (0 hata), `npm run lint` (0 hata, 0 uyarı), `npm run test` (88 / 88 test geçti), `npm run build` (başarılı).
+
+## Tamamlanan Bölümler (Geçmiş Aşamalar)
 - **Mimari Dönüşüm (Vite + React + TypeScript + Tailwind CSS v4 + React Router)**:
   - Next.js 15 App Router altyapısı kaldırıldı; Vite 8 (`@vitejs/plugin-react`), `@tailwindcss/vite` v4 ve `react-router` (`createBrowserRouter`) tabanlı tek sayfalık (SPA) yapıya geçildi.
   - `@google/genai` ve kullanılmayan şablon bağımlılıkları kaldırıldı; temiz `package.json` ve `package-lock.json` oluşturuldu.

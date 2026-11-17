@@ -1,13 +1,28 @@
-import React from 'react';
-import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Sparkles, Map, HelpCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  Sparkles,
+  Compass,
+  Volume2,
+  VolumeX,
+  X,
+  HelpCircle,
+  DoorOpen,
+  GraduationCap,
+} from 'lucide-react';
+import { useOptionalCampus } from '@/src/app/CampusProviders';
 import type { InteractiveZone } from '../types';
 
 interface WalkableControlsOverlayProps {
   activeZone: InteractiveZone | null;
   onTriggerInteraction: () => void;
   onVirtualDirection: (vx: number, vy: number) => void;
-  onBackToMap: () => void;
+  onBackToMap?: () => void;
   onDirectEnterClassroom?: () => void;
+  onExitClassroom?: () => void;
   unreachableMessage: string | null;
   currentScene: 'courtyard' | 'classroom';
 }
@@ -16,11 +31,16 @@ export function WalkableControlsOverlay({
   activeZone,
   onTriggerInteraction,
   onVirtualDirection,
-  onBackToMap,
-  onDirectEnterClassroom,
+  onExitClassroom,
   unreachableMessage,
   currentScene,
 }: WalkableControlsOverlayProps) {
+  const campus = useOptionalCampus();
+  const selectedGrade = campus?.state.selectedGrade ?? null;
+  const speechEnabled = campus?.state.speechEnabled ?? false;
+
+  const [guideMapOpen, setGuideMapOpen] = useState(false);
+
   const handlePointerDownDir = (e: React.PointerEvent<HTMLButtonElement>, vx: number, vy: number) => {
     e.preventDefault();
     try {
@@ -45,7 +65,7 @@ export function WalkableControlsOverlay({
 
   return (
     <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-3 sm:p-5 select-none z-20">
-      {/* Üst Çubuk: Bilgi Rozeti, Haritaya Dönüş ve Erişilebilir Kısayollar */}
+      {/* Üst Çubuk: Konum Rozeti, Ses Ayarı ve Rehber Harita (Sınıf seçimi avluda yer almaz) */}
       <header className="flex items-center justify-between gap-2">
         <div className="pointer-events-auto flex items-center gap-2 bg-[var(--campus-surface)]/95 backdrop-blur-xs px-3.5 py-1.5 rounded-xl border border-[var(--campus-border)] shadow-xs">
           <Sparkles className="w-4 h-4 text-[var(--seljuk-teal)] shrink-0" aria-hidden="true" />
@@ -55,28 +75,125 @@ export function WalkableControlsOverlay({
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2">
-          {currentScene === 'courtyard' && onDirectEnterClassroom && (
+          {/* Sınıf İçindeyken Aktif Düzey Göstergesi (Seçim tahta yanındaki fiziksel panodan yapılır) */}
+          {currentScene === 'classroom' && (
+            <div
+              className={`min-h-[44px] px-3 py-1.5 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs ${
+                selectedGrade
+                  ? 'bg-[var(--stone-cream)] text-[var(--seljuk-navy)] border-[var(--campus-border)]'
+                  : 'bg-amber-50 text-amber-900 border-amber-300'
+              }`}
+              title="Sınıf düzeyini tahtanın solundaki panodan değiştirebilirsin"
+            >
+              <GraduationCap className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
+              <span className="tabular-nums font-bold">
+                {selectedGrade ? `${selectedGrade}. Sınıf` : 'Sınıf Seçilmedi'}
+              </span>
+            </div>
+          )}
+
+          {/* Sınıf İçindeyken Hızlı Avluya Dönüş Düğmesi */}
+          {currentScene === 'classroom' && onExitClassroom && (
             <button
               type="button"
-              onClick={onDirectEnterClassroom}
+              onClick={onExitClassroom}
               className="min-h-[44px] px-3.5 py-1.5 rounded-lg bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-[var(--seljuk-navy)] border border-[var(--campus-border)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-              title="Klavyeyle yürümek yerine doğrudan sınıfa geç"
+              aria-label="Avluya dön"
             >
-              <span>Doğrudan Sınıfa Gir</span>
+              <DoorOpen className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
+              <span>Avluya Dön</span>
             </button>
           )}
 
+          {/* Kampüs Rehberi / Yön Bulma Haritası Düğmesi (Yalnızca avluda) */}
+          {currentScene === 'courtyard' && (
+            <button
+              type="button"
+              onClick={() => {
+                setGuideMapOpen((prev) => !prev);
+              }}
+              className={`min-h-[44px] px-3 py-1.5 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs ${
+                guideMapOpen
+                  ? 'bg-[var(--seljuk-teal)] text-white border-[var(--seljuk-teal)]'
+                  : 'bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-[var(--seljuk-navy)] border-[var(--campus-border)]'
+              }`}
+              aria-label="Kampüs binaları ve yön rehberi"
+              aria-expanded={guideMapOpen}
+            >
+              <Compass className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
+              <span className="hidden sm:inline">Kampüs Rehberi</span>
+            </button>
+          )}
+
+          {/* Sesli Anlatım Açma / Kapatma */}
           <button
             type="button"
-            onClick={onBackToMap}
-            className="min-h-[44px] px-3.5 py-1.5 rounded-lg bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-[var(--seljuk-navy)] border border-[var(--campus-border)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-            aria-label="Kuşbakışı haritaya dön"
+            onClick={() => campus?.setSpeechEnabled(!speechEnabled)}
+            className="min-h-[44px] px-3 py-1.5 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+            aria-label={speechEnabled ? 'Sesli anlatımı kapat' : 'Sesli anlatımı aç'}
           >
-            <Map className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
-            <span className="hidden sm:inline">Kuşbakışı Harita</span>
+            {speechEnabled ? (
+              <>
+                <Volume2 className="w-4 h-4 text-[var(--seljuk-teal)]" />
+                <span className="hidden md:inline">Ses Açık</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="w-4 h-4 text-[var(--alert-rose)]" />
+                <span className="hidden md:inline">Ses Kapalı</span>
+              </>
+            )}
           </button>
         </div>
       </header>
+
+      {/* Açılır Kampüs Yön Rehberi Paneli (Işınlanma Yok — Sadece Yönlendirme) */}
+      {guideMapOpen && currentScene === 'courtyard' && (
+        <div className="pointer-events-auto self-end mt-2 max-w-sm w-full bg-[var(--campus-surface)]/95 backdrop-blur-md p-4 rounded-2xl border-2 border-[var(--seljuk-teal)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex items-center justify-between border-b border-[var(--campus-border)] pb-2">
+            <div className="flex items-center gap-2">
+              <Compass className="w-4 h-4 text-[var(--seljuk-teal)]" />
+              <h2 className="text-xs sm:text-sm font-bold text-[var(--seljuk-navy)]">Kampüs Yön Rehberi</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setGuideMapOpen(false)}
+              className="p-1 rounded-md hover:bg-[var(--campus-surface-muted)] text-[var(--campus-ink-muted)] cursor-pointer"
+              aria-label="Rehberi kapat"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <p className="text-[11px] text-[var(--campus-ink-muted)]">
+            Kampüste dilediğin binaya yürüyerek ulaşabilir, kapısına yaklaştığında <strong className="text-[var(--seljuk-navy)]">[E]</strong> tuşu veya düğmeyle giriş yapabilirsin:
+          </p>
+
+          <ul className="space-y-1.5 text-xs">
+            <li className="flex items-start gap-2 p-1.5 rounded-lg bg-[var(--stone-cream)]">
+              <span className="w-2 h-2 rounded-full bg-[var(--seljuk-teal)] mt-1 shrink-0" />
+              <div>
+                <strong className="text-[var(--seljuk-navy)]">İngilizce Dünyası (Kuzeydoğu — AÇIK):</strong>
+                <span className="text-[var(--campus-ink-muted)] block text-[11px]">Sınıf seçim panosu, akıllı tahta ve kelime eşleştirme.</span>
+              </div>
+            </li>
+            <li className="flex items-start gap-2 p-1.5 rounded-lg bg-[var(--stone-cream)]">
+              <span className="w-2 h-2 rounded-full bg-[var(--seljuk-gold)] mt-1 shrink-0" />
+              <div>
+                <strong className="text-[var(--seljuk-navy)]">Kampüs Taç Kapısı (Güney — ÇIKIŞ):</strong>
+                <span className="text-[var(--campus-ink-muted)] block text-[11px]">Ana giriş kapısına dönerek kampüsten çıkış.</span>
+              </div>
+            </li>
+            <li className="flex items-start gap-2 p-1.5 rounded-lg bg-[var(--stone-cream)]">
+              <span className="w-2 h-2 rounded-full bg-slate-400 mt-1 shrink-0" />
+              <div>
+                <strong className="text-[var(--seljuk-navy)]">Diğer Binalar (Yakında):</strong>
+                <span className="text-[var(--campus-ink-muted)] block text-[11px]">Gezi ve Keşif, Kitap Dünyası, Yolculuğum ve Görev Panosu.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      )}
 
       {/* Orta Bildirim: Ulaşılamayan Nokta veya Etkileşim Bildirimi */}
       <div className="flex flex-col items-center gap-2">

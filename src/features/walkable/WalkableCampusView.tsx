@@ -15,18 +15,40 @@ import {
 } from './engine/classroomSceneRenderer';
 import { WalkableControlsOverlay } from './components/WalkableControlsOverlay';
 import { SmartBoardModal } from './components/SmartBoardModal';
+import { GradeBoardModal } from './components/GradeBoardModal';
+import { useOptionalCampus } from '../../app/CampusProviders';
 import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } from './types';
 
 export interface WalkableCampusViewProps {
   initialScene?: 'courtyard' | 'classroom';
   onBackToMap?: () => void;
+  onExitToGate?: () => void;
 }
 
 export function WalkableCampusView({
   initialScene = 'courtyard',
   onBackToMap,
+  onExitToGate,
 }: WalkableCampusViewProps) {
   const navigate = useNavigate();
+  const campus = useOptionalCampus();
+  const selectedGrade = campus?.state.selectedGrade ?? null;
+  const selectedGradeRef = useRef<number | null>(selectedGrade);
+  const onExitToGateRef = useRef(onExitToGate);
+  const campusRef = useRef(campus);
+
+  useEffect(() => {
+    selectedGradeRef.current = selectedGrade;
+  }, [selectedGrade]);
+
+  useEffect(() => {
+    onExitToGateRef.current = onExitToGate;
+  }, [onExitToGate]);
+
+  useEffect(() => {
+    campusRef.current = campus;
+  }, [campus]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<WalkableCanvasEngine | null>(null);
@@ -39,6 +61,7 @@ export function WalkableCampusView({
   const [activeZone, setActiveZone] = useState<InteractiveZone | null>(null);
   const [unreachableMessage, setUnreachableMessage] = useState<string | null>(null);
   const [isSmartBoardModalOpen, setIsSmartBoardModalOpen] = useState(false);
+  const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
   const [isSmartBoardPoweringOn, setIsSmartBoardPoweringOn] = useState(false);
   const [isSmartBoardActive, setIsSmartBoardActive] = useState(false);
 
@@ -83,13 +106,29 @@ export function WalkableCampusView({
 
         const interactiveZones: InteractiveZone[] = [
           {
+            id: 'grade-board',
+            name: 'Sınıf Seçim Panosu',
+            prompt: 'Sınıfını Seç / Değiştir',
+            x: 270,
+            y: 160,
+            radius: 80,
+            action: () => {
+              setIsGradeModalOpen(true);
+            },
+          },
+          {
             id: 'smart-board',
             name: 'Akıllı Tahta',
-            prompt: 'Akıllı Tahtayı Aç',
+            prompt: selectedGradeRef.current ? 'Akıllı Tahtayı Aç' : 'Önce Sınıfını Seç',
             x: 480,
             y: 160,
             radius: 80,
             action: () => {
+              if (!selectedGradeRef.current) {
+                setUnreachableMessage('Önce sınıfını seç.');
+                setTimeout(() => setUnreachableMessage(null), 3000);
+                return;
+              }
               setIsSmartBoardPoweringOn(true);
               setTimeout(() => {
                 setIsSmartBoardPoweringOn(false);
@@ -139,17 +178,109 @@ export function WalkableCampusView({
       ];
 
       const interactiveZones: InteractiveZone[] = [
+        // 1. İngilizce Dünyası Binası (Sinematik Sınıf ve Akıllı Tahta)
+        // 1. İngilizce Dünyası Binası (Şu aşamada tek aktif sınıf)
         {
           id: 'enter-english',
-          name: 'İngilizce Dünyası Girişi',
+          name: 'İngilizce Dünyası',
           prompt: 'İngilizce Sınıfına Gir',
           x: 970,
           y: 335,
-          radius: 70,
+          radius: 75,
           action: () => {
-            // Sınıfa girerken kapı önünde başla
             lastClassroomPosRef.current = { x: 480, y: 520 };
             setCurrentScene('classroom');
+          },
+        },
+        // 2. Gezi ve Keşif Binası (Görsel olarak durur - Yakında)
+        {
+          id: 'enter-discovery',
+          name: 'Gezi ve Keşif',
+          prompt: 'Yakında Açılacak',
+          x: 290,
+          y: 335,
+          radius: 70,
+          action: () => {
+            setUnreachableMessage(
+              'Gezi ve Keşif binası yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+            );
+            setTimeout(() => setUnreachableMessage(null), 3500);
+          },
+        },
+        // 3. Kitap ve Hikâye Dünyası Binası (Görsel olarak durur - Yakında)
+        {
+          id: 'enter-library',
+          name: 'Kitap ve Hikâye Dünyası',
+          prompt: 'Yakında Açılacak',
+          x: 700,
+          y: 285,
+          radius: 70,
+          action: () => {
+            setUnreachableMessage(
+              'Kitap ve Hikâye Dünyası yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+            );
+            setTimeout(() => setUnreachableMessage(null), 3500);
+          },
+        },
+        // 4. Kampüs Yolculuğum Köşkü (Görsel olarak durur - Yakında)
+        {
+          id: 'enter-journey',
+          name: 'Kampüs Yolculuğum',
+          prompt: 'Yakında Açılacak',
+          x: 315,
+          y: 545,
+          radius: 70,
+          action: () => {
+            setUnreachableMessage(
+              'Kampüs Yolculuğum köşkü yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+            );
+            setTimeout(() => setUnreachableMessage(null), 3500);
+          },
+        },
+        // 5. Keşif Görevleri Panosu (Görsel olarak durur - Yakında)
+        {
+          id: 'enter-kiosk',
+          name: 'Keşif Görevleri Panosu',
+          prompt: 'Yakında Açılacak',
+          x: 1005,
+          y: 545,
+          radius: 70,
+          action: () => {
+            setUnreachableMessage(
+              'Görev panosu yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+            );
+            setTimeout(() => setUnreachableMessage(null), 3500);
+          },
+        },
+        // 6. Selçuklu Yıldız Havuzu (Meydan Dinlenme Noktası)
+        {
+          id: 'fountain-rest',
+          name: 'Selçuklu Yıldız Havuzu',
+          prompt: 'Havuz Başında Dinlen',
+          x: 700,
+          y: 480,
+          radius: 70,
+          action: () => {
+            setUnreachableMessage(
+              'Selçuklu sekiz köşeli yıldız havuzunun şırıltısıyla kampüsün tüm yolları burada birleşiyor.',
+            );
+            setTimeout(() => setUnreachableMessage(null), 3500);
+          },
+        },
+        // 7. Kampüs Giriş/Çıkış Kapısı (Dış Kapı Çıkışı)
+        {
+          id: 'exit-gate',
+          name: 'Kampüs Giriş Kapısı',
+          prompt: 'Kampüsten Çık',
+          x: 700,
+          y: 840,
+          radius: 85,
+          action: () => {
+            if (onExitToGateRef.current) {
+              onExitToGateRef.current();
+            } else if (campusRef.current) {
+              campusRef.current.replayWelcomeFlow();
+            }
           },
         },
       ];
@@ -213,6 +344,7 @@ export function WalkableCampusView({
               config.height,
               smartBoardVisualStateRef.current.active,
               smartBoardVisualStateRef.current.poweringOn,
+              selectedGradeRef.current,
             );
           } else {
             renderCourtyardLayeredBackground(ctx, config.width, config.height);
@@ -240,6 +372,7 @@ export function WalkableCampusView({
               config.height,
               smartBoardVisualStateRef.current.active,
               smartBoardVisualStateRef.current.poweringOn,
+              selectedGradeRef.current,
             );
           } else {
             renderCourtyardBackground(ctx, config.width, config.height);
@@ -255,18 +388,21 @@ export function WalkableCampusView({
       (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine }).__WALKABLE_ENGINE__ = engine;
     }
 
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0 && engineRef.current) {
-          engineRef.current.updateDimensions(Math.floor(width), Math.floor(height));
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const { width, height } = entry.contentRect;
+          if (width > 0 && height > 0 && engineRef.current) {
+            engineRef.current.updateDimensions(Math.floor(width), Math.floor(height));
+          }
         }
-      }
-    });
-    ro.observe(container);
+      });
+      ro.observe(container);
+    }
 
     return () => {
-      ro.disconnect();
+      ro?.disconnect();
       if (typeof window !== 'undefined') {
         delete (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine }).__WALKABLE_ENGINE__;
       }
@@ -275,15 +411,23 @@ export function WalkableCampusView({
     };
   }, [currentScene, getSceneConfig]);
 
-  // Akıllı Tahta modalı açıldığında oyun motorunu duraklat, kapandığında güvenle devam ettir (Section 5)
+  // Sınıf seviyesi değiştiğinde sınıf etkileşim bölgelerini güncelle
+  useEffect(() => {
+    if (engineRef.current && currentScene === 'classroom') {
+      const config = getSceneConfig('classroom');
+      engineRef.current.updateInteractiveZones(config.interactiveZones);
+    }
+  }, [currentScene, getSceneConfig, selectedGrade]);
+
+  // Akıllı Tahta veya Sınıf Panosu modalı açıldığında motoru duraklat
   useEffect(() => {
     if (!engineRef.current) return;
-    if (isSmartBoardModalOpen) {
+    if (isSmartBoardModalOpen || isGradeModalOpen) {
       engineRef.current.pause();
     } else {
       engineRef.current.resume();
     }
-  }, [isSmartBoardModalOpen]);
+  }, [isSmartBoardModalOpen, isGradeModalOpen]);
 
   const handleVirtualDirection = (vx: number, vy: number) => {
     if (engineRef.current) {
@@ -295,11 +439,6 @@ export function WalkableCampusView({
     if (engineRef.current) {
       engineRef.current.triggerActiveInteraction();
     }
-  };
-
-  const handleDirectEnterClassroom = () => {
-    lastClassroomPosRef.current = { x: 480, y: 520 };
-    setCurrentScene('classroom');
   };
 
   return (
@@ -319,8 +458,13 @@ export function WalkableCampusView({
         onTriggerInteraction={handleTriggerInteraction}
         onVirtualDirection={handleVirtualDirection}
         onBackToMap={handleBackToMap}
-        onDirectEnterClassroom={
-          currentScene === 'courtyard' ? handleDirectEnterClassroom : undefined
+        onExitClassroom={
+          currentScene === 'classroom'
+            ? () => {
+                lastCourtyardPosRef.current = { x: 970, y: 350 };
+                setCurrentScene('courtyard');
+              }
+            : undefined
         }
         unreachableMessage={unreachableMessage}
         currentScene={currentScene}
@@ -331,6 +475,16 @@ export function WalkableCampusView({
         isOpen={isSmartBoardModalOpen}
         onClose={() => setIsSmartBoardModalOpen(false)}
         missionId="kapilarin-anlattigi-hikaye"
+      />
+
+      {/* Sınıf Seçim Panosu Modal Penceresi */}
+      <GradeBoardModal
+        isOpen={isGradeModalOpen}
+        onClose={() => setIsGradeModalOpen(false)}
+        selectedGrade={selectedGrade}
+        onSelectGrade={(grade) => {
+          campus?.setGrade(grade);
+        }}
       />
     </div>
   );

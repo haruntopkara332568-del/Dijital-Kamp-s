@@ -76,7 +76,12 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
   );
 
   const markGateSeen = useCallback(() => {
-    updateAndPersist((prev) => ({ ...prev, hasSeenGate: true }));
+    updateAndPersist((prev) => ({
+      ...prev,
+      hasSeenGate: true,
+      hasCompletedOnboarding: true,
+      selectedGrade: prev.selectedGrade,
+    }));
   }, [updateAndPersist]);
 
   const setDiscoveryPreference = useCallback(
@@ -231,4 +236,9 @@ export function useCampus(): CampusContextValue {
     throw new Error('useCampus yalnızca CampusProviders içinde kullanılabilir.');
   }
   return ctx;
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useOptionalCampus(): CampusContextValue | null {
+  return useContext(CampusContext);
 }
