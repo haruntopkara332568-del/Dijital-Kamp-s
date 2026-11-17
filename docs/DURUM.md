@@ -1,4 +1,27 @@
-# Proje Durum Raporu — Sürüm 5.0.2 (Aşama 5.0.2: Giriş Sonrası Yanlış Ekran Hatasının Kesin Çözümü)
+# Proje Durum Raporu — Sürüm 5.0.3 (Tek Görevli Düzeltme: Giriş Sonrası Doğrudan Yürünebilir Sinematik Avlu)
+
+## Tek Görevli Düzeltme — Giriş Sonrası Doğrudan Yürünebilir Sinematik Avlu (`feat/single-entry-walkable-campus`)
+- **Doğrudan Avlu Geçişi ve Rehbersiz/Modalsız Giriş**:
+  - Giriş kapısında "Kapıyı Aç ve İçeri Gir" tıklandığında öğrenci hiçbir modal, rehber karakter, rehberli tur veya ara seçim ekranı ile karşılaşmadan **doğrudan yürünebilir sinematik avluya** geçiş yapar.
+  - Avluda yürüyen karakter öğrenci karakteridir; rehber karakter veya yönlendirici diyaloglar giriş akışından tamamen arındırılmıştır.
+  - Sınıf seçimi varsayılan (5. sınıf) olarak ayarlanmış olup öğrenci dilediğinde ekran üzeri ayar düğmesinden değiştirebilir.
+- **Tek Aktif Sınıf İlkesi**:
+  - Bu aşamada yalnızca **İngilizce Dünyası** sınıfı aktiftir (kapı hizasına gelindiğinde "İngilizce Sınıfına Gir" etkileşimi açılır ve yürünebilir sinematik sınıfa geçilir).
+  - Diğer binalar (Gezi ve Keşif, Kitap Dünyası, Kampüs Yolculuğum, Görev Panosu) görsel olarak avluda korunmuş olup yaklaşıldığında "Yakında Açılacak" geri bildirimi sunar.
+- **Çevresel Yönlendirme (Environmental Orientation)**:
+  - **Mimari Bina Tabelaları ve Durum Rozetleri**: İngilizce Dünyası üzerinde yeşil parıltılı `İNGİLİZCE DÜNYASI [● AÇIK]` tabelası; diğer binalar üzerinde `[YAKINDA]` rozetli Selçuklu mimari tabelaları konumlandırıldı.
+  - **Merkez Meydan Yönlendirici Totemi**: Sekiz köşeli yıldız meydanının doğu kenarında sedir ağacından oyma, Selçuklu pirinç alemli yön levhası yerleştirildi. İngilizce Dünyası'na giden yönü (`➜ İngilizce Dünyası [AÇIK]`) canlı parıltıyla vurgularken, diğer kolları (`⇦ Gezi ve Keşif [YAKINDA]`, `⇧ Kitap Dünyası [YAKINDA]`) net biçimde gösterir.
+  - **Zemin Mozaik Kakma Okları**: Merkez meydandan İngilizce Dünyası'na uzanan taş yolda turkuaz çinili ve altın kakmalı yönlendirici ok motifleri zemin döşemesine işlendi.
+- **Doğal Çevre ve Zenginleştirilmiş Ağaç Atmosferi**:
+  - Giriş kapısı portalından görünen ağaç atmosferi avlunun kuzey sur duvarı ardına ufuk ağaç kuşağı olarak yansıtıldı (`drawPerimeterBackdropTrees`).
+  - Avlu içerisine köşe, yan bahçe ve giriş aksı servi ve gölgeli ağaçları eklenerek Y-sorting derinlik sıralamasına bağlandı.
+  - Yürüme yollarının kenarlarına kumtaşı bordürlü ve dokulu yeşil çim parterler (`drawCourtyardGrassParterres`) entegre edildi.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 88 / 88 test başarıyla geçti.
+  - `npm run build`: Başarılı (1.15s).
+  - Playwright E2E (`e2e/stage502_verify.spec.ts`): Chromium ve Mobile-Chrome testleri 0 modal ve 0 rehber ile doğrudan yürünebilir avlu açılışını doğruladı (`stage502_direct_walkable_courtyard.png`, `stage502_courtyard_freewalk_verified.png`).
 
 ## Aşama 5.0.2 — Giriş Sonrası Yanlış Ekran Hatasının Kesin Çözümü (`feat/single-entry-walkable-campus`)
 - **Hata Teşhisi ve Kesin Çözümü**:

@@ -1,16 +1,21 @@
-# Test ve Kalite Güvence Raporu — Sürüm 5.0.2 (Aşama 5.0.2: Giriş Sonrası Yanlış Ekran Çözümü)
+# Test ve Kalite Güvence Raporu — Sürüm 5.0.3 (Tek Görevli Düzeltme: Giriş Sonrası Doğrudan Yürünebilir Avlu)
 
 ## 1. Çalıştırıldı ve Geçti
-- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — 0 hata (strict TypeScript).
-- **`npm run lint` (`eslint .`)**: Geçti — 0 hata, 0 uyarı.
-- **`npm run test` (`vitest run`)**: Geçti — **88 / 88 test** (`src/test/walkable.test.tsx` [55 test] + `src/test/campus.test.tsx` [33 test], toplam `6.8 s`):
-- **`npx playwright test e2e/stage502_verify.spec.ts`**: Geçti — **2 / 2 test** (`chromium` [6.1s] + `mobile-chrome` [6.1s]):
-  - 1. Sinematik giriş kapısı açıldı ve doğrulandı.
-  - 2. Eski SVG haritası hiçbir aşamada gösterilmedi (`CourtyardSceneSvg`DOM'da 0 adet).
-  - 3. Onaylanan sinematik yürünebilir avlu açıldı (`canvas[data-testid="walkable-canvas"]` görünür).
-  - 4. Karşılama ve sınıf seçimi aynı avlunun üzerinde modal olarak çalıştı.
-  - 5. Karşılama tamamlandığında panel kapandı ve öğrenci avluda serbestçe hareket etti.
-- **`npm run build` (`vite build`)**: Geçti — 1.26s içinde derlendi.
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (strict TypeScript).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **88 / 88 test** (`src/test/walkable.test.tsx` [55 test] + `src/test/campus.test.tsx` [33 test], toplam `4.8 s`):
+- **`npx playwright test e2e/stage502_verify.spec.ts`**: Geçti — **2 / 2 test** (`chromium` [5.4s] + `mobile-chrome` [5.6s]):
+  - 1. Sinematik Selçuklu giriş kapısı açıldı ve doğrulandı.
+  - 2. Kapı açılınca **sıfır modal, sıfır rehber karakter ve sıfır rehberli tur** ile doğrudan yürünebilir sinematik avlu canvas'ına girildi (`canvas[data-testid="walkable-canvas"]` görünür).
+  - 3. Eski SVG haritası hiçbir aşamada gösterilmedi (`CourtyardSceneSvg` DOM'da 0 adet).
+  - 4. Avluda yürüyen karakter öğrenci karakteridir; ekran üstü D-Pad, yön pusulası ve ayar kontrolleri anında aktiftir.
+  - 5. Çevresel yönlendirme (mimari tabelalar, merkez meydan totemi, zemin kakma okları) ve zengin peyzaj (sur arkası ağaçlar, çim parterler) doğrulandı.
+- **`npm run build` (`vite build`)**: Geçti — **1.15s** içinde hatasız derlendi.
+
+## 2. Test Kanıt Ekran Görüntüleri (`docs/assets/`):
+- `stage502_gate_screen.png`: Sinematik Selçuklu Taç Kapı görünümü.
+- `stage502_direct_walkable_courtyard.png`: Kapı açıldığı anda doğrudan açılan yürünebilir avlu (0 modal, öğrenci karakteri merkez havuz önünde, yönlendirici totem ve çim parterler görünür).
+- `stage502_courtyard_freewalk_verified.png`: Öğrencinin İngilizce Dünyası yönüne serbestçe yürüyüşünün ve çevresel yönlendirmenin ekran kanıtı.
 
 ### Birim ve Entegrasyon Test Detayları:
   - **Aşama 5.0 & 5.0.2 Tek Girişli Yürünebilir Kampüs & Navigasyon Testleri (`campus.test.tsx` — 33 Test)**:

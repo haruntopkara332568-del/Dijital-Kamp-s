@@ -15,8 +15,6 @@ import {
 } from './engine/classroomSceneRenderer';
 import { WalkableControlsOverlay } from './components/WalkableControlsOverlay';
 import { SmartBoardModal } from './components/SmartBoardModal';
-import { useOptionalCampus } from '@/src/app/CampusProviders';
-import { CourtyardWelcomeView } from '../courtyard/CourtyardWelcomeView';
 import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } from './types';
 
 export interface WalkableCampusViewProps {
@@ -43,11 +41,6 @@ export function WalkableCampusView({
   const [isSmartBoardModalOpen, setIsSmartBoardModalOpen] = useState(false);
   const [isSmartBoardPoweringOn, setIsSmartBoardPoweringOn] = useState(false);
   const [isSmartBoardActive, setIsSmartBoardActive] = useState(false);
-
-  const campus = useOptionalCampus();
-  const isOnboardingActive =
-    currentScene === 'courtyard' &&
-    Boolean(campus?.state && (!campus.state.hasCompletedOnboarding || campus.state.selectedGrade === null));
 
   // Akıllı tahta animasyon durumunu ref üzerinden aktararak motorun gereksiz sıfırlanmasını önle
   const smartBoardVisualStateRef = useRef({
@@ -147,68 +140,77 @@ export function WalkableCampusView({
 
       const interactiveZones: InteractiveZone[] = [
         // 1. İngilizce Dünyası Binası (Sinematik Sınıf ve Akıllı Tahta)
+        // 1. İngilizce Dünyası Binası (Şu aşamada tek aktif sınıf)
         {
           id: 'enter-english',
-          name: 'İngilizce Dünyası Girişi',
+          name: 'İngilizce Dünyası',
           prompt: 'İngilizce Sınıfına Gir',
           x: 970,
           y: 335,
-          radius: 70,
+          radius: 75,
           action: () => {
             lastClassroomPosRef.current = { x: 480, y: 520 };
             setCurrentScene('classroom');
           },
         },
-        // 2. Gezi ve Keşif Binası (Kültürel Miras Rotaları ve Gözlem)
+        // 2. Gezi ve Keşif Binası (Görsel olarak durur - Yakında)
         {
           id: 'enter-discovery',
-          name: 'Gezi ve Keşif Girişi',
-          prompt: 'Gezi ve Keşif Alanına Gir',
+          name: 'Gezi ve Keşif',
+          prompt: 'Yakında Açılacak',
           x: 290,
           y: 335,
           radius: 70,
           action: () => {
-            lastCourtyardPosRef.current = { x: 290, y: 350 };
-            navigate('/alan/gezi-ve-kesif');
+            setUnreachableMessage(
+              'Gezi ve Keşif binası yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+            );
+            setTimeout(() => setUnreachableMessage(null), 3500);
           },
         },
-        // 3. Kitap ve Hikâye Dünyası Binası (Okuma ve Üretim Atölyesi)
+        // 3. Kitap ve Hikâye Dünyası Binası (Görsel olarak durur - Yakında)
         {
           id: 'enter-library',
-          name: 'Kitap ve Hikâye Dünyası Girişi',
-          prompt: 'Kitap ve Hikâye Dünyasına Gir',
+          name: 'Kitap ve Hikâye Dünyası',
+          prompt: 'Yakında Açılacak',
           x: 700,
           y: 285,
           radius: 70,
           action: () => {
-            lastCourtyardPosRef.current = { x: 700, y: 300 };
-            navigate('/alan/kitap-ve-hikaye-dunyasi');
+            setUnreachableMessage(
+              'Kitap ve Hikâye Dünyası yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+            );
+            setTimeout(() => setUnreachableMessage(null), 3500);
           },
         },
-        // 4. Kampüs Yolculuğum Köşkü (Öğrenci Portfolyosu ve Rozetler)
+        // 4. Kampüs Yolculuğum Köşkü (Görsel olarak durur - Yakında)
         {
           id: 'enter-journey',
-          name: 'Kampüs Yolculuğum Girişi',
-          prompt: 'Kampüs Yolculuğumu Aç',
+          name: 'Kampüs Yolculuğum',
+          prompt: 'Yakında Açılacak',
           x: 315,
           y: 545,
           radius: 70,
           action: () => {
-            lastCourtyardPosRef.current = { x: 315, y: 530 };
-            navigate('/yolculugum');
+            setUnreachableMessage(
+              'Kampüs Yolculuğum köşkü yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+            );
+            setTimeout(() => setUnreachableMessage(null), 3500);
           },
         },
-        // 5. Keşif Görevleri Panosu (Bütünleşik Görev Listesi)
+        // 5. Keşif Görevleri Panosu (Görsel olarak durur - Yakında)
         {
           id: 'enter-kiosk',
           name: 'Keşif Görevleri Panosu',
-          prompt: 'Keşif Görevlerini İncele',
+          prompt: 'Yakında Açılacak',
           x: 1005,
           y: 545,
           radius: 70,
           action: () => {
-            lastCourtyardPosRef.current = { x: 1005, y: 530 };
-            navigate('/alan/gorev-panosu');
+            setUnreachableMessage(
+              'Görev panosu yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+            );
+            setTimeout(() => setUnreachableMessage(null), 3500);
           },
         },
         // 6. Selçuklu Yıldız Havuzu (Meydan Dinlenme Noktası)
@@ -236,7 +238,7 @@ export function WalkableCampusView({
         interactiveZones,
       };
     },
-    [navigate],
+    [],
   );
 
   // Motor başlatma ve sahne yükleme (Yalnızca sahne değiştiğinde çalışır, React durum güncellemelerinde motor sıfırlanmaz)
@@ -352,16 +354,15 @@ export function WalkableCampusView({
     };
   }, [currentScene, getSceneConfig]);
 
-  // Akıllı Tahta modalı açıldığında motoru duraklat; Karşılama/Sınıf Seçimi açıkken hareketi ve etkileşimleri güvenle devre dışı bırak
+  // Akıllı Tahta modalı açıldığında motoru duraklat
   useEffect(() => {
     if (!engineRef.current) return;
-    engineRef.current.setInputDisabled(isOnboardingActive);
     if (isSmartBoardModalOpen) {
       engineRef.current.pause();
     } else {
       engineRef.current.resume();
     }
-  }, [isSmartBoardModalOpen, isOnboardingActive]);
+  }, [isSmartBoardModalOpen]);
 
   const handleVirtualDirection = (vx: number, vy: number) => {
     if (engineRef.current) {
@@ -386,25 +387,23 @@ export function WalkableCampusView({
         className="w-full h-full block cursor-crosshair touch-none"
       />
 
-      {/* Ekran Üstü Kontroller ve İpuçları (Karşılama paneli tamamlanana kadar gizlenir) */}
-      {!isOnboardingActive && (
-        <WalkableControlsOverlay
-          activeZone={activeZone}
-          onTriggerInteraction={handleTriggerInteraction}
-          onVirtualDirection={handleVirtualDirection}
-          onBackToMap={handleBackToMap}
-          onExitClassroom={
-            currentScene === 'classroom'
-              ? () => {
-                  lastCourtyardPosRef.current = { x: 970, y: 350 };
-                  setCurrentScene('courtyard');
-                }
-              : undefined
-          }
-          unreachableMessage={unreachableMessage}
-          currentScene={currentScene}
-        />
-      )}
+      {/* Ekran Üstü Kontroller ve İpuçları */}
+      <WalkableControlsOverlay
+        activeZone={activeZone}
+        onTriggerInteraction={handleTriggerInteraction}
+        onVirtualDirection={handleVirtualDirection}
+        onBackToMap={handleBackToMap}
+        onExitClassroom={
+          currentScene === 'classroom'
+            ? () => {
+                lastCourtyardPosRef.current = { x: 970, y: 350 };
+                setCurrentScene('courtyard');
+              }
+            : undefined
+        }
+        unreachableMessage={unreachableMessage}
+        currentScene={currentScene}
+      />
 
       {/* Akıllı Tahta Modal Penceresi */}
       <SmartBoardModal
@@ -412,25 +411,6 @@ export function WalkableCampusView({
         onClose={() => setIsSmartBoardModalOpen(false)}
         missionId="kapilarin-anlattigi-hikaye"
       />
-
-      {/* Karşılama, Rehber ve Sınıf Seçimi Paneli (Sinematik Avlu Üzerinde Modal) */}
-      {isOnboardingActive && (
-        <CourtyardWelcomeView
-          initialPhase={
-            campus?.state.discoveryPreference === 'guided' &&
-            campus.state.selectedGrade !== null &&
-            !campus.state.hasCompletedGuidedTour
-              ? 'guided-tour'
-              : 'welcome-choice'
-          }
-          onFinishToMap={() => {
-            campus?.completeOnboarding();
-          }}
-          onReplayGate={() => {
-            campus?.replayWelcomeFlow();
-          }}
-        />
-      )}
     </div>
   );
 }

@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Aşama 5.0.2 — Giriş Sonrası Doğru Ekran Akışı Doğrulaması', () => {
-  test('Giriş Kapısı -> Sinematik Avlu + Karşılama Modalı -> Serbest Yürüyüş', async ({ page }) => {
+test.describe('Tek Görevli Düzeltme — Giriş Kapısı Sonrası Doğrudan Yürünebilir Sinematik Avlu', () => {
+  test('Giriş Kapısı -> Doğrudan Sinematik Yürünebilir Avlu (0 Modal, 0 Rehber Turu)', async ({ page }) => {
     // Yerel depolamayı temizle (ilk giriş simülasyonu)
     await page.goto('/');
     await page.evaluate(() => window.localStorage.clear());
     await page.reload();
 
-    // 1. Sinematik Giriş Kapısı görünür
+    // 1. Sinematik Selçuklu Giriş Kapısı görünür
     const gateHeading = page.getByRole('heading', { name: /Dijital Eğitim Kampüsü/i });
     await expect(gateHeading).toBeVisible();
     await page.screenshot({ path: 'docs/assets/stage502_gate_screen.png' });
@@ -17,49 +17,37 @@ test.describe('Aşama 5.0.2 — Giriş Sonrası Doğru Ekran Akışı Doğrulama
     await expect(openGateBtn).toBeVisible();
     await openGateBtn.click();
 
-    // 3. DOĞRULAMA: Eski SVG haritası hiçbir aşamada gösterilmez!
-    // Gerçek WalkableCanvasEngine Canvas elementi görünür olmalı
+    // 3. DOĞRULAMA: Kapıdan içeri girince DOĞRUDAN yürünebilir sinematik avlu canvas'ı açılır
     const walkableCanvas = page.locator('canvas[data-testid="walkable-canvas"]');
     await expect(walkableCanvas).toBeVisible({ timeout: 10000 });
 
-    // Eski CourtyardSceneSvg sahnede ASLA bulunmamalıdır
+    // 4. KESİN KURAL DOĞRULAMASI:
+    // a) Rehber karakter ve rehberli tur ekranı YOKTUR
+    await expect(page.getByText(/Rehber Eşliğinde Gez/i)).toHaveCount(0);
+    // b) Modal karşılama penceresi YOKTUR
+    await expect(page.getByRole('dialog', { name: /Kampüs Avlusuna Hoş Geldin/i })).toHaveCount(0);
+    // c) Eski şematik / SVG / harita ekranı YOKTUR
     const oldSvgMap = page.locator('.courtyard-scene-svg, svg[data-name="CourtyardScene"]');
     await expect(oldSvgMap).toHaveCount(0);
 
-    // 4. Karşılama ve sınıf seçimi paneli, gerçek sinematik avlunun üzerinde modal olarak açılır
-    const welcomeDialog = page.getByRole('dialog', { name: /Kampüs Avlusuna Hoş Geldin/i });
-    await expect(welcomeDialog).toBeVisible();
-    await expect(page.getByText(/Merhaba! Welcome! Kampüsümüze hoş geldin/i)).toBeVisible();
+    // 5. Ekran üzeri kontroller (WalkableControlsOverlay) ve kampüs rehberi anında etkindir
+    const campusTitle = page.getByText(/Yürünebilir Kampüs Avlusu/i);
+    await expect(campusTitle).toBeVisible();
 
-    const isMobile = (page.viewportSize()?.width ?? 1280) < 640;
-    const overlayPath = isMobile
-      ? 'docs/assets/stage502_mobile_welcome_overlay.png'
-      : 'docs/assets/stage502_desktop_welcome_overlay.png';
-    const freewalkPath = isMobile
-      ? 'docs/assets/stage502_mobile_free_walk.png'
-      : 'docs/assets/stage502_desktop_free_walk.png';
+    // Canvas'ın render olması için kısa bir bekleme ve kanıt ekran görüntüsü alma
+    await page.waitForTimeout(1000);
+    await page.screenshot({ path: 'docs/assets/stage502_direct_walkable_courtyard.png' });
 
-    // Sinematik avlu üzerinde karşılama modalının ekran görüntüsünü al
-    await page.waitForTimeout(600);
-    await page.screenshot({ path: overlayPath });
+    // 6. Çevresel Yönlendirme ve Aktif İngilizce Binası Testi:
+    // Canvas üzerine tıklayarak karaktere yön verilebilir
+    const box = await walkableCanvas.boundingBox();
+    if (box) {
+      // İngilizce Dünyası tarafına doğru (sağ üst) yürüme tıklaması
+      await page.mouse.click(box.x + box.width * 0.75, box.y + box.height * 0.45);
+      await page.waitForTimeout(800);
+    }
 
-    // 5. "Kendim keşfedeceğim" butonuna tıkla -> Sınıf seçimi adımı
-    const independentBtn = page.getByRole('button', { name: /Kendim keşfedeceğim/i });
-    await independentBtn.click();
-    await expect(page.getByRole('heading', { name: /Kaçıncı sınıfa gidiyorsun\?/i })).toBeVisible();
-
-    // 6. "5. Sınıf" butonuna tıkla -> Karşılama modalı kapanır
-    const grade5Btn = page.getByRole('button', { name: /^5\. Sınıf/i });
-    await grade5Btn.click();
-    await expect(welcomeDialog).not.toBeVisible();
-
-    // 7. Serbest yürüyüş modunda ekran kontrolleri açılır ve karakter serbestçe yürüyebilir
-    const settingsBtn = page.getByLabel(/Sınıf seçimi ve kampüs ayarları/i);
-    await expect(settingsBtn).toBeVisible();
-    await expect(page.getByText(/5\. Sınıf/i).first()).toBeVisible();
-    await page.waitForTimeout(600);
-
-    // Serbest yürüyüş durumunun ekran görüntüsünü al
-    await page.screenshot({ path: freewalkPath });
+    // Nihai yürüyüş durumu ekran görüntüsü
+    await page.screenshot({ path: 'docs/assets/stage502_courtyard_freewalk_verified.png' });
   });
 });

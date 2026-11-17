@@ -76,7 +76,12 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
   );
 
   const markGateSeen = useCallback(() => {
-    updateAndPersist((prev) => ({ ...prev, hasSeenGate: true }));
+    updateAndPersist((prev) => ({
+      ...prev,
+      hasSeenGate: true,
+      hasCompletedOnboarding: true,
+      selectedGrade: prev.selectedGrade ?? 5,
+    }));
   }, [updateAndPersist]);
 
   const setDiscoveryPreference = useCallback(

@@ -877,8 +877,8 @@ describe('Aşama 5.0 — Tek Girişli Yürünebilir Kampüs Deneyimi ve Navigasy
     expect(onEnter).toHaveBeenCalled();
   });
 
-  it('2. Tek Giriş Akışı: İlk girişte Taç Kapı -> Karşılama/Sınıf Seçimi -> Yürünebilir Kampüs', async () => {
-    // A: Henüz kapı görülmedi
+  it('2. Tek Giriş Akışı: İlk girişte Taç Kapı -> Kapı açılınca doğrudan Yürünebilir Kampüs Avlusu', async () => {
+    // A: Henüz kapı görülmedi -> Taç Kapı görünür
     const { unmount } = render(
       <MemoryRouter initialEntries={['/']}>
         <CampusProviders>
@@ -890,10 +890,9 @@ describe('Aşama 5.0 — Tek Girişli Yürünebilir Kampüs Deneyimi ve Navigasy
     expect(await screen.findByRole('heading', { name: /Dijital Eğitim Kampüsü/i })).toBeInTheDocument();
     unmount();
 
-    // B: Kapı görüldü, onboarding henüz tamamlanmadı
+    // B: Kapı görüldü -> Rehbersiz ve modalsız doğrudan Yürünebilir Kampüs yüklenir
     const st2 = createInitialStudentState();
     st2.hasSeenGate = true;
-    st2.hasCompletedOnboarding = false;
     saveStudentState(st2);
 
     const { unmount: unmount2 } = render(
@@ -904,10 +903,14 @@ describe('Aşama 5.0 — Tek Girişli Yürünebilir Kampüs Deneyimi ve Navigasy
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText(EXPECTED_WELCOME_TEXT)).toBeInTheDocument();
+    // Modal karşılama veya rehberli tur ekranı değil, doğrudan walkable-canvas açılır
+    expect(await screen.findByTestId('walkable-canvas')).toBeInTheDocument();
+    expect(screen.queryByText(/Rehber Eşliğinde Gez/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Kuşbakışı Harita/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Doğrudan Sınıfa Gir/i)).not.toBeInTheDocument();
     unmount2();
 
-    // C: Karşılama ve sınıf seçimi tamamlandı (Örn. 4. sınıf) -> Doğrudan Yürünebilir Kampüs yüklenir
+    // C: Karakteriyle avluda serbestçe dolaşabilir
     const st3 = createInitialStudentState();
     st3.hasSeenGate = true;
     st3.hasCompletedOnboarding = true;
