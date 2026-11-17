@@ -219,7 +219,7 @@ export function CourtyardWelcomeView({
                         }}
                         className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] text-sm font-medium text-[var(--campus-ink-muted)] hover:text-[var(--seljuk-navy)] cursor-pointer"
                       >
-                        Turu Bitir ve Haritaya Geç
+                        Turu Bitir ve Kampüse Gir
                       </button>
 
                       {tourIndex < GUIDED_TOUR_STOPS.length - 1 ? (
@@ -240,7 +240,7 @@ export function CourtyardWelcomeView({
                           }}
                           className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--courtyard-sage)] hover:opacity-90 text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
                         >
-                          <span>Kampüs Haritasına Geç</span>
+                          <span>Kampüse Gir</span>
                           <ArrowRight className="w-4 h-4" aria-hidden="true" />
                         </button>
                       )}

@@ -1,6 +1,35 @@
-# Proje Durum Raporu — Sürüm 4.7 (Aşama 4.7: Sinematik Sınıf Entegrasyonu)
+# Proje Durum Raporu — Sürüm 5.0 (Aşama 5.0: Tek Girişli Yürünebilir Kampüs Deneyimi)
 
-## Tamamlanan Bölümler
+## Aşama 5.0 — Tek Girişli Yürünebilir Kampüs Deneyimi (`feat/single-entry-walkable-campus`)
+- **Giriş ve Navigasyon Sadeleştirmesi (Tek Giriş Akışı)**:
+  - Eski iki başlı gezinme yöntemi (kuşbakışı SVG harita `/harita` ve doğrudan sınıf kısayolları) kaldırılarak öğrencinin kampüse giriş ve öğrenme alanlarına erişim yöntemi tek ve bütünleşik yürünebilir kampüs deneyimine dönüştürüldü.
+  - Doğrusal ve kesintisiz akış: **GİRİŞ KAPISI → KARŞILAMA → SINIF SEÇİMİ → YÜRÜNEBİLİR KAMPÜS → BİNA GİRİŞİ → ÖĞRENME ETKİNLİĞİ**.
+  - Eski `/harita` rotası doğrudan anasayfaya (`/`) yönlendirildi (`<Navigate to="/" replace />`); 404 hatası ve yönlendirme döngüleri engellendi.
+- **Sinematik 3D Selçuklu Taç Kapı Görseli (`CampusGateView`)**:
+  - Aksaray Sultanhanı Kervansarayı monumental taç kapısı ve onaylı kampüs avlusu estetiğine uygun sinematik 3D görsel varlık üretildi ve entegre edildi (`public/assets/entrance/campus_portal_gate.jpg` ve `docs/assets/campus_portal_gate_concept.jpg`).
+  - Mukarnas, taş oyma kabartma ve geometrik rozet detaylarıyla donatılmış taç kapı aralanarak güneş ışığı huzmeleriyle kampüs avlusuna adım atma animasyonu sağlandı.
+  - "Kapıyı Aç ve İçeri Gir", "Animasyonu Atla", `prefers-reduced-motion` desteği, odaklanabilir klavye kontrolleri ve sıfır kişisel veri gizlilik güvencesi korundu.
+- **Bütünleşik Avlu Etkileşimi (3 Öğrenme Alanı + 2 Yardımcı İşlev + Şadırvan)**:
+  - Kampüs avlusundaki tüm mimari öğeler yürünebilir ve etkileşimli hale getirildi:
+    1. **İngilizce Dünyası**: Kapı etkileşimi yürünebilir sınıfa (`classroom`) geçiş yapar; akıllı tahta üzerinden "Kapıların Anlattığı Hikâye" görevine bağlanır.
+    2. **Gezi ve Keşif**: Kapı etkileşimi `/alan/gezi-ve-kesif` sayfasına yönlendirir; Aksaray Kültürel Miras Rotası ve Kapıların Hikâyesi keşfedilir.
+    3. **Kitap ve Hikâye Dünyası**: Kapı etkileşimi `/alan/kitap-ve-hikaye-dunyasi` sayfasına yönlendirir.
+    4. **Kampüs Yolculuğum (Güneybatı Köşk)**: Etkileşim `/yolculugum` sayfasına yönlendirir; öğrencinin görev ilerlemesi ve çizimleri listelenir.
+    5. **Keşif Görevleri Panosu (Güneydoğu Kiosk)**: Etkileşim `/alan/gorev-panosu` sayfasına yönlendirir.
+    6. **Selçuklu Yıldız Havuzu (Şadırvan)**: Etkileşim alanında dinlenme ve bilgilendirici akran rehber diyalog kartı açılır.
+- **Konum Sürekliliği (Spatial Persistence)**:
+  - Öğrenci bir binaya girdiğinde veya bir öğrenme alanına yöneldiğinde avludaki son koordinatı saklanır. Geri dönüş bağlantısına ("Kampüs Avlusuna Dön") tıklandığında öğrenci doğrudan ayrıldığı binanın kapı hizasında yeniden konumlanır.
+- **Kampüs İçi Sınıf Değiştirme ve Ayarlar Paneli**:
+  - `WalkableControlsOverlay` içinden "Doğrudan Sınıfa Gir" ve "Kuşbakışı Harita" butonları tamamen kaldırıldı.
+  - Yerine kampüsten çıkmadan sınıf seviyesini (2., 3., 4., 5., 6., 7. sınıf) değiştirebilen, seslendirmeyi açıp kapatabilen ve taç kapıyı yeniden izletebilen `SlidersHorizontal` ayarlar paneli eklendi.
+  - Işınlanma yapmayan bilgilendirici "Kampüs Rehberi" pusula kartı eklendi.
+  - Sınıf içindeyken tek tıkla avluya dönmeyi sağlayan "Avluya Dön" hızlı çıkış butonu eklendi.
+- **Geri Dönüş Bağlantılarının Sadeleştirilmesi**:
+  - `LearningAreaView`, `MissionRunnerView`, `JourneyView` ve `CampusTopBar` bileşenlerindeki eski `/harita` bağlantıları `/` ("Kampüs Avlusu") olarak güncellendi.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck` (0 hata), `npm run lint` (0 hata, 0 uyarı), `npm run test` (88 / 88 test geçti), `npm run build` (başarılı).
+
+## Tamamlanan Bölümler (Geçmiş Aşamalar)
 - **Mimari Dönüşüm (Vite + React + TypeScript + Tailwind CSS v4 + React Router)**:
   - Next.js 15 App Router altyapısı kaldırıldı; Vite 8 (`@vitejs/plugin-react`), `@tailwindcss/vite` v4 ve `react-router` (`createBrowserRouter`) tabanlı tek sayfalık (SPA) yapıya geçildi.
   - `@google/genai` ve kullanılmayan şablon bağımlılıkları kaldırıldı; temiz `package.json` ve `package-lock.json` oluşturuldu.

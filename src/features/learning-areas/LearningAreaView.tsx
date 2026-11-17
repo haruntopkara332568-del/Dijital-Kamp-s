@@ -31,10 +31,10 @@ export function LearningAreaView({ areaId }: LearningAreaViewProps) {
         <main className="max-w-3xl mx-auto px-4 py-12 text-center space-y-4">
           <h1 className="text-2xl font-bold text-[var(--seljuk-navy)]">Alan Bulunamadı</h1>
           <Link
-            to="/harita"
+            to="/"
             className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] text-white text-sm font-semibold inline-flex items-center gap-2"
           >
-            Kampüs Haritasına Dön
+            Kampüs Avlusuna Dön
           </Link>
         </main>
       </>
@@ -58,11 +58,11 @@ export function LearningAreaView({ areaId }: LearningAreaViewProps) {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         <div className="flex items-center justify-between gap-4">
           <Link
-            to="/harita"
+            to="/"
             className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-2 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-            <span>Kampüs Haritasına Dön</span>
+            <span>Kampüs Avlusuna Dön</span>
           </Link>
 
           <span className="text-xs font-semibold text-[var(--campus-ink-muted)] tabular-nums">

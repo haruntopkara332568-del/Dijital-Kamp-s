@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, Navigate, useParams } from 'react-router';
 import { useCampus } from '@/src/app/CampusProviders';
 import { CampusTopBar } from '@/src/components/CampusTopBar';
 
@@ -10,9 +10,6 @@ const CourtyardWelcomeView = lazy(() =>
   import('@/src/features/courtyard/CourtyardWelcomeView').then((m) => ({
     default: m.CourtyardWelcomeView,
   })),
-);
-const CampusMapView = lazy(() =>
-  import('@/src/features/campus-map/CampusMapView').then((m) => ({ default: m.CampusMapView })),
 );
 const LearningAreaView = lazy(() =>
   import('@/src/features/learning-areas/LearningAreaView').then((m) => ({
@@ -49,8 +46,7 @@ function RouteLoadingFallback() {
 }
 
 export function HomeRoutePage() {
-  const navigate = useNavigate();
-  const { hydrated, state, markGateSeen, replayWelcomeFlow } = useCampus();
+  const { hydrated, state, markGateSeen, replayWelcomeFlow, completeOnboarding } = useCampus();
 
   if (!hydrated) {
     return (
@@ -62,15 +58,7 @@ export function HomeRoutePage() {
     );
   }
 
-  if (state.hasCompletedOnboarding && state.selectedGrade !== null) {
-    return (
-      <Suspense fallback={<RouteLoadingFallback />}>
-        <CampusTopBar />
-        <CampusMapView />
-      </Suspense>
-    );
-  }
-
+  // 1. Henüz kapıyı görmediyse: Sinematik Taç Kapı Giriş Sahnesi
   if (!state.hasSeenGate) {
     return (
       <Suspense fallback={<RouteLoadingFallback />}>
@@ -79,31 +67,39 @@ export function HomeRoutePage() {
     );
   }
 
-  const initialPhase =
-    state.discoveryPreference === 'guided' &&
-    state.selectedGrade !== null &&
-    !state.hasCompletedGuidedTour
-      ? 'guided-tour'
-      : 'welcome-choice';
+  // 2. Kapı görüldü ancak sınıf seçilmediyse veya karşılama tamamlanmadıysa: Karşılama & Sınıf Seçimi
+  if (!state.hasCompletedOnboarding || state.selectedGrade === null) {
+    const initialPhase =
+      state.discoveryPreference === 'guided' &&
+      state.selectedGrade !== null &&
+      !state.hasCompletedGuidedTour
+        ? 'guided-tour'
+        : 'welcome-choice';
 
+    return (
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <CourtyardWelcomeView
+          initialPhase={initialPhase}
+          onFinishToMap={() => {
+            completeOnboarding();
+          }}
+          onReplayGate={replayWelcomeFlow}
+        />
+      </Suspense>
+    );
+  }
+
+  // 3. Karşılama ve sınıf seçimi tamamlandı: Tek Girişli Yürünebilir Kampüs Avlusu
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
-      <CourtyardWelcomeView
-        initialPhase={initialPhase}
-        onFinishToMap={() => navigate('/harita')}
-        onReplayGate={replayWelcomeFlow}
-      />
+      <WalkableCampusView />
     </Suspense>
   );
 }
 
 export function CampusMapRoutePage() {
-  return (
-    <Suspense fallback={<RouteLoadingFallback />}>
-      <CampusTopBar />
-      <CampusMapView />
-    </Suspense>
-  );
+  // Eski /harita URL'si açıldığında yönlendirme döngüsü veya 404 olmadan doğrudan yürünebilir kampüse geç
+  return <Navigate to="/" replace />;
 }
 
 export function LearningAreaRoutePage() {
@@ -155,13 +151,13 @@ export function NotFoundRoutePage() {
       <main className="max-w-3xl mx-auto px-4 py-12 text-center space-y-4">
         <h1 className="text-2xl font-bold text-[var(--campus-ink)]">Sayfa Bulunamadı</h1>
         <p className="text-sm text-[var(--campus-ink-muted)]">
-          Aradığın kampüs bölümü bulunamadı. Haritaya dönerek devam edebilirsin.
+          Aradığın kampüs bölümü bulunamadı. Kampüs avlusuna dönerek keşfe devam edebilirsin.
         </p>
         <Link
-          to="/harita"
+          to="/"
           className="min-h-[44px] px-5 py-2.5 rounded-lg bg-[var(--seljuk-teal)] text-white text-sm font-semibold inline-flex items-center justify-center"
         >
-          Kampüs Haritasına Dön
+          Kampüs Avlusuna Dön
         </Link>
       </main>
     </>

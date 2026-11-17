@@ -254,15 +254,15 @@ describe('Arayüz Akışları ve İki Adımlı Silme Onayı', () => {
 
   it('Üst gezinme çubuğu React Router bağlantılarını doğru adreslerle sunar', () => {
     render(
-      <MemoryRouter initialEntries={['/harita']}>
+      <MemoryRouter initialEntries={['/']}>
         <CampusProviders>
           <CampusTopBar />
         </CampusProviders>
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('link', { name: /Dijital Eğitim Kampüsü/i })).toHaveAttribute('href', '/harita');
-    expect(screen.getAllByRole('link', { name: /Kampüs Haritası/i })[0]).toHaveAttribute('href', '/harita');
+    expect(screen.getByRole('link', { name: /Dijital Eğitim Kampüsü/i })).toHaveAttribute('href', '/');
+    expect(screen.getAllByRole('link', { name: /Kampüs Avlusu/i })[0]).toHaveAttribute('href', '/');
     expect(screen.getAllByRole('link', { name: /Görev Panosu/i })[0]).toHaveAttribute('href', '/alan/gorev-panosu');
     expect(screen.getAllByRole('link', { name: /Yolculuğum/i })[0]).toHaveAttribute('href', '/yolculugum');
   });
@@ -273,6 +273,8 @@ import { createEmptyDrawing } from '@/src/features/drawing/DrawingCanvasStudio';
 import { MissionRunnerView } from '@/src/features/missions/MissionRunnerView';
 import { CampusMapView } from '@/src/features/campus-map/CampusMapView';
 import { JourneyView } from '@/src/features/journey/JourneyView';
+import { HomeRoutePage, CampusMapRoutePage } from '@/src/app/CampusPages';
+import { LearningAreaView } from '@/src/features/learning-areas/LearningAreaView';
 import { saveArtifact, listArtifacts } from '@/src/services/storage';
 import type { SavedArtifact } from '@/src/types/campus';
 
@@ -810,6 +812,149 @@ describe('Tasarım Sistemi Belirteçleri, Bileşenler ve Ön İzleme', () => {
     expect(screen.getByText(/En çok 25 sözcüklü yönerge/i)).toBeInTheDocument();
   });
 });
+
+describe('Aşama 5.0 — Tek Girişli Yürünebilir Kampüs Deneyimi ve Navigasyon Bütünlüğü', () => {
+  beforeEach(async () => {
+    window.localStorage.clear();
+    await clearAllCampusData();
+
+    // Canvas 2D context mock for WalkableCampusView
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      clearRect: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+      scale: vi.fn(),
+      clip: vi.fn(),
+      beginPath: vi.fn(),
+      closePath: vi.fn(),
+      arc: vi.fn(),
+      ellipse: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      fillRect: vi.fn(),
+      strokeRect: vi.fn(),
+      roundRect: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      quadraticCurveTo: vi.fn(),
+      bezierCurveTo: vi.fn(),
+      setLineDash: vi.fn(),
+      drawImage: vi.fn(),
+      fillText: vi.fn(),
+      strokeText: vi.fn(),
+      createRadialGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
+      createLinearGradient: vi.fn().mockReturnValue({ addColorStop: vi.fn() }),
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
+      font: '',
+      textAlign: 'left',
+      textBaseline: 'top',
+      measureText: vi.fn().mockReturnValue({ width: 50 }),
+    } as unknown as CanvasRenderingContext2D);
+
+    HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn().mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 800,
+      height: 600,
+    });
+  });
+
+  it('1. Sinematik Taç Kapı Giriş Sahnesi: Aksaray Sultanhanı esinli görsel ve animasyonu atla düğmesi içerir', () => {
+    const onEnter = vi.fn();
+    render(<CampusGateView onEnterCourtyard={onEnter} />);
+
+    expect(screen.getByRole('heading', { name: /Dijital Eğitim Kampüsü/i })).toBeInTheDocument();
+    expect(screen.getByText(/Anadolu–Selçuklu Mimarisinden Esinlenen/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Kapıyı Aç ve İçeri Gir/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Animasyonu Atla/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Kapıyı Aç ve İçeri Gir/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Animasyonu Atla/i }));
+    expect(onEnter).toHaveBeenCalled();
+  });
+
+  it('2. Tek Giriş Akışı: İlk girişte Taç Kapı -> Karşılama/Sınıf Seçimi -> Yürünebilir Kampüs', async () => {
+    // A: Henüz kapı görülmedi
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <CampusProviders>
+          <HomeRoutePage />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('heading', { name: /Dijital Eğitim Kampüsü/i })).toBeInTheDocument();
+    unmount();
+
+    // B: Kapı görüldü, onboarding henüz tamamlanmadı
+    const st2 = createInitialStudentState();
+    st2.hasSeenGate = true;
+    st2.hasCompletedOnboarding = false;
+    saveStudentState(st2);
+
+    const { unmount: unmount2 } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <CampusProviders>
+          <HomeRoutePage />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText(EXPECTED_WELCOME_TEXT)).toBeInTheDocument();
+    unmount2();
+
+    // C: Karşılama ve sınıf seçimi tamamlandı (Örn. 4. sınıf) -> Doğrudan Yürünebilir Kampüs yüklenir
+    const st3 = createInitialStudentState();
+    st3.hasSeenGate = true;
+    st3.hasCompletedOnboarding = true;
+    st3.selectedGrade = 4;
+    saveStudentState(st3);
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <CampusProviders>
+          <HomeRoutePage />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByTestId('walkable-canvas')).toBeInTheDocument();
+    // Kuşbakışı harita veya doğrudan sınıfa gir gibi eski çift giriş butonları yoktur
+    expect(screen.queryByText(/Kuşbakışı Harita/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Doğrudan Sınıfa Gir/i)).not.toBeInTheDocument();
+  });
+
+  it('3. /harita adresi yönlendirme döngüsü veya 404 olmadan doğrudan anasayfaya (/) yönlendirir', () => {
+    render(
+      <MemoryRouter initialEntries={['/harita']}>
+        <CampusProviders>
+          <CampusMapRoutePage />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByText(/Sayfa Bulunamadı/i)).not.toBeInTheDocument();
+  });
+
+  it('4. Öğrenme alanları ve gezinme bileşenlerindeki geri dönüş düğmeleri "Kampüs Avlusuna Dön" hedefini korur', () => {
+    render(
+      <MemoryRouter initialEntries={['/alan/gezi-ve-kesif']}>
+        <CampusProviders>
+          <LearningAreaView areaId="gezi-ve-kesif" />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    const backLink = screen.getByRole('link', { name: /Kampüs Avlusuna Dön/i });
+    expect(backLink).toBeInTheDocument();
+    expect(backLink).toHaveAttribute('href', '/');
+  });
+});
+
 
 
 

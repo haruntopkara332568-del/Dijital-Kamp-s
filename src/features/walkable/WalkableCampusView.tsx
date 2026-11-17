@@ -139,6 +139,7 @@ export function WalkableCampusView({
       ];
 
       const interactiveZones: InteractiveZone[] = [
+        // 1. İngilizce Dünyası Binası (Sinematik Sınıf ve Akıllı Tahta)
         {
           id: 'enter-english',
           name: 'İngilizce Dünyası Girişi',
@@ -147,9 +148,75 @@ export function WalkableCampusView({
           y: 335,
           radius: 70,
           action: () => {
-            // Sınıfa girerken kapı önünde başla
             lastClassroomPosRef.current = { x: 480, y: 520 };
             setCurrentScene('classroom');
+          },
+        },
+        // 2. Gezi ve Keşif Binası (Kültürel Miras Rotaları ve Gözlem)
+        {
+          id: 'enter-discovery',
+          name: 'Gezi ve Keşif Girişi',
+          prompt: 'Gezi ve Keşif Alanına Gir',
+          x: 290,
+          y: 335,
+          radius: 70,
+          action: () => {
+            lastCourtyardPosRef.current = { x: 290, y: 350 };
+            navigate('/alan/gezi-ve-kesif');
+          },
+        },
+        // 3. Kitap ve Hikâye Dünyası Binası (Okuma ve Üretim Atölyesi)
+        {
+          id: 'enter-library',
+          name: 'Kitap ve Hikâye Dünyası Girişi',
+          prompt: 'Kitap ve Hikâye Dünyasına Gir',
+          x: 700,
+          y: 285,
+          radius: 70,
+          action: () => {
+            lastCourtyardPosRef.current = { x: 700, y: 300 };
+            navigate('/alan/kitap-ve-hikaye-dunyasi');
+          },
+        },
+        // 4. Kampüs Yolculuğum Köşkü (Öğrenci Portfolyosu ve Rozetler)
+        {
+          id: 'enter-journey',
+          name: 'Kampüs Yolculuğum Girişi',
+          prompt: 'Kampüs Yolculuğumu Aç',
+          x: 315,
+          y: 545,
+          radius: 70,
+          action: () => {
+            lastCourtyardPosRef.current = { x: 315, y: 530 };
+            navigate('/yolculugum');
+          },
+        },
+        // 5. Keşif Görevleri Panosu (Bütünleşik Görev Listesi)
+        {
+          id: 'enter-kiosk',
+          name: 'Keşif Görevleri Panosu',
+          prompt: 'Keşif Görevlerini İncele',
+          x: 1005,
+          y: 545,
+          radius: 70,
+          action: () => {
+            lastCourtyardPosRef.current = { x: 1005, y: 530 };
+            navigate('/alan/gorev-panosu');
+          },
+        },
+        // 6. Selçuklu Yıldız Havuzu (Meydan Dinlenme Noktası)
+        {
+          id: 'fountain-rest',
+          name: 'Selçuklu Yıldız Havuzu',
+          prompt: 'Havuz Başında Dinlen',
+          x: 700,
+          y: 480,
+          radius: 70,
+          action: () => {
+            setUnreachableMessage(
+              'Selçuklu sekiz köşeli yıldız havuzunun şırıltısıyla kampüsün tüm yolları burada birleşiyor.',
+            );
+            setTimeout(() => setUnreachableMessage(null), 3500);
           },
         },
       ];
@@ -162,7 +229,7 @@ export function WalkableCampusView({
         interactiveZones,
       };
     },
-    [],
+    [navigate],
   );
 
   // Motor başlatma ve sahne yükleme (Yalnızca sahne değiştiğinde çalışır, React durum güncellemelerinde motor sıfırlanmaz)
@@ -255,18 +322,21 @@ export function WalkableCampusView({
       (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine }).__WALKABLE_ENGINE__ = engine;
     }
 
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0 && engineRef.current) {
-          engineRef.current.updateDimensions(Math.floor(width), Math.floor(height));
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const { width, height } = entry.contentRect;
+          if (width > 0 && height > 0 && engineRef.current) {
+            engineRef.current.updateDimensions(Math.floor(width), Math.floor(height));
+          }
         }
-      }
-    });
-    ro.observe(container);
+      });
+      ro.observe(container);
+    }
 
     return () => {
-      ro.disconnect();
+      ro?.disconnect();
       if (typeof window !== 'undefined') {
         delete (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine }).__WALKABLE_ENGINE__;
       }
@@ -297,11 +367,6 @@ export function WalkableCampusView({
     }
   };
 
-  const handleDirectEnterClassroom = () => {
-    lastClassroomPosRef.current = { x: 480, y: 520 };
-    setCurrentScene('classroom');
-  };
-
   return (
     <div
       ref={containerRef}
@@ -319,8 +384,13 @@ export function WalkableCampusView({
         onTriggerInteraction={handleTriggerInteraction}
         onVirtualDirection={handleVirtualDirection}
         onBackToMap={handleBackToMap}
-        onDirectEnterClassroom={
-          currentScene === 'courtyard' ? handleDirectEnterClassroom : undefined
+        onExitClassroom={
+          currentScene === 'classroom'
+            ? () => {
+                lastCourtyardPosRef.current = { x: 970, y: 350 };
+                setCurrentScene('courtyard');
+              }
+            : undefined
         }
         unreachableMessage={unreachableMessage}
         currentScene={currentScene}

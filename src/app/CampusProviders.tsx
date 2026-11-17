@@ -232,3 +232,8 @@ export function useCampus(): CampusContextValue {
   }
   return ctx;
 }
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useOptionalCampus(): CampusContextValue | null {
+  return useContext(CampusContext);
+}

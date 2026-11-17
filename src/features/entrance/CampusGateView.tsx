@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, SkipForward } from 'lucide-react';
-import { CampusPortalGateSvg } from '@/src/components/svg/CampusPortalGateSvg';
+import { ArrowRight, SkipForward, Sparkles } from 'lucide-react';
 
 interface CampusGateViewProps {
   onEnterCourtyard: () => void;
@@ -21,11 +20,17 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
     return () => window.clearTimeout(timer);
   }, [isOpening, onEnterCourtyard]);
 
+  const handleOpenGate = () => {
+    if (!isOpening) {
+      setIsOpening(true);
+    }
+  };
+
   return (
-    <main className="min-h-dvh flex flex-col items-center justify-center px-3 sm:px-6 py-4 sm:py-6 bg-gradient-to-b from-[var(--sky-warm-top)]/50 via-[var(--campus-canvas)] to-[var(--stone-light)]/55">
+    <main className="min-h-dvh flex flex-col items-center justify-center px-3 sm:px-6 py-4 sm:py-6 bg-gradient-to-b from-[var(--sky-warm-top)]/40 via-[var(--campus-canvas)] to-[var(--stone-light)]/45 select-none">
       <div className="w-full max-w-3xl space-y-3.5 text-center">
-        {/* Taç Kapı Ana Sahne Kartı: Kapı ekranın odak noktası, başlık ve düğmeler dengeli hizada */}
-        <div className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] shadow-sm overflow-hidden">
+        {/* Taç Kapı Ana Sahne Kartı: Sinematik 3D Animasyon Taç Kapı */}
+        <div className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] shadow-md overflow-hidden">
           <div
             aria-hidden="true"
             className="h-1.5 w-full bg-gradient-to-r from-[var(--seljuk-navy)] via-[var(--seljuk-teal)] to-[var(--terracotta)]"
@@ -40,26 +45,54 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
                 Dijital Eğitim Kampüsü
               </h1>
               <p className="text-xs sm:text-sm text-[var(--campus-ink-muted)]">
-                Taç kapıya dokunarak veya aşağıdaki düğmeyi kullanarak aydınlık keşif avlusuna adım atabilirsin.
+                Tarihî taç kapıya dokunarak veya aşağıdaki düğmeyi kullanarak aydınlık keşif avlusuna adım atabilirsin.
               </p>
             </header>
 
-            <button
-              type="button"
-              onClick={() => setIsOpening(true)}
-              disabled={isOpening}
-              aria-label="Kampüs kapısını aç ve içeri gir"
-              className="w-full rounded-xl focus-visible:outline-3 focus-visible:outline-[var(--seljuk-teal)] cursor-pointer group block"
-            >
-              <CampusPortalGateSvg isOpen={isOpening} />
-            </button>
-
-            <div className="pt-0.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3 max-w-md mx-auto">
+            {/* Sinematik 3D Taç Kapı Görsel Çerçevesi */}
+            <div className="relative rounded-xl overflow-hidden border border-[var(--campus-border)] shadow-inner max-w-[680px] mx-auto bg-[var(--stone-cream)]">
               <button
                 type="button"
-                onClick={() => setIsOpening(true)}
+                onClick={handleOpenGate}
                 disabled={isOpening}
-                className="sm:flex-1 min-h-[46px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer disabled:opacity-70 whitespace-nowrap"
+                aria-label="Kampüs kapısını aç ve içeri gir"
+                className="group relative w-full block cursor-pointer focus-visible:outline-3 focus-visible:outline-[var(--seljuk-teal)]"
+              >
+                <img
+                  src="/assets/entrance/campus_portal_gate.jpg"
+                  alt="Anadolu-Selçuklu Sultan Han mimarisinden esinlenen, mukarnaslı ve oymalı Taç Kapı ardında açılan aydınlık kampüs avlusu"
+                  className={`w-full h-auto aspect-[16/9] object-cover transition-transform duration-700 ease-out ${
+                    isOpening ? 'scale-105 filter brightness-110' : 'group-hover:scale-[1.01]'
+                  }`}
+                  loading="eager"
+                  decoding="sync"
+                />
+
+                {/* Açılış Işıması Katmanı (Aura / Işık Patlaması) */}
+                <div
+                  aria-hidden="true"
+                  className={`absolute inset-0 bg-radial from-[var(--sandstone-gold-soft)]/50 via-[var(--sky-warm-top)]/30 to-transparent transition-opacity duration-700 pointer-events-none ${
+                    isOpening ? 'opacity-100' : 'opacity-0 group-hover:opacity-30'
+                  }`}
+                />
+
+                {/* Kapı Üstü Etkileşim İpucu Rozeti */}
+                {!isOpening && (
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-none flex items-center gap-1.5 bg-[var(--seljuk-navy)]/80 text-[var(--stone-cream)] text-[11px] sm:text-xs font-semibold px-3 py-1 rounded-full backdrop-blur-xs border border-white/20 shadow-sm opacity-90 group-hover:opacity-100 transition-opacity">
+                    <Sparkles className="w-3.5 h-3.5 text-[var(--sandstone-gold)]" aria-hidden="true" />
+                    <span>Kapıya Dokun veya Aşağıdaki Düğmeyi Kullan</span>
+                  </div>
+                )}
+              </button>
+            </div>
+
+            {/* Aksiyon Düğmeleri */}
+            <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3 max-w-md mx-auto">
+              <button
+                type="button"
+                onClick={handleOpenGate}
+                disabled={isOpening}
+                className="sm:flex-1 min-h-[46px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer disabled:opacity-70 whitespace-nowrap shadow-sm"
               >
                 <span>{isOpening ? 'Kapı Açılıyor...' : 'Kapıyı Aç ve İçeri Gir'}</span>
                 <ArrowRight className="w-4 h-4 shrink-0" aria-hidden="true" />

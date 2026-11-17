@@ -1,10 +1,19 @@
-# Test ve Kalite Güvence Raporu
+# Test ve Kalite Güvence Raporu — Sürüm 5.0 (Aşama 5.0: Tek Girişli Yürünebilir Kampüs)
 
 ## 1. Çalıştırıldı ve Geçti
 - **`npm run typecheck` (`tsc --noEmit`)**: Geçti — 0 hata (strict TypeScript).
 - **`npm run lint` (`eslint .`)**: Geçti — 0 hata, 0 uyarı.
-- **`npm run test` (`vitest run`)**: Geçti — **81 / 81 test** (`src/test/walkable.test.tsx` [52 test] + `src/test/campus.test.tsx` [29 test], toplam `4.8 s`):
-  - **Aşama 3, 4, 4.5 & 4.7 Yürünebilir Kampüs, Karakter ve Sınıf Görsel Dünya Testleri (`walkable.test.tsx` — 52 Test)**:
+- **`npm run test` (`vitest run`)**: Geçti — **88 / 88 test** (`src/test/walkable.test.tsx` [55 test] + `src/test/campus.test.tsx` [33 test], toplam `6.6 s`):
+  - **Aşama 5.0 Tek Girişli Yürünebilir Kampüs & Navigasyon Testleri (`campus.test.tsx` — 33 Test)**:
+    1. Sinematik Taç Kapı Giriş Sahnesi: Aksaray Sultanhanı esinli görsel ve animasyonu atla düğmesi içerir
+    2. Tek Giriş Akışı: İlk girişte Taç Kapı -> Karşılama/Sınıf Seçimi -> Yürünebilir Kampüs (çift giriş ve kuşbakışı harita butonları kaldırıldı)
+    3. `/harita` adresi yönlendirme döngüsü veya 404 olmadan doğrudan anasayfaya (`/`) yönlendirir
+    4. Öğrenme alanları ve gezinme bileşenlerindeki geri dönüş düğmeleri "Kampüs Avlusuna Dön" (`/`) hedefini korur
+  - **Aşama 5.0 Ekran Üstü Kontroller ve Avlu Etkileşimi (`walkable.test.tsx` — 55 Test)**:
+    53. Ekran üstü kontrollerde Sınıf Seçimi ve Ayarlar menüsü çalışır (2–7. sınıf geçişi, sesli anlatım açma/kapama), eski çift giriş butonları bulunmaz
+    54. Yürünebilir kampüs avlusundaki 6 etkileşimli alanın (3 bina, pavyon, kiosk, şadırvan) yapılandırması eksiksizdir
+    55. Sınıf içindeyken "Avluya Dön" hızlı çıkış düğmesi görünür ve tetiklenir
+  - **Aşama 3, 4, 4.5 & 4.7 Yürünebilir Kampüs, Karakter ve Sınıf Görsel Dünya Testleri (52 Test)**:
     1. Karakter yön tuşlarıyla ve W, A, S, D ile doğru yönde hareket eder
     2. Çapraz hareket hızı normal hareket hızından fazla olamaz (Normalizasyon)
     3. Karakter bina ve engel sınırlarının içinden geçemez (Çarpışma algılama)

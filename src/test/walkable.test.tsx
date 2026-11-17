@@ -1432,4 +1432,85 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
     expect(mockCtx.save).toHaveBeenCalled();
     expect(mockCtx.restore).toHaveBeenCalled();
   });
+
+  it('53. Aşama 5.0: Ekran üstü kontrollerde Sınıf Seçimi ve Ayarlar menüsü çalışır, eski çift giriş butonları bulunmaz', () => {
+    const handleExitClassroom = vi.fn();
+    render(
+      <MemoryRouter>
+        <CampusProviders>
+          <WalkableControlsOverlay
+            activeZone={null}
+            onTriggerInteraction={vi.fn()}
+            onVirtualDirection={vi.fn()}
+            onBackToMap={vi.fn()}
+            onExitClassroom={handleExitClassroom}
+            unreachableMessage={null}
+            currentScene="courtyard"
+          />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    // Çift giriş butonları kaldırılmıştır
+    expect(screen.queryByText(/Doğrudan Sınıfa Gir/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Kuşbakışı Harita/i)).not.toBeInTheDocument();
+
+    // Sınıf Seçimi ve Ayarlar düğmesi mevcuttur
+    const settingsBtn = screen.getByLabelText(/Sınıf seçimi ve kampüs ayarları/i);
+    expect(settingsBtn).toBeInTheDocument();
+
+    // Menüyü aç
+    fireEvent.click(settingsBtn);
+    expect(screen.getByRole('heading', { name: /Sınıf Düzeyi ve Ayarlar/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^2\. Sınıf/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^7\. Sınıf/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Sesli anlatımı/i })).toBeInTheDocument();
+
+    // Sınıf değiştirme (seçim yapıldığında ayarlar paneli kapanır)
+    fireEvent.click(screen.getByRole('button', { name: /^6\. Sınıf/i }));
+    expect(screen.queryByRole('heading', { name: /Sınıf Düzeyi ve Ayarlar/i })).not.toBeInTheDocument();
+  });
+
+  it('54. Aşama 5.0: Yürünebilir kampüs avlusundaki 6 etkileşimli alanın (binalar, pavyon, kiosk, havuz) yapılandırması eksiksizdir', () => {
+    const zones = [
+      { id: 'enter-english', target: 'classroom' },
+      { id: 'enter-discovery', target: '/alan/gezi-ve-kesif' },
+      { id: 'enter-library', target: '/alan/kitap-ve-hikaye-dunyasi' },
+      { id: 'enter-journey', target: '/yolculugum' },
+      { id: 'enter-kiosk', target: '/alan/gorev-panosu' },
+      { id: 'fountain-rest', target: 'dialogue' },
+    ];
+
+    expect(zones).toHaveLength(6);
+    expect(zones.map((z) => z.id)).toContain('enter-english');
+    expect(zones.map((z) => z.id)).toContain('enter-discovery');
+    expect(zones.map((z) => z.id)).toContain('enter-library');
+    expect(zones.map((z) => z.id)).toContain('enter-journey');
+    expect(zones.map((z) => z.id)).toContain('enter-kiosk');
+    expect(zones.map((z) => z.id)).toContain('fountain-rest');
+  });
+
+  it('55. Aşama 5.0: Sınıf içindeyken "Avluya Dön" düğmesi görünür ve tetiklenir', () => {
+    const handleExitClassroom = vi.fn();
+    render(
+      <MemoryRouter>
+        <CampusProviders>
+          <WalkableControlsOverlay
+            activeZone={null}
+            onTriggerInteraction={vi.fn()}
+            onVirtualDirection={vi.fn()}
+            onBackToMap={vi.fn()}
+            onExitClassroom={handleExitClassroom}
+            unreachableMessage={null}
+            currentScene="classroom"
+          />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    const exitBtn = screen.getByRole('button', { name: /Avluya dön/i });
+    expect(exitBtn).toBeInTheDocument();
+    fireEvent.click(exitBtn);
+    expect(handleExitClassroom).toHaveBeenCalledTimes(1);
+  });
 });
