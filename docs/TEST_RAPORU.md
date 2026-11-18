@@ -1,25 +1,26 @@
-# Test ve Kalite Güvence Raporu — Sürüm 6.5.1 (Aşama 6.5: Akıllı Tahta — Sultanhanı Kervansarayı Macerası / Tekil Hikâye Akışı)
+# Test ve Kalite Güvence Raporu — Sürüm 6.5.2 (Aşama 6.5: Akıllı Tahta — Sultanhanı Kervansarayı Macerası / Görsel Akış ve Taş Eşik Düzeltmesi)
 
 ## 1. Çalıştırıldı ve Geçti
 - **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (strict TypeScript).
 - **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
-- **`npm run test` (`vitest run`)**: Geçti — **107 / 107 test** (`src/test/walkable.test.tsx` [74 test] + `src/test/campus.test.tsx` [33 test], `38.7s`):
+- **`npm run test` (`vitest run`)**: Geçti — **107 / 107 test** (`src/test/walkable.test.tsx` [74 test] + `src/test/campus.test.tsx` [33 test], `43.4s`):
   - 72. Aşama 6.5: `SmartBoardModal` 3. sınıf seçiminde `Grade3SmartBoardAdventureView` (Aksaray Sultanhanı Kervansarayı, Taç Kapı, Gezgin Çocuk Leo ve harita) açar.
-  - 73. Aşama 6.5: `Grade3SmartBoardAdventureView` 4 sahne tekil hikâye akışı (1. Sahne Kervansaraya Varış ve arkadaşa yaklaşım, 2. Sahne Taç Kapıda Leo ile karşılaşma ve "Hello!", 3. Sahne eşiği aşıp avluya geçiş, 4. Sahne avluda vedalaşma ve "Good night!", ayrılış animasyonu), sesli telaffuz desteği, cezasız ipucu toleransı, tamamlama ve sınıfa dönüş sunar.
+  - 73. Aşama 6.5: `Grade3SmartBoardAdventureView` tekil hikaye akışı (Meydanda belirgin yürüyüş, kapıda duruş ve Leo ile "Hello!", kamera takibi ile ayaklarıyla aynı taş eşiği geçiş, avluda gece vedalaşması ve "Good night!", görünür el sallama, kadrajdan çıkış ve tamamlama ekranı), sesli telaffuz desteği, cezasız ipucu toleransı, tamamlama ve sınıfa dönüş sunar.
   - 74. Aşama 6.5: `renderClassroomLayeredBackground` 3. sınıf için 4 masa tamamlandığında davetkâr parıltıyı (`#38bdf8` gölge ve altın çerçeve) çizer; 4 masa tamamlanmadan çizmez.
   - 63, 68, 70, 71: Keşfet, Öğren, Üret ve Paylaş masaları %100 korundu.
-- **`npx playwright test e2e/grade3_smartboard_adventure.spec.ts --project=chromium`**: Geçti — **2 / 2 test** (`21.4s`):
-  - Senaryo 1 (Kilitli Durum): 4 masa tamamlanmadan Akıllı Tahtaya gidildiğinde modal açılmaz; `"Büyük Görev için önce sınıftaki dört masadaki (Keşfet, Öğren, Üret, Paylaş) görevleri tamamlamalısın."` uyarısı verilir.
-  - Senaryo 2 (Tamamlanmış Masalar & Tekil Hikâye Macerası): 4 masa tamamlanmış olarak Akıllı Tahtaya tıklandığında açılış animasyonu ve ardından Sultanhanı Kervansarayı açılır (`docs/assets/grade3_smartboard_sultanhani_arrival.png`).
-    - 1. Sahne (Kervansaraya Varış): Taş meydandan kapıya yürünür ve gezi haritasını inceleyen turist çocuk Leo'ya yaklaşılır (`"Arkadaşa Yaklaş"`).
-    - 2. Sahne (Taç Kapının Önünde Karşılaşma): Leo haritadan başını kaldırır ve "Hello!" der. Öğrenci önce yanlış "Goodbye!" seçtiğinde cezasız pedagojik Türkçe ipucu gösterilir; "Hello!" seçildiğinde doğru teyit edilir ve neşeli selamlaşma animasyonu çalışır.
-    - 3. Sahne (Kapıdan İçeri Giriş): İki arkadaş asırlık Selçuklu Taç Kapısı'nın eşiğinden yan yana geçerek geniş, revaklı iç avluya adım atar (`"Eşiği Aş ve Avluya Geç"`). Arka plan kervansaray dış cephesinden revaklı iç avluya geçer.
-    - 4. Sahne (Avluda Vedalaşma): Gezi biter, gece ışığında Leo durup "Good night!" der. Yanlış seçenek "Good morning!" için cezasız ipucu verilir; "Good night!" seçildiğinde doğru teyit edilir ve çocuklar el sallayarak ayrı yönlere uğurlanır.
-    - Tamamlanma Ekranı: `"Tebrikler! Öğrendiğin İngilizce ifadeleri günlük yaşamda başarıyla kullandın."` başlığı, 🏆 rozet, 4 özet kart ve [Sınıfa Dön] butonu (`docs/assets/grade3_smartboard_adventure_completed.png`).
-    - Sınıfa Dönüş: Öğrenci sınıfta akıllı tahtanın önünde kalır, 4 masanın aşamaları (`['kesfet', 'ogren', 'uret', 'paylas']`) ve `completed: true` durumu kalıcı olarak korunur.
-- **`npx playwright test e2e/grade3_paylas_table.spec.ts e2e/grade3_uret_table.spec.ts --project=chromium`**: Geçti — **2 / 2 test** (`33.2s`):
-  - Paylaş Masası (19.3s) ve Üret Masası (31.2s) sıfır regresyonla geçti.
-- **`npm run build` (`vite build`)**: Geçti — **965ms** içinde hatasız üretim derlemesi üretildi.
+- **`npx playwright test e2e/grade3_smartboard_adventure.spec.ts --project=chromium`**: Geçti — **2 / 2 test** (`26.4s`).
+- **`npx playwright test e2e/grade3_smartboard_adventure.spec.ts --project=mobile-chrome`**: Geçti — **2 / 2 test** (`29.3s`).
+  - Senaryo 1 (Kilitli Durum): 4 masa tamamlanmadan Akıllı Tahtaya gidildiğinde modal açılmaz; uyarı gösterilir.
+  - Senaryo 2 (Tamamlanmış Masalar & Kesintisiz Video Kaydı):
+    - Meydana giriş ve taç kapıya belirgin adımlarla yürüyüş (`grade3_smartboard_square_arrival.png`).
+    - Kapının önünde duruş, Leo'ya dönüş ve "Hello!" konuşması (`grade3_smartboard_sultanhani_arrival.png`).
+    - Kamera takibi ile her iki çocuğun da ayaklarıyla aynı Selçuklu taş eşiğini geçişi (`grade3_smartboard_threshold_crossing.png`).
+    - Eşik geçildikten sonra avlunun açılışı, gece ışığı ve "Good night!" vedası (`grade3_smartboard_courtyard_farewell.png`).
+    - Görünür biçimde el sallama ve çocukların zıt yönlere kadrajdan çıkışı (`grade3_smartboard_waving_departure.png`).
+    - Ayrılış tamamlandıktan sonra açılan başarı ekranı (`grade3_smartboard_adventure_completed.png`).
+    - Sınıfa dönüş ve tahtanın önünde kalış (`grade3_smartboard_return_classroom.png`).
+    - Kesintisiz video kayıtları: `docs/assets/videos/grade3_smartboard_desktop_continuous.webm` (3.4 MB) ve `grade3_smartboard_mobile_continuous.webm` (3.7 MB).
+- **`npm run build` (`vite build`)**: Geçti — **889ms** içinde hatasız üretim derlemesi üretildi.
 
 # Test ve Kalite Güvence Raporu — Sürüm 6.3.1 (Aşama 6.3.1: 3. Sınıf Üret Masası Hata Düzeltmesi — Kelime Seçim ve İlerleme)
 

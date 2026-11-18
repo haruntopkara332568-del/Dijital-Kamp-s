@@ -2275,12 +2275,11 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
 
       // Sultanhanı sahnesinin ve ilk sahne başlığının yüklendiğini doğrula
       expect(screen.getAllByText(/Aksaray Sultanhanı Kervansarayı/i).length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText(/1\. Sahne — Kervansaraya Varış/i).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/1\. Sahne — Taç Kapının Önünde Karşılaşma/i).length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText(/Leo/i).length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByRole('button', { name: /"Arkadaşa Yaklaş"/i })).toBeInTheDocument();
     });
 
-    it('73. Aşama 6.5: Grade3SmartBoardAdventureView 4 sahne diyalog akışı, cezasız ipucu, tamamlanma ve sınıfa dönüş sunar', async () => {
+    it('73. Aşama 6.5: Grade3SmartBoardAdventureView tekil hikaye akışı, taş eşik geçişi, vedalaşma ve sınıfa dönüş sunar', async () => {
       await clearAllCampusData();
       const initialState = createInitialStudentState();
       saveStudentState({
@@ -2321,44 +2320,47 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
         </MemoryRouter>,
       );
 
-      // 1. Sahne: Kervansaraya Varış (Meydandan Kapıya Yürüyüş)
-      expect(screen.getAllByText(/1\. Sahne — Kervansaraya Varış/i).length).toBeGreaterThanOrEqual(1);
-      fireEvent.click(screen.getByRole('button', { name: /"Arkadaşa Yaklaş"/i }));
+      // 1. Sahne: Taç Kapının Önünde Karşılaşma (Meydanda Yürüyüş ve Kapıda Duruş)
+      expect(screen.getAllByText(/1\. Sahne — Taç Kapının Önünde Karşılaşma/i).length).toBeGreaterThanOrEqual(1);
 
-      // 2. Sahne: Taç Kapının Önünde Karşılaşma (Turist Çocuk Leo ile Tanışma)
-      await screen.findAllByText(/2\. Sahne — Taç Kapının Önünde Karşılaşma/i, {}, { timeout: 4000 });
+      // Deniz'in kapıya varışı ve konuşma anı seçeneklerinin belirmesini bekle
+      const goodbyeBtn = await screen.findByRole('button', { name: /"Goodbye!"/i }, { timeout: 4000 });
 
       // Yanlış seçim testi: Goodbye! -> cezasız pedagojik ipucu
-      fireEvent.click(screen.getByRole('button', { name: /"Goodbye!"/i }));
+      fireEvent.click(goodbyeBtn);
       expect(
         await screen.findByText(/Yeni karşılaştığımız bir arkadaşa selam vermek için "Hello!"/i, {}, { timeout: 3000 }),
       ).toBeInTheDocument();
 
       // Doğru seçim: Hello!
-      fireEvent.click(screen.getByRole('button', { name: /"Hello!"/i }));
+      const helloBtn = screen.getByRole('button', { name: /"Hello!"/i });
+      fireEvent.click(helloBtn);
       expect(
         await screen.findByText(/Harika! "Hello!" diyerek tanışma selamı verdin/i, {}, { timeout: 3000 }),
       ).toBeInTheDocument();
 
-      // 3. Sahne: Kapıdan İçeri Giriş (Birlikte Eşik Aşıp Avluya Geçiş)
-      await screen.findAllByText(/3\. Sahne — Kapıdan İçeri Giriş/i, {}, { timeout: 4000 });
-      fireEvent.click(screen.getByRole('button', { name: /"Eşiği Aş ve Avluya Geç"/i }));
+      // Kamera takibi ve Taş Eşiği Ayaklarla Geçiş Fazı
+      expect(
+        await screen.findByText(/Selçuklu Taç Kapı Taş Eşiği/i, {}, { timeout: 3000 }),
+      ).toBeInTheDocument();
 
-      // 4. Sahne: Avluda Vedalaşma (Gece Işığı)
-      await screen.findAllByText(/4\. Sahne — Avluda Vedalaşma/i, {}, { timeout: 4000 });
+      // 2. Sahne: Avluda Vedalaşma (Gece Işığı)
+      await screen.findAllByText(/2\. Sahne — Avluda Vedalaşma/i, {}, { timeout: 6000 });
 
       // Yanlış seçim: Good morning! -> ipucu
-      fireEvent.click(screen.getByRole('button', { name: /"Good morning!"/i }));
+      const morningBtn = await screen.findByRole('button', { name: /"Good morning!"/i }, { timeout: 3000 });
+      fireEvent.click(morningBtn);
       expect(
         await screen.findByText(/Gece ayrılırken ve uyku vakti geldiğinde "Good night!"/i, {}, { timeout: 3000 }),
       ).toBeInTheDocument();
 
       // Doğru seçim: Good night!
-      fireEvent.click(screen.getByRole('button', { name: /"Good night!"/i }));
+      const nightBtn = screen.getByRole('button', { name: /"Good night!"/i });
+      fireEvent.click(nightBtn);
 
-      // TAMAMLANMA EKRANI
+      // TAMAMLANMA EKRANI (Görünür el sallama ve kadrajdan çıkış sonrası açılır)
       expect(
-        await screen.findByText(/Tebrikler! Öğrendiğin İngilizce ifadeleri günlük yaşamda başarıyla kullandın\./i, {}, { timeout: 5000 }),
+        await screen.findByText(/Tebrikler! Öğrendiğin İngilizce ifadeleri günlük yaşamda başarıyla kullandın\./i, {}, { timeout: 8000 }),
       ).toBeInTheDocument();
 
       // 4 kartın özetini doğrula
@@ -2376,7 +2378,7 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
       const exitBtns = screen.getAllByRole('button', { name: /Sınıfa Dön/i });
       fireEvent.click(exitBtns[0]);
       expect(handleExit).toHaveBeenCalledTimes(1);
-    }, 25000);
+    }, 30000);
 
     it('74. Aşama 6.5: renderClassroomLayeredBackground 3. sınıf için 4 masa tamamlandığında davetkâr parıltıyı çizer', () => {
       const mockCtx = createClassroomMockCtx();

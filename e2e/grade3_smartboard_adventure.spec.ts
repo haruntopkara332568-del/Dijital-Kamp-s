@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
+
+test.use({ video: 'on' });
 
 test.describe('3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Macerası (Aşama 6.5)', () => {
+
   test('Senaryo 1: 4 masa tamamlanmadan Akıllı Tahta kilitlidir ve bilgilendirme uyarısı verir', async ({ page }) => {
     // 1. Durum: 3 masa tamamlanmış (Keşfet, Öğren, Üret), Paylaş masası henüz tamamlanmamış
     await page.goto('/');
@@ -115,8 +120,8 @@ test.describe('3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Macerası
     await expect(page.getByText(/Aksaray Sultanhanı Kervansarayı/i)).not.toBeVisible();
   });
 
-  test('Senaryo 2: 4 masa tamamlandığında Akıllı Tahta açılır, Sultanhanı Kervansarayı macerası tamamlanır ve sınıfa dönülür', async ({ page }) => {
-    test.setTimeout(60000);
+  test('Senaryo 2: 4 masa tamamlandığında Akıllı Tahta açılır, Sultanhanı Kervansarayı macerası tamamlanır ve sınıfa dönülür', async ({ page }, testInfo) => {
+    test.setTimeout(90000);
     // 1. Durum: Dört masanın tümü tamamlanmış
     await page.goto('/');
     await page.evaluate(() => {
@@ -222,63 +227,65 @@ test.describe('3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Macerası
 
     // Akıllı Tahta modalı açılır: Sultanhanı Kervansarayı Sahnesi
     await expect(page.getByText(/Aksaray Sultanhanı Kervansarayı/i).first()).toBeVisible({ timeout: 6000 });
-    await expect(page.getByText(/1\. Sahne — Kervansaraya Varış/i).first()).toBeVisible();
+    await expect(page.getByText(/1\. Sahne — Taç Kapının Önünde Karşılaşma/i).first()).toBeVisible();
 
-    // Ekran görüntüsü: Açılış Sahnesi
+    // 1. Görsel Kayıt: Meydana Giriş ve Belirgin Yürüyüş Adımları
+    await page.screenshot({ path: 'docs/assets/grade3_smartboard_square_arrival.png' });
+
+    // Deniz taç kapının önünde durur ve konuşma seçenekleri belirir
+    const wrongGoodbyeBtn = page.getByRole('button', { name: /"Goodbye!"/i });
+    await expect(wrongGoodbyeBtn).toBeVisible({ timeout: 5000 });
+
+    // 2. Görsel Kayıt: Taç Kapının Önünde Duruş ve Leo ile "Hello!" Karşılaşması
     await page.screenshot({ path: 'docs/assets/grade3_smartboard_sultanhani_arrival.png' });
 
-    // --- 1. SAHNE: Kervansaraya Varış (Meydandan Kapıya) ---
-    // "Arkadaşa Yaklaş" butonuna tıkla
-    const approachBtn = page.getByRole('button', { name: /Arkadaşa Yaklaş/i });
-    await expect(approachBtn).toBeVisible();
-    await approachBtn.click();
-
-    // --- 2. SAHNE: Taç Kapının Önünde Karşılaşma (Leo ile Tanışma) ---
-    await expect(page.getByText(/2\. Sahne — Taç Kapının Önünde Karşılaşma/i).first()).toBeVisible({ timeout: 5000 });
-
-    // Yanlış cevap testi: "Goodbye!"
-    const wrongGoodbyeBtn = page.getByRole('button', { name: /"Goodbye!"/i });
+    // Yanlış cevap testi: "Goodbye!" -> Cezasız pedagojik ipucu
     await wrongGoodbyeBtn.click();
     await expect(
       page.getByText(/Yeni karşılaştığımız bir arkadaşa selam vermek için "Hello!"/i),
     ).toBeVisible({ timeout: 4000 });
 
-    // Doğru cevap: "Hello!" (yanlış seçim sonrası geri bildirim temizlenene kadar veya doğrudan)
-    await page.waitForTimeout(2500); // 2400ms feedback timeout
+    // Doğru cevap: "Hello!"
+    await page.waitForTimeout(2500); // ipucu temizlenme süresi
     const correctHelloBtn = page.getByRole('button', { name: /"Hello!"/i });
     await correctHelloBtn.click();
     await expect(
       page.getByText(/Harika! "Hello!" diyerek tanışma selamı verdin/i),
     ).toBeVisible({ timeout: 4000 });
 
-    // --- 3. SAHNE: Kapıdan İçeri Giriş (Eşiği Aşma) ---
-    await expect(page.getByText(/3\. Sahne — Kapıdan İçeri Giriş/i).first()).toBeVisible({ timeout: 6000 });
-    const enterThresholdBtn = page.getByRole('button', { name: /Eşiği Aş ve Avluya Geç/i });
-    await expect(enterThresholdBtn).toBeVisible();
-    await enterThresholdBtn.click();
+    // 3. Görsel Kayıt: Kamera Takibi & Ayaklarıyla Aynı Taş Eşiği Geçiş
+    await expect(page.getByText(/Selçuklu Taç Kapı Taş Eşiği/i)).toBeVisible({ timeout: 5000 });
+    await page.screenshot({ path: 'docs/assets/grade3_smartboard_threshold_crossing.png' });
 
-    // --- 4. SAHNE: Avluda Vedalaşma (Gece) ---
-    await expect(page.getByText(/4\. Sahne — Avluda Vedalaşma/i).first()).toBeVisible({ timeout: 6000 });
+    // Eşik geçildikten sonra: 2. Sahne (Avluda Vedalaşma • Gece Işığı) açılır
+    await expect(page.getByText(/2\. Sahne — Avluda Vedalaşma/i).first()).toBeVisible({ timeout: 8000 });
 
-    // Yanlış cevap testi: "Good morning!"
+    // 4. Görsel Kayıt: Avluda Gece Vedalaşması ve "Good night!"
     const wrongMorningBtn = page.getByRole('button', { name: /"Good morning!"/i });
+    await expect(wrongMorningBtn).toBeVisible({ timeout: 5000 });
+    await page.screenshot({ path: 'docs/assets/grade3_smartboard_courtyard_farewell.png' });
+
+    // Yanlış cevap testi: "Good morning!" -> İpucu
     await wrongMorningBtn.click();
     await expect(
       page.getByText(/Gece ayrılırken ve uyku vakti geldiğinde "Good night!"/i),
     ).toBeVisible({ timeout: 4000 });
 
     // Doğru cevap: "Good night!"
-    await page.waitForTimeout(2500); // 2400ms feedback timeout
+    await page.waitForTimeout(2500);
     const correctNightBtn = page.getByRole('button', { name: /"Good night!"/i });
     await correctNightBtn.click();
     await expect(
       page.getByText(/Tebrikler! "Good night!" diyerek arkadaşınla gece vedasını yaptın/i),
     ).toBeVisible({ timeout: 4000 });
 
-    // --- TAMAMLANMA EKRANI ---
+    // 5. Görsel Kayıt: Görünür El Sallama ve Ayrı Yönlere Ayrılış
+    await page.screenshot({ path: 'docs/assets/grade3_smartboard_waving_departure.png' });
+
+    // --- TAMAMLANMA EKRANI (Ayrılış tamamlandıktan sonra açılır) ---
     await expect(
       page.getByText(/Tebrikler! Öğrendiğin İngilizce ifadeleri günlük yaşamda başarıyla kullandın\./i),
-    ).toBeVisible({ timeout: 10000 });
+    ).toBeVisible({ timeout: 8000 });
 
     // Rozet ve 4 kart özeti
     await expect(page.getByText(/Büyük Görev Başarıyla Tamamlandı 🏆/i)).toBeVisible();
@@ -287,7 +294,7 @@ test.describe('3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Macerası
     await expect(page.getByText(/Goodbye!/i).first()).toBeVisible();
     await expect(page.getByText(/Good night!/i).first()).toBeVisible();
 
-    // Ekran görüntüsü: Tamamlanma Ekranı
+    // 6. Görsel Kayıt: Tamamlanma Ekranı
     await page.screenshot({ path: 'docs/assets/grade3_smartboard_adventure_completed.png' });
 
     // Sınıfa Dön butonuna tıkla
@@ -296,6 +303,9 @@ test.describe('3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Macerası
 
     // Sınıfta olduğumuzu ve masaların yerinde durduğunu doğrula
     await expect(page.getByRole('button', { name: /Avluya dön/i })).toBeVisible({ timeout: 5000 });
+
+    // 7. Görsel Kayıt: Sınıfta Akıllı Tahtanın Önünde Kalış
+    await page.screenshot({ path: 'docs/assets/grade3_smartboard_return_classroom.png' });
 
     // LocalStorage verisinde 4 masanın korunduğunu ve büyük görevin tamamlandığını doğrula
     const savedState = await page.evaluate(() => {
@@ -306,5 +316,21 @@ test.describe('3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Macerası
     const progress = savedState?.missionProgressByKey?.['kapilarin-anlattigi-hikaye::grade-3'];
     expect(progress?.completedStages).toEqual(['kesfet', 'ogren', 'uret', 'paylas']);
     expect(progress?.completed).toBe(true);
+
+    // Kesintisiz Ekran Kaydı Videosunu docs/assets/videos Klasörüne Kaydet
+    await page.close();
+    const video = page.video();
+    if (video) {
+      const videosDir = path.resolve('docs/assets/videos');
+      if (!fs.existsSync(videosDir)) {
+        fs.mkdirSync(videosDir, { recursive: true });
+      }
+      const videoPath = await video.path();
+      const targetName =
+        testInfo.project.name === 'mobile-chrome'
+          ? 'grade3_smartboard_mobile_continuous.webm'
+          : 'grade3_smartboard_desktop_continuous.webm';
+      fs.copyFileSync(videoPath, path.join(videosDir, targetName));
+    }
   });
 });

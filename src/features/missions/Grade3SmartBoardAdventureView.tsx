@@ -17,18 +17,13 @@ export interface Grade3SmartBoardAdventureViewProps {
   onExitToClassroom: () => void;
 }
 
-type SceneId =
-  | 'scene1_arrival'
-  | 'scene2_meeting'
-  | 'scene3_entry'
-  | 'scene4_farewell'
-  | 'adventure_completed';
+type SceneId = 'scene1_meeting' | 'scene2_farewell' | 'adventure_completed';
 
 interface SceneStepConfig {
   id: SceneId;
   sceneTitle: string;
   timeLabel: string;
-  timeOfDay: 'morning' | 'daylight' | 'golden_hour' | 'night';
+  timeOfDay: 'morning' | 'daylight' | 'night';
   speakerName: string;
   speakerExpression: string;
   speakerTurkish: string;
@@ -44,36 +39,17 @@ interface SceneStepConfig {
 }
 
 const SCENE_CONFIGS: SceneStepConfig[] = [
-  // 1. SAHNE: Sultanhanı Kervansarayı'nın Önü (Meydandan Kapıya Yürüyüş)
+  // 1. SAHNE: Taç Kapının Önünde Karşılaşma (Meydanda Yürüyüş, Kapıda Duruş, "Hello!" ve Taş Eşik Geçişi)
   {
-    id: 'scene1_arrival',
-    sceneTitle: '1. Sahne — Kervansaraya Varış',
-    timeLabel: 'Sabah Vakti • Güneşli Taş Meydan',
-    timeOfDay: 'morning',
-    speakerName: 'Anlatıcı',
-    speakerExpression: 'Welcome to Sultanhani!',
-    speakerTurkish: "Sultanhanı'na Hoş Geldin!",
-    narrationText:
-      "Aksaray Sultanhanı Kervansarayı'na hoş geldin! Görkemli Selçuklu Taç Kapısı'na doğru yaklaşıyorsun. Kapının yanında elinde gezi haritası tutan bir arkadaşın var.",
-    promptText: "Kapıya doğru yürü ve gezi haritasını inceleyen arkadaşa yaklaş:",
-    options: [
-      { id: 'approach_btn', text: 'Arkadaşa Yaklaş', isCorrect: true },
-    ],
-    correctFeedback: "Kapının önüne geldin! Arkadaşın haritadan başını kaldırdı ve seninle göz teması kurdu.",
-    wrongHint: "Arkadaşa yaklaşmak için 'Arkadaşa Yaklaş' düğmesine dokun.",
-  },
-
-  // 2. SAHNE: Taç Kapının Önünde Karşılaşma (Turist Çocuk ile Tanışma)
-  {
-    id: 'scene2_meeting',
-    sceneTitle: '2. Sahne — Taç Kapının Önünde Karşılaşma',
-    timeLabel: 'Öğle Vakti • Selçuklu Taç Kapısı',
+    id: 'scene1_meeting',
+    sceneTitle: '1. Sahne — Taç Kapının Önünde Karşılaşma',
+    timeLabel: 'Sabah Vakti • Selçuklu Taç Kapısı',
     timeOfDay: 'daylight',
-    speakerName: 'Leo (Gezgin Çocuk)',
+    speakerName: 'Leo (Gezgin Arkadaş)',
     speakerExpression: 'Hello!',
     speakerTurkish: 'Merhaba!',
     narrationText:
-      "Kapının yanında tek başına duran turist arkadaşın Leo, haritadan başını kaldırıp sana gülümsedi ve el sallayarak 'Hello!' dedi.",
+      "Aksaray Sultanhanı Kervansarayı'na hoş geldin! Görkemli Selçuklu Taç Kapısı'nın önünde tek başına gezen arkadaşın Leo haritadan başını kaldırıp sana gülümsedi ve el sallayarak 'Hello!' dedi.",
     promptText: "Leo sana 'Hello!' dedi. Sen de ona İngilizce merhaba de:",
     options: [
       { id: 'opt_hello', text: 'Hello!', isCorrect: true },
@@ -85,33 +61,13 @@ const SCENE_CONFIGS: SceneStepConfig[] = [
       'Yeni karşılaştığımız bir arkadaşa selam vermek için "Hello!" (Merhaba) deriz. "Goodbye!" ise ayrılırken söylenir.',
   },
 
-  // 3. SAHNE: Kapıdan İçeri Giriş (Birlikte Eşik Aşıp Avluya Geçiş)
+  // 2. SAHNE: Avluda Vedalaşma (Gece Işığı, "Good night!", Görünür El Sallama ve Ayrı Yönlere Ayrılış)
   {
-    id: 'scene3_entry',
-    sceneTitle: '3. Sahne — Kapıdan İçeri Giriş',
-    timeLabel: 'Öğle Vakti • Anıtsal Portal ve Eşik',
-    timeOfDay: 'daylight',
-    speakerName: 'Anlatıcı',
-    speakerExpression: 'Let’s explore together!',
-    speakerTurkish: 'Birlikte keşfedelim!',
-    narrationText:
-      "İki yeni arkadaş, asırlık Selçuklu Taç Kapısı'nın taş eşiğinden geçerek kervansarayın geniş ve tarihi avlusuna birlikte adım atıyor...",
-    promptText: "Leo ile yan yana yürüyerek taç kapının eşiğini aş ve iç avluya adım at:",
-    options: [
-      { id: 'enter_btn', text: 'Eşiği Aş ve Avluya Geç', isCorrect: true },
-    ],
-    correctFeedback:
-      "Muhteşem! İki arkadaş taç kapının serin gölgesinden geçip Sultanhanı'nın geniş revaklı iç avlusuna ulaştı.",
-    wrongHint: "Avluya geçmek için 'Eşiği Aş ve Avluya Geç' düğmesine dokun.",
-  },
-
-  // 4. SAHNE: Avluda Vedalaşma (Akşam/Gece Işığı ve Ayrılış)
-  {
-    id: 'scene4_farewell',
-    sceneTitle: '4. Sahne — Avluda Vedalaşma',
+    id: 'scene2_farewell',
+    sceneTitle: '2. Sahne — Avluda Vedalaşma',
     timeLabel: 'Gece Vakti • Yıldızlı Selçuklu Avlusu',
     timeOfDay: 'night',
-    speakerName: 'Leo (Gezgin Çocuk)',
+    speakerName: 'Leo (Gezgin Arkadaş)',
     speakerExpression: 'Good night!',
     speakerTurkish: 'İyi geceler!',
     narrationText:
@@ -135,6 +91,7 @@ const SCENE_CONFIGS: SceneStepConfig[] = [
 interface DenizCharacterProps {
   action: 'walk_square' | 'turn_to_leo' | 'greet_hello' | 'walk_threshold' | 'farewell_night' | 'walk_away_left' | 'idle';
   isSpeaking: boolean;
+  isWavingProminently?: boolean;
 }
 
 /**
@@ -142,24 +99,22 @@ interface DenizCharacterProps {
  * Görünüm: Mevcut kampüs karakteriyle birebir uyumlu
  * (Turkuaz yelek, Selçuklu sekizgen yıldız rozeti, beyaz gömlek, mavi pantolon, sırt çantası, kahverengi saç)
  */
-function DenizCharacter({ action, isSpeaking }: DenizCharacterProps) {
+function DenizCharacter({ action, isSpeaking, isWavingProminently }: DenizCharacterProps) {
   const isWalking =
     action === 'walk_square' ||
     action === 'walk_threshold' ||
     action === 'walk_away_left';
 
   const isBackView = action === 'walk_threshold';
-  const isWaving = action === 'greet_hello' || action === 'farewell_night';
+  const isWaving = action === 'greet_hello' || action === 'farewell_night' || isWavingProminently;
   const isFacingRight = action === 'turn_to_leo';
 
   return (
     <div
       className={`relative flex flex-col items-center select-none transition-transform duration-700 ${
-        action === 'walk_square'
-          ? 'translate-x-0'
-          : action === 'walk_away_left'
-            ? '-translate-x-32 opacity-0'
-            : 'translate-x-0'
+        action === 'walk_away_left'
+          ? '-translate-x-48 opacity-0'
+          : 'translate-x-0 opacity-100'
       }`}
     >
       {/* Karakter İsim Rozeti */}
@@ -183,7 +138,7 @@ function DenizCharacter({ action, isSpeaking }: DenizCharacterProps) {
             className={isWalking ? 'animate-pulse' : ''}
           />
 
-          {/* Ayaklar ve Ayakkabılar (Yürüme adımları veya sabit duruş) */}
+          {/* Ayaklar ve Ayakkabılar (Belirgin yürüyüş adımları) */}
           <g className={isWalking ? 'deniz-walk-legs' : ''}>
             {/* Sol Bacak & Ayak */}
             <rect
@@ -246,7 +201,7 @@ function DenizCharacter({ action, isSpeaking }: DenizCharacterProps) {
               {/* Beyaz Gömlek Orta Şeridi */}
               <rect x="42" y="48" width="16" height="42" fill="#f8fafc" />
               <path d="M 50,48 L 50,90" stroke="#cbd5e1" strokeWidth="1.5" />
-              {/* Kırmızı/Bordo Kravat & Yaka İpi */}
+              {/* Kırmızı Kravat */}
               <path d="M 48,50 L 50,62 L 52,50 Z" fill="#b91c1c" />
               {/* Selçuklu Sekizgen Altın Yıldız Rozeti */}
               <circle cx="40" cy="62" r="3.5" fill="#f59e0b" stroke="#b45309" strokeWidth="1" />
@@ -256,26 +211,32 @@ function DenizCharacter({ action, isSpeaking }: DenizCharacterProps) {
             </g>
           )}
 
-          {/* Kollar: El Sallama veya Yürüme Hareketi */}
+          {/* Kollar: Görünür El Sallama veya Yürüme Hareketi */}
           {isWaving ? (
-            <g className="animate-pulse">
+            <g>
+              {/* Sol Kol Dinlenmede */}
               <path
-                d="M 32,54 Q 20,68 22,82"
+                d="M 32,54 Q 22,68 24,82"
                 stroke="#0e768a"
                 strokeWidth="6"
                 strokeLinecap="round"
                 fill="none"
               />
-              <circle cx="22" cy="82" r="4" fill="#fbcfe8" />
-              {/* Havaya Kalkan ve Sallanan Kol */}
-              <path
-                d="M 68,54 Q 84,36 82,20"
-                stroke="#0e768a"
-                strokeWidth="6.5"
-                strokeLinecap="round"
-                fill="none"
-              />
-              <circle cx="82" cy="20" r="4.5" fill="#fbcfe8" />
+              <circle cx="24" cy="82" r="4" fill="#fbcfe8" />
+              {/* Sağ Kol: Görünür Biçimde Sallanan El */}
+              <g className="deniz-wave-arm">
+                <path
+                  d="M 68,54 Q 84,36 82,18"
+                  stroke="#0e768a"
+                  strokeWidth="6.5"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                <g className="deniz-wave-hand">
+                  <circle cx="82" cy="18" r="5" fill="#fbcfe8" />
+                  <path d="M 80,16 L 80,11 M 82,16 L 83,10 M 85,17 L 87,12" stroke="#fbcfe8" strokeWidth="1.8" strokeLinecap="round" />
+                </g>
+              </g>
             </g>
           ) : isWalking ? (
             <g>
@@ -301,7 +262,7 @@ function DenizCharacter({ action, isSpeaking }: DenizCharacterProps) {
             </g>
           ) : (
             <g>
-              {/* Bekleme / Duruş Hali */}
+              {/* Duruş Hali */}
               <path
                 d="M 32,54 Q 24,70 26,84"
                 stroke="#0e768a"
@@ -327,40 +288,25 @@ function DenizCharacter({ action, isSpeaking }: DenizCharacterProps) {
 
           {/* Saç: Kahverengi Çocuk Saçı */}
           {isBackView ? (
-            <path
-              d="M 32,28 Q 50,8 68,28 Q 50,42 32,28 Z"
-              fill="#451a03"
-            />
+            <path d="M 32,28 Q 50,8 68,28 Q 50,42 32,28 Z" fill="#451a03" />
           ) : (
             <g>
-              <path
-                d="M 32,26 Q 50,8 68,26 Q 50,18 32,26 Z"
-                fill="#451a03"
-              />
+              <path d="M 32,26 Q 50,8 68,26 Q 50,18 32,26 Z" fill="#451a03" />
               <circle cx="34" cy="24" r="5" fill="#451a03" />
               <circle cx="66" cy="24" r="5" fill="#451a03" />
             </g>
           )}
 
-          {/* Yüz Hatları (Sadece ön ve yan görüşte) */}
+          {/* Yüz Hatları */}
           {!isBackView && (
             <g>
-              {/* Gözler */}
               <circle cx="44" cy="28" r="2.2" fill="#0f172a" />
               <circle cx="56" cy="28" r="2.2" fill="#0f172a" />
-              {/* Ağız (Konuşurken hareketli) */}
               {isSpeaking ? (
                 <ellipse cx="50" cy="35" rx="3.5" ry="3" fill="#b91c1c" className="animate-pulse" />
               ) : (
-                <path
-                  d="M 45,34 Q 50,39 55,34"
-                  stroke="#b91c1c"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  fill="none"
-                />
+                <path d="M 45,34 Q 50,39 55,34" stroke="#b91c1c" strokeWidth="2" strokeLinecap="round" fill="none" />
               )}
-              {/* Gülümseyen Yanak Parıltıları */}
               <ellipse cx="40" cy="32" rx="3" ry="1.5" fill="#f43f5e" opacity="0.35" />
               <ellipse cx="60" cy="32" rx="3" ry="1.5" fill="#f43f5e" opacity="0.35" />
             </g>
@@ -374,24 +320,27 @@ function DenizCharacter({ action, isSpeaking }: DenizCharacterProps) {
 interface TouristKidProps {
   action: 'stand_with_map' | 'greet_hello' | 'walk_threshold' | 'farewell_night' | 'walk_away_right' | 'idle';
   isSpeaking: boolean;
+  isWavingProminently?: boolean;
 }
 
 /**
  * Yabancı Turist Çocuk (Leo)
  * Görünüm: Yaşıt yabancı turist çocuk, kâşif şapkası, bej/turuncu gezgin kıyafeti,
- * ve elinde küçük mavi-beyaz katlanmış gezi haritası tutar.
+ * elinde katlanmış gezi haritası tutar.
  */
-function TouristKid({ action, isSpeaking }: TouristKidProps) {
+function TouristKid({ action, isSpeaking, isWavingProminently }: TouristKidProps) {
   const isWalking =
     action === 'walk_threshold' || action === 'walk_away_right';
 
   const isBackView = action === 'walk_threshold';
-  const isWaving = action === 'greet_hello' || action === 'farewell_night';
+  const isWaving = action === 'greet_hello' || action === 'farewell_night' || isWavingProminently;
 
   return (
     <div
       className={`relative flex flex-col items-center select-none transition-transform duration-700 ${
-        action === 'walk_away_right' ? 'translate-x-32 opacity-0' : 'translate-x-0'
+        action === 'walk_away_right'
+          ? 'translate-x-48 opacity-0'
+          : 'translate-x-0 opacity-100'
       }`}
     >
       {/* Karakter İsim Rozeti */}
@@ -413,26 +362,35 @@ function TouristKid({ action, isSpeaking }: TouristKidProps) {
             className={isWalking ? 'animate-pulse' : ''}
           />
 
-          {/* Ayaklar ve Ayakkabılar */}
+          {/* Ayaklar ve Ayakkabılar (Belirgin adımlar) */}
           <g className={isWalking ? 'leo-walk-legs' : ''}>
-            <rect x="36" y="108" width="10" height="20" rx="4" fill="#475569" />
+            <rect x="36" y="108" width="10" height="20" rx="4" fill="#475569" className={isWalking ? 'leo-left-leg' : ''} />
             <ellipse cx="40" cy="129" rx="7" ry="4" fill="#1e293b" />
-            <rect x="54" y="108" width="10" height="20" rx="4" fill="#475569" />
+            <rect x="54" y="108" width="10" height="20" rx="4" fill="#475569" className={isWalking ? 'leo-right-leg' : ''} />
             <ellipse cx="58" cy="129" rx="7" ry="4" fill="#1e293b" />
           </g>
 
-          {/* Gezgin Şortu / Pantolonu */}
+          {/* Gezgin Şortu */}
           <rect x="34" y="86" width="32" height="26" rx="4" fill="#78716c" />
           <path d="M 50,96 L 50,112" stroke="#44403c" strokeWidth="1.5" />
 
           {/* Gövde ve Kıyafet (Turuncu Macera Tişörtü ve Bej Yelek) */}
-          <rect x="32" y="48" width="36" height="42" rx="6" fill="#f97316" />
-          {/* Bej Yelek Yanları */}
-          <path d="M 32,48 L 42,48 L 40,90 L 32,90 Z" fill="#d6d3d1" />
-          <path d="M 68,48 L 58,48 L 60,90 L 68,90 Z" fill="#d6d3d1" />
-          <path d="M 50,48 L 50,90" stroke="#ea580c" strokeWidth="1.5" />
+          {isBackView ? (
+            <g>
+              <rect x="32" y="48" width="36" height="42" rx="6" fill="#d6d3d1" />
+              <rect x="38" y="52" width="24" height="28" rx="4" fill="#a8a29e" />
+              <path d="M 44,52 L 44,80 M 56,52 L 56,80" stroke="#78716c" strokeWidth="2" />
+            </g>
+          ) : (
+            <g>
+              <rect x="32" y="48" width="36" height="42" rx="6" fill="#f97316" />
+              <path d="M 32,48 L 42,48 L 40,90 L 32,90 Z" fill="#d6d3d1" />
+              <path d="M 68,48 L 58,48 L 60,90 L 68,90 Z" fill="#d6d3d1" />
+              <path d="M 50,48 L 50,90" stroke="#ea580c" strokeWidth="1.5" />
+            </g>
+          )}
 
-          {/* Sol Kol: ELİNDE GEZİ HARİTASI TUTAR 🗺️ */}
+          {/* Sol Kol: ELİNDE GEZİ HARİTASI TUTAR */}
           <g>
             <path
               d="M 32,54 Q 20,68 28,76"
@@ -443,36 +401,20 @@ function TouristKid({ action, isSpeaking }: TouristKidProps) {
             />
             <circle cx="28" cy="76" r="3.8" fill="#fed7aa" />
 
-            {/* AÇIK GEZİ HARİTASI (Illustrated Travel Map) */}
-            <g transform="translate(14, 66) rotate(-12)">
-              {/* Harita Kağıdı */}
-              <rect
-                x="0"
-                y="0"
-                width="20"
-                height="15"
-                rx="1.5"
-                fill="#f8fafc"
-                stroke="#0284c7"
-                strokeWidth="1.2"
-              />
-              {/* Harita Katlama ve Rota Çizgileri */}
-              <path d="M 7,0 L 7,15 M 13,0 L 13,15" stroke="#bae6fd" strokeWidth="0.8" />
-              <path
-                d="M 3,4 Q 8,10 16,5"
-                stroke="#e11d48"
-                strokeWidth="1.2"
-                strokeLinecap="round"
-                fill="none"
-              />
-              {/* Minik Pusula / Yıldız İkonu */}
-              <circle cx="16" cy="11" r="2" fill="#f59e0b" />
-            </g>
+            {/* AÇIK GEZİ HARİTASI */}
+            {!isBackView && (
+              <g transform="translate(14, 66) rotate(-12)">
+                <rect x="0" y="0" width="18" height="14" rx="1.5" fill="#f8fafc" stroke="#0284c7" strokeWidth="1.2" />
+                <path d="M 3,4 Q 9,2 15,4 M 3,7 Q 9,9 15,7 M 3,10 Q 9,8 15,10" stroke="#38bdf8" strokeWidth="1" fill="none" />
+                <circle cx="8" cy="7" r="1.5" fill="#ef4444" />
+                <circle cx="13" cy="5" r="1" fill="#f59e0b" />
+              </g>
+            )}
           </g>
 
-          {/* Sağ Kol: El Sallama veya Normal Duruş */}
+          {/* Sağ Kol: Görünür El Sallama */}
           {isWaving ? (
-            <g className="animate-pulse">
+            <g className="leo-wave-arm">
               <path
                 d="M 68,54 Q 84,36 82,18"
                 stroke="#f97316"
@@ -480,29 +422,33 @@ function TouristKid({ action, isSpeaking }: TouristKidProps) {
                 strokeLinecap="round"
                 fill="none"
               />
-              <circle cx="82" cy="18" r="4.5" fill="#fed7aa" />
+              <g className="leo-wave-hand">
+                <circle cx="82" cy="18" r="5" fill="#fed7aa" />
+                <path d="M 80,16 L 80,11 M 82,16 L 83,10 M 85,17 L 87,12" stroke="#fed7aa" strokeWidth="1.8" strokeLinecap="round" />
+              </g>
             </g>
           ) : isWalking ? (
             <g>
               <path
-                d="M 68,54 Q 78,70 72,86"
+                d="M 68,54 Q 78,70 74,86"
                 stroke="#f97316"
                 strokeWidth="6"
                 strokeLinecap="round"
                 fill="none"
+                className="leo-right-arm"
               />
-              <circle cx="72" cy="86" r="4" fill="#fed7aa" />
+              <circle cx="74" cy="86" r="4" fill="#fed7aa" />
             </g>
           ) : (
             <g>
               <path
-                d="M 68,54 Q 76,68 74,82"
+                d="M 68,54 Q 76,70 74,84"
                 stroke="#f97316"
                 strokeWidth="6"
                 strokeLinecap="round"
                 fill="none"
               />
-              <circle cx="74" cy="82" r="4" fill="#fed7aa" />
+              <circle cx="74" cy="84" r="4" fill="#fed7aa" />
             </g>
           )}
 
@@ -510,40 +456,30 @@ function TouristKid({ action, isSpeaking }: TouristKidProps) {
           <rect x="44" y="40" width="12" height="10" fill="#fed7aa" />
           <circle cx="50" cy="28" r="17" fill="#fed7aa" />
 
-          {/* Sarı / Kumral Saç */}
-          <path d="M 32,26 Q 50,8 68,26 Q 50,16 32,26 Z" fill="#d97706" />
+          {/* KÂŞİF VE SAFARİ ŞAPKASI */}
+          <g>
+            <ellipse cx="50" cy="22" rx="23" ry="5.5" fill="#b45309" />
+            <path d="M 33,22 Q 50,7 67,22 Z" fill="#d97706" />
+            <rect x="36" y="18" width="28" height="4" fill="#92400e" rx="1" />
+            <circle cx="50" cy="19" r="1.5" fill="#fef08a" />
+          </g>
 
-          {/* Kâşif Gezgin Şapkası (Safari Sun Hat) */}
-          <ellipse
-            cx="50"
-            cy="18"
-            rx="24"
-            ry="7"
-            fill="#fde047"
-            stroke="#ca8a04"
-            strokeWidth="1.8"
-          />
-          <path d="M 36,18 Q 50,2 64,18 Z" fill="#eab308" />
-          <rect x="36" y="16" width="28" height="3" fill="#b45309" />
+          {/* Sarı/Kumral Çocuk Saçı Uçları */}
+          <path d="M 31,24 Q 28,32 33,36" stroke="#ca8a04" strokeWidth="2.5" fill="none" />
+          <path d="M 69,24 Q 72,32 67,36" stroke="#ca8a04" strokeWidth="2.5" fill="none" />
 
-          {/* Yüz Hatları (Gözler, gülümseme) */}
+          {/* Yüz Hatları */}
           {!isBackView && (
             <g>
-              <circle cx="44" cy="28" r="2.2" fill="#0f172a" />
-              <circle cx="56" cy="28" r="2.2" fill="#0f172a" />
+              <circle cx="44" cy="30" r="2.2" fill="#0f172a" />
+              <circle cx="56" cy="30" r="2.2" fill="#0f172a" />
               {isSpeaking ? (
-                <ellipse cx="50" cy="35" rx="3.5" ry="3" fill="#b91c1c" className="animate-pulse" />
+                <ellipse cx="50" cy="37" rx="3.5" ry="3" fill="#ea580c" className="animate-pulse" />
               ) : (
-                <path
-                  d="M 45,34 Q 50,39 55,34"
-                  stroke="#b91c1c"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  fill="none"
-                />
+                <path d="M 45,36 Q 50,40 55,36" stroke="#ea580c" strokeWidth="2" strokeLinecap="round" fill="none" />
               )}
-              <ellipse cx="40" cy="32" rx="3" ry="1.5" fill="#f43f5e" opacity="0.35" />
-              <ellipse cx="60" cy="32" rx="3" ry="1.5" fill="#f43f5e" opacity="0.35" />
+              <ellipse cx="40" cy="33" rx="2.5" ry="1.2" fill="#f97316" opacity="0.3" />
+              <ellipse cx="60" cy="33" rx="2.5" ry="1.2" fill="#f97316" opacity="0.3" />
             </g>
           )}
         </svg>
@@ -553,34 +489,72 @@ function TouristKid({ action, isSpeaking }: TouristKidProps) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                       ANA MACERA GÖRÜNÜM BİLEŞENİ                          */
+/*                 SELÇUKLU TAÇ KAPI ANITSAL TAŞ EŞİĞİ                       */
 /* -------------------------------------------------------------------------- */
 
-export function Grade3SmartBoardAdventureView({
-  onExitToClassroom,
-}: Grade3SmartBoardAdventureViewProps) {
+function SeljukStoneThreshold({ isCrossing }: { isCrossing: boolean }) {
+  return (
+    <div
+      className={`absolute left-1/2 -translate-x-1/2 bottom-[90px] sm:bottom-[110px] z-10 flex flex-col items-center pointer-events-none transition-all duration-1000 ${
+        isCrossing ? 'opacity-100 scale-105' : 'opacity-85 scale-95'
+      }`}
+    >
+      {/* Taş Eşik Etiketi */}
+      <div className="mb-1.5 px-3 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-950/85 text-amber-300 border border-amber-500/50 shadow-lg backdrop-blur-xs flex items-center gap-1.5">
+        <Footprints className="w-3.5 h-3.5 text-amber-400" />
+        <span>Selçuklu Taç Kapı Taş Eşiği</span>
+      </div>
+
+      {/* 3D Taş Eşik Çizimi */}
+      <svg viewBox="0 0 260 36" className="w-64 sm:w-80 drop-shadow-[0_12px_20px_rgba(0,0,0,0.85)]">
+        {/* Eşik Altı Derin Gölge */}
+        <rect x="8" y="26" width="244" height="10" rx="3" fill="rgba(0,0,0,0.7)" />
+
+        {/* Taş Eşik Ön Yüzü (Yükselti) */}
+        <polygon points="10,16 250,16 245,30 15,30" fill="#78552b" stroke="#452a0d" strokeWidth="1.2" />
+
+        {/* Taş Eşik Üst Basma Yüzeyi (Ayakların Bastığı ve Aştığı Taş Blok) */}
+        <polygon points="22,4 238,4 250,16 10,16" fill="#d4b584" stroke="#8c6836" strokeWidth="1.5" />
+
+        {/* Taş Eşik Üst Kenar Işık Yansıması */}
+        <line x1="12" y1="16" x2="248" y2="16" stroke="#fef3c7" strokeWidth="2.2" strokeLinecap="round" />
+
+        {/* Selçuklu Taş Derzleri */}
+        <line x1="65" y1="4" x2="60" y2="30" stroke="#5c3d18" strokeWidth="1.2" opacity="0.65" />
+        <line x1="130" y1="4" x2="130" y2="30" stroke="#5c3d18" strokeWidth="1.5" opacity="0.75" />
+        <line x1="195" y1="4" x2="200" y2="30" stroke="#5c3d18" strokeWidth="1.2" opacity="0.65" />
+
+        {/* Eşik Üstü Tarihi Aşınma İzi */}
+        <ellipse cx="130" cy="11" rx="45" ry="3.5" fill="#fae8b4" opacity="0.55" />
+      </svg>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                         ANA MACERA BİLEŞENİ                                */
+/* -------------------------------------------------------------------------- */
+
+export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3SmartBoardAdventureViewProps) {
   const campus = useOptionalCampus();
 
-  // Sahne Adımı (0: Meydandan Kapıya, 1: Karşılaşma, 2: Kapıdan Giriş, 3: Avluda Vedalaşma, 4: Tamamlandı)
-  const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
+  // Sahne ve Akış Durumları
+  const [currentSceneIndex, setCurrentSceneIndex] = useState<number>(0);
+  const [subPhase, setSubPhase] = useState<'approach' | 'dialogue' | 'threshold_crossing' | 'waving' | 'departing'>('approach');
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ text: string; isError: boolean } | null>(null);
-  const [isLocked, setIsLocked] = useState(false);
-  const isLockedRef = useRef(false);
+  const [isLocked, setIsLocked] = useState<boolean>(false);
+  const isLockedRef = useRef<boolean>(false);
 
-  // Ses Durumu
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [speakingRole, setSpeakingRole] = useState<'leo' | 'deniz' | null>(null);
-
-  // Animasyon Durumları
+  // Karakter Eylemleri
   const [denizAction, setDenizAction] = useState<DenizCharacterProps['action']>('walk_square');
   const [leoAction, setLeoAction] = useState<TouristKidProps['action']>('stand_with_map');
 
-  // Zamanlayıcı referansı
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // Seslendirme
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [speakingRole, setSpeakingRole] = useState<'deniz' | 'leo' | null>(null);
 
-  const currentConfig = SCENE_CONFIGS[currentSceneIndex] ?? SCENE_CONFIGS[0];
-  const isCompletedScene = currentSceneIndex >= SCENE_CONFIGS.length;
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -589,20 +563,23 @@ export function Grade3SmartBoardAdventureView({
     }
   }, []);
 
-  // Web Speech API ile Çocuk Dostu Telaffuz Sentezi
+  const isCompletedScene = currentSceneIndex >= SCENE_CONFIGS.length;
+  const currentConfig = !isCompletedScene ? SCENE_CONFIGS[currentSceneIndex] : SCENE_CONFIGS[0];
+
+  // Web Speech API ile İngilizce Doğal Seslendirme
   const playSpeech = useCallback(
-    (text: string, speaker: 'leo' | 'deniz', speed: 'normal' | 'slow' = 'normal') => {
+    (text: string, role: 'deniz' | 'leo', speed: 'normal' | 'slow' = 'normal') => {
       if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
       try {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
-        utterance.rate = speed === 'slow' ? 0.65 : speaker === 'leo' ? 0.85 : 0.9;
-        utterance.pitch = speaker === 'leo' ? 1.25 : 1.15;
+        utterance.rate = speed === 'slow' ? 0.65 : 0.85;
+        utterance.pitch = role === 'deniz' ? 1.15 : 1.1;
 
         setIsSpeaking(true);
-        setSpeakingRole(speaker);
+        setSpeakingRole(role);
 
         utterance.onend = () => {
           setIsSpeaking(false);
@@ -622,51 +599,42 @@ export function Grade3SmartBoardAdventureView({
     [],
   );
 
-  // Sahne Başlangıç Animasyonları ve Karakter Davranışları
+  // Sahne 1 Açılışı: Deniz Meydandan Yürür, Kapının Önünde Durup Leo'ya Döner
   useEffect(() => {
     if (isCompletedScene) return;
-
     clearTimer();
 
-    if (currentConfig.id === 'scene1_arrival') {
+    if (currentSceneIndex === 0) {
+      // 1. Aşama: Meydanda Belirgin Adımlarla Taç Kapıya Yürüyüş
       const tInit = setTimeout(() => {
+        setSubPhase('approach');
         setDenizAction('walk_square');
         setLeoAction('stand_with_map');
       }, 0);
 
-      const tWalk = setTimeout(() => {
-        setDenizAction('turn_to_leo');
-      }, 1500);
-
-      return () => {
-        clearTimeout(tInit);
-        clearTimeout(tWalk);
-      };
-    } else if (currentConfig.id === 'scene2_meeting') {
-      const tInit = setTimeout(() => {
+      // 2.4 saniye sonra kapının önüne varış, duruş ve Leo'ya dönüş
+      const tArrival = setTimeout(() => {
+        setSubPhase('dialogue');
         setDenizAction('turn_to_leo');
         setLeoAction('greet_hello');
-      }, 0);
 
-      const tLeoGreet = setTimeout(() => {
-        playSpeech('Hello!', 'leo', 'normal');
-      }, 600);
+        // Leo'nun "Hello!" konuşması
+        const tLeo = setTimeout(() => {
+          playSpeech('Hello!', 'leo', 'normal');
+        }, 500);
 
-      return () => {
-        clearTimeout(tInit);
-        clearTimeout(tLeoGreet);
-      };
-    } else if (currentConfig.id === 'scene3_entry') {
-      const tInit = setTimeout(() => {
-        setDenizAction('walk_threshold');
-        setLeoAction('walk_threshold');
-      }, 0);
+        timerRef.current = tLeo;
+      }, 2400);
 
       return () => {
         clearTimeout(tInit);
+        clearTimeout(tArrival);
+        clearTimer();
       };
-    } else if (currentConfig.id === 'scene4_farewell') {
+    } else if (currentSceneIndex === 1) {
+      // 2. Sahne Açılışı: Avluda Vedalaşma (Gece Işığı)
       const tInit = setTimeout(() => {
+        setSubPhase('dialogue');
         setDenizAction('idle');
         setLeoAction('farewell_night');
       }, 0);
@@ -678,18 +646,19 @@ export function Grade3SmartBoardAdventureView({
       return () => {
         clearTimeout(tInit);
         clearTimeout(tLeoNight);
+        clearTimer();
       };
     }
-  }, [currentSceneIndex, currentConfig.id, isCompletedScene, playSpeech, clearTimer]);
+  }, [currentSceneIndex, isCompletedScene, playSpeech, clearTimer]);
 
-  // Öğrencinin Cevap / Aksiyon Seçimi
+  // Öğrencinin Cevap Seçimi
   const handleSelectOption = (option: { id: string; text: string; isCorrect: boolean }) => {
     if (isLockedRef.current) return;
 
     setSelectedOptionId(option.id);
 
     if (option.isCorrect) {
-      // Doğru Seçim!
+      // DOĞRU SEÇİM
       isLockedRef.current = true;
       setIsLocked(true);
       clearTimer();
@@ -699,43 +668,49 @@ export function Grade3SmartBoardAdventureView({
         isError: false,
       });
 
-      // Sahneye göre seslendirme ve karakter jesti
-      if (currentConfig.id === 'scene1_arrival') {
-        setDenizAction('turn_to_leo');
-        timerRef.current = setTimeout(() => {
-          advanceToNextScene();
-        }, 1200);
-      } else if (currentConfig.id === 'scene2_meeting') {
+      if (currentSceneIndex === 0) {
+        // --- 1. SAHNE: "Hello!" Karşılaşması ve Taş Eşik Geçişi ---
         setDenizAction('greet_hello');
         playSpeech('Hello!', 'deniz', 'normal');
         setLeoAction('greet_hello');
 
+        // Konuşma bittikten sonra: Kamera ikisini takip eder, taş eşiği ayaklarıyla geçerler
         timerRef.current = setTimeout(() => {
-          advanceToNextScene();
-        }, 1800);
-      } else if (currentConfig.id === 'scene3_entry') {
-        setDenizAction('walk_threshold');
-        setLeoAction('walk_threshold');
+          setSubPhase('threshold_crossing');
+          setDenizAction('walk_threshold');
+          setLeoAction('walk_threshold');
 
-        timerRef.current = setTimeout(() => {
-          advanceToNextScene();
-        }, 1600);
-      } else if (currentConfig.id === 'scene4_farewell') {
+          // Çocuklar eşiği geçtikten sonra (3.4s) avluya geçiş
+          timerRef.current = setTimeout(() => {
+            advanceToNextScene();
+          }, 3400);
+        }, 1500);
+      } else if (currentSceneIndex === 1) {
+        // --- 2. SAHNE: "Good night!" Vedalaşması, Görünür El Sallama ve Ayrılış ---
         setDenizAction('farewell_night');
         playSpeech('Good night!', 'deniz', 'normal');
 
+        // Karşılıklı "Good night!" dedikten sonra elleri görünür biçimde sallanır
         timerRef.current = setTimeout(() => {
-          // İki çocuk ayrı yönlere yürüyerek sahneden ayrılır
-          setDenizAction('walk_away_left');
-          setLeoAction('walk_away_right');
+          setSubPhase('waving');
+          setDenizAction('farewell_night');
+          setLeoAction('farewell_night');
 
+          // Görünür el sallama sonrası: İki çocuk adım atarak ayrı yönlerden kadrajdan çıkar
           timerRef.current = setTimeout(() => {
-            advanceToNextScene();
-          }, 1800);
-        }, 1400);
+            setSubPhase('departing');
+            setDenizAction('walk_away_left');
+            setLeoAction('walk_away_right');
+
+            // Başarı ekranı ayrılış tamamlanınca açılır (2.4s)
+            timerRef.current = setTimeout(() => {
+              advanceToNextScene();
+            }, 2400);
+          }, 1600);
+        }, 1200);
       }
     } else {
-      // Yanlış Seçim: Cezasız pedagojik ipucu
+      // YANLIŞ SEÇİM: Cezasız pedagojik ipucu
       setFeedback({
         text: currentConfig.wrongHint,
         isError: true,
@@ -750,7 +725,7 @@ export function Grade3SmartBoardAdventureView({
     }
   };
 
-  // Sonraki Sahneye Geçiş
+  // Sonraki Sahneye veya Başarı Ekranına Geçiş
   const advanceToNextScene = () => {
     clearTimer();
     setSelectedOptionId(null);
@@ -781,6 +756,7 @@ export function Grade3SmartBoardAdventureView({
   const handleRestart = () => {
     clearTimer();
     setCurrentSceneIndex(0);
+    setSubPhase('approach');
     setSelectedOptionId(null);
     setFeedback(null);
     setIsLocked(false);
@@ -789,7 +765,7 @@ export function Grade3SmartBoardAdventureView({
     setLeoAction('stand_with_map');
   };
 
-  // Sayfadan çıkışta sesi durdur
+  // Sayfadan çıkışta temizlik
   useEffect(() => {
     return () => {
       clearTimer();
@@ -801,19 +777,19 @@ export function Grade3SmartBoardAdventureView({
 
   return (
     <div className="relative w-full h-full min-h-[600px] flex flex-col bg-[#0b1424] text-white select-none overflow-hidden font-sans">
-      {/* İÇ CSS ANİMASYONLARI (Gerçekçi Yürüme ve El Sallama Döngüleri) */}
+      {/* İÇ CSS ANİMASYONLARI (Gerçekçi Yürüme, Taş Eşik Geçişi ve El Sallama Döngüleri) */}
       <style>{`
         @keyframes denizLegLeft {
           0%, 100% { transform: rotate(0deg); }
-          50% { transform: rotate(18deg) translateY(-2px); }
+          50% { transform: rotate(24deg) translateY(-3px); }
         }
         @keyframes denizLegRight {
           0%, 100% { transform: rotate(0deg); }
-          50% { transform: rotate(-18deg) translateY(-2px); }
+          50% { transform: rotate(-24deg) translateY(-3px); }
         }
         @keyframes denizArmSwing {
           0%, 100% { transform: rotate(0deg); }
-          50% { transform: rotate(20deg); }
+          50% { transform: rotate(24deg); }
         }
         .deniz-left-leg {
           transform-origin: 41px 108px;
@@ -831,12 +807,71 @@ export function Grade3SmartBoardAdventureView({
           transform-origin: 68px 54px;
           animation: denizArmSwing 0.5s ease-in-out infinite reverse;
         }
-        @keyframes cameraZoomThreshold {
-          0% { transform: scale(1); }
-          100% { transform: scale(1.08) translateY(2%); }
+        @keyframes leoLegLeft {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(-22deg) translateY(-3px); }
         }
-        .camera-zoom-active {
-          animation: cameraZoomThreshold 4s ease-out forwards;
+        @keyframes leoLegRight {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(22deg) translateY(-3px); }
+        }
+        .leo-left-leg {
+          transform-origin: 41px 108px;
+          animation: leoLegLeft 0.5s ease-in-out infinite;
+        }
+        .leo-right-leg {
+          transform-origin: 59px 108px;
+          animation: leoLegRight 0.5s ease-in-out infinite;
+        }
+        .leo-right-arm {
+          transform-origin: 68px 54px;
+          animation: denizArmSwing 0.5s ease-in-out infinite;
+        }
+        @keyframes waveArmMotion {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(-32deg); }
+        }
+        @keyframes waveHandMotion {
+          0%, 100% { transform: rotate(-20deg); }
+          50% { transform: rotate(25deg); }
+        }
+        .deniz-wave-arm {
+          transform-origin: 68px 54px;
+          animation: waveArmMotion 0.65s ease-in-out infinite;
+        }
+        .deniz-wave-hand {
+          transform-origin: 82px 18px;
+          animation: waveHandMotion 0.32s ease-in-out infinite;
+        }
+        .leo-wave-arm {
+          transform-origin: 68px 54px;
+          animation: waveArmMotion 0.65s ease-in-out infinite;
+        }
+        .leo-wave-hand {
+          transform-origin: 82px 18px;
+          animation: waveHandMotion 0.32s ease-in-out infinite;
+        }
+        @keyframes cameraZoomPortal {
+          0% { transform: scale(1); }
+          100% { transform: scale(1.18) translateY(4%); }
+        }
+        .camera-zoom-portal-active {
+          animation: cameraZoomPortal 3.8s ease-out forwards;
+        }
+        @keyframes walkAcrossSquare {
+          0% { transform: translateX(-160px); }
+          100% { transform: translateX(0px); }
+        }
+        .deniz-walk-across {
+          animation: walkAcrossSquare 2.4s ease-out forwards;
+        }
+        @keyframes stepThroughThreshold {
+          0% { transform: translateY(40px) scale(1); }
+          50% { transform: translateY(0px) scale(0.92); }
+          100% { transform: translateY(-40px) scale(0.82); opacity: 0.85; }
+        }
+        .children-cross-threshold {
+          animation: stepThroughThreshold 3.4s ease-in-out forwards;
         }
       `}</style>
 
@@ -896,38 +931,33 @@ export function Grade3SmartBoardAdventureView({
             className={`absolute inset-0 transition-colors duration-1000 ${
               isCompletedScene || currentConfig.timeOfDay === 'night'
                 ? 'bg-gradient-to-b from-[#060c18] via-[#0f1d38] to-[#18294a]'
-                : currentConfig.timeOfDay === 'golden_hour'
-                  ? 'bg-gradient-to-b from-[#d97706]/40 via-[#f59e0b]/20 to-[#fed7aa]/30'
-                  : 'bg-gradient-to-b from-[#7dd3fc]/40 via-[#bae6fd]/25 to-[#fef08a]/20'
+                : 'bg-gradient-to-b from-[#7dd3fc]/40 via-[#bae6fd]/25 to-[#fef08a]/20'
             }`}
           />
 
-          {/* Sultanhanı Kervansarayı Arka Plan Görseli (Dış Cephe & İç Avlu Geçişi) */}
+          {/* Sultanhanı Kervansarayı Arka Plan Görseli (Dış Cephe & Eşik Geçişi Sonrası İç Avlu) */}
           <img
             src={
-              currentConfig.id === 'scene3_entry' || currentConfig.id === 'scene4_farewell' || isCompletedScene
+              currentSceneIndex === 1 || isCompletedScene
                 ? '/assets/walkable/sultanhani_inner_courtyard.jpg'
                 : '/assets/walkable/sultanhani_caravanserai.jpg'
             }
             alt="Aksaray Sultanhanı Kervansarayı Taç Kapısı ve Avlusu"
             className={`w-full h-full object-cover object-center transition-all duration-1000 ${
-              currentConfig.id === 'scene3_entry'
-                ? 'camera-zoom-active'
-                : currentConfig.id === 'scene4_farewell' || isCompletedScene
+              subPhase === 'threshold_crossing'
+                ? 'camera-zoom-portal-active'
+                : currentSceneIndex === 1 || isCompletedScene
                   ? 'brightness-50 contrast-110 saturate-80'
                   : 'brightness-95 contrast-105'
             }`}
           />
 
-          {/* Gece Vakti Parlayan Ay ve Yıldızlar (4. Sahne) */}
+          {/* Gece Vakti Parlayan Ay ve Yıldızlar (2. Sahne) */}
           {(isCompletedScene || currentConfig.timeOfDay === 'night') && (
             <div className="absolute inset-0 z-1 pointer-events-none animate-in fade-in duration-700">
-              {/* Parlayan Hilal Ay */}
               <div className="absolute top-6 right-16 w-12 h-12 rounded-full bg-amber-200/90 shadow-[0_0_35px_#fde68a] flex items-center justify-center">
                 <Moon className="w-8 h-8 text-amber-50 fill-amber-100" />
               </div>
-
-              {/* Işıltılı Yıldızlar */}
               <div className="absolute top-10 left-12 w-2 h-2 rounded-full bg-white animate-ping opacity-75" />
               <div className="absolute top-16 left-1/4 w-1.5 h-1.5 rounded-full bg-amber-200 animate-pulse" />
               <div className="absolute top-8 left-1/2 w-2 h-2 rounded-full bg-white opacity-80" />
@@ -936,19 +966,19 @@ export function Grade3SmartBoardAdventureView({
             </div>
           )}
 
-          {/* Sabah Güneşi Işık Huzmesi Katmanı (Sahne 1 & 2) */}
-          {(currentConfig.timeOfDay === 'morning' || currentConfig.timeOfDay === 'daylight') && !isCompletedScene && (
+          {/* Sabah Güneşi Işık Huzmesi (1. Sahne) */}
+          {currentConfig.timeOfDay === 'daylight' && !isCompletedScene && (
             <div className="absolute inset-0 pointer-events-none bg-radial from-amber-300/15 via-transparent to-transparent opacity-80" />
           )}
 
-          {/* Ön Plan Canlı Çiçek ve Lavanta Gölgesi */}
+          {/* Ön Plan Çiçek ve Zemin Gölgesi */}
           <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-black/70 to-transparent pointer-events-none z-10" />
         </div>
 
         {/* 2.5D KARAKTER VE DİYALOG SAHNESİ KATMANI */}
         {!isCompletedScene ? (
           <div className="relative z-20 flex-1 flex flex-col justify-between p-3 sm:p-6">
-            {/* ÜST KONUŞMA VE ANLATIM BALONLARI ALANI (Taç Kapıyı Kapatmayacak Şekilde Yerleşim) */}
+            {/* ÜST KONUŞMA BALONLARI ALANI */}
             <div className="w-full flex items-start justify-between gap-4 pt-1">
               {/* SOL: ÖĞRENCİ (DENİZ) KONUŞMA BALONU */}
               <div className="w-1/2 max-w-xs sm:max-w-sm">
@@ -966,9 +996,9 @@ export function Grade3SmartBoardAdventureView({
                 )}
               </div>
 
-              {/* SAĞ: LEO'NUN KONUŞMA BALONU (2. ve 4. Sahnede Aktif) */}
+              {/* SAĞ: LEO'NUN KONUŞMA BALONU */}
               <div className="w-1/2 max-w-xs sm:max-w-sm ml-auto">
-                {(currentConfig.id === 'scene2_meeting' || currentConfig.id === 'scene4_farewell') && (
+                {subPhase !== 'threshold_crossing' && (
                   <div
                     className={`p-3 sm:p-4 rounded-2xl bg-white/95 text-slate-900 border-2 shadow-xl transition-all duration-300 ${
                       isSpeaking && speakingRole === 'leo'
@@ -984,7 +1014,7 @@ export function Grade3SmartBoardAdventureView({
                         </span>
                       </div>
 
-                      {/* Ses Dinleme Düğmeleri (Normal ve Yavaş Telaffuz) */}
+                      {/* Ses Dinleme Düğmeleri (Normal ve Yavaş) */}
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
@@ -1019,22 +1049,49 @@ export function Grade3SmartBoardAdventureView({
               </div>
             </div>
 
-            {/* ORTA KATMAN: CANLI 2.5D KARAKTER SPRITE'LARI (Taç Kapının ve Meydanın Önünde) */}
-            <div className="w-full flex items-end justify-between px-6 sm:px-16 pb-2 pointer-events-none">
-              {/* SOL: DENİZ (KAMPÜS ÖĞRENCİSİ) */}
-              <DenizCharacter
-                action={denizAction}
-                isSpeaking={isSpeaking && speakingRole === 'deniz'}
-              />
+            {/* ORTA KATMAN: CANLI 2.5D KARAKTERLER VE TAŞ EŞİK */}
+            {currentSceneIndex === 0 && subPhase === 'threshold_crossing' ? (
+              /* EŞİK GEÇİŞİ ANİMASYONU: Kamera takip eder, aynı taş eşiği ayaklarıyla geçerler */
+              <div className="relative w-full flex-1 flex flex-col items-center justify-end pb-4 pointer-events-none">
+                {/* SELÇUKLU TAÇ KAPI TAŞ EŞİĞİ */}
+                <SeljukStoneThreshold isCrossing={true} />
 
-              {/* SAĞ: LEO (GEZGİN TURİST ÇOCUK VE HARİTASI) */}
-              <TouristKid
-                action={leoAction}
-                isSpeaking={isSpeaking && speakingRole === 'leo'}
-              />
-            </div>
+                {/* İKİ ÇOCUK YAN YANA EŞİĞE DOĞRU YÜRÜR VE AYAKLARIYLA GEÇER */}
+                <div className="flex items-end justify-center gap-6 sm:gap-10 children-cross-threshold z-20">
+                  <DenizCharacter
+                    action="walk_threshold"
+                    isSpeaking={false}
+                  />
+                  <TouristKid
+                    action="walk_threshold"
+                    isSpeaking={false}
+                  />
+                </div>
+              </div>
+            ) : (
+              /* NORMAL SAHNE: Meydanda yürüyüş, kapının önünde duruş veya avluda duruş */
+              <div className="w-full flex items-end justify-between px-6 sm:px-16 pb-2 pointer-events-none">
+                {/* SOL: DENİZ (KAMPÜS ÖĞRENCİSİ) */}
+                <div className={subPhase === 'approach' && currentSceneIndex === 0 ? 'deniz-walk-across' : ''}>
+                  <DenizCharacter
+                    action={denizAction}
+                    isSpeaking={isSpeaking && speakingRole === 'deniz'}
+                    isWavingProminently={subPhase === 'waving'}
+                  />
+                </div>
 
-            {/* ALT KATMAN: HİKÂYE ANLATIMI VE ETKİLEŞİM PANELİ */}
+                {/* SAĞ: LEO (GEZGİN ÇOCUK) */}
+                <div>
+                  <TouristKid
+                    action={leoAction}
+                    isSpeaking={isSpeaking && speakingRole === 'leo'}
+                    isWavingProminently={subPhase === 'waving'}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ALT KATMAN: HİKÂYE ANLATIMI VE DİYALOG SEÇİM PANELİ */}
             <div className="relative z-30 w-full max-w-3xl mx-auto flex flex-col gap-2.5">
               {/* Hikâye Anlatım ve İpucu Kartı */}
               <div className="bg-slate-950/90 border-2 border-amber-500/50 rounded-2xl p-3 sm:p-4 shadow-2xl backdrop-blur-md">
@@ -1047,38 +1104,46 @@ export function Grade3SmartBoardAdventureView({
                 </div>
 
                 <p className="text-xs sm:text-sm text-slate-200 font-medium pt-2 leading-relaxed">
-                  {currentConfig.narrationText}
+                  {subPhase === 'threshold_crossing'
+                    ? "İki arkadaş anıtsal Selçuklu Taç Kapısı'nın asırlık taş eşiğinden yan yana geçerek kervansarayın avlusuna adım atıyor..."
+                    : subPhase === 'approach'
+                      ? "Deniz, Sultanhanı Kervansarayı'nın önündeki meydanda belirgin adımlarla taç kapıya doğru yaklaşıyor..."
+                      : currentConfig.narrationText}
                 </p>
 
-                <p className="text-xs sm:text-sm font-bold text-amber-300 mt-2">
-                  👉 {currentConfig.promptText}
-                </p>
+                {subPhase === 'dialogue' && (
+                  <p className="text-xs sm:text-sm font-bold text-amber-300 mt-2">
+                    👉 {currentConfig.promptText}
+                  </p>
+                )}
               </div>
 
-              {/* Karar / Cevap Seçenekleri Butonları */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {currentConfig.options.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => handleSelectOption(option)}
-                    disabled={isLocked}
-                    className={`min-h-[52px] p-3 rounded-2xl font-black text-base sm:text-lg border-2 shadow-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
-                      selectedOptionId === option.id
-                        ? option.isCorrect
-                          ? 'border-emerald-400 bg-emerald-700 text-white scale-102 ring-4 ring-emerald-500/40'
-                          : 'border-amber-400 bg-amber-800 text-amber-100 ring-4 ring-amber-500/40'
-                        : 'border-amber-400/60 bg-slate-900/90 text-amber-100 hover:bg-slate-800 hover:border-amber-300 active:scale-98'
-                    }`}
-                    aria-label={`"${option.text}" seçeneğini yanıtla`}
-                  >
-                    <span>"{option.text}"</span>
-                    {selectedOptionId === option.id && option.isCorrect && (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-200 animate-in zoom-in" />
-                    )}
-                  </button>
-                ))}
-              </div>
+              {/* Karar / Konuşma Seçenekleri Butonları (Yalnızca Konuşma Anlarında Aktif) */}
+              {subPhase === 'dialogue' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {currentConfig.options.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => handleSelectOption(option)}
+                      disabled={isLocked}
+                      className={`min-h-[52px] p-3 rounded-2xl font-black text-base sm:text-lg border-2 shadow-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
+                        selectedOptionId === option.id
+                          ? option.isCorrect
+                            ? 'border-emerald-400 bg-emerald-700 text-white scale-102 ring-4 ring-emerald-500/40'
+                            : 'border-amber-400 bg-amber-800 text-amber-100 ring-4 ring-amber-500/40'
+                          : 'border-amber-400/60 bg-slate-900/90 text-amber-100 hover:bg-slate-800 hover:border-amber-300 active:scale-98'
+                      }`}
+                      aria-label={`"${option.text}" seçeneğini yanıtla`}
+                    >
+                      <span>"{option.text}"</span>
+                      {selectedOptionId === option.id && option.isCorrect && (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-200 animate-in zoom-in" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Geri Bildirim veya Pedagojik İpucu Çubuğu */}
               {feedback && (
@@ -1100,7 +1165,7 @@ export function Grade3SmartBoardAdventureView({
             </div>
           </div>
         ) : (
-          /* MACERA TAMAMLAMA VE BAŞARI EKRANI */
+          /* MACERA TAMAMLAMA VE BAŞARI EKRANI (Ayrılış Tamamlanınca Açılır) */
           <div className="relative z-30 flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center animate-in zoom-in-95 duration-500">
             <div className="max-w-xl w-full bg-slate-950/95 border-3 border-amber-500 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-lg">
               {/* Başarı Rozeti */}
@@ -1117,50 +1182,51 @@ export function Grade3SmartBoardAdventureView({
               </h2>
 
               <p className="text-xs sm:text-sm text-slate-300 mb-6">
-                Aksaray Sultanhanı Kervansarayı'nda turist arkadaşın Leo ile karşılaştın, Taç Kapı'nın eşiğinden geçip avluyu keşfettiniz ve gece vedasını yaptınız!
+                Aksaray Sultanhanı Kervansarayı'nda turist arkadaşın Leo ile karşılaştın, Taç Kapı'nın taş eşiğinden geçip avluyu keşfettiniz ve gece vedasını yaptınız!
               </p>
 
-              {/* Dört İfadenin Özet Mini Kartları */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-6 text-left">
-                <div className="p-2.5 rounded-xl bg-slate-900 border border-amber-500/40">
-                  <span className="text-[10px] font-bold text-amber-400">Tanışma</span>
-                  <p className="text-sm font-extrabold text-white font-serif">Hello!</p>
-                  <p className="text-[10px] text-slate-400">Merhaba!</p>
+              {/* Öğrenilen 4 İfade Özet Kartları */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
+                <div className="p-2.5 rounded-xl bg-slate-900 border border-amber-500/40 flex flex-col items-center">
+                  <span className="text-lg">👋</span>
+                  <span className="text-xs font-black text-amber-300 mt-1">Hello!</span>
+                  <span className="text-[10px] text-slate-400">Merhaba!</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-slate-900 border border-amber-500/40">
-                  <span className="text-[10px] font-bold text-amber-400">Sabah</span>
-                  <p className="text-sm font-extrabold text-white font-serif">Good morning!</p>
-                  <p className="text-[10px] text-slate-400">Günaydın!</p>
+                <div className="p-2.5 rounded-xl bg-slate-900 border border-amber-500/40 flex flex-col items-center">
+                  <span className="text-lg">🌅</span>
+                  <span className="text-xs font-black text-amber-300 mt-1">Good morning!</span>
+                  <span className="text-[10px] text-slate-400">Günaydın!</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-slate-900 border border-amber-500/40">
-                  <span className="text-[10px] font-bold text-amber-400">Veda</span>
-                  <p className="text-sm font-extrabold text-white font-serif">Goodbye!</p>
-                  <p className="text-[10px] text-slate-400">Hoşça kal!</p>
+                <div className="p-2.5 rounded-xl bg-slate-900 border border-amber-500/40 flex flex-col items-center">
+                  <span className="text-lg">🚪</span>
+                  <span className="text-xs font-black text-amber-300 mt-1">Goodbye!</span>
+                  <span className="text-[10px] text-slate-400">Hoşça kal!</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-slate-900 border border-amber-500/40">
-                  <span className="text-[10px] font-bold text-amber-400">Gece</span>
-                  <p className="text-sm font-extrabold text-white font-serif">Good night!</p>
-                  <p className="text-[10px] text-slate-400">İyi geceler!</p>
+                <div className="p-2.5 rounded-xl bg-slate-900 border border-amber-500/40 flex flex-col items-center">
+                  <span className="text-lg">🌙</span>
+                  <span className="text-xs font-black text-amber-300 mt-1">Good night!</span>
+                  <span className="text-[10px] text-slate-400">İyi geceler!</span>
                 </div>
               </div>
 
-              {/* Aksiyon Butonları */}
+              {/* Eylem Düğmeleri */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <button
                   type="button"
                   onClick={handleRestart}
-                  className="w-full sm:w-auto min-h-[46px] px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-200 border border-amber-500/40 font-bold text-sm inline-flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  className="min-h-[48px] w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-amber-200 border border-amber-500/40 font-bold text-sm inline-flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
-                  <RotateCcw className="w-4 h-4" />
+                  <RotateCcw className="w-4 h-4 text-amber-400" />
                   <span>Tekrar Oyna</span>
                 </button>
+
                 <button
                   type="button"
                   onClick={onExitToClassroom}
-                  className="w-full sm:w-auto min-h-[46px] px-8 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm inline-flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+                  className="min-h-[48px] w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm shadow-xl inline-flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer"
                 >
-                  <ArrowLeft className="w-4 h-4" />
                   <span>Sınıfa Dön</span>
+                  <ArrowLeft className="w-4 h-4 rotate-180" />
                 </button>
               </div>
             </div>
