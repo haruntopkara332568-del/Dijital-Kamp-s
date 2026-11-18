@@ -1,37 +1,35 @@
-# Proje Durum Raporu — Sürüm 6.5.2 (Aşama 6.5: Akıllı Tahta — Sultanhanı Kervansarayı Macerası / Görsel Akış ve Taş Eşik Düzeltmesi)
+# Proje Durum Raporu — Sürüm 6.5.3 (Aşama 6.5: Akıllı Tahta — Sultanhanı Kervansarayı Macerası / Taç Kapı Eşik Hizalaması ve Kenara Kadar Görünür Ayrılış)
 
 ## 3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı 2.5D Sinematik Macerası (`feat/english-four-learning-tables`)
 - **Kapsam İzolasyonu ve Dokunulmayan Sistemler**:
   - `main` dalı ve üretim ortamı, Selçuklu Taç Kapı, yürünebilir avlu mimarisi, karakter ve kamera kontrol altyapısı, İngilizce sınıfı mimarisi, 4 öğrenme masası (Keşfet, Öğren, Üret, Paylaş), Sınıf Panosu, diğer sınıf düzeyleri (2, 4, 5, 6, 7), veri modeli ve depolama anahtarları (`dek_campus_v1_state`) %100 korunmuştur.
-- **1. Akıllı Tahta Etkileşimi ve Kilit Sistemi**:
-  - Dört öğrenme masası (`kesfet`, `ogren`, `uret`, `paylas`) tamamlanmadan Büyük Görev kilitli kalır.
-  - Kilitliyken tıklandığında veya yaklaşıldığında: `"Büyük Görev için önce sınıftaki dört masadaki (Keşfet, Öğren, Üret, Paylaş) görevleri tamamlamalısın."` uyarısı gösterilir.
-  - Dört masa tamamlandığında: Akıllı tahta üzerinde davetkâr parıldayan dış ışık aurası (`#38bdf8` gölge ve altın çerçeve), "★ BÜYÜK GÖREV HAZIR ★" etiketi ve `Büyük Görev: Kervansaray Macerası [E]` istemi belirir.
-  - Etkileşimde doğrudan Aksaray Sultanhanı Kervansarayı tam ekran sinematik öğrenme simülasyonu açılır.
-- **2. Mekân, Karakterler ve Görsel Akış**:
-  - **Meydanda Belirgin Yürüyüş ve Kapıda Duruş**: Deniz, Sultanhanı Kervansarayı önündeki taş meydanda belirgin yürüyüş adımlarıyla (bacak, kol, gölge döngüsü) taç kapıya yaklaşır. Kapının önünde durup tek başına gezen turist çocuk Leo'ya döner ve `"Hello!"` konuşması orada gerçekleşir.
-  - **Kamera Takibi ve Aynı Taş Eşiğin Geçilişi**: Konuşma bittikten sonra kamera ikisini takip eder. Her iki çocuğun da ayaklarıyla aynı Selçuklu taş eşiğini geçtiği görülene kadar taç kapı kadrajda tutulur. Çocuklar eşiği geçtikten sonra kervansarayın revaklı iç avlusu gösterilir.
-  - **Gece Vedası, Görünür El Sallama ve Ayrılış**: Avluda gece vedasında karşılıklı `"Good night!"` dedikten sonra elleri görünür biçimde sallanır (`deniz-wave-arm`, `leo-wave-arm`). İki çocuk adım atarak zıt yönlerden kadrajdan çıkar. Başarı ekranı ayrılış tamamlanınca açılır.
-- **3. Pedagojik Konuşma Anları ve Doğal Süre**:
-  - Öğrenci seçimleri yalnızca konuşma anlarında tutulmuş, aradaki yapay bekleme butonları kaldırılmıştır.
-  - 1. Konuşma: Taç kapıda Leo `"Hello!"` der ➔ Öğrenci `"Hello!"` (veya cezasız ipuçlu `"Goodbye!"`) seçer.
-  - 2. Konuşma: Avluda gece Leo `"Good night!"` der ➔ Öğrenci `"Good night!"` (veya cezasız ipuçlu `"Good morning!"`) seçer.
-  - Hedef süre: Normal konuşma, dinleme ve seçimlerle doğal 2–2.5 dakikalık akış.
-- **4. Web Speech API & Cezasız Hata Toleransı**:
-  - Tüm İngilizce diyaloglar için doğal Web Speech API seslendirmesi, 🔊 Dinle (0.85x) ve 🐢 Yavaş Dinle (0.65x) seçenekleri.
-  - Hatalı yanıtlarda puan kırma, can hakkı veya başarısızlık hissi yoktur; yumuşak Türkçe ipucu verilir ve öğrenci hemen doğru cevaba yönlendirilir.
-- **5. Başarı Ekranı ve Sınıfa Dönüş**:
-  - Ayrılış tamamlandıktan sonra açılan kesin kutlama başlığı: `"Tebrikler! Öğrendiğin İngilizce ifadeleri günlük yaşamda başarıyla kullandın."`
-  - 🏆 Büyük Görev Başarı Rozeti ve 4 ifadenin özet mini kartları (Hello!, Good morning!, Goodbye!, Good night!).
-  - **[Tekrar Oyna]** ve **[Sınıfa Dön]** aksiyonları.
-  - Sınıfa dönüldüğünde öğrenci tahtanın hemen önünde (`x: 480, y: 180`) sınıfta kalır, 4 masanın tamamlanma durumu ve rozetleri eksiksiz korunur.
-- **6. Kalite Güvencesi ve Doğrulama**:
+- **1. Taç Kapı Tabanına Taş Eşik Yerleşimi ve Perspektif Uyumu**:
+  - Selçuklu anıtsal taş eşiği, taç kapının gerçek mimari açıklığının tabanına (`bottom-6 sm:bottom-8`) ve meydan taş zemin perspektifine tam oturacak şekilde yerleştirildi.
+  - Açıklığın iç derinliği (`rounded-t-full bg-gradient-to-b from-[#090b10] via-[#121620] to-[#1e1b18]`) ve iç avludan süzülen altın ışık hüzmesi eklendi.
+  - Meydan zeminine basan taş basamak yükseltisi, ayakların bastığı üst basma yüzeyi (`#d4b584`), tarihi aşınma izi ve derz çizgileri 3D Selçuklu taş işçiliğiyle modelledi.
+  - İki çocuğun ayakları zemine basarak kapıya yaklaşır (`translateY(45px) scale(0.95)`), ikisi aynı taş eşiğin üstüne adım atar (`translateY(2px) scale(0.88)`), eşiği aşar (`translateY(-28px) scale(0.78)`) ve açıklığın içinden avluya doğru yürür (`translateY(-62px) scale(0.66)`).
+  - Kamera bu hareketi portal açıklığına doğru sinematik ölçeklemeyle takip eder (`cameraZoomPortal`, `scale(1.22) translateY(5%)`).
+  - Avlu görüntüsü, iki çocuk da eşiğin öte tarafına (portal koridoruna) ulaştıktan sonra (3.8 saniye) yumuşak geçişle açılır.
+- **2. Avluda Gece Vedası, Görünür El Sallama ve Kenara Kadar Kesintisiz Ayrılış**:
+  - Avluda karşılıklı `"Good night!"` telaffuzunun ardından Deniz ve Leo görünür biçimde ellerini kaldırıp sallarlar (`deniz-wave-arm`, `leo-wave-arm`, `subPhase === 'waving'`).
+  - El sallamanın ardından Deniz sola (`walk_away_left`, `scale-x-[1]`), Leo sağa (`walk_away_right`, `scale-x-[-1]`) döner ve belirgin bacak yürüyüş adımlarıyla zıt yönlere yürür.
+  - Karakterler kadrajın kenarına kadar %100 opaklıkla (`opacity: 1`) görünür kalır; erken kaybolma / solma kesinlikle uygulanmaz.
+  - Ayrılış hareketi kesintisiz 3.0 saniyelik doğrusal geçişle (`translateX(-120vw)` ve `translateX(120vw)`) ekran dışına taşınır.
+  - Başarı ekranı, iki çocuk da kadrajdan tamamen çıktıktan sonra (3.2 saniye) açılır.
+- **3. Masaüstü ve Mobil Kadraj Bütünlüğü & Sınıfa Dönüş**:
+  - Mobilde üst başlık ultra-kompakt hale getirilmiş, çift yığılma yapan ikincil "Sınıfa Dön" butonu mobilde gizlenerek taç kapı tabanı, taş eşik ve çocukların ayakları hem masaüstü hem mobil kayıtlarda kadrajda tutulmuştur.
+  - Her iki kayıt da Sultanhanı Kervansarayı macerasının tamamlanmasının ardından [Sınıfa Dön] ile İngilizce Dünyası sınıfına dönüşü ve akıllı tahta önündeki duruşu gösterecek şekilde 2 saniyelik net duraklamayla bitirilmiştir.
+- **4. Normal Oynanış Süresi Ölçümü**:
+  - Yapay bekleme butonu eklenmeksizin doğal öğrenci oynanışında süre ölçülmüştür:
+    - **Chromium (Masaüstü)**: **23.6 saniye**
+    - **Mobile Chrome (Mobil)**: **25.2 saniye**
+- **5. Kalite Güvencesi ve Doğrulama**:
   - `npm run typecheck`: 0 hata (strict TypeScript).
   - `npm run lint`: 0 hata, 0 uyarı.
   - `npm run test`: 107 / 107 test geçti (74 walkable + 33 campus).
-  - Playwright E2E (`e2e/grade3_smartboard_adventure.spec.ts`): 4 / 4 test geçti (Chromium [26.4s] + Mobile Chrome [29.3s]).
-  - Kesintisiz ekran kayıtları: `docs/assets/videos/grade3_smartboard_desktop_continuous.webm` (3.4 MB) ve `grade3_smartboard_mobile_continuous.webm` (3.7 MB).
-  - `npm run build`: 889ms içinde hatasız üretim derlemesi üretildi.
+  - Playwright E2E (`e2e/grade3_smartboard_adventure.spec.ts`): 4 / 4 test geçti (Chromium [29.7s] + Mobile Chrome [31.3s]).
+  - Kesintisiz ekran kayıtları: `docs/assets/videos/grade3_smartboard_desktop_continuous.webm` (3.9 MB) ve `grade3_smartboard_mobile_continuous.webm` (4.1 MB).
+  - `npm run build`: 949ms içinde hatasız üretim derlemesi üretildi.
 
 # Proje Durum Raporu — Sürüm 6.3.1 (Aşama 6.3.1: 3. Sınıf Üret Masası Hata Düzeltmesi — Kelime Seçim ve İlerleme)
 

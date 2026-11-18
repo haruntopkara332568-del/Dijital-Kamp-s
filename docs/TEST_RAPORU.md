@@ -1,26 +1,26 @@
-# Test ve Kalite Güvence Raporu — Sürüm 6.5.2 (Aşama 6.5: Akıllı Tahta — Sultanhanı Kervansarayı Macerası / Görsel Akış ve Taş Eşik Düzeltmesi)
+# Test ve Kalite Güvence Raporu — Sürüm 6.5.3 (Aşama 6.5: Akıllı Tahta — Sultanhanı Kervansarayı Macerası / Taç Kapı Eşik Hizalaması ve Kenara Kadar Görünür Ayrılış)
 
 ## 1. Çalıştırıldı ve Geçti
 - **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (strict TypeScript).
 - **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
-- **`npm run test` (`vitest run`)**: Geçti — **107 / 107 test** (`src/test/walkable.test.tsx` [74 test] + `src/test/campus.test.tsx` [33 test], `43.4s`):
+- **`npm run test` (`vitest run`)**: Geçti — **107 / 107 test** (`src/test/walkable.test.tsx` [74 test] + `src/test/campus.test.tsx` [33 test], `46.7s`):
   - 72. Aşama 6.5: `SmartBoardModal` 3. sınıf seçiminde `Grade3SmartBoardAdventureView` (Aksaray Sultanhanı Kervansarayı, Taç Kapı, Gezgin Çocuk Leo ve harita) açar.
   - 73. Aşama 6.5: `Grade3SmartBoardAdventureView` tekil hikaye akışı (Meydanda belirgin yürüyüş, kapıda duruş ve Leo ile "Hello!", kamera takibi ile ayaklarıyla aynı taş eşiği geçiş, avluda gece vedalaşması ve "Good night!", görünür el sallama, kadrajdan çıkış ve tamamlama ekranı), sesli telaffuz desteği, cezasız ipucu toleransı, tamamlama ve sınıfa dönüş sunar.
   - 74. Aşama 6.5: `renderClassroomLayeredBackground` 3. sınıf için 4 masa tamamlandığında davetkâr parıltıyı (`#38bdf8` gölge ve altın çerçeve) çizer; 4 masa tamamlanmadan çizmez.
   - 63, 68, 70, 71: Keşfet, Öğren, Üret ve Paylaş masaları %100 korundu.
-- **`npx playwright test e2e/grade3_smartboard_adventure.spec.ts --project=chromium`**: Geçti — **2 / 2 test** (`26.4s`).
-- **`npx playwright test e2e/grade3_smartboard_adventure.spec.ts --project=mobile-chrome`**: Geçti — **2 / 2 test** (`29.3s`).
-  - Senaryo 1 (Kilitli Durum): 4 masa tamamlanmadan Akıllı Tahtaya gidildiğinde modal açılmaz; uyarı gösterilir.
+- **`npx playwright test e2e/grade3_smartboard_adventure.spec.ts --project=chromium`**: Geçti — **2 / 2 test** (`29.7s`, toplam oynanış süresi: **23.6s**).
+- **`npx playwright test e2e/grade3_smartboard_adventure.spec.ts --project=mobile-chrome`**: Geçti — **2 / 2 test** (`31.3s`, toplam oynanış süresi: **25.2s**).
+  - Senaryo 1 (Kilitli Durum): 4 masa tamamlanmadan Akıllı Tahtaya gidildiğinde modal açılmaz; bilgilendirme uyarısı gösterilir.
   - Senaryo 2 (Tamamlanmış Masalar & Kesintisiz Video Kaydı):
     - Meydana giriş ve taç kapıya belirgin adımlarla yürüyüş (`grade3_smartboard_square_arrival.png`).
     - Kapının önünde duruş, Leo'ya dönüş ve "Hello!" konuşması (`grade3_smartboard_sultanhani_arrival.png`).
-    - Kamera takibi ile her iki çocuğun da ayaklarıyla aynı Selçuklu taş eşiğini geçişi (`grade3_smartboard_threshold_crossing.png`).
+    - Taç kapı açıklığı tabanında 3D Selçuklu taş eşiği; iki çocuğun ayaklarının taş zemine basarak kapıya yaklaşması, aynı eşiği aşması ve açıklığın içinden yürümesi (`grade3_smartboard_threshold_crossing.png`).
     - Eşik geçildikten sonra avlunun açılışı, gece ışığı ve "Good night!" vedası (`grade3_smartboard_courtyard_farewell.png`).
-    - Görünür biçimde el sallama ve çocukların zıt yönlere kadrajdan çıkışı (`grade3_smartboard_waving_departure.png`).
+    - Görünür biçimde el sallama ve çocukların belirgin adımlarla kadrajın kenarına kadar %100 görünür ayrılışı (`grade3_smartboard_waving_departure.png`).
     - Ayrılış tamamlandıktan sonra açılan başarı ekranı (`grade3_smartboard_adventure_completed.png`).
     - Sınıfa dönüş ve tahtanın önünde kalış (`grade3_smartboard_return_classroom.png`).
-    - Kesintisiz video kayıtları: `docs/assets/videos/grade3_smartboard_desktop_continuous.webm` (3.4 MB) ve `grade3_smartboard_mobile_continuous.webm` (3.7 MB).
-- **`npm run build` (`vite build`)**: Geçti — **889ms** içinde hatasız üretim derlemesi üretildi.
+    - Kesintisiz video kayıtları: `docs/assets/videos/grade3_smartboard_desktop_continuous.webm` (3.9 MB) ve `grade3_smartboard_mobile_continuous.webm` (4.1 MB).
+- **`npm run build` (`vite build`)**: Geçti — **949ms** içinde hatasız üretim derlemesi üretildi.
 
 # Test ve Kalite Güvence Raporu — Sürüm 6.3.1 (Aşama 6.3.1: 3. Sınıf Üret Masası Hata Düzeltmesi — Kelime Seçim ve İlerleme)
 

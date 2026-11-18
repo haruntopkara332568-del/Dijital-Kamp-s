@@ -108,15 +108,10 @@ function DenizCharacter({ action, isSpeaking, isWavingProminently }: DenizCharac
   const isBackView = action === 'walk_threshold';
   const isWaving = action === 'greet_hello' || action === 'farewell_night' || isWavingProminently;
   const isFacingRight = action === 'turn_to_leo';
+  const isFacingLeft = action === 'walk_away_left';
 
   return (
-    <div
-      className={`relative flex flex-col items-center select-none transition-transform duration-700 ${
-        action === 'walk_away_left'
-          ? '-translate-x-48 opacity-0'
-          : 'translate-x-0 opacity-100'
-      }`}
-    >
+    <div className="relative flex flex-col items-center select-none">
       {/* Karakter İsim Rozeti */}
       <span className="mb-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-700 text-white shadow-md border border-emerald-300">
         🎒 Deniz (Kampüs Öğrencisi)
@@ -126,7 +121,7 @@ function DenizCharacter({ action, isSpeaking, isWavingProminently }: DenizCharac
       <div className="w-24 h-36 sm:w-28 sm:h-42 drop-shadow-2xl">
         <svg
           viewBox="0 0 100 140"
-          className={`w-full h-full ${isFacingRight ? 'scale-x-[-1]' : ''}`}
+          className={`w-full h-full ${isFacingRight ? 'scale-x-[-1]' : isFacingLeft ? 'scale-x-[1]' : ''}`}
         >
           {/* Zemin Gölgesi */}
           <ellipse
@@ -138,7 +133,7 @@ function DenizCharacter({ action, isSpeaking, isWavingProminently }: DenizCharac
             className={isWalking ? 'animate-pulse' : ''}
           />
 
-          {/* Ayaklar ve Ayakkabılar (Belirgin yürüyüş adımları) */}
+          {/* Ayaklar ve Ayakkabılar (Zemine basan belirgin yürüyüş adımları) */}
           <g className={isWalking ? 'deniz-walk-legs' : ''}>
             {/* Sol Bacak & Ayak */}
             <rect
@@ -334,15 +329,10 @@ function TouristKid({ action, isSpeaking, isWavingProminently }: TouristKidProps
 
   const isBackView = action === 'walk_threshold';
   const isWaving = action === 'greet_hello' || action === 'farewell_night' || isWavingProminently;
+  const isFacingRight = action === 'walk_away_right';
 
   return (
-    <div
-      className={`relative flex flex-col items-center select-none transition-transform duration-700 ${
-        action === 'walk_away_right'
-          ? 'translate-x-48 opacity-0'
-          : 'translate-x-0 opacity-100'
-      }`}
-    >
+    <div className="relative flex flex-col items-center select-none">
       {/* Karakter İsim Rozeti */}
       <span className="mb-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-600 text-white shadow-md border border-amber-300 flex items-center gap-1">
         <Compass className="w-2.5 h-2.5 text-amber-200" />
@@ -351,7 +341,10 @@ function TouristKid({ action, isSpeaking, isWavingProminently }: TouristKidProps
 
       {/* SVG Karakter Gövdesi */}
       <div className="w-24 h-36 sm:w-28 sm:h-42 drop-shadow-2xl">
-        <svg viewBox="0 0 100 140" className="w-full h-full">
+        <svg
+          viewBox="0 0 100 140"
+          className={`w-full h-full ${isFacingRight ? 'scale-x-[-1]' : ''}`}
+        >
           {/* Zemin Gölgesi */}
           <ellipse
             cx="50"
@@ -362,7 +355,7 @@ function TouristKid({ action, isSpeaking, isWavingProminently }: TouristKidProps
             className={isWalking ? 'animate-pulse' : ''}
           />
 
-          {/* Ayaklar ve Ayakkabılar (Belirgin adımlar) */}
+          {/* Ayaklar ve Ayakkabılar (Zemine basan belirgin adımlar) */}
           <g className={isWalking ? 'leo-walk-legs' : ''}>
             <rect x="36" y="108" width="10" height="20" rx="4" fill="#475569" className={isWalking ? 'leo-left-leg' : ''} />
             <ellipse cx="40" cy="129" rx="7" ry="4" fill="#1e293b" />
@@ -495,38 +488,68 @@ function TouristKid({ action, isSpeaking, isWavingProminently }: TouristKidProps
 function SeljukStoneThreshold({ isCrossing }: { isCrossing: boolean }) {
   return (
     <div
-      className={`absolute left-1/2 -translate-x-1/2 bottom-[90px] sm:bottom-[110px] z-10 flex flex-col items-center pointer-events-none transition-all duration-1000 ${
-        isCrossing ? 'opacity-100 scale-105' : 'opacity-85 scale-95'
+      className={`absolute left-1/2 -translate-x-1/2 bottom-6 sm:bottom-8 z-10 flex flex-col items-center pointer-events-none transition-all duration-1000 ${
+        isCrossing ? 'opacity-100 scale-105' : 'opacity-85 scale-100'
       }`}
     >
-      {/* Taş Eşik Etiketi */}
-      <div className="mb-1.5 px-3 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-950/85 text-amber-300 border border-amber-500/50 shadow-lg backdrop-blur-xs flex items-center gap-1.5">
-        <Footprints className="w-3.5 h-3.5 text-amber-400" />
-        <span>Selçuklu Taç Kapı Taş Eşiği</span>
+      {/* Selçuklu Taç Kapı Portal Açıklığı (Arched Doorway Passage) */}
+      <div className="relative flex flex-col items-center">
+        {/* Portal Açıklığı (Açıklığın derinliği & gölgesi) */}
+        <div className="w-36 sm:w-44 h-40 sm:h-48 rounded-t-full bg-gradient-to-b from-[#090b10] via-[#121620] to-[#1e1b18] border-t-2 border-x-2 border-amber-900/60 shadow-[inset_0_20px_40px_rgba(0,0,0,0.95)] opacity-95 flex items-center justify-center overflow-hidden">
+          {/* İç Avluya Doğru Açılan Aydınlık Koridor Hüzmesi */}
+          <div className="w-14 h-24 rounded-t-full bg-amber-400/15 blur-xs mb-3" />
+        </div>
+
+        {/* Taş Eşik Bilgi Rozeti */}
+        <div className="absolute top-2 px-3 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold bg-amber-950/90 text-amber-300 border border-amber-500/60 shadow-lg backdrop-blur-xs flex items-center gap-1.5 z-20">
+          <Footprints className="w-3.5 h-3.5 text-amber-400" />
+          <span>Selçuklu Taç Kapı Taş Eşiği</span>
+        </div>
+
+        {/* 3D Taş Eşik Çizimi (Portal Açıklığının Tabanında & Meydan Zemin Perspektifinde) */}
+        <svg
+          viewBox="0 0 280 40"
+          className="w-52 sm:w-64 -mt-5 z-20 drop-shadow-[0_15px_25px_rgba(0,0,0,0.9)]"
+        >
+          {/* Eşik Altı Zemin Gölgesi */}
+          <rect x="6" y="28" width="268" height="12" rx="3" fill="rgba(0,0,0,0.75)" />
+
+          {/* Taş Eşik Ön Yüzü (Yükselti - Meydan Zeminine Basan Taş Basamak) */}
+          <polygon
+            points="10,16 270,16 264,32 16,32"
+            fill="#78552b"
+            stroke="#452a0d"
+            strokeWidth="1.2"
+          />
+
+          {/* Taş Eşik Üst Basma Yüzeyi (Top Sill - Ayakların Bastığı ve Aştığı Taş Zemin) */}
+          <polygon
+            points="24,4 256,4 270,16 10,16"
+            fill="#d4b584"
+            stroke="#8c6836"
+            strokeWidth="1.5"
+          />
+
+          {/* Taş Eşik Üst Kenar Işık Yansıması */}
+          <line
+            x1="12"
+            y1="16"
+            x2="268"
+            y2="16"
+            stroke="#fef3c7"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+          />
+
+          {/* Selçuklu Taş Derzleri ve Geometrik Çizgiler */}
+          <line x1="70" y1="4" x2="65" y2="32" stroke="#5c3d18" strokeWidth="1.2" opacity="0.65" />
+          <line x1="140" y1="4" x2="140" y2="32" stroke="#5c3d18" strokeWidth="1.5" opacity="0.75" />
+          <line x1="210" y1="4" x2="215" y2="32" stroke="#5c3d18" strokeWidth="1.2" opacity="0.65" />
+
+          {/* Tarihi Aşınma İzi */}
+          <ellipse cx="140" cy="11" rx="50" ry="3.5" fill="#fae8b4" opacity="0.6" />
+        </svg>
       </div>
-
-      {/* 3D Taş Eşik Çizimi */}
-      <svg viewBox="0 0 260 36" className="w-64 sm:w-80 drop-shadow-[0_12px_20px_rgba(0,0,0,0.85)]">
-        {/* Eşik Altı Derin Gölge */}
-        <rect x="8" y="26" width="244" height="10" rx="3" fill="rgba(0,0,0,0.7)" />
-
-        {/* Taş Eşik Ön Yüzü (Yükselti) */}
-        <polygon points="10,16 250,16 245,30 15,30" fill="#78552b" stroke="#452a0d" strokeWidth="1.2" />
-
-        {/* Taş Eşik Üst Basma Yüzeyi (Ayakların Bastığı ve Aştığı Taş Blok) */}
-        <polygon points="22,4 238,4 250,16 10,16" fill="#d4b584" stroke="#8c6836" strokeWidth="1.5" />
-
-        {/* Taş Eşik Üst Kenar Işık Yansıması */}
-        <line x1="12" y1="16" x2="248" y2="16" stroke="#fef3c7" strokeWidth="2.2" strokeLinecap="round" />
-
-        {/* Selçuklu Taş Derzleri */}
-        <line x1="65" y1="4" x2="60" y2="30" stroke="#5c3d18" strokeWidth="1.2" opacity="0.65" />
-        <line x1="130" y1="4" x2="130" y2="30" stroke="#5c3d18" strokeWidth="1.5" opacity="0.75" />
-        <line x1="195" y1="4" x2="200" y2="30" stroke="#5c3d18" strokeWidth="1.2" opacity="0.65" />
-
-        {/* Eşik Üstü Tarihi Aşınma İzi */}
-        <ellipse cx="130" cy="11" rx="45" ry="3.5" fill="#fae8b4" opacity="0.55" />
-      </svg>
     </div>
   );
 }
@@ -612,7 +635,7 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
         setLeoAction('stand_with_map');
       }, 0);
 
-      // 2.4 saniye sonra kapının önüne varış, duruş ve Leo'ya dönüş
+      // 2.2 saniye sonra kapının önüne varış, duruş ve Leo'ya dönüş
       const tArrival = setTimeout(() => {
         setSubPhase('dialogue');
         setDenizAction('turn_to_leo');
@@ -621,10 +644,10 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
         // Leo'nun "Hello!" konuşması
         const tLeo = setTimeout(() => {
           playSpeech('Hello!', 'leo', 'normal');
-        }, 500);
+        }, 400);
 
         timerRef.current = tLeo;
-      }, 2400);
+      }, 2200);
 
       return () => {
         clearTimeout(tInit);
@@ -641,7 +664,7 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
 
       const tLeoNight = setTimeout(() => {
         playSpeech('Good night!', 'leo', 'normal');
-      }, 700);
+      }, 600);
 
       return () => {
         clearTimeout(tInit);
@@ -651,7 +674,7 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
     }
   }, [currentSceneIndex, isCompletedScene, playSpeech, clearTimer]);
 
-  // Öğrencinin Cevap Seçimi
+  // Öğrencinin Cevap Seçimi (Yalnızca Konuşma Anlarında Aktif)
   const handleSelectOption = (option: { id: string; text: string; isCorrect: boolean }) => {
     if (isLockedRef.current) return;
 
@@ -674,19 +697,21 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
         playSpeech('Hello!', 'deniz', 'normal');
         setLeoAction('greet_hello');
 
-        // Konuşma bittikten sonra: Kamera ikisini takip eder, taş eşiği ayaklarıyla geçerler
+        // Konuşma bittikten sonra: Kamera ikisini takip eder, taş eşiği ayaklarıyla geçerler ve açıklığın içinden yürürler
         timerRef.current = setTimeout(() => {
+          setFeedback(null);
+          setSelectedOptionId(null);
           setSubPhase('threshold_crossing');
           setDenizAction('walk_threshold');
           setLeoAction('walk_threshold');
 
-          // Çocuklar eşiği geçtikten sonra (3.4s) avluya geçiş
+          // İki çocuk da eşiğin öte tarafına ulaştıktan sonra (3.8s) avlu görüntüsü açılır
           timerRef.current = setTimeout(() => {
             advanceToNextScene();
-          }, 3400);
+          }, 3800);
         }, 1500);
       } else if (currentSceneIndex === 1) {
-        // --- 2. SAHNE: "Good night!" Vedalaşması, Görünür El Sallama ve Ayrılış ---
+        // --- 2. SAHNE: "Good night!" Vedalaşması, Görünür El Sallama ve Kadrajın Kenarına Doğru Ayrılış ---
         setDenizAction('farewell_night');
         playSpeech('Good night!', 'deniz', 'normal');
 
@@ -696,17 +721,19 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
           setDenizAction('farewell_night');
           setLeoAction('farewell_night');
 
-          // Görünür el sallama sonrası: İki çocuk adım atarak ayrı yönlerden kadrajdan çıkar
+          // Görünür el sallama sonrası: İki çocuk belirgin adımlarla kadrajın kenarına kadar yürür
           timerRef.current = setTimeout(() => {
+            setFeedback(null);
+            setSelectedOptionId(null);
             setSubPhase('departing');
             setDenizAction('walk_away_left');
             setLeoAction('walk_away_right');
 
-            // Başarı ekranı ayrılış tamamlanınca açılır (2.4s)
+            // Başarı ekranı ikisi de kadrajdan tamamen çıktıktan sonra açılır (3.2s)
             timerRef.current = setTimeout(() => {
               advanceToNextScene();
-            }, 2400);
-          }, 1600);
+            }, 3200);
+          }, 1500);
         }, 1200);
       }
     } else {
@@ -853,7 +880,7 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
         }
         @keyframes cameraZoomPortal {
           0% { transform: scale(1); }
-          100% { transform: scale(1.18) translateY(4%); }
+          100% { transform: scale(1.22) translateY(5%); }
         }
         .camera-zoom-portal-active {
           animation: cameraZoomPortal 3.8s ease-out forwards;
@@ -863,34 +890,45 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
           100% { transform: translateX(0px); }
         }
         .deniz-walk-across {
-          animation: walkAcrossSquare 2.4s ease-out forwards;
+          animation: walkAcrossSquare 2.2s ease-out forwards;
         }
         @keyframes stepThroughThreshold {
-          0% { transform: translateY(40px) scale(1); }
-          50% { transform: translateY(0px) scale(0.92); }
-          100% { transform: translateY(-40px) scale(0.82); opacity: 0.85; }
+          0% {
+            transform: translateY(45px) scale(0.95);
+          }
+          35% {
+            transform: translateY(2px) scale(0.88);
+          }
+          65% {
+            transform: translateY(-28px) scale(0.78);
+            filter: brightness(0.92);
+          }
+          100% {
+            transform: translateY(-62px) scale(0.66);
+            filter: brightness(0.60);
+          }
         }
         .children-cross-threshold {
-          animation: stepThroughThreshold 3.4s ease-in-out forwards;
+          animation: stepThroughThreshold 3.7s ease-in-out forwards;
         }
       `}</style>
 
       {/* ÜST BAŞLIK VE ADIM BİLGİSİ BARI */}
-      <div className="shrink-0 px-4 py-2.5 bg-[#080e1a]/95 border-b border-amber-500/30 flex items-center justify-between gap-3 z-30">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300">
-            <Compass className="w-5 h-5 text-amber-400" />
+      <div className="shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 bg-[#080e1a]/95 border-b border-amber-500/30 flex items-center justify-between gap-2 z-30">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300">
+            <Compass className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-400 bg-amber-950/70 px-2 py-0.5 rounded border border-amber-600/40">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-amber-400 bg-amber-950/70 px-1.5 py-0.5 rounded border border-amber-600/40">
                 Büyük Görev • 3. Sınıf
               </span>
-              <span className="text-xs sm:text-sm font-bold text-amber-100 hidden sm:inline">
+              <span className="text-xs sm:text-sm font-bold text-amber-100 hidden md:inline">
                 Kervansarayın Gölgesinde Macera
               </span>
             </div>
-            <p className="text-[10px] text-amber-200/80">
+            <p className="text-[9px] sm:text-[10px] text-amber-200/80 truncate max-w-[200px] sm:max-w-none">
               Aksaray Sultanhanı Kervansarayı • Greetings (Selamlaşma)
             </p>
           </div>
@@ -898,12 +936,12 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
 
         {/* Sahne Adım Göstergesi */}
         {!isCompletedScene && (
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700/60 text-xs">
-            <Clock className="w-3.5 h-3.5 text-amber-400" />
+          <div className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-slate-900/80 border border-slate-700/60 text-[11px] sm:text-xs">
+            <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
             <span className="text-amber-200 font-bold">{currentConfig.sceneTitle}</span>
             <span className="text-slate-400 mx-1 hidden sm:inline">•</span>
             <span className="text-amber-100/90 font-medium hidden sm:inline">{currentConfig.timeLabel}</span>
-            <span className="text-slate-400 mx-1">|</span>
+            <span className="text-slate-400 mx-0.5 sm:mx-1">|</span>
             <span className="font-bold text-white">
               {currentSceneIndex + 1} / {SCENE_CONFIGS.length}
             </span>
@@ -914,7 +952,7 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
         <button
           type="button"
           onClick={onExitToClassroom}
-          className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-amber-200 border border-amber-500/30 font-bold text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+          className="hidden sm:inline-flex min-h-[44px] px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-amber-200 border border-amber-500/30 font-bold text-xs items-center gap-1.5 transition-colors cursor-pointer"
           aria-label="Kervansaray macerasından çık ve sınıfa dön"
         >
           <ArrowLeft className="w-4 h-4 text-amber-400" aria-hidden="true" />
@@ -943,7 +981,7 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
                 : '/assets/walkable/sultanhani_caravanserai.jpg'
             }
             alt="Aksaray Sultanhanı Kervansarayı Taç Kapısı ve Avlusu"
-            className={`w-full h-full object-cover object-center transition-all duration-1000 ${
+            className={`w-full h-full object-cover object-[center_55%] transition-all duration-1000 ${
               subPhase === 'threshold_crossing'
                 ? 'camera-zoom-portal-active'
                 : currentSceneIndex === 1 || isCompletedScene
@@ -971,13 +1009,13 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
             <div className="absolute inset-0 pointer-events-none bg-radial from-amber-300/15 via-transparent to-transparent opacity-80" />
           )}
 
-          {/* Ön Plan Çiçek ve Zemin Gölgesi */}
+          {/* Ön Plan Zemin Gölgesi */}
           <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-black/70 to-transparent pointer-events-none z-10" />
         </div>
 
         {/* 2.5D KARAKTER VE DİYALOG SAHNESİ KATMANI */}
         {!isCompletedScene ? (
-          <div className="relative z-20 flex-1 flex flex-col justify-between p-3 sm:p-6">
+          <div className="relative z-20 flex-1 flex flex-col justify-between p-3 sm:p-5">
             {/* ÜST KONUŞMA BALONLARI ALANI */}
             <div className="w-full flex items-start justify-between gap-4 pt-1">
               {/* SOL: ÖĞRENCİ (DENİZ) KONUŞMA BALONU */}
@@ -998,7 +1036,7 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
 
               {/* SAĞ: LEO'NUN KONUŞMA BALONU */}
               <div className="w-1/2 max-w-xs sm:max-w-sm ml-auto">
-                {subPhase !== 'threshold_crossing' && (
+                {subPhase !== 'threshold_crossing' && subPhase !== 'departing' && (
                   <div
                     className={`p-3 sm:p-4 rounded-2xl bg-white/95 text-slate-900 border-2 shadow-xl transition-all duration-300 ${
                       isSpeaking && speakingRole === 'leo'
@@ -1051,13 +1089,13 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
 
             {/* ORTA KATMAN: CANLI 2.5D KARAKTERLER VE TAŞ EŞİK */}
             {currentSceneIndex === 0 && subPhase === 'threshold_crossing' ? (
-              /* EŞİK GEÇİŞİ ANİMASYONU: Kamera takip eder, aynı taş eşiği ayaklarıyla geçerler */
-              <div className="relative w-full flex-1 flex flex-col items-center justify-end pb-4 pointer-events-none">
-                {/* SELÇUKLU TAÇ KAPI TAŞ EŞİĞİ */}
+              /* EŞİK GEÇİŞİ ANİMASYONU: Kamera takip eder, ayaklarıyla aynı taş eşiği geçerler ve açıklığın içinden yürürler */
+              <div className="relative w-full flex-1 flex flex-col items-center justify-end pb-6 sm:pb-8 pointer-events-none">
+                {/* SELÇUKLU TAÇ KAPI ANITSAL TAŞ EŞİĞİ VE AÇIKLIĞI */}
                 <SeljukStoneThreshold isCrossing={true} />
 
-                {/* İKİ ÇOCUK YAN YANA EŞİĞE DOĞRU YÜRÜR VE AYAKLARIYLA GEÇER */}
-                <div className="flex items-end justify-center gap-6 sm:gap-10 children-cross-threshold z-20">
+                {/* İKİ ÇOCUK YAN YANA EŞİĞE DOĞRU YÜRÜR, AYAKLARIYLA EŞİĞİ AŞAR VE AÇIKLIĞIN İÇİNDEN YÜRÜR */}
+                <div className="flex items-end justify-center gap-8 sm:gap-12 children-cross-threshold z-30">
                   <DenizCharacter
                     action="walk_threshold"
                     isSpeaking={false}
@@ -1069,10 +1107,26 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
                 </div>
               </div>
             ) : (
-              /* NORMAL SAHNE: Meydanda yürüyüş, kapının önünde duruş veya avluda duruş */
+              /* NORMAL SAHNE: Meydanda yürüyüş, kapının önünde duruş veya avluda duruş / ayrılış */
               <div className="w-full flex items-end justify-between px-6 sm:px-16 pb-2 pointer-events-none">
                 {/* SOL: DENİZ (KAMPÜS ÖĞRENCİSİ) */}
-                <div className={subPhase === 'approach' && currentSceneIndex === 0 ? 'deniz-walk-across' : ''}>
+                <div
+                  className={
+                    subPhase === 'approach' && currentSceneIndex === 0
+                      ? 'deniz-walk-across'
+                      : ''
+                  }
+                  style={{
+                    transform:
+                      subPhase === 'departing'
+                        ? 'translateX(-120vw)'
+                        : undefined,
+                    transition:
+                      subPhase === 'departing'
+                        ? 'transform 3000ms linear'
+                        : undefined,
+                  }}
+                >
                   <DenizCharacter
                     action={denizAction}
                     isSpeaking={isSpeaking && speakingRole === 'deniz'}
@@ -1081,7 +1135,18 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
                 </div>
 
                 {/* SAĞ: LEO (GEZGİN ÇOCUK) */}
-                <div>
+                <div
+                  style={{
+                    transform:
+                      subPhase === 'departing'
+                        ? 'translateX(120vw)'
+                        : undefined,
+                    transition:
+                      subPhase === 'departing'
+                        ? 'transform 3000ms linear'
+                        : undefined,
+                  }}
+                >
                   <TouristKid
                     action={leoAction}
                     isSpeaking={isSpeaking && speakingRole === 'leo'}
@@ -1094,7 +1159,13 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
             {/* ALT KATMAN: HİKÂYE ANLATIMI VE DİYALOG SEÇİM PANELİ */}
             <div className="relative z-30 w-full max-w-3xl mx-auto flex flex-col gap-2.5">
               {/* Hikâye Anlatım ve İpucu Kartı */}
-              <div className="bg-slate-950/90 border-2 border-amber-500/50 rounded-2xl p-3 sm:p-4 shadow-2xl backdrop-blur-md">
+              <div
+                className={`bg-slate-950/90 border-2 border-amber-500/50 rounded-2xl shadow-2xl backdrop-blur-md transition-all duration-300 ${
+                  subPhase === 'threshold_crossing'
+                    ? 'p-2 sm:p-2.5 max-w-xl mx-auto border-amber-500/30'
+                    : 'p-3 sm:p-4'
+                }`}
+              >
                 <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-amber-500/20">
                   <div className="flex items-center gap-1.5 text-amber-300 text-xs font-bold">
                     <Footprints className="w-4 h-4 text-amber-400" />
@@ -1105,10 +1176,12 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
 
                 <p className="text-xs sm:text-sm text-slate-200 font-medium pt-2 leading-relaxed">
                   {subPhase === 'threshold_crossing'
-                    ? "İki arkadaş anıtsal Selçuklu Taç Kapısı'nın asırlık taş eşiğinden yan yana geçerek kervansarayın avlusuna adım atıyor..."
+                    ? "İki arkadaş anıtsal Selçuklu Taç Kapısı'nın asırlık taş eşiğinden ayaklarıyla yan yana geçerek açıklığın içinden avluya doğru yürüyor..."
                     : subPhase === 'approach'
                       ? "Deniz, Sultanhanı Kervansarayı'nın önündeki meydanda belirgin adımlarla taç kapıya doğru yaklaşıyor..."
-                      : currentConfig.narrationText}
+                      : subPhase === 'departing'
+                        ? "İki arkadaş karşılıklı el sallayarak kervansarayın avlusundan ayrı yönlere doğru belirgin adımlarla uğurlanıyor..."
+                        : currentConfig.narrationText}
                 </p>
 
                 {subPhase === 'dialogue' && (
@@ -1165,7 +1238,7 @@ export function Grade3SmartBoardAdventureView({ onExitToClassroom }: Grade3Smart
             </div>
           </div>
         ) : (
-          /* MACERA TAMAMLAMA VE BAŞARI EKRANI (Ayrılış Tamamlanınca Açılır) */
+          /* MACERA TAMAMLAMA VE BAŞARI EKRANI (İkisi de Kadrajdan Çıktıktan Sonra Açılır) */
           <div className="relative z-30 flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center animate-in zoom-in-95 duration-500">
             <div className="max-w-xl w-full bg-slate-950/95 border-3 border-amber-500 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-lg">
               {/* Başarı Rozeti */}

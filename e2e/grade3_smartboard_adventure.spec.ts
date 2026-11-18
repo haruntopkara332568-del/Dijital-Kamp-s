@@ -226,6 +226,7 @@ test.describe('3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Macerası
     });
 
     // Akıllı Tahta modalı açılır: Sultanhanı Kervansarayı Sahnesi
+    const adventureStartTime = Date.now();
     await expect(page.getByText(/Aksaray Sultanhanı Kervansarayı/i).first()).toBeVisible({ timeout: 6000 });
     await expect(page.getByText(/1\. Sahne — Taç Kapının Önünde Karşılaşma/i).first()).toBeVisible();
 
@@ -279,10 +280,12 @@ test.describe('3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Macerası
       page.getByText(/Tebrikler! "Good night!" diyerek arkadaşınla gece vedasını yaptın/i),
     ).toBeVisible({ timeout: 4000 });
 
-    // 5. Görsel Kayıt: Görünür El Sallama ve Ayrı Yönlere Ayrılış
+    // 5. Görsel Kayıt: Görünür El Sallama ve Kadrajın Kenarına Doğru Ayrılış
+    // Karakterler ellerini görünür biçimde sallayıp ayrılış adımlarına geçerken yakala
+    await page.waitForTimeout(2000);
     await page.screenshot({ path: 'docs/assets/grade3_smartboard_waving_departure.png' });
 
-    // --- TAMAMLANMA EKRANI (Ayrılış tamamlandıktan sonra açılır) ---
+    // --- TAMAMLANMA EKRANI (İki karakter de kadrajdan tamamen çıktıktan sonra açılır) ---
     await expect(
       page.getByText(/Tebrikler! Öğrendiğin İngilizce ifadeleri günlük yaşamda başarıyla kullandın\./i),
     ).toBeVisible({ timeout: 8000 });
@@ -303,6 +306,13 @@ test.describe('3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Macerası
 
     // Sınıfta olduğumuzu ve masaların yerinde durduğunu doğrula
     await expect(page.getByRole('button', { name: /Avluya dön/i })).toBeVisible({ timeout: 5000 });
+
+    // Video kaydının sınıfa dönüşü ve 4 masayı net gösterebilmesi için 2 saniye bekle
+    await page.waitForTimeout(2000);
+
+    // Oynanış süresini ölç ve konsola raporla
+    const totalElapsedSeconds = ((Date.now() - adventureStartTime) / 1000).toFixed(1);
+    console.log(`[Akıllı Tahta Sultanhanı Macerası (${testInfo.project.name})] Ölçülen Toplam Oynanış Süresi: ${totalElapsedSeconds} saniye`);
 
     // 7. Görsel Kayıt: Sınıfta Akıllı Tahtanın Önünde Kalış
     await page.screenshot({ path: 'docs/assets/grade3_smartboard_return_classroom.png' });
