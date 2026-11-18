@@ -2274,11 +2274,10 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
       );
 
       // Sultanhanı sahnesinin ve ilk sahne başlığının yüklendiğini doğrula
-      expect(screen.getByText(/Aksaray Sultanhanı Kervansarayı/i)).toBeInTheDocument();
-      expect(screen.getByText(/1\. Sahne — Kervansaraya Varış/i)).toBeInTheDocument();
-      expect(screen.getAllByText(/Kerem/i).length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByRole('button', { name: /"Good morning!"/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /"Good night!"/i })).toBeInTheDocument();
+      expect(screen.getAllByText(/Aksaray Sultanhanı Kervansarayı/i).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/1\. Sahne — Kervansaraya Varış/i).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/Leo/i).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByRole('button', { name: /"Arkadaşa Yaklaş"/i })).toBeInTheDocument();
     });
 
     it('73. Aşama 6.5: Grade3SmartBoardAdventureView 4 sahne diyalog akışı, cezasız ipucu, tamamlanma ve sınıfa dönüş sunar', async () => {
@@ -2322,42 +2321,50 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
         </MemoryRouter>,
       );
 
-      // 1. Sahne: Kervansaraya Varış
-      expect(screen.getByText(/1\. Sahne — Kervansaraya Varış/i)).toBeInTheDocument();
+      // 1. Sahne: Kervansaraya Varış (Meydandan Kapıya Yürüyüş)
+      expect(screen.getAllByText(/1\. Sahne — Kervansaraya Varış/i).length).toBeGreaterThanOrEqual(1);
+      fireEvent.click(screen.getByRole('button', { name: /"Arkadaşa Yaklaş"/i }));
 
-      // Yanlış seçim: Good night! -> cezasız ipucu
-      fireEvent.click(screen.getByRole('button', { name: /"Good night!"/i }));
+      // 2. Sahne: Taç Kapının Önünde Karşılaşma (Turist Çocuk Leo ile Tanışma)
+      await screen.findAllByText(/2\. Sahne — Taç Kapının Önünde Karşılaşma/i, {}, { timeout: 4000 });
+
+      // Yanlış seçim testi: Goodbye! -> cezasız pedagojik ipucu
+      fireEvent.click(screen.getByRole('button', { name: /"Goodbye!"/i }));
       expect(
-        await screen.findByText(/Sabah saatlerinde güne başlarken "Good morning!"/i, {}, { timeout: 3000 }),
+        await screen.findByText(/Yeni karşılaştığımız bir arkadaşa selam vermek için "Hello!"/i, {}, { timeout: 3000 }),
       ).toBeInTheDocument();
 
-      // Doğru seçim: Good morning!
+      // Doğru seçim: Hello!
+      fireEvent.click(screen.getByRole('button', { name: /"Hello!"/i }));
+      expect(
+        await screen.findByText(/Harika! "Hello!" diyerek tanışma selamı verdin/i, {}, { timeout: 3000 }),
+      ).toBeInTheDocument();
+
+      // 3. Sahne: Kapıdan İçeri Giriş (Birlikte Eşik Aşıp Avluya Geçiş)
+      await screen.findAllByText(/3\. Sahne — Kapıdan İçeri Giriş/i, {}, { timeout: 4000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Eşiği Aş ve Avluya Geç"/i }));
+
+      // 4. Sahne: Avluda Vedalaşma (Gece Işığı)
+      await screen.findAllByText(/4\. Sahne — Avluda Vedalaşma/i, {}, { timeout: 4000 });
+
+      // Yanlış seçim: Good morning! -> ipucu
       fireEvent.click(screen.getByRole('button', { name: /"Good morning!"/i }));
       expect(
-        await screen.findByText(/Harika! "Good morning!" diyerek Kerem'e sabah selamı verdin/i, {}, { timeout: 3000 }),
+        await screen.findByText(/Gece ayrılırken ve uyku vakti geldiğinde "Good night!"/i, {}, { timeout: 3000 }),
       ).toBeInTheDocument();
 
-      // 2. Sahne: Yeni Bir Arkadaş (Zeynep)
-      await screen.findByText(/2\. Sahne — Yeni Bir Arkadaş/i, {}, { timeout: 4000 });
-      fireEvent.click(screen.getByRole('button', { name: /"Hello!"/i }));
-
-      // 3. Sahne: Vedalaşma
-      await screen.findByText(/3\. Sahne — Vedalaşma/i, {}, { timeout: 4000 });
-      fireEvent.click(screen.getByRole('button', { name: /"Goodbye!"/i }));
-
-      // 4. Sahne: Günün Sonu
-      await screen.findByText(/4\. Sahne — Günün Sonu/i, {}, { timeout: 4000 });
+      // Doğru seçim: Good night!
       fireEvent.click(screen.getByRole('button', { name: /"Good night!"/i }));
 
       // TAMAMLANMA EKRANI
       expect(
-        await screen.findByText(/Tebrikler! Öğrendiğin İngilizce ifadeleri günlük yaşamda başarıyla kullandın\./i, {}, { timeout: 4000 }),
+        await screen.findByText(/Tebrikler! Öğrendiğin İngilizce ifadeleri günlük yaşamda başarıyla kullandın\./i, {}, { timeout: 5000 }),
       ).toBeInTheDocument();
 
       // 4 kartın özetini doğrula
       expect(screen.getByText(/Büyük Görev Başarıyla Tamamlandı/i)).toBeInTheDocument();
-      expect(screen.getByText(/Good morning!/i)).toBeInTheDocument();
-      expect(screen.getByText(/Goodbye!/i)).toBeInTheDocument();
+      expect(screen.getByText(/Hello!/i)).toBeInTheDocument();
+      expect(screen.getByText(/Good night!/i)).toBeInTheDocument();
 
       // State'te 4 masanın aşamalarının korunduğunu doğrula
       const savedState = loadStudentState();
