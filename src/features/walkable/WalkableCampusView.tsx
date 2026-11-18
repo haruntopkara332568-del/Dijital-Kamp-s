@@ -17,7 +17,7 @@ import {
 import {
   renderSultanhaniBackground,
   renderSultanhaniEntities,
-  renderSultanhaniForeground,
+  SULTANHANI_SQUARE,
 } from './engine/sultanhaniSceneRenderer';
 import { WalkableControlsOverlay } from './components/WalkableControlsOverlay';
 import { SmartBoardModal } from './components/SmartBoardModal';
@@ -74,11 +74,12 @@ export function WalkableCampusView({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<WalkableCanvasEngine | null>(null);
+  const sceneTransitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sahne içi son konumları saklayarak geri dönüşlerde konumu koruma (Section 6)
   const lastCourtyardPosRef = useRef<Position>({ x: 700, y: 560 });
   const lastClassroomPosRef = useRef<Position>({ x: 480, y: 520 });
-  const lastSultanhaniPosRef = useRef<Position>({ x: 553, y: 760 });
+  const lastSultanhaniPosRef = useRef<Position>(SULTANHANI_SQUARE.spawn);
 
   const [currentScene, setCurrentScene] = useState<'courtyard' | 'classroom' | 'sultanhani_square'>(initialScene);
   const [activeZone, setActiveZone] = useState<InteractiveZone | null>(null);
@@ -113,10 +114,18 @@ export function WalkableCampusView({
     }
   }, [onBackToMap, navigate]);
 
+  useEffect(() => () => {
+    if (sceneTransitionTimer.current !== null) clearTimeout(sceneTransitionTimer.current);
+  }, []);
+
   const handleExitSultanhani = useCallback(() => {
+    if (sceneTransitionTimer.current !== null) return;
+    engineRef.current?.setInputDisabled(true);
+    setActiveZone(null);
     setTeleportMessage("İngilizce Sınıfına Geri Dönülüyor... 🎒");
     setIsTeleporting(true);
-    setTimeout(() => {
+    sceneTransitionTimer.current = setTimeout(() => {
+      sceneTransitionTimer.current = null;
       setIsTeleporting(false);
       lastClassroomPosRef.current = { x: 480, y: 180 };
       setCurrentScene('classroom');
@@ -127,41 +136,13 @@ export function WalkableCampusView({
   const getSceneConfig = useCallback(
     (scene: 'courtyard' | 'classroom' | 'sultanhani_square'): WalkableSceneConfig => {
       if (scene === 'sultanhani_square') {
-        const obstacles: SceneObstacle[] = [
-          // Sol sur duvarı (kapı solundaki heybetli taş cephe)
-          { id: 'caravanserai-wall-left', name: 'Sol Sur Duvarı', x: 0, y: 0, width: 518, height: 590 },
-          // Sağ sur duvarı (kapı sağındaki taş cephe)
-          { id: 'caravanserai-wall-right', name: 'Sağ Sur Duvarı', x: 588, y: 0, width: 518, height: 590 },
-          // Taç kapı kemerinin üstü (kapı açıklığı 480-590 arası açık, 0-480 arası duvar)
-          { id: 'gate-arch-top', name: 'Taç Kapı Kemeri', x: 518, y: 0, width: 70, height: 480 },
-          // Sol ön meydan yeşillikleri ve ağaç
-          { id: 'bushes-left', name: 'Meydan Yeşillik', x: 0, y: 800, width: 140, height: 132 },
-          // Sağ meydan tanıtım tabelası
-          { id: 'sign-right', name: 'Tanıtım Panosu', x: 960, y: 780, width: 146, height: 152 },
-        ];
-
         const interactiveZones: InteractiveZone[] = [
-          // Taç kapıdan içeri adım atıldığında iç koridor geçiş noktası
-          {
-            id: 'gate-interior',
-            name: 'Kervansaray İç Avlusu',
-            prompt: 'İç Avluya Geç [E]',
-            x: 553,
-            y: 520,
-            radius: 55,
-            action: () => {
-              setUnreachableMessage(
-                'Sultanhanı Kervansarayı taç kapısından içeri girdin! 🏛️ Selçuklu mimarisinin görkemi seni karşılıyor.',
-              );
-              setTimeout(() => setUnreachableMessage(null), 3500);
-            },
-          },
           // Meydanın güney çıkış portalı: İngilizce sınıfına geri dönüş
           {
             id: 'return-classroom-portal',
             name: 'İngilizce Sınıfına Dönüş',
             prompt: 'Sınıfa Geri Dön [E]',
-            x: 553,
+            x: SULTANHANI_SQUARE.spawn.x,
             y: 910,
             radius: 65,
             action: () => {
@@ -171,10 +152,10 @@ export function WalkableCampusView({
         ];
 
         return {
-          width: 1106,
-          height: 932,
+          width: SULTANHANI_SQUARE.width,
+          height: SULTANHANI_SQUARE.height,
           playerSpawn: lastSultanhaniPosRef.current,
-          obstacles,
+          obstacles: SULTANHANI_SQUARE.obstacles,
           interactiveZones,
         };
       }
@@ -245,16 +226,20 @@ export function WalkableCampusView({
                 }
 
                 // Dört masa tamamlandığında: Açılış animasyonu ve ardından Sultanhanı Kervansarayı Meydanı'na ışınlanma
+                if (sceneTransitionTimer.current !== null) return;
+                engineRef.current?.setInputDisabled(true);
                 setIsSmartBoardPoweringOn(true);
-                setTimeout(() => {
+                sceneTransitionTimer.current = setTimeout(() => {
                   setIsSmartBoardPoweringOn(false);
                   setIsSmartBoardActive(true);
                   setTeleportMessage("Sultanhanı Kervansarayı Meydanı'na Işınlanıyorsun... 🏛️✨");
+                  setActiveZone(null);
                   setIsTeleporting(true);
-                  setTimeout(() => {
+                  sceneTransitionTimer.current = setTimeout(() => {
+                    sceneTransitionTimer.current = null;
                     setIsTeleporting(false);
                     lastClassroomPosRef.current = { x: 480, y: 180 };
-                    lastSultanhaniPosRef.current = { x: 553, y: 760 };
+                    lastSultanhaniPosRef.current = SULTANHANI_SQUARE.spawn;
                     setCurrentScene('sultanhani_square');
                   }, 650);
                 }, 350);
@@ -426,6 +411,7 @@ export function WalkableCampusView({
           radius: 75,
           action: () => {
             lastClassroomPosRef.current = { x: 480, y: 520 };
+            setActiveZone(null);
             setCurrentScene('classroom');
           },
         },
@@ -592,7 +578,7 @@ export function WalkableCampusView({
         },
         onRenderBackground: (ctx) => {
           if (currentScene === 'sultanhani_square') {
-            renderSultanhaniBackground(ctx, config.width, config.height);
+            renderSultanhaniBackground(ctx);
           } else if (currentScene === 'classroom') {
             renderClassroomLayeredBackground(
               ctx,
@@ -609,7 +595,7 @@ export function WalkableCampusView({
         },
         onRenderEntities: (ctx, player) => {
           if (currentScene === 'sultanhani_square') {
-            renderSultanhaniEntities(ctx, player, config.width, config.height);
+            renderSultanhaniEntities(ctx, player);
           } else if (currentScene === 'classroom') {
             renderClassroomEntities(
               ctx,
@@ -623,17 +609,15 @@ export function WalkableCampusView({
           }
         },
         onRenderForeground: (ctx) => {
-          if (currentScene === 'sultanhani_square') {
-            renderSultanhaniForeground(ctx, config.width, config.height, engineRef.current?.player);
-          } else if (currentScene === 'classroom') {
+          if (currentScene === 'classroom') {
             renderClassroomForeground(ctx, config.width, config.height);
-          } else {
+          } else if (currentScene === 'courtyard') {
             renderCourtyardForeground(ctx, config.width, config.height);
           }
         },
         onCustomRender: (ctx) => {
           if (currentScene === 'sultanhani_square') {
-            renderSultanhaniBackground(ctx, config.width, config.height);
+            renderSultanhaniBackground(ctx);
           } else if (currentScene === 'classroom') {
             renderClassroomBackground(
               ctx,
@@ -758,9 +742,6 @@ export function WalkableCampusView({
             <p className="text-sm font-bold text-[var(--seljuk-navy)]">
               {teleportMessage}
             </p>
-            <span className="text-xs text-[var(--campus-text-muted)]">
-              Sultanhanı Kervansarayı meydanı açılıyor...
-            </span>
           </div>
         </div>
       )}

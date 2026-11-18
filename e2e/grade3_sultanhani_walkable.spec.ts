@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -59,248 +59,132 @@ test.describe('Aşama 6.5: Sultanhanı Meydanında Aynı Karakterle Yürüyüş 
     await expect(openGateBtn).toBeVisible({ timeout: 10000 });
     await openGateBtn.click();
 
+    const touch = !!testInfo.project.use.hasTouch;
+    if (!touch) await page.setViewportSize({ width: 1000, height: 650 });
+
     const walkableCanvas = page.locator('canvas[data-testid="walkable-canvas"]');
     await expect(walkableCanvas).toBeVisible({ timeout: 10000 });
     await page.waitForTimeout(600);
 
-    // İngilizce Dünyası binasına yürü ve sınıfa gir
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: {
-            setPosition: (p: { x: number; y: number }) => void;
-          };
-        }
-      ).__WALKABLE_ENGINE__;
-      if (engine) {
-        engine.setPosition({ x: 970, y: 335 });
-      }
-    });
-    await page.waitForTimeout(400);
-
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: {
-            triggerActiveInteraction: () => void;
-          };
-        }
-      ).__WALKABLE_ENGINE__;
-      engine?.triggerActiveInteraction();
-    });
-
-    // Sınıfta olduğumuzu doğrula
-    await expect(page.getByRole('button', { name: /Avluya dön/i })).toBeVisible({ timeout: 5000 });
+    const city = await readScene(page);
+    if (city.width < 620) {
+      await pointAtWorld(page, !!testInfo.project.use.hasTouch, 815, 470);
+      await expect.poll(async () => (await readScene(page)).x).toBeGreaterThan(800);
+    }
+    await pointAtWorld(page, touch, 970, 350);
+    const interaction = page.getByRole('button', { name: /Etkileşimi başlat/i });
+    await expect(page.getByText('İngilizce Sınıfına Gir', { exact: true })).toBeVisible({ timeout: 12000 });
+    await interaction.click();
     await expect(page.getByText('İngilizce Sınıfı', { exact: true })).toBeVisible();
-    await page.waitForTimeout(800);
 
-    // Sınıfta akıllı tahtaya yaklaş (x: 480, y: 180)
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: {
-            setPosition: (p: { x: number; y: number }) => void;
-          };
-        }
-      ).__WALKABLE_ENGINE__;
-      if (engine) {
-        engine.setPosition({ x: 480, y: 180 });
+    await expect(page.getByText('İngilizce Sınıfına Gir', { exact: true })).toBeHidden();
+    await expect.poll(async () => (await readScene(page)).y).toBeGreaterThan(500);
+    if (touch) {
+      await pointAtWorld(page, true, 480, 220);
+      await expect.poll(async () => (await readScene(page)).y).toBeLessThan(240);
+    } else {
+      await page.keyboard.down('ArrowUp');
+      try {
+        await expect.poll(async () => (await readScene(page)).y, { timeout: 15000 }).toBeLessThan(230);
+      } finally {
+        await page.keyboard.up('ArrowUp');
       }
-    });
-    await page.waitForTimeout(600);
+    }
+    await expect(page.getByText(/Büyük Görev: Kervansaray Macerası/)).toBeVisible();
+    await interaction.click();
 
-    // Akıllı tahtayı tetikle (Büyük Görev: Kervansaray Macerası [E])
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: {
-            triggerActiveInteraction: () => void;
-          };
-        }
-      ).__WALKABLE_ENGINE__;
-      if (engine) {
-        engine.triggerActiveInteraction();
+    const teleport = page.getByTestId('teleport-overlay');
+    await expect(teleport).toContainText('Sultanhanı Kervansarayı');
+    await expect(teleport).toBeHidden();
+    await expect(page.getByText(/Sultanhanı Kervansarayı — Dış Meydan/)).toBeVisible();
+    const arrival = await readScene(page);
+    await page.waitForTimeout(550);
+    expect(await readScene(page)).toEqual(arrival);
+
+    await pointAtWorld(page, touch, arrival.x - 85, arrival.y - 75);
+    await expect.poll(async () => (await readScene(page)).x).toBeLessThan(arrival.x - 70);
+
+    if (!touch) {
+      await page.keyboard.down('ArrowUp');
+      try {
+        await expect.poll(async () => (await readScene(page)).y).toBeLessThan(595);
+        await page.waitForTimeout(350);
+      } finally {
+        await page.keyboard.up('ArrowUp');
       }
-    });
-
-    // Işınlanma efektinin belirdiğini doğrula
-    const teleportOverlay = page.locator('[data-testid="teleport-overlay"]');
-    await expect(teleportOverlay).toBeVisible({ timeout: 5000 });
-    await expect(teleportOverlay).toContainText('Sultanhanı Kervansarayı');
-
-    // Sultanhanı Meydanına varış (overlay kaybolur, başlık Aksaray Sultanhanı Kervansarayı olur)
-    await expect(teleportOverlay).toBeHidden({ timeout: 10000 });
-    await expect(page.getByText(/Aksaray Sultanhanı Kervansarayı — Dış Meydan/i)).toBeVisible({ timeout: 5000 });
-    await expect(page.getByRole('button', { name: /Sınıfa Dön/i })).toBeVisible();
-
-    // 1. Doğrulama: Karakter meydanda başlangıç konumunda bekler (otomatik yürümez)
-    const initialPos = await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: {
-            player: { x: number; y: number; direction: string };
-          };
-        }
-      ).__WALKABLE_ENGINE__;
-      return engine ? { x: engine.player.x, y: engine.player.y } : null;
-    });
-
-    expect(initialPos).toBeTruthy();
-    expect(initialPos?.x).toBe(553);
-    expect(initialPos?.y).toBe(760);
-    await page.waitForTimeout(1000);
-
-    // 2. Doğrulama: Öğrenci kontrollü yürüyüş (Zemine hedef belirleme ve yürüme)
-    // Karakter taç kapıya doğru adım atar
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: {
-            navigateWalkToTarget: (x: number, y: number) => void;
-          };
-        }
-      ).__WALKABLE_ENGINE__;
-      if (engine) {
-        // Taç kapı hizasında ileri yürü
-        engine.navigateWalkToTarget(553, 670);
+      const atWall = await readScene(page);
+      expect(atWall.y).toBeGreaterThanOrEqual(585);
+      await page.keyboard.down('ArrowDown');
+      try {
+        await expect.poll(async () => (await readScene(page)).y).toBeGreaterThan(atWall.y + 55);
+      } finally {
+        await page.keyboard.up('ArrowDown');
       }
-    });
-    await page.waitForTimeout(1400);
+      const stopped = await readScene(page);
+      await page.waitForTimeout(350);
+      expect(Math.abs((await readScene(page)).y - stopped.y)).toBeLessThan(4);
+    }
 
-    // 3. Doğrulama: Yön değiştirme, durma ve geriye dönme (Yön kontrolleri)
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: {
-            setVirtualDirection: (vx: number, vy: number) => void;
-          };
-        }
-      ).__WALKABLE_ENGINE__;
-      if (engine) {
-        // Sağa ve geriye dönüş
-        engine.setVirtualDirection(1, 0);
-      }
-    });
-    await page.waitForTimeout(600);
+    // 553 × 466 kaynak fotoğrafında kapı açıklığı x~298–327, eşik y~296.
+    await pointAtWorld(page, touch, 625, touch ? 653 : 645);
+    await expect.poll(async () => Math.abs((await readScene(page)).x - 625)).toBeLessThan(8);
+    await pointAtWorld(page, touch, 625, 540);
+    await expect.poll(async () => (await readScene(page)).y).toBeLessThan(556);
 
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: {
-            setVirtualDirection: (vx: number, vy: number) => void;
-          };
-        }
-      ).__WALKABLE_ENGINE__;
-      if (engine) {
-        // Dur ve sola dön
-        engine.setVirtualDirection(-1, 0);
-      }
-    });
-    await page.waitForTimeout(600);
+    const passage = await readScene(page);
+    expect(passage.x).toBeGreaterThan(596);
+    expect(passage.x).toBeLessThan(654);
+    expect(passage.cameraX).toBeLessThanOrEqual(596);
+    expect(passage.cameraX + passage.width).toBeGreaterThanOrEqual(654);
+    expect(passage.cameraY).toBeLessThanOrEqual(486);
+    expect(passage.cameraY + passage.height).toBeGreaterThanOrEqual(592);
+    expect(passage.y + 18).toBeLessThan(592);
 
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: {
-            setVirtualDirection: (vx: number, vy: number) => void;
-          };
-        }
-      ).__WALKABLE_ENGINE__;
-      if (engine) {
-        engine.setVirtualDirection(0, 0);
-      }
-    });
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(650);
+    await page.getByRole('button', { name: /Sınıfa dön/i }).click();
+    await expect(page.getByText('İngilizce Sınıfı', { exact: true })).toBeVisible();
+    await page.waitForTimeout(1200);
 
-    // 4. Doğrulama: Fotoğraftaki taç kapı açıklığından tam geçiş
-    // Hedef: x: 553, y: 530 (Taç kapı açıklığının tonozlu içi)
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: {
-            navigateWalkToTarget: (x: number, y: number) => void;
-          };
-        }
-      ).__WALKABLE_ENGINE__;
-      if (engine) {
-        engine.navigateWalkToTarget(553, 530);
-      }
-    });
-
-    // Karakter kapıdan geçerken adımları bekle
-    await page.waitForTimeout(2500);
-
-    // Karakterin taç kapı eşiğini aşıp iç koridora adım attığını doğrula
-    const gatePos = await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: {
-            player: { x: number; y: number };
-            camera: { x: number; y: number };
-            canvas: HTMLCanvasElement;
-          };
-        }
-      ).__WALKABLE_ENGINE__;
-      if (!engine) return null;
-      return {
-        playerX: engine.player.x,
-        playerY: engine.player.y,
-        feetY: engine.player.y + 18,
-        cameraY: engine.camera.y,
-        cameraH: engine.canvas.height,
-      };
-    });
-
-    expect(gatePos).toBeTruthy();
-    // Karakter kapı açıklığına (y <= 565) ulaşmıştır
-    expect(gatePos!.playerY).toBeLessThanOrEqual(565);
-    // Ayakları ve kapı açıklığı (y: 480-590) kadrajda yer almaktadır
-    const isFeetInView =
-      gatePos!.feetY >= gatePos!.cameraY &&
-      gatePos!.feetY <= gatePos!.cameraY + gatePos!.cameraH;
-    expect(isFeetInView).toBe(true);
-
-    // Geçiş anının ekran görüntüsünü al
-    await page.screenshot({
-      path: `docs/assets/grade3_sultanhani_gate_crossing_${testInfo.project.name}.png`,
-    });
-    await page.waitForTimeout(1000);
-
-    // 5. Doğrulama: "Sınıfa Dön" düğmesine tıkla ve sınıfa geri dön
-    const exitBtn = page.getByRole('button', { name: /Sınıfa Dön/i });
-    await expect(exitBtn).toBeVisible();
-    await exitBtn.click();
-
-    // Sınıfa dönüş ışınlanma geçişi
-    await expect(teleportOverlay).toBeVisible({ timeout: 5000 });
-    await expect(teleportOverlay).toContainText('İngilizce Sınıfına');
-
-    // Sınıfa döndüğümüzü doğrula
-    await expect(teleportOverlay).toBeHidden({ timeout: 10000 });
-    await expect(page.getByText('İngilizce Sınıfı', { exact: true })).toBeVisible({ timeout: 5000 });
-    await expect(page.getByRole('button', { name: /Avluya dön/i })).toBeVisible();
-
-    await page.waitForTimeout(1500);
-
-    // Sınıfa dönüş anının ekran görüntüsünü al
-    await page.screenshot({
-      path: `docs/assets/grade3_sultanhani_return_classroom_${testInfo.project.name}.png`,
-    });
-
-    // Kesintisiz Ekran Kaydı Videosunu docs/assets/videos Klasörüne Kaydet
     await page.close();
     const video = page.video();
     if (video) {
       const videosDir = path.resolve('docs/assets/videos');
-      if (!fs.existsSync(videosDir)) {
-        fs.mkdirSync(videosDir, { recursive: true });
-      }
-      const videoPath = await video.path();
-      const targetName =
-        testInfo.project.name === 'mobile-chrome'
-          ? 'grade3_sultanhani_walkable_mobile.webm'
-          : 'grade3_sultanhani_walkable_desktop.webm';
-      fs.copyFileSync(videoPath, path.join(videosDir, targetName));
+      fs.mkdirSync(videosDir, { recursive: true });
+      await video.saveAs(path.join(videosDir, touch
+        ? 'grade3_sultanhani_walkable_mobile.webm'
+        : 'grade3_sultanhani_walkable_desktop.webm'));
     }
   });
 });
+
+async function readScene(page: Page) {
+  return page.getByTestId('walkable-canvas').evaluate((canvas: HTMLCanvasElement) => {
+    const engine = (window as unknown as {
+      __WALKABLE_ENGINE__: {
+        getPosition: () => { x: number; y: number };
+        camera: { x: number; y: number };
+      };
+    }).__WALKABLE_ENGINE__;
+    return {
+      ...engine.getPosition(),
+      cameraX: Math.round(engine.camera.x),
+      cameraY: Math.round(engine.camera.y),
+      width: canvas.width,
+      height: canvas.height,
+    };
+  });
+}
+
+async function pointAtWorld(page: Page, touch: boolean, worldX: number, worldY: number) {
+  const scene = await readScene(page);
+  const bounds = await page.getByTestId('walkable-canvas').boundingBox();
+  if (!bounds) throw new Error('Sahne tuvali bulunamadı.');
+  const x = bounds.x + (worldX - scene.cameraX) * bounds.width / scene.width;
+  const y = bounds.y + (worldY - scene.cameraY) * bounds.height / scene.height;
+  expect(x).toBeGreaterThan(bounds.x);
+  expect(x).toBeLessThan(bounds.x + bounds.width);
+  expect(y).toBeGreaterThan(bounds.y);
+  expect(y).toBeLessThan(bounds.y + bounds.height);
+  if (touch) await page.touchscreen.tap(x, y);
+  else await page.mouse.click(x, y);
+}
