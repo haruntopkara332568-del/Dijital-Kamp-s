@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { Sparkles } from 'lucide-react';
 import { WalkableCanvasEngine } from './engine/WalkableCanvasEngine';
 import {
   renderCourtyardBackground,
@@ -13,6 +14,11 @@ import {
   renderClassroomEntities,
   renderClassroomForeground,
 } from './engine/classroomSceneRenderer';
+import {
+  renderSultanhaniBackground,
+  renderSultanhaniEntities,
+  renderSultanhaniForeground,
+} from './engine/sultanhaniSceneRenderer';
 import { WalkableControlsOverlay } from './components/WalkableControlsOverlay';
 import { SmartBoardModal } from './components/SmartBoardModal';
 import { GradeBoardModal } from './components/GradeBoardModal';
@@ -22,7 +28,7 @@ import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } fr
 import type { MissionStageId } from '@/src/types/campus';
 
 export interface WalkableCampusViewProps {
-  initialScene?: 'courtyard' | 'classroom';
+  initialScene?: 'courtyard' | 'classroom' | 'sultanhani_square';
   onBackToMap?: () => void;
   onExitToGate?: () => void;
 }
@@ -72,8 +78,9 @@ export function WalkableCampusView({
   // Sahne içi son konumları saklayarak geri dönüşlerde konumu koruma (Section 6)
   const lastCourtyardPosRef = useRef<Position>({ x: 700, y: 560 });
   const lastClassroomPosRef = useRef<Position>({ x: 480, y: 520 });
+  const lastSultanhaniPosRef = useRef<Position>({ x: 553, y: 760 });
 
-  const [currentScene, setCurrentScene] = useState<'courtyard' | 'classroom'>(initialScene);
+  const [currentScene, setCurrentScene] = useState<'courtyard' | 'classroom' | 'sultanhani_square'>(initialScene);
   const [activeZone, setActiveZone] = useState<InteractiveZone | null>(null);
   const [unreachableMessage, setUnreachableMessage] = useState<string | null>(null);
   const [isSmartBoardModalOpen, setIsSmartBoardModalOpen] = useState(false);
@@ -82,6 +89,8 @@ export function WalkableCampusView({
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [isSmartBoardPoweringOn, setIsSmartBoardPoweringOn] = useState(false);
   const [isSmartBoardActive, setIsSmartBoardActive] = useState(false);
+  const [isTeleporting, setIsTeleporting] = useState(false);
+  const [teleportMessage, setTeleportMessage] = useState("Sultanhanı Kervansarayı Meydanı'na Işınlanıyorsun... 🏛️✨");
 
   // Akıllı tahta animasyon durumunu ref üzerinden aktararak motorun gereksiz sıfırlanmasını önle
   const smartBoardVisualStateRef = useRef({
@@ -104,9 +113,72 @@ export function WalkableCampusView({
     }
   }, [onBackToMap, navigate]);
 
+  const handleExitSultanhani = useCallback(() => {
+    setTeleportMessage("İngilizce Sınıfına Geri Dönülüyor... 🎒");
+    setIsTeleporting(true);
+    setTimeout(() => {
+      setIsTeleporting(false);
+      lastClassroomPosRef.current = { x: 480, y: 180 };
+      setCurrentScene('classroom');
+    }, 600);
+  }, []);
+
   // Sahneye göre konfigürasyon belirleme
   const getSceneConfig = useCallback(
-    (scene: 'courtyard' | 'classroom'): WalkableSceneConfig => {
+    (scene: 'courtyard' | 'classroom' | 'sultanhani_square'): WalkableSceneConfig => {
+      if (scene === 'sultanhani_square') {
+        const obstacles: SceneObstacle[] = [
+          // Sol sur duvarı (kapı solundaki heybetli taş cephe)
+          { id: 'caravanserai-wall-left', name: 'Sol Sur Duvarı', x: 0, y: 0, width: 518, height: 590 },
+          // Sağ sur duvarı (kapı sağındaki taş cephe)
+          { id: 'caravanserai-wall-right', name: 'Sağ Sur Duvarı', x: 588, y: 0, width: 518, height: 590 },
+          // Taç kapı kemerinin üstü (kapı açıklığı 480-590 arası açık, 0-480 arası duvar)
+          { id: 'gate-arch-top', name: 'Taç Kapı Kemeri', x: 518, y: 0, width: 70, height: 480 },
+          // Sol ön meydan yeşillikleri ve ağaç
+          { id: 'bushes-left', name: 'Meydan Yeşillik', x: 0, y: 800, width: 140, height: 132 },
+          // Sağ meydan tanıtım tabelası
+          { id: 'sign-right', name: 'Tanıtım Panosu', x: 960, y: 780, width: 146, height: 152 },
+        ];
+
+        const interactiveZones: InteractiveZone[] = [
+          // Taç kapıdan içeri adım atıldığında iç koridor geçiş noktası
+          {
+            id: 'gate-interior',
+            name: 'Kervansaray İç Avlusu',
+            prompt: 'İç Avluya Geç [E]',
+            x: 553,
+            y: 520,
+            radius: 55,
+            action: () => {
+              setUnreachableMessage(
+                'Sultanhanı Kervansarayı taç kapısından içeri girdin! 🏛️ Selçuklu mimarisinin görkemi seni karşılıyor.',
+              );
+              setTimeout(() => setUnreachableMessage(null), 3500);
+            },
+          },
+          // Meydanın güney çıkış portalı: İngilizce sınıfına geri dönüş
+          {
+            id: 'return-classroom-portal',
+            name: 'İngilizce Sınıfına Dönüş',
+            prompt: 'Sınıfa Geri Dön [E]',
+            x: 553,
+            y: 910,
+            radius: 65,
+            action: () => {
+              handleExitSultanhani();
+            },
+          },
+        ];
+
+        return {
+          width: 1106,
+          height: 932,
+          playerSpawn: lastSultanhaniPosRef.current,
+          obstacles,
+          interactiveZones,
+        };
+      }
+
       if (scene === 'classroom') {
         const obstacles: SceneObstacle[] = [
           // Kuzey ön duvar ve akıllı tahta altı
@@ -172,13 +244,20 @@ export function WalkableCampusView({
                   return;
                 }
 
-                // Dört masa tamamlandığında: Açılış animasyonu ve ardından Sultanhanı Kervansarayı macerası
+                // Dört masa tamamlandığında: Açılış animasyonu ve ardından Sultanhanı Kervansarayı Meydanı'na ışınlanma
                 setIsSmartBoardPoweringOn(true);
                 setTimeout(() => {
                   setIsSmartBoardPoweringOn(false);
                   setIsSmartBoardActive(true);
-                  setIsSmartBoardModalOpen(true);
-                }, 450);
+                  setTeleportMessage("Sultanhanı Kervansarayı Meydanı'na Işınlanıyorsun... 🏛️✨");
+                  setIsTeleporting(true);
+                  setTimeout(() => {
+                    setIsTeleporting(false);
+                    lastClassroomPosRef.current = { x: 480, y: 180 };
+                    lastSultanhaniPosRef.current = { x: 553, y: 760 };
+                    setCurrentScene('sultanhani_square');
+                  }, 650);
+                }, 350);
                 return;
               }
 
@@ -451,7 +530,7 @@ export function WalkableCampusView({
         interactiveZones,
       };
     },
-    [],
+    [handleExitSultanhani],
   );
 
   // Sınıf seçimi veya aşama tamamlanma durumunda etkileşim bölgelerini (prompt ve kilitleri) dinamik güncelle
@@ -486,7 +565,12 @@ export function WalkableCampusView({
 
     updateCanvasSize();
 
-    const spawnPos = currentScene === 'classroom' ? lastClassroomPosRef.current : lastCourtyardPosRef.current;
+    const spawnPos =
+      currentScene === 'sultanhani_square'
+        ? lastSultanhaniPosRef.current
+        : currentScene === 'classroom'
+          ? lastClassroomPosRef.current
+          : lastCourtyardPosRef.current;
 
     const engine = new WalkableCanvasEngine(
       canvas,
@@ -494,7 +578,9 @@ export function WalkableCampusView({
       {
         onActiveZoneChange: (zone) => setActiveZone(zone),
         onPositionChange: (pos) => {
-          if (currentScene === 'classroom') {
+          if (currentScene === 'sultanhani_square') {
+            lastSultanhaniPosRef.current = pos;
+          } else if (currentScene === 'classroom') {
             lastClassroomPosRef.current = pos;
           } else {
             lastCourtyardPosRef.current = pos;
@@ -505,7 +591,9 @@ export function WalkableCampusView({
           setTimeout(() => setUnreachableMessage(null), 2500);
         },
         onRenderBackground: (ctx) => {
-          if (currentScene === 'classroom') {
+          if (currentScene === 'sultanhani_square') {
+            renderSultanhaniBackground(ctx, config.width, config.height);
+          } else if (currentScene === 'classroom') {
             renderClassroomLayeredBackground(
               ctx,
               config.width,
@@ -520,7 +608,9 @@ export function WalkableCampusView({
           }
         },
         onRenderEntities: (ctx, player) => {
-          if (currentScene === 'classroom') {
+          if (currentScene === 'sultanhani_square') {
+            renderSultanhaniEntities(ctx, player, config.width, config.height);
+          } else if (currentScene === 'classroom') {
             renderClassroomEntities(
               ctx,
               player,
@@ -533,14 +623,18 @@ export function WalkableCampusView({
           }
         },
         onRenderForeground: (ctx) => {
-          if (currentScene === 'classroom') {
+          if (currentScene === 'sultanhani_square') {
+            renderSultanhaniForeground(ctx, config.width, config.height, engineRef.current?.player);
+          } else if (currentScene === 'classroom') {
             renderClassroomForeground(ctx, config.width, config.height);
           } else {
             renderCourtyardForeground(ctx, config.width, config.height);
           }
         },
         onCustomRender: (ctx) => {
-          if (currentScene === 'classroom') {
+          if (currentScene === 'sultanhani_square') {
+            renderSultanhaniBackground(ctx, config.width, config.height);
+          } else if (currentScene === 'classroom') {
             renderClassroomBackground(
               ctx,
               config.width,
@@ -559,6 +653,9 @@ export function WalkableCampusView({
     );
 
     engine.start();
+    if (currentScene === 'sultanhani_square') {
+      engine.player.direction = 'up';
+    }
     engineRef.current = engine;
     if (typeof window !== 'undefined') {
       (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine }).__WALKABLE_ENGINE__ = engine;
@@ -640,11 +737,33 @@ export function WalkableCampusView({
                 lastCourtyardPosRef.current = { x: 970, y: 350 };
                 setCurrentScene('courtyard');
               }
-            : undefined
+            : currentScene === 'sultanhani_square'
+              ? handleExitSultanhani
+              : undefined
         }
         unreachableMessage={unreachableMessage}
         currentScene={currentScene}
       />
+
+      {/* Işınlanma Geçiş Efekti (Portal Teleport Animation) */}
+      {isTeleporting && (
+        <div
+          data-testid="teleport-overlay"
+          className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[var(--seljuk-navy)]/80 backdrop-blur-md animate-fade-in transition-all duration-300 pointer-events-none"
+        >
+          <div className="relative flex flex-col items-center gap-4 text-center px-6 py-8 rounded-2xl bg-[var(--campus-surface)]/95 border border-[var(--campus-border)] shadow-2xl max-w-sm mx-4">
+            <div className="w-16 h-16 rounded-full bg-[var(--seljuk-teal)]/15 border-2 border-[var(--seljuk-teal)] flex items-center justify-center animate-spin">
+              <Sparkles className="w-8 h-8 text-[var(--seljuk-teal)]" />
+            </div>
+            <p className="text-sm font-bold text-[var(--seljuk-navy)]">
+              {teleportMessage}
+            </p>
+            <span className="text-xs text-[var(--campus-text-muted)]">
+              Sultanhanı Kervansarayı meydanı açılıyor...
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Akıllı Tahta Modal Penceresi */}
       <SmartBoardModal

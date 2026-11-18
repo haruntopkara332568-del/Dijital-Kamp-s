@@ -42,6 +42,8 @@ export const CLASSROOM_BOOKSHELF_ASSET_URL = '/assets/walkable/classroom_bookshe
 export const SMARTBOARD_SCREEN_OFF_ASSET_URL = '/assets/walkable/smartboard_screen_off.png';
 export const SMARTBOARD_SCREEN_POWERING_ASSET_URL = '/assets/walkable/smartboard_screen_powering.png';
 export const SMARTBOARD_SCREEN_ACTIVE_ASSET_URL = '/assets/walkable/smartboard_screen_active.png';
+export const SULTANHANI_CARAVANSERAI_ASSET_URL = '/assets/walkable/sultanhani_caravanserai.jpg';
+export const SULTANHANI_INNER_COURTYARD_ASSET_URL = '/assets/walkable/sultanhani_inner_courtyard.jpg';
 
 /**
  * Varlık getter fonksiyonları
@@ -114,6 +116,14 @@ export function getSmartBoardScreenActiveAsset(): HTMLImageElement | null {
   return getLoadedAsset(SMARTBOARD_SCREEN_ACTIVE_ASSET_URL);
 }
 
+export function getSultanhaniCaravanseraiAsset(): HTMLImageElement | null {
+  return getLoadedAsset(SULTANHANI_CARAVANSERAI_ASSET_URL);
+}
+
+export function getSultanhaniInnerCourtyardAsset(): HTMLImageElement | null {
+  return getLoadedAsset(SULTANHANI_INNER_COURTYARD_ASSET_URL);
+}
+
 /**
  * Test veya özel durumlar için önbelleğe doğrudan görsel nesnesi ekleme.
  */
@@ -143,6 +153,8 @@ export function preloadWalkableAssets() {
   getLoadedAsset(SMARTBOARD_SCREEN_OFF_ASSET_URL);
   getLoadedAsset(SMARTBOARD_SCREEN_POWERING_ASSET_URL);
   getLoadedAsset(SMARTBOARD_SCREEN_ACTIVE_ASSET_URL);
+  getLoadedAsset(SULTANHANI_CARAVANSERAI_ASSET_URL);
+  getLoadedAsset(SULTANHANI_INNER_COURTYARD_ASSET_URL);
 }
 
 // Modül yüklendiğinde otomatik ön yükleme başlat

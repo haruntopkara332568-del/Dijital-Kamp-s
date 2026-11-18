@@ -1,3 +1,31 @@
+# Proje Durum Raporu — Sürüm 6.5.4 (Aşama 6.5: Sultanhanı Meydanında Aynı Karakterle Yürüyüş ve Taç Kapıdan Geçiş / İlk Teslim)
+
+## 3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Yürünebilir Meydan & Taç Kapı Açıklığından Geçiş (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu ve Dokunulmayan Sistemler**:
+  - `main` dalı ve üretim ortamı, Selçuklu Taç Kapı, yürünebilir kampüs avlusu mimarisi, karakter ve kamera kontrol altyapısı, İngilizce sınıfı mimarisi, 4 öğrenme masası (Keşfet, Öğren, Üret, Paylaş), Sınıf Panosu, diğer sınıf düzeyleri (2, 4, 5, 6, 7), veri modeli ve depolama anahtarları (`dek_campus_v1_state`) %100 korunmuştur.
+- **1. Aynı Kampüs Karakteriyle Meydana Işınlanma**:
+  - Öğrenci sınıfta 4 masayı bitirdikten sonra akıllı tahtayı etkinleştirdiğinde kısa bir ışınlanma geçişi (`teleport-overlay`, portal parçacık animasyonu) devreye girer.
+  - Öğrenci, sınıfta kontrol ettiği kampüs karakterinin aynısıyla (`drawCharacter`, `character_student_atlas.png`, yönlere göre duruşlar, yüz, saç, kıyafet ve renkler) Sultanhanı Kervansarayı dış meydanında (`x: 553, y: 760`) belirir. Karakter baştan çizilmemiş, alternatif bir model üretilmemiştir.
+- **2. Yürüyüşü Öğrenci Kontrol Eder (Serbest Gezinme)**:
+  - Işınlanmanın ardından karakter meydanda bekler (idle); hareket komutu verilmeden kendi kendine yürümez.
+  - Masaüstünde fareyle zemine tıklayarak veya yön tuşlarıyla (ok tuşları / WASD), mobilde zemine dokunarak karakter yürütülür; istenildiğinde durup geriye dönebilir ve farklı yöne yürüyebilir.
+  - Kamera karakteri yumuşakça takip eder (smooth lerp).
+- **3. Fotoğraftaki Gerçek Taç Kapı Açıklığından Geçiş**:
+  - Orijinal kervansaray dış cephe fotoğrafı (`sultanhani_caravanserai.jpg`) zemin ve mimari arka plan olarak korunmuştur.
+  - Yürünebilir zemin ve geçiş alanı doğrudan fotoğraftaki gerçek taç kapı açıklığına (`x: 520-586, y: 480-590`) hizalanmıştır.
+  - İki yandaki heybetli taş sur duvarları ve üst kemer geçişe kapalıdır (çarpışma sınırları).
+  - Öğrenci meydandan kapıya doğru kendi kontrolüyle yürür; ayakları zemine basarak tam kapı açıklığından tonozlu iç koridora adım atar.
+  - Karakter kapıdan geçerken hem kapı açıklığı hem de karakterin ayakları masaüstü ve mobil kadrajda kalır.
+  - Cephenin üzerine ikinci bir kapı ya da dekoratif bir eşik eklenmemiştir.
+  - Geçişin ardından tonozlu iç koridor ve altın rengi avlu ışığı görünür; [Sınıfa Dön] butonu ile öğrenci sınıfa geri döner.
+- **4. Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata (strict TypeScript).
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 107 / 107 test geçti (74 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_sultanhani_walkable.spec.ts`): 2 / 2 test geçti (Chromium [18.2s] + Mobile Chrome [19.2s]).
+  - Kesintisiz ekran kayıtları: `docs/assets/videos/grade3_sultanhani_walkable_desktop.webm` (2.61 MB) ve `grade3_sultanhani_walkable_mobile.webm` (2.42 MB).
+  - `npm run build`: 1.30s içinde hatasız üretim derlemesi üretildi.
+
 # Proje Durum Raporu — Sürüm 6.5.3 (Aşama 6.5: Akıllı Tahta — Sultanhanı Kervansarayı Macerası / Taç Kapı Eşik Hizalaması ve Kenara Kadar Görünür Ayrılış)
 
 ## 3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı 2.5D Sinematik Macerası (`feat/english-four-learning-tables`)

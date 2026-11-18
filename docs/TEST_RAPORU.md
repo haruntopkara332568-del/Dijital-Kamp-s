@@ -1,3 +1,20 @@
+# Test ve Kalite Güvence Raporu — Sürüm 6.5.4 (Aşama 6.5: Sultanhanı Meydanında Aynı Karakterle Yürüyüş ve Taç Kapıdan Geçiş / İlk Teslim)
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (strict TypeScript).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **107 / 107 test** (`src/test/walkable.test.tsx` [74 test] + `src/test/campus.test.tsx` [33 test], `45.99s`).
+- **`npx playwright test e2e/grade3_sultanhani_walkable.spec.ts --project=chromium`**: Geçti — **1 / 1 test** (`18.2s`).
+- **`npx playwright test e2e/grade3_sultanhani_walkable.spec.ts --project=mobile-chrome`**: Geçti — **1 / 1 test** (`19.2s`).
+  - Doğrulama 1: Sınıftan akıllı tahta tetiklendiğinde teleport efekti devreye girer, aynı kampüs karakteri (`drawCharacter`) Sultanhanı Kervansarayı meydanında belirir.
+  - Doğrulama 2: Karakter meydanda başlangıç noktasında (`x: 553, y: 760`) bekler; öğrenci komut vermeden hareket etmez.
+  - Doğrulama 3: Öğrenci tıklama ve yön kontrolleriyle karakteri serbestçe yönlendirir, durdurur, geriye döndürür.
+  - Doğrulama 4: Karakter fotoğraftaki gerçek taç kapı açıklığına (`x: 520-586, y: 480-590`) doğru yürür, ayakları zemine basarak tam kapı açıklığından tonozlu iç koridora adım atar. Yan duvarlar çarpışmaya kapalıdır.
+  - Doğrulama 5: Geçiş boyunca kapı açıklığı ve karakterin ayakları hem masaüstü hem de mobil kadrajda kalır (`isFeetInView === true`).
+  - Doğrulama 6: [Sınıfa Dön] düğmesiyle sınıf ortamına kesintisiz dönüş sağlanır.
+  - Kesintisiz ekran kayıtları: `docs/assets/videos/grade3_sultanhani_walkable_desktop.webm` (2.61 MB) ve `grade3_sultanhani_walkable_mobile.webm` (2.42 MB).
+- **`npm run build` (`vite build`)**: Geçti — **1.30s** içinde hatasız üretim derlemesi üretildi.
+
 # Test ve Kalite Güvence Raporu — Sürüm 6.5.3 (Aşama 6.5: Akıllı Tahta — Sultanhanı Kervansarayı Macerası / Taç Kapı Eşik Hizalaması ve Kenara Kadar Görünür Ayrılış)
 
 ## 1. Çalıştırıldı ve Geçti

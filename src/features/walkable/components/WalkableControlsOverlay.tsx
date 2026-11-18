@@ -24,7 +24,7 @@ interface WalkableControlsOverlayProps {
   onDirectEnterClassroom?: () => void;
   onExitClassroom?: () => void;
   unreachableMessage: string | null;
-  currentScene: 'courtyard' | 'classroom';
+  currentScene: 'courtyard' | 'classroom' | 'sultanhani_square';
 }
 
 export function WalkableControlsOverlay({
@@ -70,11 +70,28 @@ export function WalkableControlsOverlay({
         <div className="pointer-events-auto flex items-center gap-2 bg-[var(--campus-surface)]/95 backdrop-blur-xs px-3.5 py-1.5 rounded-xl border border-[var(--campus-border)] shadow-xs">
           <Sparkles className="w-4 h-4 text-[var(--seljuk-teal)] shrink-0" aria-hidden="true" />
           <span className="text-xs sm:text-sm font-bold text-[var(--seljuk-navy)]">
-            {currentScene === 'courtyard' ? 'Yürünebilir Kampüs Avlusu' : 'İngilizce Sınıfı'}
+            {currentScene === 'courtyard'
+              ? 'Yürünebilir Kampüs Avlusu'
+              : currentScene === 'classroom'
+                ? 'İngilizce Sınıfı'
+                : 'Aksaray Sultanhanı Kervansarayı — Dış Meydan'}
           </span>
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2">
+          {/* Sultanhanı Meydanındayken Hızlı Sınıfa Dönüş Düğmesi */}
+          {currentScene === 'sultanhani_square' && onExitClassroom && (
+            <button
+              type="button"
+              onClick={onExitClassroom}
+              className="min-h-[44px] px-3.5 py-1.5 rounded-lg bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-[var(--seljuk-navy)] border border-[var(--campus-border)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              aria-label="Sınıfa dön"
+            >
+              <DoorOpen className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
+              <span>Sınıfa Dön</span>
+            </button>
+          )}
+
           {/* Sınıf İçindeyken Aktif Düzey Göstergesi (Seçim tahta yanındaki fiziksel panodan yapılır) */}
           {currentScene === 'classroom' && (
             <div
