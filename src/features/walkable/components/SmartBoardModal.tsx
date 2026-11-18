@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Tv, ArrowLeft } from 'lucide-react';
 import { MissionRunnerView } from '@/src/features/missions/MissionRunnerView';
+import { Grade3SmartBoardAdventureView } from '@/src/features/missions/Grade3SmartBoardAdventureView';
+import { useOptionalCampus } from '@/src/app/CampusProviders';
 
 interface SmartBoardModalProps {
   isOpen: boolean;
@@ -39,6 +41,8 @@ export function SmartBoardModal({
   onClose,
   missionId = 'kapilarin-anlattigi-hikaye',
 }: SmartBoardModalProps) {
+  const campus = useOptionalCampus();
+  const selectedGrade = campus?.state.selectedGrade ?? null;
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
 
@@ -164,9 +168,13 @@ export function SmartBoardModal({
           </button>
         </div>
 
-        {/* Akıllı Tahta Ekran İçi: Mevcut Görev Motoru */}
+        {/* Akıllı Tahta Ekran İçi: 3. Sınıf için Sultanhanı Macerası, Diğerleri için Standart Görev */}
         <div className="flex-1 overflow-y-auto">
-          <MissionRunnerView missionId={missionId} />
+          {selectedGrade === 3 ? (
+            <Grade3SmartBoardAdventureView onExitToClassroom={onClose} />
+          ) : (
+            <MissionRunnerView missionId={missionId} />
+          )}
         </div>
       </div>
     </div>

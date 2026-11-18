@@ -139,7 +139,14 @@ export function WalkableCampusView({
             name: 'Akıllı Tahta',
             prompt: !selectedGradeRef.current
               ? 'Önce Sınıfını Seç'
-              : 'Akıllı Tahta (Yakında)',
+              : selectedGradeRef.current === 3
+                ? (completedStagesRef.current.includes('kesfet') &&
+                   completedStagesRef.current.includes('ogren') &&
+                   completedStagesRef.current.includes('uret') &&
+                   completedStagesRef.current.includes('paylas')
+                    ? 'Büyük Görev: Kervansaray Macerası [E]'
+                    : 'Büyük Görev (Önce 4 Masayı Bitir)')
+                : 'Akıllı Tahta (Yakında)',
             x: 480,
             y: 160,
             radius: 80,
@@ -149,7 +156,33 @@ export function WalkableCampusView({
                 setTimeout(() => setUnreachableMessage(null), 3000);
                 return;
               }
-              // Görsel açılış animasyonunu koru; görevi masalara yönlendir
+
+              if (selectedGradeRef.current === 3) {
+                const areAllTablesDone =
+                  completedStagesRef.current.includes('kesfet') &&
+                  completedStagesRef.current.includes('ogren') &&
+                  completedStagesRef.current.includes('uret') &&
+                  completedStagesRef.current.includes('paylas');
+
+                if (!areAllTablesDone) {
+                  setUnreachableMessage(
+                    'Büyük Görev için önce sınıftaki dört masadaki (Keşfet, Öğren, Üret, Paylaş) görevleri tamamlamalısın.',
+                  );
+                  setTimeout(() => setUnreachableMessage(null), 4000);
+                  return;
+                }
+
+                // Dört masa tamamlandığında: Açılış animasyonu ve ardından Sultanhanı Kervansarayı macerası
+                setIsSmartBoardPoweringOn(true);
+                setTimeout(() => {
+                  setIsSmartBoardPoweringOn(false);
+                  setIsSmartBoardActive(true);
+                  setIsSmartBoardModalOpen(true);
+                }, 450);
+                return;
+              }
+
+              // Diğer sınıflar için korunan mevcut davranış
               setIsSmartBoardPoweringOn(true);
               setTimeout(() => {
                 setIsSmartBoardPoweringOn(false);
@@ -480,6 +513,7 @@ export function WalkableCampusView({
               smartBoardVisualStateRef.current.active,
               smartBoardVisualStateRef.current.poweringOn,
               selectedGradeRef.current,
+              completedStagesRef.current,
             );
           } else {
             renderCourtyardLayeredBackground(ctx, config.width, config.height);
@@ -514,6 +548,7 @@ export function WalkableCampusView({
               smartBoardVisualStateRef.current.active,
               smartBoardVisualStateRef.current.poweringOn,
               selectedGradeRef.current,
+              completedStagesRef.current,
             );
           } else {
             renderCourtyardBackground(ctx, config.width, config.height);

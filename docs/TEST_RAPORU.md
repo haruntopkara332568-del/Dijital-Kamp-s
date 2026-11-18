@@ -1,3 +1,26 @@
+# Test ve Kalite Güvence Raporu — Sürüm 6.5.0 (Aşama 6.5: Akıllı Tahta — Sultanhanı Kervansarayı Macerası)
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (strict TypeScript).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **107 / 107 test** (`src/test/walkable.test.tsx` [74 test] + `src/test/campus.test.tsx` [33 test], `38.7s`):
+  - 72. Aşama 6.5: `SmartBoardModal` 3. sınıf seçiminde `Grade3SmartBoardAdventureView` (Aksaray Sultanhanı Kervansarayı, Taç Kapı, Kerem) açar.
+  - 73. Aşama 6.5: `Grade3SmartBoardAdventureView` 4 sahne diyalog akışı (Kervansaraya Varış, Yeni Bir Arkadaş, Vedalaşma, Günün Sonu), sesli telaffuz desteği, cezasız ipucu toleransı, tamamlama ve sınıfa dönüş sunar.
+  - 74. Aşama 6.5: `renderClassroomLayeredBackground` 3. sınıf için 4 masa tamamlandığında davetkâr parıltıyı (`#38bdf8` gölge ve altın çerçeve) çizer; 4 masa tamamlanmadan çizmez.
+  - 63, 68, 70, 71: Keşfet, Öğren, Üret ve Paylaş masaları %100 korundu.
+- **`npx playwright test e2e/grade3_smartboard_adventure.spec.ts --project=chromium`**: Geçti — **2 / 2 test** (`17.5s`):
+  - Senaryo 1 (Kilitli Durum): 4 masa tamamlanmadan Akıllı Tahtaya gidildiğinde modal açılmaz; `"Büyük Görev için önce sınıftaki dört masadaki (Keşfet, Öğren, Üret, Paylaş) görevleri tamamlamalısın."` uyarısı verilir.
+  - Senaryo 2 (Tamamlanmış Masalar & Tam Macera): 4 masa tamamlanmış olarak Akıllı Tahtaya tıklandığında açılış animasyonu ve ardından Sultanhanı Kervansarayı açılır (`docs/assets/grade3_smartboard_sultanhani_arrival.png`).
+    - 1. Sahne (Kervansaraya Varış): Kerem "Good morning!" der; öğrenci önce yanlış "Good night!" seçtiğinde cezasız pedagojik ipucu gösterilir; "Good morning!" seçildiğinde doğru teyit edilir ve sevinç animasyonu çalışır.
+    - 2. Sahne (Yeni Bir Arkadaş): Zeynep gelir; öğrenci "Hello!" der ve Zeynep "Hello!" ile yanıt verir.
+    - 3. Sahne (Vedalaşma): İkindi göğü altında Kerem "Goodbye!" der; öğrenci "Goodbye!" ile uğurlar.
+    - 4. Sahne (Günün Sonu): Yıldızlı gece ve ay altında öğrenci "Good night!" der.
+    - Tamamlanma Ekranı: `"Tebrikler! Öğrendiğin İngilizce ifadeleri günlük yaşamda başarıyla kullandın."` başlığı, 🏆 rozet, 4 özet kart ve [Sınıfa Dön] butonu (`docs/assets/grade3_smartboard_adventure_completed.png`).
+    - Sınıfa Dönüş: Öğrenci sınıfta akıllı tahtanın önünde kalır, 4 masanın aşamaları (`['kesfet', 'ogren', 'uret', 'paylas']`) ve `completed: true` durumu kalıcı olarak korunur.
+- **`npx playwright test e2e/grade3_paylas_table.spec.ts e2e/grade3_uret_table.spec.ts --project=chromium`**: Geçti — **2 / 2 test** (`32.6s`):
+  - Paylaş Masası (19.7s) ve Üret Masası (30.4s) sıfır regresyonla geçti.
+- **`npm run build` (`vite build`)**: Geçti — **1.61s** içinde hatasız üretim derlemesi üretildi.
+
 # Test ve Kalite Güvence Raporu — Sürüm 6.3.1 (Aşama 6.3.1: 3. Sınıf Üret Masası Hata Düzeltmesi — Kelime Seçim ve İlerleme)
 
 ## 1. Çalıştırıldı ve Geçti

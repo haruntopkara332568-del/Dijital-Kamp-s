@@ -33,12 +33,21 @@ export function renderClassroomLayeredBackground(
   isSmartBoardActive: boolean,
   isSmartBoardPoweringOn: boolean,
   selectedGrade?: number | null,
+  completedStages?: string[],
 ) {
   const isReducedMotion =
     typeof window !== 'undefined' &&
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
   const now = isReducedMotion ? 0 : performance.now();
+
+  const isSmartBoardReady =
+    selectedGrade === 3 &&
+    Array.isArray(completedStages) &&
+    completedStages.includes('kesfet') &&
+    completedStages.includes('ogren') &&
+    completedStages.includes('uret') &&
+    completedStages.includes('paylas');
 
   const bgAsset = getClassroomBackgroundAsset();
   if (bgAsset) {
@@ -66,6 +75,7 @@ export function renderClassroomLayeredBackground(
     isSmartBoardActive,
     isSmartBoardPoweringOn,
     now,
+    isSmartBoardReady,
   );
 
   // 4b. SELÇUKLU SINIF SEÇİM PANOSU (Akıllı Tahtanın Solunda Fiziksel Pano)
@@ -325,6 +335,7 @@ export function renderClassroomBackground(
   isSmartBoardActive: boolean,
   isSmartBoardPoweringOn: boolean,
   selectedGrade?: number | null,
+  completedStages?: string[],
 ) {
   renderClassroomLayeredBackground(
     ctx,
@@ -333,6 +344,7 @@ export function renderClassroomBackground(
     isSmartBoardActive,
     isSmartBoardPoweringOn,
     selectedGrade,
+    completedStages,
   );
 
   const dummyPlayer: PlayerCharacter = {
@@ -559,8 +571,26 @@ function drawSmartBoard(
   isActive: boolean,
   isPoweringOn: boolean,
   now: number,
+  isReady: boolean = false,
 ) {
   ctx.save();
+
+  // 0. Dört masa tamamlandığında davetkâr parıldayan dış aura (Aşama 6.5)
+  if (isReady && !isActive && !isPoweringOn) {
+    const auraPulse = Math.sin(now / 320) * 0.25 + 0.75;
+    ctx.save();
+    ctx.shadowColor = '#38bdf8';
+    ctx.shadowBlur = 18 * auraPulse;
+    ctx.strokeStyle = `rgba(245, 158, 11, ${auraPulse})`;
+    ctx.lineWidth = 3;
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(x - 12, y - 12, w + 24, h + 24, 10);
+    } else {
+      ctx.strokeRect(x - 12, y - 12, w + 24, h + 24);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
 
   // 1. Tahta Duvar Askı Gölgesi
   ctx.fillStyle = 'rgba(23, 43, 71, 0.22)';
@@ -614,12 +644,33 @@ function drawSmartBoard(
     if (offAsset) {
       ctx.drawImage(offAsset, x, y, w, h);
       const ledGlow = Math.sin(now / 450) * 0.3 + 0.7;
-      ctx.fillStyle = `rgba(36, 154, 176, ${ledGlow})`;
+      ctx.fillStyle = isReady ? `rgba(245, 158, 11, ${ledGlow})` : `rgba(36, 154, 176, ${ledGlow})`;
       ctx.beginPath();
       ctx.arc(x + w - 16, y + h - 14, 3.5, 0, Math.PI * 2);
       ctx.fill();
+
+      // Hazır durumunda varlık üzerine parıltılı davet etiketi
+      if (isReady) {
+        ctx.save();
+        const pulse = Math.sin(now / 280) * 0.2 + 0.8;
+        ctx.fillStyle = `rgba(15, 23, 42, ${0.75 * pulse})`;
+        ctx.fillRect(x + 20, y + h / 2 - 20, w - 40, 40);
+        ctx.strokeStyle = `rgba(245, 158, 11, ${pulse})`;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x + 20, y + h / 2 - 20, w - 40, 40);
+
+        ctx.fillStyle = '#fef08a';
+        ctx.font = 'bold 11px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('★ BÜYÜK GÖREV HAZIR ★', x + w / 2, y + h / 2 - 4);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '600 10px Inter, system-ui, sans-serif';
+        ctx.fillText('Kervansaray Macerası [E]', x + w / 2, y + h / 2 + 12);
+        ctx.restore();
+      }
     } else {
-      drawVectorOffScreen(ctx, x, y, w, h, now);
+      drawVectorOffScreen(ctx, x, y, w, h, now, isReady);
     }
   }
 
@@ -908,6 +959,7 @@ function drawVectorOffScreen(
   w: number,
   h: number,
   now: number,
+  isReady: boolean = false,
 ) {
   ctx.fillStyle = '#101a27';
   ctx.beginPath();
@@ -926,6 +978,35 @@ function drawVectorOffScreen(
   ctx.lineTo(x, y + h);
   ctx.closePath();
   ctx.fill();
+
+  if (isReady) {
+    const pulse = Math.sin(now / 300) * 0.2 + 0.8;
+    // Parıldayan Selçuklu Yıldızı
+    ctx.save();
+    ctx.translate(x + w / 2, y + h / 2 - 14);
+    ctx.fillStyle = `rgba(245, 158, 11, ${0.85 * pulse})`;
+    for (let i = 0; i < 2; i++) {
+      ctx.rotate((Math.PI / 4) * i);
+      ctx.fillRect(-13, -13, 26, 26);
+    }
+    ctx.restore();
+
+    ctx.fillStyle = '#fef08a';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('★ BÜYÜK GÖREV HAZIR ★', x + w / 2, y + h / 2 + 12);
+
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.fillText('Kervansaray Macerası [E]', x + w / 2, y + h / 2 + 28);
+
+    const ledGlow = Math.sin(now / 300) * 0.3 + 0.7;
+    ctx.fillStyle = `rgba(245, 158, 11, ${ledGlow})`;
+    ctx.beginPath();
+    ctx.arc(x + w - 16, y + h - 14, 4, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
 
   ctx.save();
   ctx.translate(x + w / 2, y + h / 2 - 12);

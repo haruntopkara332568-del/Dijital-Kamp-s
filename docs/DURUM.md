@@ -1,3 +1,38 @@
+# Proje Durum Raporu — Sürüm 6.5.0 (Aşama 6.5: Akıllı Tahta — Sultanhanı Kervansarayı Macerası)
+
+## 3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı 2.5D Sinematik Macerası (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu ve Dokunulmayan Sistemler**:
+  - `main` dalı ve üretim ortamı, Selçuklu Taç Kapı, yürünebilir avlu mimarisi, karakter ve kamera kontrol altyapısı, İngilizce sınıfı mimarisi, 4 öğrenme masası (Keşfet, Öğren, Üret, Paylaş), Sınıf Panosu, diğer sınıf düzeyleri (2, 4, 5, 6, 7), veri modeli ve depolama anahtarları (`dek_campus_v1_state`) %100 korunmuştur.
+- **1. Akıllı Tahta Etkileşimi ve Kilit Sistemi**:
+  - Dört öğrenme masası (`kesfet`, `ogren`, `uret`, `paylas`) tamamlanmadan Büyük Görev kilitli kalır.
+  - Kilitliyken tıklandığında veya yaklaşıldığında: `"Büyük Görev için önce sınıftaki dört masadaki (Keşfet, Öğren, Üret, Paylaş) görevleri tamamlamalısın."` uyarısı gösterilir.
+  - Dört masa tamamlandığında: Akıllı tahta üzerinde davetkâr parıldayan dış ışık aurası (`#38bdf8` gölge ve altın çerçeve), "★ BÜYÜK GÖREV HAZIR ★" etiketi ve `Büyük Görev: Kervansaray Macerası [E]` istemi belirir.
+  - Etkileşimde doğrudan Aksaray Sultanhanı Kervansarayı tam ekran sinematik öğrenme simülasyonu açılır.
+- **2. Mekân ve Görsel Kompozisyon**:
+  - Aksaray Sultanhanı Kervansarayı referans görseli esas alınarak anıtsal Mukarnas Taç Kapı odak noktası olarak yerleştirilmiştir.
+  - Karakterler, konuşma balonları ve seçenek butonları Taç Kapı'nın mimari zarafetini kapatmayacak şekilde sol, sağ ve alt kenarlarda konumlandırılmıştır.
+  - Güneş ışığı huzmeleri, çiçek/lavanta ön planı, zaman dilimine göre değişen gökyüzü (Sabah güneşi, öğle aydınlığı, ikindi kızıllığı, yıldızlı ve aylı gece göğü).
+- **3. Pedagojik Hedef ve 4 Aşamalı Yaşam Deneyimi (Yalnızca 4 İfade)**:
+  - **1. Sahne (Kervansaraya Varış • Sabah Vakti)**: Kerem öğrenciyi karşılar ve el sallar (`"Good morning!"`). Öğrenci "Good morning!" diyerek sabah selamı verir. (Yanlış seçenek "Good night!" için cezasız pedagojik ipucu verilir).
+  - **2. Sahne (Yeni Bir Arkadaş • Gündüz)**: Avluda Zeynep ile karşılaşılır. Öğrenci "Hello!" diyerek tanışma selamı verir, Zeynep sevinçle "Hello!" yanıtı verir.
+  - **3. Sahne (Vedalaşma • İkindi Vakti)**: Gün batımına doğru Kerem veda eder (`"Goodbye!"`). Öğrenci "Goodbye!" ile karşılık verir, Kerem el sallayarak ayrılır.
+  - **4. Sahne (Günün Sonu • Gece Vakti)**: Yıldızlı ve aylı gece göğü altında öğrenci "Good night!" diyerek günü huzurla tamamlar.
+- **4. Web Speech API & Cezasız Hata Toleransı**:
+  - Tüm ifadeler için doğal seslendirme, 🔊 Dinle (0.85x) ve 🐢 Yavaş Dinle (0.65x) seçenekleri.
+  - Hatalı yanıtlarda puan kırma, can hakkı veya başarısızlık hissi yoktur; yumuşak Türkçe ipucu verilir ve öğrenci hemen doğru cevaba yönlendirilir.
+- **5. Başarı Ekranı ve Sınıfa Dönüş**:
+  - İstenen kesin kutlama başlığı: `"Tebrikler! Öğrendiğin İngilizce ifadeleri günlük yaşamda başarıyla kullandın."`
+  - 🏆 Büyük Görev Başarı Rozeti ve 4 ifadenin özet mini kartları (Good morning!, Hello!, Goodbye!, Good night!).
+  - **[Tekrar Oyna]** ve **[Sınıfa Dön]** aksiyonları.
+  - Sınıfa dönüldüğünde öğrenci tahtanın hemen önünde (`x: 480, y: 180`) sınıfta kalır, 4 masanın tamamlanma durumu ve rozetleri eksiksiz korunur.
+- **6. Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata (strict TypeScript).
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 107 / 107 test geçti (74 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_smartboard_adventure.spec.ts`): 2 / 2 test geçti (Chromium).
+  - Playwright Regresyon E2E (`e2e/grade3_paylas_table.spec.ts`, `e2e/grade3_uret_table.spec.ts`): 2 / 2 test geçti.
+  - `npm run build`: 1.61s içinde hatasız üretim derlemesi üretildi.
+
 # Proje Durum Raporu — Sürüm 6.3.1 (Aşama 6.3.1: 3. Sınıf Üret Masası Hata Düzeltmesi — Kelime Seçim ve İlerleme)
 
 ## 3. Sınıf Üret Masası — Kelime Seçim ve İlerleme Hata Düzeltmesi (`feat/english-four-learning-tables`)

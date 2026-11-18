@@ -10,6 +10,7 @@ import {
   DEFAULT_HITBOX,
 } from '@/src/features/walkable/engine/pathfinding';
 import { SmartBoardModal } from '@/src/features/walkable/components/SmartBoardModal';
+import { Grade3SmartBoardAdventureView } from '@/src/features/missions/Grade3SmartBoardAdventureView';
 import { GradeBoardModal } from '@/src/features/walkable/components/GradeBoardModal';
 import { TableStationModal } from '@/src/features/walkable/components/TableStationModal';
 import { HelloGardenView } from '@/src/features/missions/HelloGardenView';
@@ -2252,5 +2253,135 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
         await screen.findByRole('button', { name: /2\. Etkinliğe Başla/i }, { timeout: 3000 }),
       ).toBeInTheDocument();
     }, 25000);
+
+    it('72. Aşama 6.5: SmartBoardModal 3. sınıf seçiminde Grade3SmartBoardAdventureView (Sultanhanı Kervansarayı) açar', async () => {
+      await clearAllCampusData();
+      saveStudentState({
+        ...createInitialStudentState(),
+        selectedGrade: 3,
+      });
+
+      render(
+        <MemoryRouter>
+          <CampusProviders>
+            <SmartBoardModal
+              isOpen={true}
+              onClose={vi.fn()}
+              missionId="kapilarin-anlattigi-hikaye"
+            />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      // Sultanhanı sahnesinin ve ilk sahne başlığının yüklendiğini doğrula
+      expect(screen.getByText(/Aksaray Sultanhanı Kervansarayı/i)).toBeInTheDocument();
+      expect(screen.getByText(/1\. Sahne — Kervansaraya Varış/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Kerem/i).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByRole('button', { name: /"Good morning!"/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /"Good night!"/i })).toBeInTheDocument();
+    });
+
+    it('73. Aşama 6.5: Grade3SmartBoardAdventureView 4 sahne diyalog akışı, cezasız ipucu, tamamlanma ve sınıfa dönüş sunar', async () => {
+      await clearAllCampusData();
+      const initialState = createInitialStudentState();
+      saveStudentState({
+        ...initialState,
+        selectedGrade: 3,
+        missionProgressByKey: {
+          'kapilarin-anlattigi-hikaye::grade-3': {
+            missionId: 'kapilarin-anlattigi-hikaye',
+            missionVersion: '1.0.0',
+            grade: 3,
+            currentStage: 'paylas',
+            completedStages: ['kesfet', 'ogren', 'uret', 'paylas'],
+            selections: {
+              selectedDoorIds: [],
+              inspectedCampusGate: false,
+              observationNotes: {},
+              matchedVocabularyIds: [],
+              matchedExampleSentence: false,
+              doorName: '',
+              writtenText: '',
+              usedEnglishWords: [],
+            },
+            draftArtifactId: null,
+            selfEvaluation: null,
+            completed: false,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      });
+
+      const handleExit = vi.fn();
+
+      render(
+        <MemoryRouter>
+          <CampusProviders>
+            <Grade3SmartBoardAdventureView onExitToClassroom={handleExit} />
+          </CampusProviders>
+        </MemoryRouter>,
+      );
+
+      // 1. Sahne: Kervansaraya Varış
+      expect(screen.getByText(/1\. Sahne — Kervansaraya Varış/i)).toBeInTheDocument();
+
+      // Yanlış seçim: Good night! -> cezasız ipucu
+      fireEvent.click(screen.getByRole('button', { name: /"Good night!"/i }));
+      expect(
+        await screen.findByText(/Sabah saatlerinde güne başlarken "Good morning!"/i, {}, { timeout: 3000 }),
+      ).toBeInTheDocument();
+
+      // Doğru seçim: Good morning!
+      fireEvent.click(screen.getByRole('button', { name: /"Good morning!"/i }));
+      expect(
+        await screen.findByText(/Harika! "Good morning!" diyerek Kerem'e sabah selamı verdin/i, {}, { timeout: 3000 }),
+      ).toBeInTheDocument();
+
+      // 2. Sahne: Yeni Bir Arkadaş (Zeynep)
+      await screen.findByText(/2\. Sahne — Yeni Bir Arkadaş/i, {}, { timeout: 4000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Hello!"/i }));
+
+      // 3. Sahne: Vedalaşma
+      await screen.findByText(/3\. Sahne — Vedalaşma/i, {}, { timeout: 4000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Goodbye!"/i }));
+
+      // 4. Sahne: Günün Sonu
+      await screen.findByText(/4\. Sahne — Günün Sonu/i, {}, { timeout: 4000 });
+      fireEvent.click(screen.getByRole('button', { name: /"Good night!"/i }));
+
+      // TAMAMLANMA EKRANI
+      expect(
+        await screen.findByText(/Tebrikler! Öğrendiğin İngilizce ifadeleri günlük yaşamda başarıyla kullandın\./i, {}, { timeout: 4000 }),
+      ).toBeInTheDocument();
+
+      // 4 kartın özetini doğrula
+      expect(screen.getByText(/Büyük Görev Başarıyla Tamamlandı/i)).toBeInTheDocument();
+      expect(screen.getByText(/Good morning!/i)).toBeInTheDocument();
+      expect(screen.getByText(/Goodbye!/i)).toBeInTheDocument();
+
+      // State'te 4 masanın aşamalarının korunduğunu doğrula
+      const savedState = loadStudentState();
+      const progress = savedState.missionProgressByKey['kapilarin-anlattigi-hikaye::grade-3'];
+      expect(progress?.completedStages).toEqual(['kesfet', 'ogren', 'uret', 'paylas']);
+      expect(progress?.completed).toBe(true);
+
+      // Sınıfa Dön butonuna tıkla
+      const exitBtns = screen.getAllByRole('button', { name: /Sınıfa Dön/i });
+      fireEvent.click(exitBtns[0]);
+      expect(handleExit).toHaveBeenCalledTimes(1);
+    }, 25000);
+
+    it('74. Aşama 6.5: renderClassroomLayeredBackground 3. sınıf için 4 masa tamamlandığında davetkâr parıltıyı çizer', () => {
+      const mockCtx = createClassroomMockCtx();
+
+      // 1. Durum: Sadece 3 masa tamamlanmış (Akıllı tahta henüz hazır değil)
+      renderClassroomLayeredBackground(mockCtx, 960, 640, false, false, 3, ['kesfet', 'ogren', 'uret']);
+      expect(mockCtx.shadowColor).not.toBe('#38bdf8');
+
+      // 2. Durum: Dört masa tamamlanmış (Akıllı tahta parıldayan aura ile hazır)
+      const mockCtxReady = createClassroomMockCtx();
+      renderClassroomLayeredBackground(mockCtxReady, 960, 640, false, false, 3, ['kesfet', 'ogren', 'uret', 'paylas']);
+      expect(mockCtxReady.shadowColor).toBe('#38bdf8');
+    });
   });
 });
