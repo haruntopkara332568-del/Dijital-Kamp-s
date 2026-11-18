@@ -33,12 +33,21 @@ export function renderClassroomLayeredBackground(
   isSmartBoardActive: boolean,
   isSmartBoardPoweringOn: boolean,
   selectedGrade?: number | null,
+  completedStages?: string[],
 ) {
   const isReducedMotion =
     typeof window !== 'undefined' &&
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
   const now = isReducedMotion ? 0 : performance.now();
+
+  const isSmartBoardReady =
+    selectedGrade === 3 &&
+    Array.isArray(completedStages) &&
+    completedStages.includes('kesfet') &&
+    completedStages.includes('ogren') &&
+    completedStages.includes('uret') &&
+    completedStages.includes('paylas');
 
   const bgAsset = getClassroomBackgroundAsset();
   if (bgAsset) {
@@ -66,6 +75,7 @@ export function renderClassroomLayeredBackground(
     isSmartBoardActive,
     isSmartBoardPoweringOn,
     now,
+    isSmartBoardReady,
   );
 
   // 4b. SELÇUKLU SINIF SEÇİM PANOSU (Akıllı Tahtanın Solunda Fiziksel Pano)
@@ -89,10 +99,12 @@ export function renderClassroomEntities(
   player: PlayerCharacter,
   width?: number,
   height?: number,
+  completedStages?: string[],
 ) {
   void width;
   void height;
 
+  const now = typeof performance !== 'undefined' ? performance.now() : 0;
   const podiumAsset = getClassroomTeacherPodiumAsset();
   const bookshelfAsset = getClassroomBookshelfAsset();
   const deskAsset = getClassroomDeskAsset();
@@ -137,7 +149,7 @@ export function renderClassroomEntities(
       },
     },
 
-    // 3. ÖĞRENCİ SIRASI 1 — Sol Ön (Engel: 190, 260, 150, 55 -> alt taban baseY: 315)
+    // 3. 1. KEŞFET MASASI — Sol Ön (Engel: 190, 260, 150, 55 -> alt taban baseY: 315)
     {
       id: 'desk-1',
       baseY: 315,
@@ -151,12 +163,21 @@ export function renderClassroomEntities(
           c.drawImage(deskAsset, 175, 210, 180, 115);
           c.restore();
         } else {
-          drawStudentDesk(c, 190, 260, '1. Sıra (Sol)', '#d87a32');
+          drawStudentDesk(c, 190, 260, '1. Keşfet Masası', '#0e768a');
         }
+        drawTablePlaque(
+          c,
+          265,
+          246,
+          '1. KEŞFET MASASI',
+          completedStages?.includes('kesfet'),
+          !completedStages?.includes('kesfet'),
+          now,
+        );
       },
     },
 
-    // 4. ÖĞRENCİ SIRASI 2 — Sağ Ön (Engel: 590, 260, 150, 55 -> alt taban baseY: 315)
+    // 4. 2. ÖĞREN MASASI — Sağ Ön (Engel: 590, 260, 150, 55 -> alt taban baseY: 315)
     {
       id: 'desk-2',
       baseY: 315,
@@ -171,12 +192,21 @@ export function renderClassroomEntities(
           c.drawImage(sprite, 575, 210, 180, 115);
           c.restore();
         } else {
-          drawStudentDesk(c, 590, 260, '1. Sıra (Sağ)', '#249ab0');
+          drawStudentDesk(c, 590, 260, '2. Öğren Masası', '#249ab0');
         }
+        drawTablePlaque(
+          c,
+          665,
+          246,
+          '2. ÖĞREN MASASI',
+          completedStages?.includes('ogren'),
+          completedStages?.includes('kesfet') && !completedStages?.includes('ogren'),
+          now,
+        );
       },
     },
 
-    // 5. ÖĞRENCİ SIRASI 3 — Sol Arka (Engel: 190, 390, 150, 55 -> alt taban baseY: 445)
+    // 5. 3. ÜRET MASASI — Sol Arka (Engel: 190, 390, 150, 55 -> alt taban baseY: 445)
     {
       id: 'desk-3',
       baseY: 445,
@@ -190,12 +220,21 @@ export function renderClassroomEntities(
           c.drawImage(deskAsset, 175, 340, 180, 115);
           c.restore();
         } else {
-          drawStudentDesk(c, 190, 390, '2. Sıra (Sol)', '#2d7350');
+          drawStudentDesk(c, 190, 390, '3. Üret Masası', '#d97706');
         }
+        drawTablePlaque(
+          c,
+          265,
+          376,
+          '3. ÜRET MASASI',
+          completedStages?.includes('uret'),
+          completedStages?.includes('ogren') && !completedStages?.includes('uret'),
+          now,
+        );
       },
     },
 
-    // 6. ÖĞRENCİ SIRASI 4 — Sağ Arka (Engel: 590, 390, 150, 55 -> alt taban baseY: 445)
+    // 6. 4. PAYLAŞ MASASI — Sağ Arka (Engel: 590, 390, 150, 55 -> alt taban baseY: 445)
     {
       id: 'desk-4',
       baseY: 445,
@@ -210,8 +249,17 @@ export function renderClassroomEntities(
           c.drawImage(sprite, 575, 340, 180, 115);
           c.restore();
         } else {
-          drawStudentDesk(c, 590, 390, '2. Sıra (Sağ)', '#b25938');
+          drawStudentDesk(c, 590, 390, '4. Paylaş Masası', '#059669');
         }
+        drawTablePlaque(
+          c,
+          665,
+          376,
+          '4. PAYLAŞ MASASI',
+          completedStages?.includes('paylas'),
+          completedStages?.includes('uret') && !completedStages?.includes('paylas'),
+          now,
+        );
       },
     },
 
@@ -287,6 +335,7 @@ export function renderClassroomBackground(
   isSmartBoardActive: boolean,
   isSmartBoardPoweringOn: boolean,
   selectedGrade?: number | null,
+  completedStages?: string[],
 ) {
   renderClassroomLayeredBackground(
     ctx,
@@ -295,6 +344,7 @@ export function renderClassroomBackground(
     isSmartBoardActive,
     isSmartBoardPoweringOn,
     selectedGrade,
+    completedStages,
   );
 
   const dummyPlayer: PlayerCharacter = {
@@ -521,8 +571,26 @@ function drawSmartBoard(
   isActive: boolean,
   isPoweringOn: boolean,
   now: number,
+  isReady: boolean = false,
 ) {
   ctx.save();
+
+  // 0. Dört masa tamamlandığında davetkâr parıldayan dış aura (Aşama 6.5)
+  if (isReady && !isActive && !isPoweringOn) {
+    const auraPulse = Math.sin(now / 320) * 0.25 + 0.75;
+    ctx.save();
+    ctx.shadowColor = '#38bdf8';
+    ctx.shadowBlur = 18 * auraPulse;
+    ctx.strokeStyle = `rgba(245, 158, 11, ${auraPulse})`;
+    ctx.lineWidth = 3;
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(x - 12, y - 12, w + 24, h + 24, 10);
+    } else {
+      ctx.strokeRect(x - 12, y - 12, w + 24, h + 24);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
 
   // 1. Tahta Duvar Askı Gölgesi
   ctx.fillStyle = 'rgba(23, 43, 71, 0.22)';
@@ -576,12 +644,33 @@ function drawSmartBoard(
     if (offAsset) {
       ctx.drawImage(offAsset, x, y, w, h);
       const ledGlow = Math.sin(now / 450) * 0.3 + 0.7;
-      ctx.fillStyle = `rgba(36, 154, 176, ${ledGlow})`;
+      ctx.fillStyle = isReady ? `rgba(245, 158, 11, ${ledGlow})` : `rgba(36, 154, 176, ${ledGlow})`;
       ctx.beginPath();
       ctx.arc(x + w - 16, y + h - 14, 3.5, 0, Math.PI * 2);
       ctx.fill();
+
+      // Hazır durumunda varlık üzerine parıltılı davet etiketi
+      if (isReady) {
+        ctx.save();
+        const pulse = Math.sin(now / 280) * 0.2 + 0.8;
+        ctx.fillStyle = `rgba(15, 23, 42, ${0.75 * pulse})`;
+        ctx.fillRect(x + 20, y + h / 2 - 20, w - 40, 40);
+        ctx.strokeStyle = `rgba(245, 158, 11, ${pulse})`;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x + 20, y + h / 2 - 20, w - 40, 40);
+
+        ctx.fillStyle = '#fef08a';
+        ctx.font = 'bold 11px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('★ BÜYÜK GÖREV HAZIR ★', x + w / 2, y + h / 2 - 4);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '600 10px Inter, system-ui, sans-serif';
+        ctx.fillText('Kervansaray Macerası [E]', x + w / 2, y + h / 2 + 12);
+        ctx.restore();
+      }
     } else {
-      drawVectorOffScreen(ctx, x, y, w, h, now);
+      drawVectorOffScreen(ctx, x, y, w, h, now, isReady);
     }
   }
 
@@ -870,6 +959,7 @@ function drawVectorOffScreen(
   w: number,
   h: number,
   now: number,
+  isReady: boolean = false,
 ) {
   ctx.fillStyle = '#101a27';
   ctx.beginPath();
@@ -888,6 +978,35 @@ function drawVectorOffScreen(
   ctx.lineTo(x, y + h);
   ctx.closePath();
   ctx.fill();
+
+  if (isReady) {
+    const pulse = Math.sin(now / 300) * 0.2 + 0.8;
+    // Parıldayan Selçuklu Yıldızı
+    ctx.save();
+    ctx.translate(x + w / 2, y + h / 2 - 14);
+    ctx.fillStyle = `rgba(245, 158, 11, ${0.85 * pulse})`;
+    for (let i = 0; i < 2; i++) {
+      ctx.rotate((Math.PI / 4) * i);
+      ctx.fillRect(-13, -13, 26, 26);
+    }
+    ctx.restore();
+
+    ctx.fillStyle = '#fef08a';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('★ BÜYÜK GÖREV HAZIR ★', x + w / 2, y + h / 2 + 12);
+
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.fillText('Kervansaray Macerası [E]', x + w / 2, y + h / 2 + 28);
+
+    const ledGlow = Math.sin(now / 300) * 0.3 + 0.7;
+    ctx.fillStyle = `rgba(245, 158, 11, ${ledGlow})`;
+    ctx.beginPath();
+    ctx.arc(x + w - 16, y + h - 14, 4, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
 
   ctx.save();
   ctx.translate(x + w / 2, y + h / 2 - 12);
@@ -1001,6 +1120,113 @@ function drawBookshelf(ctx: CanvasRenderingContext2D, x: number, y: number) {
   ctx.strokeStyle = '#d8972b';
   ctx.lineWidth = 1.5;
   ctx.stroke();
+
+  ctx.restore();
+}
+
+/**
+ * Dört Öğrenme Masası Selçuklu Ahşap & Çini İsim Levhası:
+ * Ahşap oyma kaide, sivri Selçuklu kemeri, turkuaz çini bordür, altın yaldızlı başlık ve durum rozeti.
+ */
+export function drawTablePlaque(
+  ctx: CanvasRenderingContext2D,
+  centerX: number,
+  topY: number,
+  title: string,
+  isCompleted: boolean = false,
+  isNext: boolean = false,
+  now: number = 0,
+) {
+  const w = 118;
+  const h = 26;
+  const x = centerX - w / 2;
+  const y = topY;
+
+  ctx.save();
+
+  // 1. Zemin Yumuşak Masa Üstü Gölgesi
+  ctx.fillStyle = 'rgba(23, 43, 71, 0.28)';
+  ctx.beginPath();
+  ctx.ellipse(centerX, y + h + 2, w / 2 + 4, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 2. Selçuklu Masif Ahşap Kaide / Pano Gövdesi
+  ctx.fillStyle = '#2b1b11';
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x, y, w, h, 5);
+  } else {
+    ctx.rect(x, y, w, h);
+  }
+  ctx.fill();
+
+  // 3. Selçuklu Altın Yaldızlı Ahşap Çerçeve
+  ctx.strokeStyle = isNext ? '#f59e0b' : '#a67c52';
+  ctx.lineWidth = isNext ? 2 : 1.5;
+  ctx.stroke();
+
+  // 4. Turkuaz Çini İç Bordür
+  ctx.strokeStyle = '#0e768a';
+  ctx.lineWidth = 1.2;
+  ctx.strokeRect(x + 3, y + 3, w - 6, h - 6);
+
+  // 5. Üst Sivri Kemer Mukarnas Süsü
+  ctx.fillStyle = '#0e768a';
+  ctx.beginPath();
+  ctx.moveTo(centerX - 16, y);
+  if (ctx.quadraticCurveTo) {
+    ctx.quadraticCurveTo(centerX, y - 7, centerX + 16, y);
+  } else {
+    ctx.lineTo(centerX, y - 7);
+    ctx.lineTo(centerX + 16, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#d8972b';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Mini Selçuklu rozeti
+  ctx.fillStyle = '#fef08a';
+  ctx.beginPath();
+  ctx.arc(centerX, y - 2, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 6. Masa İsim Yazısı (Altın Yaldızlı & Okunaklı)
+  ctx.fillStyle = isCompleted ? '#86efac' : isNext ? '#fef08a' : '#fbf2df';
+  ctx.font = 'bold 9px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+  ctx.shadowBlur = 3;
+  ctx.shadowOffsetY = 1;
+  ctx.fillText(title, centerX, y + h / 2 + 1);
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+
+  // 7. Durum Rozeti (Sağ üst köşe)
+  if (isCompleted) {
+    ctx.fillStyle = '#10b981';
+    ctx.beginPath();
+    ctx.arc(x + w - 6, y + 6, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 7px sans-serif';
+    ctx.fillText('✓', x + w - 6, y + 6.5);
+  } else if (isNext) {
+    const pulse = Math.sin(now / 220) * 0.35 + 0.65;
+    ctx.fillStyle = `rgba(245, 158, 11, ${pulse})`;
+    ctx.beginPath();
+    ctx.arc(x + w - 6, y + 6, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fef08a';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
 
   ctx.restore();
 }

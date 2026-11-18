@@ -36,8 +36,11 @@ import {
   createEmptyDrawing,
 } from '@/src/features/drawing/DrawingCanvasStudio';
 
-interface MissionRunnerViewProps {
+export interface MissionRunnerViewProps {
   missionId: string;
+  focusedStage?: MissionStageId;
+  onExitToClassroom?: () => void;
+  onAdvanceToNextTable?: (nextStage: MissionStageId) => void;
 }
 
 const MIDDLE_SCHOOL_MATERIALS = [
@@ -119,7 +122,12 @@ function createEmptySelections(): MissionSelections {
   };
 }
 
-export function MissionRunnerView({ missionId }: MissionRunnerViewProps) {
+export function MissionRunnerView({
+  missionId,
+  focusedStage,
+  onExitToClassroom,
+  onAdvanceToNextTable,
+}: MissionRunnerViewProps) {
   const { hydrated, state, activeGradeProfile, getMissionProgress } = useCampus();
   const mission = getMissionById(missionId);
   const effectiveGrade = state.selectedGrade ?? 2;
@@ -127,11 +135,14 @@ export function MissionRunnerView({ missionId }: MissionRunnerViewProps) {
 
   return (
     <MissionRunnerInner
-      key={`${missionId}-${effectiveGrade}-${hydrated ? 'ready' : 'init'}`}
+      key={`${missionId}-${effectiveGrade}-${focusedStage ?? 'all'}-${hydrated ? 'ready' : 'init'}`}
       missionId={missionId}
       effectiveGrade={effectiveGrade}
       initialProgress={initialProgress}
       defaultHintTier={activeGradeProfile.alwaysShowHint ? 1 : 0}
+      focusedStage={focusedStage}
+      onExitToClassroom={onExitToClassroom}
+      onAdvanceToNextTable={onAdvanceToNextTable}
     />
   );
 }
@@ -141,11 +152,17 @@ function MissionRunnerInner({
   effectiveGrade,
   initialProgress,
   defaultHintTier,
+  focusedStage,
+  onExitToClassroom,
+  onAdvanceToNextTable,
 }: {
   missionId: string;
   effectiveGrade: 2 | 3 | 4 | 5 | 6 | 7;
   initialProgress: MissionProgress | null;
   defaultHintTier: number;
+  focusedStage?: MissionStageId;
+  onExitToClassroom?: () => void;
+  onAdvanceToNextTable?: (nextStage: MissionStageId) => void;
 }) {
   const navigate = useNavigate();
   const { activeGradeProfile, saveMissionProgress } = useCampus();
@@ -160,7 +177,7 @@ function MissionRunnerInner({
   const primaryVocab = mission?.contentRefs.ilkokulVocabulary[0];
 
   const [stage, setStage] = useState<MissionStageId>(
-    () => initialProgress?.currentStage ?? 'kesfet',
+    () => focusedStage ?? initialProgress?.currentStage ?? 'kesfet',
   );
   const [completedStages, setCompletedStages] = useState<MissionStageId[]>(
     () => initialProgress?.completedStages ?? [],
@@ -550,7 +567,9 @@ function MissionRunnerInner({
               <button
                 type="button"
                 onClick={() => {
-                  if (hasUnsavedWork) {
+                  if (onExitToClassroom) {
+                    onExitToClassroom();
+                  } else if (hasUnsavedWork) {
                     setPendingExitUrl('/');
                     setExitPromptOpen(true);
                   } else {
@@ -559,7 +578,7 @@ function MissionRunnerInner({
                 }}
                 className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--campus-ink)] cursor-pointer"
               >
-                Güvenle Kampüse Dön
+                {onExitToClassroom ? 'Masadan Kalk / Sınıfa Dön' : 'Güvenle Kampüse Dön'}
               </button>
             </div>
           </div>
@@ -861,15 +880,40 @@ function MissionRunnerInner({
               </section>
             )}
 
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => goToStage('ogren', true)}
-                className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
-              >
-                <span>Öğren Aşamasına Geç (İngilizce Dünyası)</span>
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              </button>
+            <div className="flex justify-end gap-3 items-center">
+              {focusedStage ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextCompleted = Array.from(new Set<MissionStageId>([...completedStages, 'kesfet']));
+                    setCompletedStages(nextCompleted);
+                    persistProgress({
+                      currentStage: 'ogren',
+                      completedStages: nextCompleted,
+                    });
+                    if (onAdvanceToNextTable) {
+                      onAdvanceToNextTable('ogren');
+                    } else if (onExitToClassroom) {
+                      onExitToClassroom();
+                    } else {
+                      goToStage('ogren', true);
+                    }
+                  }}
+                  className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer shadow-sm"
+                >
+                  <span>Keşfet Adımını Tamamla (Öğren Masasına Git)</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => goToStage('ogren', true)}
+                  className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
+                >
+                  <span>Öğren Aşamasına Geç (İngilizce Dünyası)</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -1199,21 +1243,52 @@ function MissionRunnerInner({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <button
                 type="button"
-                onClick={() => goToStage('kesfet')}
+                onClick={() => {
+                  if (focusedStage && onExitToClassroom) {
+                    onExitToClassroom();
+                  } else {
+                    goToStage('kesfet');
+                  }
+                }}
                 className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-                <span>Önceki Adım (Keşfet)</span>
+                <span>{focusedStage ? 'Sınıfa Dön' : 'Önceki Adım (Keşfet)'}</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => goToStage('uret', true)}
-                className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
-              >
-                <span>Üret Aşamasına Geç (Kitap ve Hikâye Dünyası)</span>
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              </button>
+              {focusedStage ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextCompleted = Array.from(new Set<MissionStageId>([...completedStages, 'ogren']));
+                    setCompletedStages(nextCompleted);
+                    persistProgress({
+                      currentStage: 'uret',
+                      completedStages: nextCompleted,
+                    });
+                    if (onAdvanceToNextTable) {
+                      onAdvanceToNextTable('uret');
+                    } else if (onExitToClassroom) {
+                      onExitToClassroom();
+                    } else {
+                      goToStage('uret', true);
+                    }
+                  }}
+                  className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer shadow-sm"
+                >
+                  <span>Öğren Adımını Tamamla (Üret Masasına Git)</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => goToStage('uret', true)}
+                  className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
+                >
+                  <span>Üret Aşamasına Geç (Kitap ve Hikâye Dünyası)</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -1505,7 +1580,12 @@ function MissionRunnerInner({
                     return;
                   }
                   const saveRes = await saveArtifactToDevice({ silentIfSaved: true });
-                  goToStage('paylas', true);
+                  const nextCompleted = Array.from(new Set<MissionStageId>([...completedStages, 'uret']));
+                  setCompletedStages(nextCompleted);
+                  persistProgress({
+                    currentStage: 'paylas',
+                    completedStages: nextCompleted,
+                  });
                   if (saveRes.persisted) {
                     setStatusBanner({
                       tone: 'success',
@@ -1520,10 +1600,21 @@ function MissionRunnerInner({
                         : 'Çalışman cihaz depolamasına kaydedilemedi; yalnızca bu oturumda geçici olarak tutuluyor. Sayfayı kapattığında kaybolabileceği için PNG olarak indirmeni öneririz.',
                     });
                   }
+                  if (focusedStage) {
+                    if (onAdvanceToNextTable) {
+                      onAdvanceToNextTable('paylas');
+                    } else if (onExitToClassroom) {
+                      onExitToClassroom();
+                    } else {
+                      goToStage('paylas', true);
+                    }
+                  } else {
+                    goToStage('paylas', true);
+                  }
                 }}
-                className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
+                className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer shadow-sm"
               >
-                <span>Kaydet ve Paylaş Adımına Geç</span>
+                <span>{focusedStage ? 'Üretimi Kaydet (Paylaş Masasına Git)' : 'Kaydet ve Paylaş Adımına Geç'}</span>
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
@@ -1781,13 +1872,24 @@ function MissionRunnerInner({
                 <span>Önceki Adım (Üret)</span>
               </button>
 
-              <Link
-                to="/yolculugum"
-                className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-navy)] hover:bg-[var(--seljuk-navy-shade)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors"
-              >
-                <span>Kampüs Yolculuğumda Gör</span>
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              </Link>
+              {onExitToClassroom ? (
+                <button
+                  type="button"
+                  onClick={onExitToClassroom}
+                  className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
+                >
+                  <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                  <span>Görevi Tamamla ve Sınıfa Dön</span>
+                </button>
+              ) : (
+                <Link
+                  to="/yolculugum"
+                  className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-navy)] hover:bg-[var(--seljuk-navy-shade)] text-white text-sm font-semibold inline-flex items-center gap-2 transition-colors"
+                >
+                  <span>Kampüs Yolculuğumda Gör</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </Link>
+              )}
             </div>
           </div>
         )}

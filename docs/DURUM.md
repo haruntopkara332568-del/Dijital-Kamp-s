@@ -1,3 +1,345 @@
+# Proje Durum Raporu — Sürüm 6.5.4 (Aşama 6.5: Sultanhanı Meydanında Aynı Karakterle Yürüyüş ve Taç Kapıdan Geçiş / İlk Teslim)
+
+## 3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Yürünebilir Meydan & Taç Kapı Açıklığından Geçiş (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu ve Dokunulmayan Sistemler**:
+  - `main` dalı ve üretim ortamı, Selçuklu Taç Kapı, yürünebilir kampüs avlusu mimarisi, karakter ve kamera kontrol altyapısı, İngilizce sınıfı mimarisi, 4 öğrenme masası (Keşfet, Öğren, Üret, Paylaş), Sınıf Panosu, diğer sınıf düzeyleri (2, 4, 5, 6, 7), veri modeli ve depolama anahtarları (`dek_campus_v1_state`) %100 korunmuştur.
+- **1. Aynı Kampüs Karakteriyle Meydana Işınlanma**:
+  - Öğrenci sınıfta 4 masayı bitirdikten sonra akıllı tahtayı etkinleştirdiğinde kısa bir ışınlanma geçişi (`teleport-overlay`, portal parçacık animasyonu) devreye girer.
+  - Öğrenci, sınıfta kontrol ettiği kampüs karakterinin aynısıyla (`drawCharacter`, `character_student_atlas.png`, yönlere göre duruşlar, yüz, saç, kıyafet ve renkler) Sultanhanı Kervansarayı dış meydanında (`x: 553, y: 760`) belirir. Karakter baştan çizilmemiş, alternatif bir model üretilmemiştir.
+- **2. Yürüyüşü Öğrenci Kontrol Eder (Serbest Gezinme)**:
+  - Işınlanmanın ardından karakter meydanda bekler (idle); hareket komutu verilmeden kendi kendine yürümez.
+  - Masaüstünde fareyle zemine tıklayarak veya yön tuşlarıyla (ok tuşları / WASD), mobilde zemine dokunarak karakter yürütülür; istenildiğinde durup geriye dönebilir ve farklı yöne yürüyebilir.
+  - Kamera karakteri yumuşakça takip eder (smooth lerp).
+- **3. Fotoğraftaki Gerçek Taç Kapı Açıklığından Geçiş**:
+  - Orijinal kervansaray dış cephe fotoğrafı (`sultanhani_caravanserai.jpg`) zemin ve mimari arka plan olarak korunmuştur.
+  - Yürünebilir zemin ve geçiş alanı doğrudan fotoğraftaki gerçek taç kapı açıklığına (`x: 520-586, y: 480-590`) hizalanmıştır.
+  - İki yandaki heybetli taş sur duvarları ve üst kemer geçişe kapalıdır (çarpışma sınırları).
+  - Öğrenci meydandan kapıya doğru kendi kontrolüyle yürür; ayakları zemine basarak tam kapı açıklığından tonozlu iç koridora adım atar.
+  - Karakter kapıdan geçerken hem kapı açıklığı hem de karakterin ayakları masaüstü ve mobil kadrajda kalır.
+  - Cephenin üzerine ikinci bir kapı ya da dekoratif bir eşik eklenmemiştir.
+  - Geçişin ardından tonozlu iç koridor ve altın rengi avlu ışığı görünür; [Sınıfa Dön] butonu ile öğrenci sınıfa geri döner.
+- **4. Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata (strict TypeScript).
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 107 / 107 test geçti (74 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_sultanhani_walkable.spec.ts`): 2 / 2 test geçti (Chromium [18.2s] + Mobile Chrome [19.2s]).
+  - Kesintisiz ekran kayıtları: `docs/assets/videos/grade3_sultanhani_walkable_desktop.webm` (2.61 MB) ve `grade3_sultanhani_walkable_mobile.webm` (2.42 MB).
+  - `npm run build`: 1.30s içinde hatasız üretim derlemesi üretildi.
+
+# Proje Durum Raporu — Sürüm 6.5.3 (Aşama 6.5: Akıllı Tahta — Sultanhanı Kervansarayı Macerası / Taç Kapı Eşik Hizalaması ve Kenara Kadar Görünür Ayrılış)
+
+## 3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı 2.5D Sinematik Macerası (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu ve Dokunulmayan Sistemler**:
+  - `main` dalı ve üretim ortamı, Selçuklu Taç Kapı, yürünebilir avlu mimarisi, karakter ve kamera kontrol altyapısı, İngilizce sınıfı mimarisi, 4 öğrenme masası (Keşfet, Öğren, Üret, Paylaş), Sınıf Panosu, diğer sınıf düzeyleri (2, 4, 5, 6, 7), veri modeli ve depolama anahtarları (`dek_campus_v1_state`) %100 korunmuştur.
+- **1. Taç Kapı Tabanına Taş Eşik Yerleşimi ve Perspektif Uyumu**:
+  - Selçuklu anıtsal taş eşiği, taç kapının gerçek mimari açıklığının tabanına (`bottom-6 sm:bottom-8`) ve meydan taş zemin perspektifine tam oturacak şekilde yerleştirildi.
+  - Açıklığın iç derinliği (`rounded-t-full bg-gradient-to-b from-[#090b10] via-[#121620] to-[#1e1b18]`) ve iç avludan süzülen altın ışık hüzmesi eklendi.
+  - Meydan zeminine basan taş basamak yükseltisi, ayakların bastığı üst basma yüzeyi (`#d4b584`), tarihi aşınma izi ve derz çizgileri 3D Selçuklu taş işçiliğiyle modelledi.
+  - İki çocuğun ayakları zemine basarak kapıya yaklaşır (`translateY(45px) scale(0.95)`), ikisi aynı taş eşiğin üstüne adım atar (`translateY(2px) scale(0.88)`), eşiği aşar (`translateY(-28px) scale(0.78)`) ve açıklığın içinden avluya doğru yürür (`translateY(-62px) scale(0.66)`).
+  - Kamera bu hareketi portal açıklığına doğru sinematik ölçeklemeyle takip eder (`cameraZoomPortal`, `scale(1.22) translateY(5%)`).
+  - Avlu görüntüsü, iki çocuk da eşiğin öte tarafına (portal koridoruna) ulaştıktan sonra (3.8 saniye) yumuşak geçişle açılır.
+- **2. Avluda Gece Vedası, Görünür El Sallama ve Kenara Kadar Kesintisiz Ayrılış**:
+  - Avluda karşılıklı `"Good night!"` telaffuzunun ardından Deniz ve Leo görünür biçimde ellerini kaldırıp sallarlar (`deniz-wave-arm`, `leo-wave-arm`, `subPhase === 'waving'`).
+  - El sallamanın ardından Deniz sola (`walk_away_left`, `scale-x-[1]`), Leo sağa (`walk_away_right`, `scale-x-[-1]`) döner ve belirgin bacak yürüyüş adımlarıyla zıt yönlere yürür.
+  - Karakterler kadrajın kenarına kadar %100 opaklıkla (`opacity: 1`) görünür kalır; erken kaybolma / solma kesinlikle uygulanmaz.
+  - Ayrılış hareketi kesintisiz 3.0 saniyelik doğrusal geçişle (`translateX(-120vw)` ve `translateX(120vw)`) ekran dışına taşınır.
+  - Başarı ekranı, iki çocuk da kadrajdan tamamen çıktıktan sonra (3.2 saniye) açılır.
+- **3. Masaüstü ve Mobil Kadraj Bütünlüğü & Sınıfa Dönüş**:
+  - Mobilde üst başlık ultra-kompakt hale getirilmiş, çift yığılma yapan ikincil "Sınıfa Dön" butonu mobilde gizlenerek taç kapı tabanı, taş eşik ve çocukların ayakları hem masaüstü hem mobil kayıtlarda kadrajda tutulmuştur.
+  - Her iki kayıt da Sultanhanı Kervansarayı macerasının tamamlanmasının ardından [Sınıfa Dön] ile İngilizce Dünyası sınıfına dönüşü ve akıllı tahta önündeki duruşu gösterecek şekilde 2 saniyelik net duraklamayla bitirilmiştir.
+- **4. Normal Oynanış Süresi Ölçümü**:
+  - Yapay bekleme butonu eklenmeksizin doğal öğrenci oynanışında süre ölçülmüştür:
+    - **Chromium (Masaüstü)**: **23.6 saniye**
+    - **Mobile Chrome (Mobil)**: **25.2 saniye**
+- **5. Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata (strict TypeScript).
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 107 / 107 test geçti (74 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_smartboard_adventure.spec.ts`): 4 / 4 test geçti (Chromium [29.7s] + Mobile Chrome [31.3s]).
+  - Kesintisiz ekran kayıtları: `docs/assets/videos/grade3_smartboard_desktop_continuous.webm` (3.9 MB) ve `grade3_smartboard_mobile_continuous.webm` (4.1 MB).
+  - `npm run build`: 949ms içinde hatasız üretim derlemesi üretildi.
+
+# Proje Durum Raporu — Sürüm 6.3.1 (Aşama 6.3.1: 3. Sınıf Üret Masası Hata Düzeltmesi — Kelime Seçim ve İlerleme)
+
+## 3. Sınıf Üret Masası — Kelime Seçim ve İlerleme Hata Düzeltmesi (`feat/english-four-learning-tables`)
+- **Tespit Edilen Kök Neden ve Çözüm**:
+  - **Sorun 1 (Yanlış Sıralamada Kilitlenme)**: `BUILD_TASKS` ilk görevinde kartlar `['morning', 'Good']` şeklinde sunulurken öğrenci yanlışlıkla `morning` ardından `Good` seçtiğinde seçimler ekranda kalıyor, 8 yaşındaki öğrenci geri almayı veya düzeltmeyi bilemediği için takılıyordu.
+    - *Çözüm*: Yanlış sıralamada öğrenciye açık, anlaşılır bir uyarı ve pedagojik ipucu (`"Kelimelerin sırası karıştı. Bir daha deneyelim! İpucu: ...'Good' ile başlarız: 'Good morning!'"`) gösterilir, telaffuz yavaş çalışır; 1800ms sonra seçimler otomatik temizlenir ve öğrenci yeni bir kelime kartına bastığında hatalı seçim anında temizlenerek yeni seçimle başlanır.
+  - **Sorun 2 (Yeniden Dene Düğmesi)**: Geri alma butonunun adı ve amacı çocuk dostu hale getirilerek belirgin bir `[Yeniden Dene]` butonu (`aria-label="Kelimeleri temizle"`) eklenmiş, hatalı durumda tek tıkla seçimi sıfırlama imkânı sağlanmıştır.
+  - **Sorun 3 (Tek Kelimelik Görev Kilitlenmesi - Görev 3 & 4)**: Görev 3 (`Hello!`) ve Görev 4 (`Goodbye!`) tek kelimelik görevlerken öğrenci yanlış karta bastığında, ikinci bir karta basıldığında seçim uzunluğu 2 olup hedef uzunluk 1 ile uyuşmadığı için doğrulama tetiklenemiyordu.
+    - *Çözüm*: `handleSelectWordA` içinde hata durumunda veya seçim sayısı ulaştığında yeni karta tıklama anında eski seçimi silip tek tıklamayla yeni seçimi doğrulamaktadır.
+  - **Sorun 4 (Asenkron State ve Çift Tıklama Koruması)**: Geçiş sırasında `useRef` tabanlı senkron kilit (`isTaskLockedRef.current = true`) devreye sokulmuş, setTimeout React setState pure fonksiyonu dışına çıkarılarak temiz DOM döngüsü sağlanmıştır.
+- **Kapsam İzolasyonu ve Dokunulmayan Sistemler**:
+  - `main` dalı ve canlı sürüm, Selçuklu Taç Kapı, yürünebilir avlu mimarisi, İngilizce sınıfı mimarisi, akıllı tahta kilit ve senaryoları, Keşfet, Öğren ve Paylaş masaları, diğer sınıf düzeyleri (2, 4, 5, 6, 7), veri modelleri ve depolama anahtarları %100 korunmuştur.
+- **Değiştirilen Dosyalar**:
+  - `src/features/missions/Grade3UretStationView.tsx`: `handleSelectWordA`, `checkSelectionA`, `handleClearSelectionA`, `isTaskLockedRef`, `timerRef` ve remounting kart anahtarları.
+  - `src/test/walkable.test.tsx`: Test 71 (Senaryo A, B, C tam kapsamlı doğrulama).
+  - `e2e/grade3_uret_table.spec.ts`: Senaryo A, B, C, hızlı tıklama koruması, ara geçiş ve sınıfta kalma E2E testi.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata (strict TypeScript).
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 104 / 104 test geçti (71 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_uret_table.spec.ts`): 2 / 2 test geçti (Chromium [30.7s] + Mobile Chrome [30.5s]).
+  - Regresyon E2E (`e2e/grade3_hello_garden.spec.ts`, `e2e/grade3_ogren_table.spec.ts`, `e2e/grade3_paylas_table.spec.ts`): 6 / 6 test geçti (1.5m).
+  - `npm run build`: 853ms içinde hatasız üretim derlemesi üretildi.
+
+# Proje Durum Raporu — Sürüm 6.4.0 (Aşama 6.4: 3. Sınıf Paylaş Masası — "Greetings / Birlikte Konuşalım" Karşılık Ver & Sen Başlat)
+
+## 3. Sınıf Paylaş Masası — Karşılıklı Konuşma ve Konuşmayı Başlatma Etkinliği (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu ve Dokunulmayan Sistemler**:
+  - `main` dalı ve üretim ortamı, Selçuklu Taç Kapı, yürünebilir avlu mimarisi, karakter ve kamera kontrol altyapısı, İngilizce sınıfı mimarisi, 4 masanın yerleşimi, Sınıf Panosu, onaylanan Aşama 6.1 Keşfet Masası, Aşama 6.2 Öğren Masası, Aşama 6.3 Üret Masası, Akıllı Tahta koruma sistemi, diğer sınıf düzeyleri (2, 4, 5, 6, 7), veri modeli ve depolama anahtarları (`dek_campus_v1_state`) %100 korunmuştur.
+- **1. Pedagojik Öğrenme İçeriği (Yalnızca 4 Temel İfade)**:
+  - **Hello!** (Merhaba!) — Karşılaşan ve el sallayarak selam veren çocuk illüstrasyonu.
+  - **Good morning!** (Günaydın!) — Sabah güneşi ve uyanan çocuk illüstrasyonu.
+  - **Goodbye!** (Hoşça kal!) — Ayrılan ve vedalaşan çocuk illüstrasyonu.
+  - **Good night!** (İyi geceler!) — Gece, ay ve uykuya hazırlanan çocuk illüstrasyonu.
+  - Yeni kelime listesi, gramer anlatımı veya yazılı sınav mantığı eklenmemiştir.
+- **2. İki Aşamalı İletişimsel Öğrenme Akışı**:
+  - **Etkinlik A — Arkadaşım Ne Söylüyor? / Karşılık Ver (4 Durum)**:
+    - Durum 1: Sabah okul bahçesinde karşılaşma — Ali "Good morning!" diyor. Öğrenci "Good morning!" ile karşılık verir. (Yanlış seçenek: "Good night!").
+    - Durum 2: Bahçede karşılaşma — Zeynep "Hello!" diyor. Öğrenci "Hello!" ile karşılık verir. (Yanlış seçenek: "Goodbye!").
+    - Durum 3: Okul çıkışında vedalaşma — Emir "Goodbye!" diyor. Öğrenci "Goodbye!" ile karşılık verir. (Yanlış seçenek: "Hello!").
+    - Durum 4: Gece uyku vakti — Annesi "Good night!" diyor. Öğrenci "Good night!" ile karşılık verir. (Yanlış seçenek: "Good morning!").
+    - Karakter konuşma balonu ve çift hızlı [Dinle] (0.85x) / [Yavaş Dinle] (0.65x) desteği.
+    - Yanlış cevapta cezasız pedagojik Türkçe ipucu ve anında yeniden deneme imkânı.
+  - **Ara Geçiş Ekranı**: 1. Etkinlik bitiminde tebrik ve 2. etkinliğe geçiş butonu sunulur (`"Karşılıklı Konuşmaları Başarıyla Tamamladın! 💬 / 2. Etkinliğe Başla (Şimdi Sen Konuş!)"`).
+  - **Etkinlik B — Şimdi Sen Konuş! / Sen Başlat (4 Tur)**:
+    - Tur 1: Sabah güneşi altında arkadaşını gördün -> Öğrenci durumu değerlendirir ve konuşmayı "Good morning!" ile başlatır; arkadaşı sevinçle karşılık verir.
+    - Tur 2: Bahçede oyun alanında arkadaşını gördün -> Öğrenci konuşmayı "Hello!" ile başlatır.
+    - Tur 3: Dersler bitti, eve dönerken arkadaşına veda -> Öğrenci "Goodbye!" ile başlatır.
+    - Tur 4: Gece uyku saati geldiğinde ailene iyi uykular dile -> Öğrenci "Good night!" ile başlatır.
+    - İletişimsel bağlam odaklı, 2 net seçenek kartı ve her seçimde sesli geri bildirim.
+- **3. Çocuk Dostu Pembe/Gül İstasyon Tasarımı & Telaffuz**:
+  - Pembe / gül rengi (`rose-600` / `rose-100`) ve Selçuklu masif ahşap çerçeveli 4. istasyon teması (soru ve onay konuşma balonları motifleri).
+  - Doğal Web Speech API (`en-US`/`en-GB`) telaffuz desteği.
+  - Mikrofon, kamera veya klavye girişi zorunluluğu yoktur; çocuk dostu dokunmatik/tıklamalı seçenekler.
+- **4. Dört İstasyonun Tamamlanması ve Sınıfta Kalma**:
+  - Her iki etkinlik de tamamlandığında `dek_campus_v1_state` içinde öğrencinin ilerlemesi kalıcı olarak güncellenir:
+    `completedStages: ['kesfet', 'ogren', 'uret', 'paylas']`, `completed: true`.
+  - Başarı ekranında tam talimat metni yer alır: `"Harika! Dört öğrenme masasını da tamamladın. Artık Büyük Görev'e hazırsın! 🏆"`
+  - 4 selamlaşma ifadesinin mini sözlük kartları ve rozeti sergilenir.
+  - **Akıllı tahtaya otomatik ışınlanma YOKTUR.**
+  - Aksiyonlar: **[Masadan Kalk / Sınıfa Dön]** ve **[Tekrar Oyna]**.
+  - Masadan kalkıldığında öğrenci sınıfta, 4. Paylaş Masası'nın yanında (`desk-4`, `x: 665, y: 418`) kalır.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata (strict TypeScript).
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 103 / 103 test geçti (70 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_paylas_table.spec.ts`): 2 / 2 test geçti (Desktop Chromium [19.2s] ve Mobile Chrome [19.6s]).
+  - Regresyon E2E (`grade3_hello_garden.spec.ts`, `grade3_ogren_table.spec.ts`, `grade3_uret_table.spec.ts`): 6 / 6 test geçti (1.5m).
+  - `npm run build`: 1.00s içinde hatasız üretim derlemesi üretildi.
+
+# Proje Durum Raporu — Sürüm 6.3.0 (Aşama 6.3: 3. Sınıf Üret Masası — "Greetings / Cümlemi Oluştur" Kelimeleri Birleştir & Doğru Cümleyi Bul)
+
+## 3. Sınıf Üret Masası — Cümlemi Oluştur ve Doğru Cümleyi Bul Etkinliği (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu ve Dokunulmayan Sistemler**:
+  - `main` dalı ve üretim ortamı, Selçuklu Taç Kapı, yürünebilir avlu mimarisi, karakter ve kamera kontrol altyapısı, İngilizce sınıfı mimarisi, 4 masanın yerleşimi, Sınıf Panosu, onaylanan Aşama 6.1 Keşfet Masası ve Aşama 6.2 Öğren Masası, Paylaş Masası, Akıllı Tahta koruma sistemi, diğer sınıf düzeyleri (2, 4, 5, 6, 7), veri modeli ve depolama anahtarları (`dek_campus_v1_state`) %100 korunmuştur.
+- **1. Pedagojik Öğrenme İçeriği (Yalnızca 4 Temel İfade)**:
+  - **Hello!** (Merhaba!) — Karşılaşan ve selam veren çocuk illüstrasyonu.
+  - **Good morning!** (Günaydın!) — Sabah güneşi ve uyanan çocuk illüstrasyonu.
+  - **Goodbye!** (Hoşça kal!) — Ayrılan ve vedalaşan çocuk illüstrasyonu.
+  - **Good night!** (İyi geceler!) — Gece, ay ve uykuya hazırlanan çocuk illüstrasyonu.
+  - Yeni ifade, yabancı gramer veya sınav mantığı eklenmemiştir.
+- **2. İki Aşamalı Öğrenme ve Üretim Akışı**:
+  - **Etkinlik A — Kelimeleri Birleştir / Cümlemi Oluştur (4 Görev)**: Öğrenci ekrandaki sevimli durum görselini inceler ve alttaki karışık kelime kartlarına dokunarak ifadeyi oluşturur (Örn: `[Good]` + `[morning]` -> `Good morning!`). Kartlara tıklandığında üst kutuya sırayla yerleşir, cümle bitiminde ünlem (!) otomatik eklenir. Geri al / temizle butonu cezasızdır. Yanlış sırada cezasız rehber ipucu verilir. Doğru oluşturulduğunda İngilizce seslendirme otomatik çalışır, yeşil ışıma ile onaylanır.
+  - **Ara Geçiş Ekranı**: 1. Etkinlik bitiminde tebrik ve 2. etkinliğe geçiş butonu sunulur (`"Cümlelerini Başarıyla Oluşturdun! ✏️ / 2. Etkinliğe Başla"`).
+  - **Etkinlik B — Görsele Uygun İfadeyi Seç / Doğru Cümleyi Bul (4 Tur)**: Ekranda durum görseli ve başlığı gösterilir. Öğrenci en fazla 2 büyük seçenek kartı arasından görsele uyan ifadeyi seçer. Yanlış seçimde pedagojik ipucu verilir ve ifade sesli hatırlatılır. Doğru seçimde onay ve sesli pekiştirme sağlanır.
+- **3. Telaffuz ve Çocuk Dostu Yeşil İstasyon Tasarımı**:
+  - Zümrüt yeşili / nane yeşili ve Selçuklu ahşap bordürlü masa kimliği (kalem ve defter motifleri).
+  - Her aşamada [Dinle] (0.85x) ve [Yavaş Dinle] (0.65x) telaffuz butonları.
+  - Web Speech API ile `en-US` / `en-GB` doğal telaffuz; yapay Türkçe okunuş kılavuzu eklenmemiştir.
+  - Mikrofon veya ses kaydı izni istenmez.
+- **4. İlerleme Kaydı ve Sınıfta Kalma**:
+  - Her iki etkinlik tamamlandığında `uret` aşaması `dek_campus_v1_state` üzerine kalıcı olarak işlenir (`completedStages: ['kesfet', 'ogren', 'uret']`, `currentStage: 'paylas'`).
+  - Tamamlama ekranında 4 ifadenin görsel mini sözlük kartları ve tebrik rozeti yer alır.
+  - **"Paylaş Masasına Git" doğrudan ışınlanma butonu kaldırılmıştır.**
+  - Tek aksiyon olarak **[Masadan Kalk / Sınıfa Dön]** butonu ve **[Tekrar Oyna]** seçeneği sunulur. Öğrenci masadan kalktığında sınıfta, 3. Üret Masası'nın yanında kalır.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 101 / 101 test geçti (68 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_uret_table.spec.ts`): 2 / 2 test geçti (Desktop Chromium ve Mobile Chrome dokunmatik).
+  - `npm run build`: 1.16s içinde hatasız üretim derlemesi üretildi.
+
+# Proje Durum Raporu — Sürüm 6.2.0 (Aşama 6.2: 3. Sınıf Öğren Masası — "Greetings / Dinle ve Anla" Dinle-Bul & Sesleri Ayırt Et)
+
+## 3. Sınıf Öğren Masası — Dinle-Bul ve Sesleri Ayırt Et Etkinliği (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu ve Dokunulmayan Sistemler**:
+  - `main` dalı ve üretim ortamı, Selçuklu Taç Kapı, yürünebilir avlu mimarisi, karakter ve kamera kontrol altyapısı, İngilizce sınıfı mimarisi, 4 masanın yerleşimi, Sınıf Panosu, onaylanan Aşama 6.1 Keşfet Masası, Üret ve Paylaş masaları, Akıllı Tahta koruma sistemi, diğer sınıf düzeyleri (2, 4, 5, 6, 7), veri modeli ve depolama anahtarları (`dek_campus_v1_state`) %100 korunmuştur.
+- **1. Pedagojik Öğrenme İçeriği (Yalnızca 4 Temel İfade)**:
+  - **Hello!** (Merhaba!)
+  - **Good morning!** (Günaydın!)
+  - **Goodbye!** (Hoşça kal!)
+  - **Good night!** (İyi geceler!)
+  - Yeni ifade, yabancı gramer veya sınav mantığı eklenmemiştir.
+- **2. İki Aşamalı Öğrenme Akışı**:
+  - **Etkinlik A — Dinle ve Bul (4 Tur)**: Öğrenci [Dinle] (0.85x) ve [Yavaş Dinle] (0.65x) düğmeleriyle ifadeyi dinler; 4 büyük çocuk dostu görsel arasından duyduğu ifadeye karşılık geleni seçer. Yanlış cevapta cezalandırmadan pedagojik ipucu (`"Tekrar dene! İpucu: Bu ifade..."`) gösterilir, sınırsız yeniden deneme hakkı tanınır; doğru cevapta yeşil onay rozetiyle tebrik edilir.
+  - **Ara Geçiş Ekranı**: 1. Etkinlik bitiminde tebrik ve 2. etkinliğe geçiş butonu sunulur.
+  - **Etkinlik B — Sesleri Ayırt Et (4 Tur)**: İngilizce ifade seslendirilir; öğrenci iki büyük yazılı seçenek kartı arasından duyduğunu seçer. Yanlış cevapta doğru ifade sesli ve görsel olarak hatırlatılır.
+- **3. Telaffuz ve Çocuk Dostu Tasarım**:
+  - Sarı / altın sarısı ve Selçuklu ahşap bordürlü masa kimliği (kulaklık ve tablet motifleri).
+  - Web Speech API ile `en-US` / `en-GB` doğal telaffuz; Türkçe okunuş kılavuzu eklenmemiştir.
+  - Mikrofon veya ses kaydı izni istenmez; ses desteği olmayan cihazlarda yazılı/görsel olarak %100 çalışır.
+- **4. İlerleme Kaydı ve Sınıfta Kalma**:
+  - Her iki etkinlik tamamlandığında `ogren` aşaması `dek_campus_v1_state` üzerine kalıcı olarak işlenir (`completedStages: ['kesfet', 'ogren']`, `currentStage: 'uret'`).
+  - Tamamlama ekranında 4 ifadenin görsel mini sözlük kartları ve tebrik rozeti yer alır.
+  - **"Üret Masasına Git" doğrudan ışınlanma butonu kaldırılmıştır.**
+  - Tek aksiyon olarak **[Masadan Kalk / Sınıfa Dön]** butonu ve **[Tekrar Oyna]** seçeneği sunulur. Öğrenci masadan kalktığında sınıfta, 2. Öğren Masası'nın yanında kalır.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 99 / 99 test geçti (66 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_ogren_table.spec.ts` & `e2e/grade3_hello_garden.spec.ts`): 4 / 4 test geçti (Desktop Chromium ve Mobile Chrome dokunmatik).
+  - `npm run build`: 855ms içinde hatasız üretim derlemesi üretildi.
+
+# Proje Durum Raporu — Sürüm 6.1.0 (Aşama 6.1: 3. Sınıf Keşfet Masası — "Greetings / Selamlaşma" Görsel Destekli Öğrenme ve Eşleştirme)
+
+## 3. Sınıf Keşfet Masası — Görsel Destekli Öğrenme ve Eşleştirme Etkinliği (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu ve Dokunulmayan Sistemler**:
+  - `main` dalı, üretim ortamı, Selçuklu Taç Kapı, yürünebilir avlu mimarisi, karakter ve kamera kontrol altyapısı, İngilizce sınıfı mimarisi, 4 masanın yerleşimi, Sınıf Panosu, Akıllı Tahta kilidi ve koruma mantığı, diğer masalar (Öğren, Üret, Paylaş), diğer sınıf seviyeleri (2, 4, 5, 6, 7), veri modeli ve depolama anahtarları (`dek_campus_v1_state`) %100 korunmuştur.
+- **1. Pedagojik Öğrenme İçeriği (Yalnızca 4 Temel İfade)**:
+  - **Hello!** (Merhaba!): El sallayarak neşeyle selam veren çocuk illüstrasyonu.
+  - **Good morning!** (Günaydın!): Sabah güneşi, pırıl pırıl gökyüzü ve güne başlayan çocuk illüstrasyonu.
+  - **Goodbye!** (Hoşça kal!): Ayrılırken el sallayan çocuk illüstrasyonu.
+  - **Good night!** (İyi geceler!): Gece göğü, hilal ay, yıldızlar ve uykuya hazırlanan sevimli çocuk illüstrasyonu.
+  - Müfredat dışı hiçbir yabancı ifade veya karmaşık gramer kuralı eklenmemiştir.
+- **2. İki Aşamalı Etkileşim Akışı**:
+  - **Bölüm A — Keşfet & Dinle**: 4 büyük, canlı, çocuk dostu kart. Tıklandığında kart öne çıkar; İngilizce ifade, Türkçe anlam desteği ve iki ayrı seslendirme butonu (**[🔊 Dinle]** 0.85x ve **[🐢 Yavaş Dinle]** 0.65x) sunulur. 4 ifadenin tamamı dinlenip keşfedilmeden Bölüm B kilidi açılmaz (ilerleme göstergesi: `x / 4 Keşfedildi`).
+  - **Bölüm B — Eşleştir**: 4 görsel kart solda, 4 karışık İngilizce ifade sağda yer alır. Sürükle-bırak zorunluluğu olmadan tıklayarak eşleştirme sağlanır. Doğru eşleşmede yeşil ışıma, başarı onayı ve kilitlenme; yanlış eşleşmede pedagojik ipucu (`"Bu görsel günaydın selamını anlatıyor..."`), Türkçe anlam hatırlatması ve anında cezasız yeniden deneme imkânı sunulur.
+- **3. Tamamlama ve Sınıfta Kalma Bütünlüğü**:
+  - Eşleştirmeler tamamlandığında tebrik rozeti ve 4 ifadenin mini sözlük özeti gösterilir.
+  - Öğrencinin `kesfet` aşaması `dek_campus_v1_state` üzerine kalıcı olarak kaydedilir.
+  - **"Öğren Masasına Git" doğrudan ışınlanma butonu kaldırılmıştır.**
+  - Tek aksiyon olarak **[Masadan Kalk / Sınıfa Dön]** butonu sunulur. Öğrenci masadan kalktığında Keşfet Masası'nın yanında, sınıfta kalır; klavye ve dokunmatik hareket kontrolleri yeniden etkinleşir.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 97 / 97 birim testi geçti (64 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_hello_garden.spec.ts`): Hem Chromium (Masaüstü) hem Mobile Chrome (Dokunmatik) geçti (2 / 2).
+  - `npm run build`: 1.19s içinde hatasız üretim derlemesi üretildi.
+
+# Proje Durum Raporu — Sürüm 5.1.3 (Aşama 5.1.3: 3. Sınıf Keşfet Masası — Gerçek Sinematik 2.5D Canlı Bahçe Simülasyonu)
+
+## 3. Sınıf Keşfet Masası — "Hello! Tanışma Bahçesi" Canlı Minyatür Simülasyonu (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu ve Değiştirilmeyen Sistemler**:
+  - `main` dalı, üretim dağıtımı, Taç Kapı, avlu mimarisi, yürünebilir karakter ve kamera altyapısı, İngilizce sınıfı mimarisi, 4 masanın konumu ve isimleri, Sınıf Panosu, Akıllı Tahta açılış animasyonu ve koruma sistemi, Öğren/Üret/Paylaş masaları, diğer sınıf seviyeleri (2, 4, 5, 6, 7), veri modeli ve depolama anahtarları (`CampusStudentState`) %100 korunmuştur.
+- **1. Gerçek Sinematik 2.5D Minyatür Bahçe Simülasyonu**:
+  - Statik modal veya düz diyalog formu kaldırıldı. Masaya yaklaşıldığında kameranın sinematik biçimde masaya odaklandığı (`perspective-1200`, yumuşak ölçeklenme) canlı bir 2.5D minyatür bahçe sahnesi inşa edildi.
+  - Sahnede masif ahşap masa çerçevesi, Selçuklu çini bordürü, kıvrımlı taş yürüyüş yolu (`stepping stones`), minyatür ahşap bahçe kapısı, servi ve zeytin ağaçları, çiçek tarhları ve doğrudan seçilebilir 3 çocuk karakter bulunmaktadır.
+- **2. Yaşayan ve Canlı Tepki Veren Karakterler**:
+  - Karakterler yalnızca sabit SVG çizimi değildir; öğrenci tıklayarak doğrudan konuşmak istediği karakteri seçebilir.
+  - Karakter seçildiğinde öğrenciye döner, canlı el sallama/selamlama animasyonu sergiler ve konuşur.
+  - Cevaplara göre karakterin duygu ve davranışı değişir (doğru cevapta neşeli tebrik/zıplama, yanlış cevapta baş eğme ve hafif şaşkınlık animasyonu).
+- **3. Dört Pedagojik Etkileşim ve Hata Geri Bildirimi**:
+  - **1. Selamlaşma (Ali)**: Ali kapı yanında karşılar: *"Hello!"*. Öğrenci selamlaşır (`"Hello!"` / `"Hi!"`). Yanlış cevapta (`"Goodbye!"`) görev ilerlemez, nazik geri bildirim verilir ve tekrar denetilir.
+  - **2. Tanışma (Ece)**: Ece çiçeklerin yanında bekler. Öğrenci adını sorar (`"What's your name?"`). Ece *"My name is Ece."* der. Öğrenci hazır kâşif kimliğini tanıtır (`"My name is Deniz."`). Ece *"Nice to meet you!"* der.
+  - **3. Yaş Sorma ve Sayı Etkileşimi (Can)**: Öğrenci Can'ın yaşını sorar (`"How old are you?"`). Can *"I'm nine."* der. Öğrenci bahçe zeminindeki interaktif ahşap tabelalardan 9 sayısını bularak tıklar. Yanlış sayıda (7, 8, 10) ipucu verilir; 9 seçildiğinde Can sevinçle kutlar.
+  - **4. Vedalaşma (Tüm Arkadaşlar)**: Üç arkadaş bir araya gelir. Öğrenci *"Goodbye!"* der; üç karakter birden el sallayarak uğurlar.
+- **4. Telaffuz ve Ses Kalitesi Düzenlemesi**:
+  - Türkçe harflerle yazılmış uydurma fonetik kılavuzlar (`he-LO` vb.) tamamen kaldırıldı; doğru İngilizce yazım korundu.
+  - **[🔊 Dinle]** (doğal hız: 0.85) ve **[🐢 Yavaş Dinle]** (kelime anlaşılırlığı: 0.65) butonları korundu.
+  - `en-US` / `en-GB` sesleri önceliklendirildi. Konuşma sırasında balon turkuaz ışımayla vurgulanır. Ses kapatıldığında veya modal kapandığında ses durdurulur. Ses motoru olmasa dahi simülasyon %100 yazılı olarak çalışır.
+- **5. Sınıfa Dönüş ve Masa İlerleme Kuralı**:
+  - Dört etkileşim bitmeden ilerleme kaydedilmez; tamamlandığında `kesfet` aşaması kalıcı olarak kaydedilir.
+  - **"Öğren Masasına Git" butonu kesinlikle kaldırılmıştır.** Öğrenci otomatik başka masaya ışınlanmaz.
+  - "Masadan Kalk / Sınıfa Dön" butonuyla öğrenci Keşfet Masası'nın hemen yanında sınıfa döner; yürüyüş kontrolü yeniden etkinleşir ve öğrenci 2. Öğren Masası'na kendi karakterini yürüterek gider.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 97 / 97 birim testi geçti (64 walkable + 33 campus).
+  - Playwright E2E (`e2e/grade3_hello_garden.spec.ts` & `e2e/stage51_tables.spec.ts`): Geçti. Hem Masaüstü (Chromium) hem Mobil (Mobile Chrome) kanıt ekran görüntüleri üretildi.
+  - `npm run build`: Başarılı (1.37s).
+
+# Proje Durum Raporu — Sürüm 5.1.2 (3. Sınıf Keşfet Masası: Sinematik "Hello! Tanışma Bahçesi" Görsel, Konuşma Dili ve Çift Hızlı Telaffuz İyileştirmesi)
+
+## 3. Sınıf Keşfet Masası — "Hello! Tanışma Bahçesi" Kapsamlı Düzeltme (`feat/english-four-learning-tables`)
+- **Kapsam ve İzolasyon Kuralı**:
+  - Yalnızca 3. sınıf Keşfet Masası ("Hello! Tanışma Bahçesi") iyileştirildi.
+  - `main` dalı, diğer sınıf düzeyleri (2, 4, 5, 6, 7), diğer masalar (Öğren, Üret, Paylaş), akıllı tahta koruması, avlu mimarisi, giriş kapısı, veri modeli ve `localStorage` / `IndexedDB` anahtarları kesinlikle değiştirilmedi.
+- **1. Görsel Düzeltmeler (Sinematik 2.5D Sahne)**:
+  - Basit modal görünümü bütünüyle kaldırıldı. Yerine 2.5D animasyon filmi estetiğinde, sıcak, çocuk dostu bir açık hava bahçe sahnesi entegre edildi.
+  - Güneş ışıkları huzmesi (`sunGlow`), sabah gökyüzü degradeleri, uzakta Selçuklu sivri taş kemer silüeti, servi ve zeytin ağaçları, kıvrımlı taş yol ve renkli çiçek detayları eklendi.
+  - Sahne üzerinde 3 karakter (Elif, Can, Sen) stilize ve canlı vektör çizimleriyle yerleştirildi; konuşan karaktere aktif dalga animasyonu ve odak vurgusu verildi.
+- **2. Konuşma Dili Düzeltmeleri (3. Sınıf Seviyesine İndirgeme)**:
+  - Karmaşık veya yetişkin üslubundaki ifadeler temizlendi; MEB 3. sınıf İngilizce müfredatına birebir uygun, 3 adımlı doğal tanışma akışı kurgulandı:
+    - **1. Adım**: Elif karşılar: *"Hello!"* (he-LO) — Öğrenci seçenekleri: *"Hello!"* veya *"Good morning!"*.
+    - **2. Adım**: Can adını sorar: *"What is your name?"* (UOT iz yor NEYM) — Öğrenci seçenekleri: *"I am Deniz."*, *"I am a student."*, *"I am an Explorer."*.
+    - **3. Adım**: Elif & Can memnun olur: *"Nice to meet you."* (NAYS tu MİT yu) — Öğrenci seçenekleri: *"Nice to meet you."*, *"Let's explore!"*.
+    - **Tamamlama Ekranı**: Sade özet kartı (`Hello!`, `What is your name?`, `Nice to meet you.`), *"Öğren Masasına Git (2. Masa)"* ve *"Masadan Kalk / Sınıfa Dön"* butonları. Öğrenci masadan kalktığında sınıfta masanın yanında kalır.
+- **3. Telaffuz Ayarları ve Çift Hızlı Dinleme Desteği**:
+  - Web Speech API tabanlı iki ayrı dinleme butonu konuşma balonuna yerleştirildi:
+    - **[🔊 Dinle]**: 3. sınıf çocuk pedagojisine uygun `rate: 0.82`, `pitch: 1.06` doğal konuşma hızı.
+    - **[🐢 Yavaş Dinle]**: Hece vurgularını kaçırmayan, net ve yavaş `rate: 0.62`, `pitch: 1.0` çalışma hızı.
+  - Ses çalarken konuşma balonuna turkuaz ışıma ve aktif durum halkası (`isCurrentSentenceSpeaking`) eklendi.
+  - Karmaşık IPA alfabeleri yerine 3. sınıf öğrencisinin rahat okuyacağı sade heceleme kılavuzu eklendi (`he-LO`, `UOT iz yor NEYM`, `NAYS tu MİT yu`).
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 97 / 97 birim testi geçti (64 walkable + 33 campus).
+  - `npm run build`: Başarılı (1.49s).
+  - Playwright E2E (`e2e/grade3_hello_garden.spec.ts`): Chromium ve Mobile-Chrome başarıyla geçti (18.2s).
+
+# Proje Durum Raporu — Sürüm 5.1.1 (3. Sınıf Keşfet Masası: "Hello! Tanışma Bahçesi" Prototipi)
+
+## 3. Sınıf Keşfet Masası — "Hello! Tanışma Bahçesi" Prototipi (`feat/english-four-learning-tables`)
+- **Kapsam İzolasyonu**: Yalnızca 3. sınıf Keşfet Masası için sinematik "Hello! Tanışma Bahçesi" prototipi geliştirildi. Diğer sınıflar (2, 4, 5, 6, 7), diğer masalar (Öğren, Üret, Paylaş), akıllı tahta, mimari, karakter hareketleri ve depolama kayıt sistemi (`CampusStudentState`) kesinlikle değiştirilmedi.
+- **Karakter ve Sahne Kuralı**:
+  - En fazla 3 karakter yer alır: **Elif** (Akran öğrenci), **Can** (Meraklı kampüs arkadaşı) ve **Sen** (Öğrenci / Kâşif).
+  - Görsel olarak Selçuklu kemer silüeti, servi ağaçları ve güneşli kampüs avlu bahçesi atmosferi sunulur.
+- **Diyalog ve Bilgi Yükü İlkesi**:
+  - Bilgi yığını oluşturulmadan, 3. sınıf düzeyine tam uygun (en çok 10 kelimelik kısa cümleler, TDK onaylı Türkçe ipuçları, Web Speech API sesli dinleme desteği):
+    - **1. Adım**: Elif karşılar: *"Hello! Welcome to our garden."* -> 2 sade seçenek (`Hello! I am glad to be here.` / `Good morning!`).
+    - **2. Adım**: Can adını sorar: *"What is your name?"* -> 3 hazır seçenek (`I am Deniz.` / `I am a student.` / `I am an Explorer.`) — *kişisel veri istenmez*.
+    - **3. Adım**: Elif & Can ortak neşeyle yanıtlar: *"Nice to meet you! Let's explore together."* -> 2 sade seçenek (`Nice to meet you too!` / `Thank you! Let's explore!`).
+  - **Tamamlama Ekranı**:
+    - Öğrenilen üç temel kalıp (`Hello!`, `What is your name?`, `Nice to meet you!`) kısa özet kartında pekiştirilir.
+    - `kesfet` aşaması mevcut kayıt API'si üzerinden tamamlandı olarak kaydedilir.
+    - Düğmeler: *"Öğren Masasına Git (2. Masa)"* veya *"Masadan Kalk / Sınıfa Dön"*.
+    - Masadan kalkıldığında öğrenci doğrudan sınıfta, masanın yanında kalır.
+- **Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 97 / 97 birim testi geçti (64 walkable + 33 campus).
+  - `npm run build`: Başarılı (1.10s).
+  - Playwright E2E (`e2e/grade3_hello_garden.spec.ts` & `e2e/stage51_tables.spec.ts`): 4 / 4 test geçti.
+
+# Proje Durum Raporu — Sürüm 5.1.0 (Aşama 5.1: İngilizce Sınıfında Dört Etkileşimli Masa ve Akıllı Tahta Koruması)
+
+## Aşama 5.1 — İngilizce Sınıfında Dört Etkileşimli Masa (`feat/english-four-learning-tables`)
+- **1. Dört Etkileşimli Masaya Taşınan Öğrenme İstasyonları**:
+  - Mevcut "Kapıların Anlattığı Hikâye" 4 aşamalı öğrenme akışı, sınıftaki dört fiziksel öğrenci masasına taşındı:
+    1. **1. KEŞFET MASASI (Sol Ön / Kuzeybatı)**: Görevin "Keşfet" aşaması (`table-kesfet`).
+    2. **2. ÖĞREN MASASI (Sağ Ön / Kuzeydoğu)**: Görevin "Öğren" aşaması (`table-ogren`).
+    3. **3. ÜRET MASASI (Sol Arka / Güneybatı)**: Görevin "Üret" aşaması (`table-uret`).
+    4. **4. PAYLAŞ MASASI (Sağ Arka / Güneydoğu)**: Görevin "Paylaş" aşaması (`table-paylas`).
+  - Görev içerikleri, diyaloglar, sınıf düzeyine göre farklılaşan kelime/görev yapıları (`gradeProfiles.ts`) ve depolama mekanizması (`dek_campus_v1_state`) %100 korundu; yeni içerik veya gereksiz bağımlılık eklenmedi.
+- **2. Masa Tasarımı ve Selçuklu Levhaları**:
+  - Mevcut dört masanın konumu, boyutları (150x55) ve sinematik 3B sprite görünümleri korundu.
+  - Masaların üzerine Selçuklu mimarisine uygun masif sedir ağacı kaide, sivri kemerli mukarnas formu, turkuaz çini bordürü (`#0e768a`) ve altın varak süslemeli okunaklı isim levhaları (`drawTablePlaque`) işlendi:
+    `1. KEŞFET MASASI`, `2. ÖĞREN MASASI`, `3. ÜRET MASASI`, `4. PAYLAŞ MASASI`.
+  - Masalara yaklaşıldığında aşama durumuna göre dinamik etkileşim ipucu açılır: `Keşfet Masası'na Otur [E]`.
+- **3. Sıralı İlerleme ve Sınıf Seçimi Koruması (Gating)**:
+  - Henüz sınıf seçilmemişse masalara yaklaşıldığında etkileşim ipucu `Önce Sınıfını Seç` olarak görünür; etkileşime girildiğinde `Önce Sınıf Seçim Panosu'ndan sınıfını seç.` uyarısı verilir.
+  - Önceki aşamalar tamamlanmadan sonraki masaya oturulamaz:
+    - Keşfet tamamlanmadan Öğren masasına gidildiğinde: `Önce Keşfet Masası'ndaki etkinliği tamamlamalısın.`
+    - Öğren tamamlanmadan Üret masasına gidildiğinde: `Önce Öğren Masası'ndaki etkinliği tamamlamalısın.`
+    - Üret tamamlanmadan Paylaş masasına gidildiğinde: `Önce Üret Masası'ndaki etkinliği tamamlamalısın.`
+- **4. İstasyon Modalı (`TableStationModal`) ve Sınıfa Dönüş**:
+  - Her masa yalnızca kendisine ait aşamayı izole biçimde açar (`TableStationModal`).
+  - Masadan kalkıldığında (Escape tuşu veya "Masadan Kalk / Sınıfa Dön" düğmesi) öğrenci doğrudan sınıfta, masanın hemen yanında kalır.
+  - Aşama tamamlandığında sonraki masaya yönlendiren butonlar yer alır: `Keşfet Adımını Tamamla (Öğren Masasına Git)`.
+- **5. Akıllı Tahta Koruması**:
+  - Akıllı tahtanın görsel tasarımı, konumu ve 600ms açılış ışığı/güç animasyonu eksiksiz korundu.
+  - Akıllı tahtaya etkileşime girildiğinde eski görev akışı açılmaz; etkinliklerin 4 masaya taşındığı ve tahtanın yakında gerçek yaşam uygulama alanı olarak açılacağı rehber mesajı gösterilir:
+    `Öğrenme etkinlikleri sınıftaki dört masaya (Keşfet, Öğren, Üret, Paylaş) taşınmıştır. Akıllı tahta yakında gerçek yaşam uygulama alanı olarak açılacaktır.`
+  - `SmartBoardModal` teknik kodu korunmuştur.
+- **6. Kalite Güvencesi ve Doğrulama**:
+  - `npm run typecheck`: 0 hata.
+  - `npm run lint`: 0 hata, 0 uyarı.
+  - `npm run test`: 94 / 94 test başarıyla geçti (`walkable.test.tsx` [61 test] + `campus.test.tsx` [33 test]).
+  - `npm run build`: Başarılı (902ms).
+  - Playwright E2E (`e2e/stage51_tables.spec.ts`): Chromium ve Mobile-Chrome tam döngüyü doğruladı (8 adet kanıt ekran görüntüsü `docs/assets/stage51_*.png`).
+
 # Proje Durum Raporu — Sürüm 5.0.4 (Tek Görevli Düzeltme: Sınıf Seçim Panosu, Akıllı Tahta Kilidi ve Dış Kapı Çıkış Döngüsü)
 
 ## Tek Görevli Düzeltme — Sınıf Seçim Panosu, Akıllı Tahta Kilidi ve Dış Kapı Çıkışı (`feat/single-entry-walkable-campus`)
