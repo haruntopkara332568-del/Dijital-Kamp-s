@@ -23,6 +23,7 @@ import { WalkableControlsOverlay } from './components/WalkableControlsOverlay';
 import { SmartBoardModal } from './components/SmartBoardModal';
 import { GradeBoardModal } from './components/GradeBoardModal';
 import { TableStationModal } from './components/TableStationModal';
+import { CAMPUS_BUILDING_NAMES } from '@/src/data/brandConfig';
 import { useOptionalCampus } from '../../app/CampusProviders';
 import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } from './types';
 import type { MissionStageId } from '@/src/types/campus';
@@ -395,12 +396,12 @@ export function WalkableCampusView({
 
       // 'courtyard' (Kampüs Avlusu)
       const obstacles: SceneObstacle[] = [
-        // İngilizce Dünyası Binası
-        { id: 'bldg-english', name: 'İngilizce Dünyası', x: 860, y: 140, width: 220, height: 180 },
-        // Gezi ve Keşif Binası
-        { id: 'bldg-discovery', name: 'Gezi ve Keşif', x: 180, y: 140, width: 220, height: 180 },
-        // Kitap ve Hikâye Dünyası
-        { id: 'bldg-library', name: 'Kitap Dünyası', x: 580, y: 100, width: 240, height: 170 },
+        // İngilizce Öğreniyorum Binası
+        { id: 'bldg-english', name: CAMPUS_BUILDING_NAMES.english, x: 860, y: 140, width: 220, height: 180 },
+        // Hayalden Gerçeğe Binası
+        { id: 'bldg-discovery', name: CAMPUS_BUILDING_NAMES.discovery, x: 180, y: 140, width: 220, height: 180 },
+        // Hikâyeden Hayata Binası
+        { id: 'bldg-library', name: CAMPUS_BUILDING_NAMES.library, x: 580, y: 100, width: 240, height: 170 },
         // Kampüs Yolculuğum Köşkü
         { id: 'pavilion-journey', name: 'Kampüs Yolculuğum', x: 220, y: 560, width: 190, height: 140 },
         // Keşif Görevleri Panosu
@@ -410,11 +411,10 @@ export function WalkableCampusView({
       ];
 
       const interactiveZones: InteractiveZone[] = [
-        // 1. İngilizce Dünyası Binası (Sinematik Sınıf ve Akıllı Tahta)
-        // 1. İngilizce Dünyası Binası (Şu aşamada tek aktif sınıf)
+        // 1. İngilizce Öğreniyorum Binası (Sinematik Sınıf ve Akıllı Tahta)
         {
           id: 'enter-english',
-          name: 'İngilizce Dünyası',
+          name: CAMPUS_BUILDING_NAMES.english,
           prompt: 'İngilizce Sınıfına Gir',
           x: 970,
           y: 335,
@@ -425,32 +425,32 @@ export function WalkableCampusView({
             setCurrentScene('classroom');
           },
         },
-        // 2. Gezi ve Keşif Binası (Görsel olarak durur - Yakında)
+        // 2. Hayalden Gerçeğe Binası (Görsel olarak durur - Yakında)
         {
           id: 'enter-discovery',
-          name: 'Gezi ve Keşif',
+          name: CAMPUS_BUILDING_NAMES.discovery,
           prompt: 'Yakında Açılacak',
           x: 290,
           y: 335,
           radius: 70,
           action: () => {
             setUnreachableMessage(
-              'Gezi ve Keşif binası yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+              'Hayalden Gerçeğe binası yakında açılacak. Şu an İngilizce Öğreniyorum sınıfı aktiftir.',
             );
             setTimeout(() => setUnreachableMessage(null), 3500);
           },
         },
-        // 3. Kitap ve Hikâye Dünyası Binası (Görsel olarak durur - Yakında)
+        // 3. Hikâyeden Hayata Binası (Görsel olarak durur - Yakında)
         {
           id: 'enter-library',
-          name: 'Kitap ve Hikâye Dünyası',
+          name: CAMPUS_BUILDING_NAMES.library,
           prompt: 'Yakında Açılacak',
           x: 700,
           y: 285,
           radius: 70,
           action: () => {
             setUnreachableMessage(
-              'Kitap ve Hikâye Dünyası yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+              'Hikâyeden Hayata binası yakında açılacak. Şu an İngilizce Öğreniyorum sınıfı aktiftir.',
             );
             setTimeout(() => setUnreachableMessage(null), 3500);
           },
@@ -465,7 +465,7 @@ export function WalkableCampusView({
           radius: 70,
           action: () => {
             setUnreachableMessage(
-              'Kampüs Yolculuğum köşkü yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+              'Kampüs Yolculuğum köşkü yakında açılacak. Şu an İngilizce Öğreniyorum sınıfı aktiftir.',
             );
             setTimeout(() => setUnreachableMessage(null), 3500);
           },
@@ -480,7 +480,7 @@ export function WalkableCampusView({
           radius: 70,
           action: () => {
             setUnreachableMessage(
-              'Görev panosu yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+              'Görev panosu yakında açılacak. Şu an İngilizce Öğreniyorum sınıfı aktiftir.',
             );
             setTimeout(() => setUnreachableMessage(null), 3500);
           },

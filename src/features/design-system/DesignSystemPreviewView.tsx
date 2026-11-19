@@ -20,6 +20,7 @@ import {
   getVisualLanguageSpec,
 } from '@/src/data/designSystem';
 import { GRADE_LIST } from '@/src/data/gradeProfiles';
+import { CAMPUS_BRAND } from '@/src/data/brandConfig';
 import type { GradeLevel } from '@/src/types/campus';
 
 const MOTIF_ITEMS: Array<{ variant: AnatolianMotifVariant; title: string; usage: string }> = [
@@ -71,8 +72,8 @@ export function DesignSystemPreviewView() {
           <div className="space-y-4">
             <CampusSectionHeader
               eyebrow="Ortak Anadolu–Selçuklu Görsel Dili"
-              title="Dijital Eğitim Kampüsü Tasarım Sistemi"
-              description="Taş beji, krem, turkuaz, lacivert, toprak tonları ve adaçayı yeşili üzerine kurulu; 2–7. sınıflar için ortak ama yaş düzeyine uyarlanabilir sade bileşen kütüphanesi."
+              title={`${CAMPUS_BRAND.name} Tasarım Sistemi`}
+              description="Taş beji, krem, turkuaz, lacivert, toprak tonları ve adaçayı yeşili üzerine kurulu; 2–4. sınıflar için ortak ama yaş düzeyine uyarlanabilir sade bileşen kütüphanesi."
               headingLevel="h1"
               tier={visualSpec.tier}
             />

@@ -1,3 +1,88 @@
+# Proje Durum Raporu — Bakım ve Onarım 02: Marka Kimliği ve Mimari Kitabelerin Yeniden Yapılandırılması
+
+## Kapsam ve Temel İlke
+- **Çalışma Dalı**: `fix/maintenance-02-brand-identity`
+- **Başlangıç Referansı**: `33dcf4a07cbc680dd3f7c212fd03f42af9e34c58` (`origin/fix/maintenance-01-primary-school-scope`)
+- **Kesinleşmiş Marka Kimliği**:
+  - **Ana Marka Adı**: Yeni Nesil Külliye (Mimari kitabelerde: `YENİ NESİL KÜLLİYE`)
+  - **Alt Başlık**: Dijital Öğrenme Kampüsü
+  - **Slogan**: Geçmişin bilgeliği, geleceğin öğrenme dünyası
+- **Kesinleşmiş Bina İsimleri**:
+  - `ingilizce-dunyasi` → **İngilizce Öğreniyorum** (Kitabe: `İNGİLİZCE ÖĞRENİYORUM`)
+  - `gezi-ve-kesif` → **Hayalden Gerçeğe** (Kitabe: `HAYALDEN GERÇEĞE`)
+  - `kitap-ve-hikaye-dunyasi` → **Hikâyeden Hayata** (Kitabe: `HİKÂYEDEN HAYATA`)
+  - *Teknik ID'ler, rota adresleri ve ilerleme anahtarları geriye dönük uyumluluk için değiştirilmemiştir.*
+- **Merkezî Yapılandırma Kaynağı**: `src/data/brandConfig.ts` tek ve güvenilir kaynak (Single Source of Truth) olarak oluşturulmuş; tüm aktif arayüzler, başlıklar, Canvas kitabeleri ve SVG çizimleri bu yapılandırmadan beslenmiştir.
+- **Mimari Kitabe Uygulamaları**:
+  - **Ana Taç Kapı**: Selçuklu taş mimarisine tam uyumlu, sıcak kumtaşı renkli, oyma taş kabartma efektli ve köşelerinde Selçuklu rozetleri bulunan mimari taş kitabe katmanı entegre edilmiştir. Tıklamayı engellemez (`pointer-events-none`) ve kapı açılışında perspektifle orantılı genişler.
+  - **Üç Öğrenme Binası**: Canvas tabanlı avlu sahnesinde modern reklam tabelası yerine, sıcak kumtaşı/kireçtaşı dokulu taş kitabeler, taşa işlenmiş derinlikli harfler ve Selçuklu çinisi esintili zarif durum mühürleri (`● AÇIK` / `YAKINDA`) çizilmiştir.
+  - **Avlu Yön Totemi**: Yön levhaları yeni bina isimleriyle (`İngilizce Öğreniyorum ➜`, `⇦ Hayalden Gerçeğe`, `⇧ Hikâyeden Hayata`) güncellenmiş; eski isimlerin yeni kitabelerle aynı anda görünmesi kesinlikle engellenmiştir.
+
+## Onaylanmış Pedagojik Kararlar (Gelecek Geliştirmeler İçin Kayıt)
+Aşağıdaki modeller proje için kesinleşmiş pedagojik çerçevedir (Bu aşamada yeni kod yazılmamış, belgelenmiştir):
+1. **İngilizce Öğreniyorum**:
+   - Keşfet
+   - Öğren
+   - Üret
+   - Paylaş
+   - Büyük Görev — Gerçek Yaşam Deneyimi (Çalışan öğrenme masaları ve akıllı tahta altyapısı korunacaktır).
+2. **Hayalden Gerçeğe**:
+   - Merak Et
+   - Yola Çık
+   - Keşfet
+   - Deneyimle
+   - Gerçeğe Taşı (Kültürel miras ve doğal mekânların deneyimleyerek öğrenilmesi).
+3. **Hikâyeden Hayata**:
+   - Oku
+   - Hikâyenin İçine Gir (Öğrenci okuduğu hikâyenin mekânını keşfeder, karakterlerle etkileşime girer ve kararlarıyla olayların akışını değiştirebilir).
+   - Hayal Et
+   - Kendi Hikâyeni Yaz
+   - Hikâyeni Canlandır (Öğrenci yazdığı hikâyeyi hazır karakterler, mekânlar ve hareketli animasyonlar yardımıyla canlandırabilir; ilk sürümde ücretsiz, hazır sahneler ve tekrar kullanılabilir animasyonlar esas alınacaktır).
+
+## 20 Senaryo Doğrulama Özeti
+1. **Senaryo 1 (Ana Giriş Ekranı)**: Doğru marka adı, alt başlık ve slogan eksiksiz görünür (DOĞRULANDI).
+2. **Senaryo 2 (Kapı Geçişi)**: Mevcut sinematik kapı açılış ve avluya geçiş animasyonu çalışır (DOĞRULANDI).
+3. **Senaryo 3 (Kampüs Avlusu)**: Üç yeni bina adı (`İngilizce Öğreniyorum`, `Hayalden Gerçeğe`, `Hikâyeden Hayata`) görünür (DOĞRULANDI).
+4. **Senaryo 4 (Kamera Hareketi)**: Kitabeler binaların sahne koordinatlarına bağlıdır ve kamerayla birlikte hareket eder (DOĞRULANDI).
+5. **Senaryo 5 (İngilizce Binasına Giriş)**: Kapıya yaklaşıldığında "İngilizce Sınıfına Gir" çalışır ve sınıf açılır (DOĞRULANDI).
+6. **Senaryo 6 (Sınıf Seçim Panosu)**: Sınıf panosunda yalnızca 2, 3 ve 4. sınıflar görünür; 5, 6, 7 kesinlikle yoktur (DOĞRULANDI).
+7. **Senaryo 7 (Keşfet Masası)**: 3. sınıf Tanışma Bahçesi etkinliği sorunsuz tamamlanır (DOĞRULANDI).
+8. **Senaryo 8 (Öğren Masası)**: Selamlaşma Kartları ve seslendirmeler sorunsuz çalışır (DOĞRULANDI).
+9. **Senaryo 9 (Üret Masası)**: 6.3.1 hata düzeltmesi teyitlidir; kelime seçimleri ve otomatik geçişler çalışır (DOĞRULANDI).
+10. **Senaryo 10 (Paylaş Masası)**: Kısa Konuşma ve tamamlama kaydı sorunsuz çalışır (DOĞRULANDI).
+11. **Senaryo 11 (Akıllı Tahta Kilidi)**: Dört masa tamamlanmadan tahta açılmaz kuralı korunur (DOĞRULANDI).
+12. **Senaryo 12 (Sultanhanı Macerası)**: Kervansaray meydanında aynı karakterle yürüyüş ve taç kapı eşiğinden geçiş çalışır (DOĞRULANDI).
+13. **Senaryo 13 (Gezi Binası / Hayalden Gerçeğe)**: Yaklaşıldığında "Hayalden Gerçeğe binası yakında açılacak" uyarısı verir (DOĞRULANDI).
+14. **Senaryo 14 (Hikâye Binası / Hikâyeden Hayata)**: Yaklaşıldığında "Hikâyeden Hayata binası yakında açılacak" uyarısı verir (DOĞRULANDI).
+15. **Senaryo 15 (Tarayıcı Başlığı)**: `<title>Yeni Nesil Külliye — Dijital Öğrenme Kampüsü</title>` görünür (DOĞRULANDI).
+16. **Senaryo 16 (Eski Öğrenci Kayıtları)**: 5, 6, 7. sınıf ilerlemeleri Yolculuğum'da Arşiv Kaydı olarak korunur (DOĞRULANDI).
+17. **Senaryo 17 (Mobil Giriş Ekranı)**: Mobil cihazlarda kitabe kesilmez, taşmaz ve orantılı ölçeklenir (DOĞRULANDI).
+18. **Senaryo 18 (Mobil Kampüs Avlusu)**: Mobilde bina kitabeleri ve dokunmatik kontroller sorunsuz çalışır (DOĞRULANDI).
+19. **Senaryo 19 (Ekran Boyutu Değişikliği)**: Responsive değişimlerde kitabe konumu kapı ve binalardan ayrılmaz (DOĞRULANDI).
+20. **Senaryo 20 (Sayfa Yenileme)**: Yenilemede marka adı ve öğrenci ilerleme kayıtları korunur (DOĞRULANDI).
+
+## Kalite Güvencesi ve Test Sonuçları
+- **`npm run typecheck`**: 0 hata (Tam TypeScript tip uyumu).
+- **`npm run lint`**: 0 hata, 0 uyarı (ESLint temiz).
+- **`npm run test`**: 123 / 123 test GEÇTİ (%100 başarı; `brandIdentityMaintenance.test.tsx` [7], `campus.test.tsx` [33], `primaryScopeMaintenance.test.tsx` [9], `walkable.test.tsx` [74]).
+- **Playwright E2E (`e2e/brand_identity_maintenance.spec.ts`)**:
+  - Chromium (Desktop): 6 / 6 test GEÇTİ (8.2s).
+  - Mobile Chrome (Pixel 5): 6 / 6 test GEÇTİ (5.8s).
+- **Playwright E2E (`e2e/primary_school_scope_maintenance.spec.ts`)**:
+  - Chromium (Desktop): 7 / 7 test GEÇTİ (9.4s).
+- **`npm run build`**: 913ms içinde hatasız ve optimize edilmiş üretim paketi (`dist/`).
+- **Görsel Kanıt Dosyaları (`docs/assets/`)**:
+  - `brand_gate_desktop.png` (Masaüstü Taç Kapı Kitabesi)
+  - `brand_gate_mobile.png` (Mobil Taç Kapı Kitabesi)
+  - `brand_courtyard_desktop.png` (Masaüstü Avlu Genel Görünümü)
+  - `brand_courtyard_mobile.png` (Mobil Avlu Genel Görünümü)
+  - `brand_english_building_close.png` (İngilizce Öğreniyorum Bina Kitabesi Yakın Görünüm)
+  - `brand_discovery_building_close.png` (Hayalden Gerçeğe Bina Kitabesi Yakın Görünüm)
+  - `brand_library_building_close.png` (Hikâyeden Hayata Bina Kitabesi Yakın Görünüm)
+  - `brand_classroom_grade_board.png` (Sınıf İçi ve 2, 3, 4. Sınıf Seçim Panosu)
+
+---
+
 # Proje Durum Raporu — Bakım ve Onarım 01: Proje Kapsamının İlkokul Düzeyiyle Sınırlandırılması (2, 3, 4. Sınıflar)
 
 ## Kapsam ve Temel İlke

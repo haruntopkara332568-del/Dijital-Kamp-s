@@ -1,3 +1,36 @@
+# Test ve Kalite Güvence Raporu — Bakım ve Onarım 02: Marka Kimliği ve Mimari Kitabelerin Yeniden Yapılandırılması
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (Strict TypeScript tip denetimi).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı** (ESLint kuralları tam uyumlu).
+- **`npm run test` (`vitest run`)**: Geçti — **123 / 123 test** (%100 başarı):
+  - `src/test/brandIdentityMaintenance.test.tsx`: **7 / 7 test** (`98ms`).
+  - `src/test/primaryScopeMaintenance.test.tsx`: **9 / 9 test** (`278ms`).
+  - `src/test/campus.test.tsx`: **33 / 33 test** (`3.7s`).
+  - `src/test/walkable.test.tsx`: **74 / 74 test** (`42.1s`).
+- **`npx playwright test e2e/brand_identity_maintenance.spec.ts --project=chromium`**: Geçti — **6 / 6 test** (`8.2s`):
+  - Senaryo 1 & 15: Ana Giriş Ekranı ve Tarayıcı Başlığı yeni marka kimliğini doğru sunar (Geçti).
+  - Senaryo 2: Kapı geçiş animasyonu ve avluya adım atma kesintisiz çalışır (Geçti).
+  - Senaryo 3, 4, 18: Kampüs Avlusu, Bina Kitabeleri ve Kamera Hareketi (Geçti).
+  - Senaryo 5, 6: İngilizce Öğreniyorum binasına giriş ve Sınıf Seçim Panosu (Geçti).
+  - Senaryo 13, 14: Yakında açılacak binalara yaklaşıldığında yeni isimlerle bildirim verilir (Geçti).
+  - Senaryo 16, 20: Eski öğrenci kayıtları ve sayfa yenileme bütünlüğü korunur (Geçti).
+- **`npx playwright test e2e/brand_identity_maintenance.spec.ts --project=mobile-chrome`**: Geçti — **6 / 6 test** (`5.8s`):
+  - Senaryo 17, 18: Mobil Chrome (Pixel 5) üzerinde ana giriş, bina kitabeleri ve dokunmatik avlu akışı (Geçti).
+- **`npx playwright test e2e/primary_school_scope_maintenance.spec.ts --project=chromium`**: Geçti — **7 / 7 test** (`9.4s`) (Onarım 01 ilkokul kapsamı regresyonsuz korundu).
+- **`npm run build` (`vite build`)**: Geçti — **913ms** içinde optimize edilmiş üretim derlemesi üretildi.
+- **Doğrulanan Gerçek Görsel Varlıklar (`docs/assets/`)**:
+  - `brand_gate_desktop.png` (542 KB)
+  - `brand_gate_mobile.png` (881 KB)
+  - `brand_courtyard_desktop.png` (1.06 MB)
+  - `brand_courtyard_mobile.png` (1.33 MB)
+  - `brand_english_building_close.png` (1.13 MB)
+  - `brand_discovery_building_close.png` (1.16 MB)
+  - `brand_library_building_close.png` (1.16 MB)
+  - `brand_classroom_grade_board.png` (243 KB)
+
+---
+
 # Test ve Kalite Güvence Raporu — Bakım ve Onarım 01: Proje Kapsamının İlkokul Düzeyiyle Sınırlandırılması (2, 3, 4. Sınıflar)
 
 ## 1. Çalıştırıldı ve Geçti

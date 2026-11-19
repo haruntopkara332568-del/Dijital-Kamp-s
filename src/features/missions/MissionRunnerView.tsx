@@ -54,11 +54,11 @@ const MIDDLE_SCHOOL_MATERIALS = [
 ];
 
 const DEFAULT_DOOR_UI_COPY = {
-  kesfetPrimaryBadge: 'Gezi ve Keşif Bağlantısı',
+  kesfetPrimaryBadge: 'Hayalden Gerçeğe Bağlantısı',
   kesfetPrimaryHeading: 'Gördüğün Kapıları Seç',
   kesfetPrimaryEarlyDesc: 'Tanıdığın kapılara dokun.',
   kesfetPrimaryDesc: 'Daha önce gördüğün kapıları seç; seçimin sonraki adımlarda kullanılacak.',
-  kesfetMiddleBadge: 'Gezi ve Keşif · Karşılaştırmalı Gözlem',
+  kesfetMiddleBadge: 'Hayalden Gerçeğe · Karşılaştırmalı Gözlem',
   kesfetMiddleHeading: 'Günlük Kapılar ile Kampüs Kapısını Karşılaştır',
   kesfetMiddleDesc:
     'İki görseli incele ve aşağıdaki dört gözlem alanında dikkatini çeken özellikleri seç.',
@@ -912,7 +912,7 @@ function MissionRunnerInner({
                   onClick={() => goToStage('ogren', true)}
                   className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
                 >
-                  <span>Öğren Aşamasına Geç (İngilizce Dünyası)</span>
+                  <span>Öğren Aşamasına Geç (İngilizce Öğreniyorum)</span>
                   <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </button>
               )}
@@ -926,7 +926,7 @@ function MissionRunnerInner({
             <section className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] p-5 sm:p-6 space-y-5">
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-[var(--seljuk-teal)]">
-                  İngilizce Dünyası Bağlantısı
+                  İngilizce Öğreniyorum Bağlantısı
                 </p>
                 <h2 className="text-xl font-bold text-[var(--campus-ink)]">
                   {isPrimary ? uiCopy.ogrenPrimaryHeading : uiCopy.ogrenMiddleHeading}
@@ -1287,7 +1287,7 @@ function MissionRunnerInner({
                   onClick={() => goToStage('uret', true)}
                   className="min-h-[44px] px-6 py-2.5 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-sm font-semibold inline-flex items-center gap-2 cursor-pointer"
                 >
-                  <span>Üret Aşamasına Geç (Kitap ve Hikâye Dünyası)</span>
+                  <span>Üret Aşamasına Geç (Hikâyeden Hayata)</span>
                   <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </button>
               )}
@@ -1306,7 +1306,7 @@ function MissionRunnerInner({
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-[var(--courtyard-sage)]">
-                    Kitap ve Hikâye Dünyası Bağlantısı
+                    Hikâyeden Hayata Bağlantısı
                   </p>
                   <h2 className="text-xl font-bold text-[var(--campus-ink)]">
                     {isEarlyPrimary

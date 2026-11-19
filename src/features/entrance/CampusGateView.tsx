@@ -1,8 +1,60 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, SkipForward, Sparkles } from 'lucide-react';
+import { CAMPUS_BRAND, CAMPUS_INSCRIPTION_NAMES } from '@/src/data/brandConfig';
 
 interface CampusGateViewProps {
   onEnterCourtyard: () => void;
+}
+
+/**
+ * Ana Giriş Kapısı Mimari Taş Kitabesi (Onarım 02):
+ * Selçuklu mimarisine uygun taş kitabe görünümü, taşa işlenmiş kabartma etkisi,
+ * sıcak kumtaşı renkleri ve kesinleşmiş görsel hiyerarşi:
+ * 1. YENİ NESİL KÜLLİYE (Büyük harf, en belirgin)
+ * 2. Dijital Öğrenme Kampüsü (Alt başlık)
+ * 3. Geçmişin bilgeliği, geleceğin öğrenme dünyası (Slogan)
+ */
+function ArchitecturalPortalInscription({ isOpening }: { isOpening: boolean }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`absolute top-[16%] left-1/2 -translate-x-1/2 w-[52%] sm:w-[42%] max-w-[325px] pointer-events-none transition-transform duration-700 ease-out ${
+        isOpening ? 'scale-105 filter brightness-110' : ''
+      }`}
+    >
+      <div className="relative px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xs bg-gradient-to-b from-[#f4e9d3]/96 via-[#e8d6b8]/96 to-[#d7c19c]/96 border border-[#8f7350]/85 shadow-[0_2px_8px_rgba(30,20,10,0.5),inset_0_1px_1px_rgba(255,255,255,0.85),inset_0_-1px_2px_rgba(50,35,18,0.4)] backdrop-blur-[0.5px]">
+        {/* İnce Taş Oyma Derz Çerçevesi */}
+        <div className="absolute inset-[2.5px] border border-[#a48a68]/50 rounded-2xs pointer-events-none" />
+
+        {/* Dört Köşe Selçuklu Oyma Taş Rozetleri */}
+        <span className="absolute top-1 left-1.5 text-[7px] text-[#785b37] leading-none select-none">❖</span>
+        <span className="absolute top-1 right-1.5 text-[7px] text-[#785b37] leading-none select-none">❖</span>
+        <span className="absolute bottom-1 left-1.5 text-[7px] text-[#785b37] leading-none select-none">❖</span>
+        <span className="absolute bottom-1 right-1.5 text-[7px] text-[#785b37] leading-none select-none">❖</span>
+
+        {/* Kitabe Metin Hiyerarşisi */}
+        <div className="flex flex-col items-center justify-center text-center space-y-0.5">
+          {/* 1. Ana Marka Adı (Büyük Harf, En Belirgin, Oyma Taş Etkisi) */}
+          <span className="text-[10.5px] xs:text-[11.5px] sm:text-[13.5px] md:text-[14.5px] font-extrabold tracking-[0.08em] sm:tracking-[0.12em] text-[#221407] drop-shadow-[0_1px_0_rgba(255,255,255,0.8)] font-serif uppercase leading-tight">
+            {CAMPUS_INSCRIPTION_NAMES.brand}
+          </span>
+
+          {/* 2. Alt Başlık (Daha Küçük, Dengeli) */}
+          <span className="text-[8.5px] xs:text-[9px] sm:text-[10.5px] font-semibold tracking-wide text-[#4f361c] drop-shadow-[0_0.5px_0_rgba(255,255,255,0.6)] leading-tight">
+            {CAMPUS_BRAND.subtitle}
+          </span>
+
+          {/* İnce Taş Ayırıcı Çizgi */}
+          <div className="w-14 sm:w-20 h-[1px] bg-gradient-to-r from-transparent via-[#8f7350]/65 to-transparent my-0.5" />
+
+          {/* 3. Slogan (En Küçük, Okunabilir, İki Satıra İzinli) */}
+          <span className="text-[7px] xs:text-[7.5px] sm:text-[9px] font-medium text-[#684a2b] leading-snug drop-shadow-[0_0.5px_0_rgba(255,255,255,0.5)]">
+            {CAMPUS_BRAND.slogan}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
@@ -39,10 +91,10 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
           <div className="px-3.5 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6 space-y-3.5">
             <header className="space-y-1 max-w-xl mx-auto">
               <p className="text-[11px] sm:text-xs font-semibold text-[var(--seljuk-teal)] tracking-wide">
-                Anadolu–Selçuklu Mimarisinden Esinlenen Dijital Yerleşke
+                {CAMPUS_BRAND.subtitle}
               </p>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--seljuk-navy)]">
-                Dijital Eğitim Kampüsü
+                {CAMPUS_BRAND.name}
               </h1>
               <p className="text-xs sm:text-sm text-[var(--campus-ink-muted)]">
                 Tarihî taç kapıya dokunarak veya aşağıdaki düğmeyi kullanarak aydınlık keşif avlusuna adım atabilirsin.
@@ -60,13 +112,16 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
               >
                 <img
                   src="/assets/entrance/campus_portal_gate.jpg"
-                  alt="Anadolu-Selçuklu Sultan Han mimarisinden esinlenen, mukarnaslı ve oymalı Taç Kapı ardında açılan aydınlık kampüs avlusu"
+                  alt="Anadolu-Selçuklu mimarisinden esinlenen, üzerinde Yeni Nesil Külliye kitabesi yer alan mukarnaslı Taç Kapı"
                   className={`w-full h-auto aspect-[16/9] object-cover transition-transform duration-700 ease-out ${
                     isOpening ? 'scale-105 filter brightness-110' : 'group-hover:scale-[1.01]'
                   }`}
                   loading="eager"
                   decoding="sync"
                 />
+
+                {/* Mimari Taş Kitabe Katmanı */}
+                <ArchitecturalPortalInscription isOpening={isOpening} />
 
                 {/* Açılış Işıması Katmanı (Aura / Işık Patlaması) */}
                 <div

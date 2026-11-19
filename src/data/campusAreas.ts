@@ -1,4 +1,5 @@
 import type { CampusAreaRecord } from '@/src/types/campus';
+import { CAMPUS_BUILDING_NAMES } from '@/src/data/brandConfig';
 
 /**
  * Kampüs haritası ve erişim noktaları tamamen veri temellidir.
@@ -8,8 +9,8 @@ import type { CampusAreaRecord } from '@/src/types/campus';
 export const CAMPUS_AREAS: CampusAreaRecord[] = [
   {
     id: 'gezi-ve-kesif',
-    title: 'Gezi ve Keşif',
-    shortTitle: 'Gezi ve Keşif',
+    title: CAMPUS_BUILDING_NAMES.discovery,
+    shortTitle: CAMPUS_BUILDING_NAMES.discovery,
     type: 'learning-area',
     status: 'active',
     route: '/alan/gezi-ve-kesif',
@@ -31,14 +32,14 @@ export const CAMPUS_AREAS: CampusAreaRecord[] = [
   },
   {
     id: 'ingilizce-dunyasi',
-    title: 'İngilizce Dünyası',
-    shortTitle: 'İngilizce Dünyası',
+    title: CAMPUS_BUILDING_NAMES.english,
+    shortTitle: CAMPUS_BUILDING_NAMES.english,
     type: 'learning-area',
     status: 'active',
     route: '/alan/ingilizce-dunyasi',
     summary: 'Yaşına uygun İngilizce kelimeleri ve günlük ifadeleri görsel eşleşmelerle öğren.',
     detailNote:
-      'İngilizce Dünyası, öğrendiğin yeni kelimeleri sesli destek ve bağlam içi örneklerle pekiştirir. Aktif görevlerin Öğren adımları bu alanla bağlantılıdır.',
+      'İngilizce Öğreniyorum, öğrendiğin yeni kelimeleri sesli destek ve bağlam içi örneklerle pekiştirir. Aktif görevlerin Öğren adımları bu alanla bağlantılıdır.',
     accentToken: 'teal',
     mapPosition: { xPercent: 50, yPercent: 24 },
     connectedToIds: ['gezi-ve-kesif', 'kitap-ve-hikaye-dunyasi', 'gorev-panosu'],
@@ -53,8 +54,8 @@ export const CAMPUS_AREAS: CampusAreaRecord[] = [
   },
   {
     id: 'kitap-ve-hikaye-dunyasi',
-    title: 'Kitap ve Hikâye Dünyası',
-    shortTitle: 'Kitap ve Hikâye',
+    title: CAMPUS_BUILDING_NAMES.library,
+    shortTitle: CAMPUS_BUILDING_NAMES.library,
     type: 'learning-area',
     status: 'active',
     route: '/alan/kitap-ve-hikaye-dunyasi',

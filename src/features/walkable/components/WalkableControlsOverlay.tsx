@@ -190,7 +190,7 @@ export function WalkableControlsOverlay({
             <li className="flex items-start gap-2 p-1.5 rounded-lg bg-[var(--stone-cream)]">
               <span className="w-2 h-2 rounded-full bg-[var(--seljuk-teal)] mt-1 shrink-0" />
               <div>
-                <strong className="text-[var(--seljuk-navy)]">İngilizce Dünyası (Kuzeydoğu — AÇIK):</strong>
+                <strong className="text-[var(--seljuk-navy)]">İngilizce Öğreniyorum (Kuzeydoğu — AÇIK):</strong>
                 <span className="text-[var(--campus-ink-muted)] block text-[11px]">Sınıf seçim panosu, akıllı tahta ve kelime eşleştirme.</span>
               </div>
             </li>
@@ -205,7 +205,7 @@ export function WalkableControlsOverlay({
               <span className="w-2 h-2 rounded-full bg-slate-400 mt-1 shrink-0" />
               <div>
                 <strong className="text-[var(--seljuk-navy)]">Diğer Binalar (Yakında):</strong>
-                <span className="text-[var(--campus-ink-muted)] block text-[11px]">Gezi ve Keşif, Kitap Dünyası, Yolculuğum ve Görev Panosu.</span>
+                <span className="text-[var(--campus-ink-muted)] block text-[11px]">Hayalden Gerçeğe, Hikâyeden Hayata, Yolculuğum ve Görev Panosu.</span>
               </div>
             </li>
           </ul>

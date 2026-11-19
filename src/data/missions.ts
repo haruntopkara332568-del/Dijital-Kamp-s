@@ -30,21 +30,21 @@ export const MISSIONS: MissionDefinition[] = [
         id: 'kesfet',
         title: 'Keşfet',
         areaId: 'gezi-ve-kesif',
-        areaLabel: 'Gezi ve Keşif',
+        areaLabel: 'Hayalden Gerçeğe',
         journeyStepLabel: 'Rota ve Keşif',
       },
       {
         id: 'ogren',
         title: 'Öğren',
         areaId: 'ingilizce-dunyasi',
-        areaLabel: 'İngilizce Dünyası',
+        areaLabel: 'İngilizce Öğreniyorum',
         journeyStepLabel: 'İngilizce',
       },
       {
         id: 'uret',
         title: 'Üret',
         areaId: 'kitap-ve-hikaye-dunyasi',
-        areaLabel: 'Kitap ve Hikâye Dünyası',
+        areaLabel: 'Hikâyeden Hayata',
         journeyStepLabel: 'Özgün Üretim',
       },
       {
@@ -230,21 +230,21 @@ export const MISSIONS: MissionDefinition[] = [
         id: 'kesfet',
         title: 'Keşfet',
         areaId: 'gezi-ve-kesif',
-        areaLabel: 'Gezi ve Keşif',
+        areaLabel: 'Hayalden Gerçeğe',
         journeyStepLabel: 'Rota ve Keşif',
       },
       {
         id: 'ogren',
         title: 'Öğren',
         areaId: 'ingilizce-dunyasi',
-        areaLabel: 'İngilizce Dünyası',
+        areaLabel: 'İngilizce Öğreniyorum',
         journeyStepLabel: 'İngilizce',
       },
       {
         id: 'uret',
         title: 'Üret',
         areaId: 'kitap-ve-hikaye-dunyasi',
-        areaLabel: 'Kitap ve Hikâye Dünyası',
+        areaLabel: 'Hikâyeden Hayata',
         journeyStepLabel: 'Özgün Üretim',
       },
       {
@@ -404,13 +404,13 @@ export const MISSIONS: MissionDefinition[] = [
       },
     },
     uiCopy: {
-      kesfetPrimaryBadge: 'Gezi ve Keşif · Tematik Dijital Öğrenme Rotası',
+      kesfetPrimaryBadge: 'Hayalden Gerçeğe · Tematik Dijital Öğrenme Rotası',
       kesfetPrimaryHeading: 'Aksaray Duraklarını Keşfet',
       kesfetPrimaryEarlyDesc:
         'Bu dijital öğrenme rotasında beğendiğin duraklara dokun. (Fiziksel yol tarifi değildir.)',
       kesfetPrimaryDesc:
         'Aksaray tematik dijital öğrenme rotasındaki dört durağı incele ve sonraki adımda kullanacağın durakları seç.',
-      kesfetMiddleBadge: 'Gezi ve Keşif · Tematik Dijital Öğrenme Rotası',
+      kesfetMiddleBadge: 'Hayalden Gerçeğe · Tematik Dijital Öğrenme Rotası',
       kesfetMiddleHeading: 'Aksaray Duraklarını Malzeme ve Çevre Açısından Karşılaştır',
       kesfetMiddleDesc:
         'Bu rota fiziksel ulaşım güzergâhı değil, dijital gözlem yolculuğudur. Dört durağı inceleyip aşağıdaki boyutlarda gözlemlerini seç.',

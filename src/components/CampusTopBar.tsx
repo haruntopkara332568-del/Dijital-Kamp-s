@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { Volume2, VolumeX, SlidersHorizontal, Trash2, Compass, Footprints } from 'lucide-react';
 import { useCampus } from '@/src/app/CampusProviders';
 import { GRADE_LIST } from '@/src/data/gradeProfiles';
+import { CAMPUS_BRAND } from '@/src/data/brandConfig';
 import type { GradeLevel } from '@/src/types/campus';
 import { DeleteDataModal } from './DeleteDataModal';
 
@@ -68,7 +69,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
             onClick={(e) => handleNavClick(e, '/')}
             className="min-h-[44px] inline-flex items-center text-base sm:text-lg font-bold tracking-tight text-[var(--seljuk-navy)] whitespace-nowrap shrink-0 hover:text-[var(--seljuk-teal)] transition-colors"
           >
-            Dijital Eğitim Kampüsü
+            {CAMPUS_BRAND.name}
           </Link>
 
           {/* Bölge 2: Tek satırlık temiz gezinme bağlantıları */}

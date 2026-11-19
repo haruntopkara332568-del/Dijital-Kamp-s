@@ -312,7 +312,7 @@ export function LearningAreaView({ areaId }: LearningAreaViewProps) {
                       <h3 className="text-lg font-bold text-[var(--seljuk-navy)]">{m.title}</h3>
                       <p className="text-xs text-[var(--campus-ink-muted)]">
                         {isReady
-                          ? 'Keşfet (Gezi ve Keşif) → Öğren (İngilizce Dünyası) → Üret (Kitap ve Hikâye Dünyası) → Paylaş (Kampüs Yolculuğum)'
+                          ? 'Keşfet (Hayalden Gerçeğe) → Öğren (İngilizce Öğreniyorum) → Üret (Hikâyeden Hayata) → Paylaş (Kampüs Yolculuğum)'
                           : 'Bu görev kaynak ve içerik doğrulama sürecindedir.'}
                       </p>
                     </div>

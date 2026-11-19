@@ -265,7 +265,7 @@ describe('Arayüz Akışları ve İki Adımlı Silme Onayı', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('link', { name: /Dijital Eğitim Kampüsü/i })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: /Yeni Nesil Külliye/i })).toHaveAttribute('href', '/');
     expect(screen.getAllByRole('link', { name: /Kampüs Avlusu/i })[0]).toHaveAttribute('href', '/');
     expect(screen.getAllByRole('link', { name: /Görev Panosu/i })[0]).toHaveAttribute('href', '/alan/gorev-panosu');
     expect(screen.getAllByRole('link', { name: /Yolculuğum/i })[0]).toHaveAttribute('href', '/yolculugum');
@@ -814,7 +814,7 @@ describe('Tasarım Sistemi Belirteçleri, Bileşenler ve Ön İzleme', () => {
     );
 
     expect(
-      screen.getByRole('heading', { name: 'Dijital Eğitim Kampüsü Tasarım Sistemi' }),
+      screen.getByRole('heading', { name: 'Yeni Nesil Külliye Tasarım Sistemi' }),
     ).toBeInTheDocument();
     expect(screen.getByText(/Sınıf Düzeyi Görsel Dil Ön İzlemesi \(2\. Sınıf\)/i)).toBeInTheDocument();
 
@@ -883,8 +883,8 @@ describe('Aşama 5.0 — Tek Girişli Yürünebilir Kampüs Deneyimi ve Navigasy
     const onEnter = vi.fn();
     render(<CampusGateView onEnterCourtyard={onEnter} />);
 
-    expect(screen.getByRole('heading', { name: /Dijital Eğitim Kampüsü/i })).toBeInTheDocument();
-    expect(screen.getByText(/Anadolu–Selçuklu Mimarisinden Esinlenen/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Yeni Nesil Külliye/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/Dijital Öğrenme Kampüsü/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByRole('button', { name: /Kapıyı Aç ve İçeri Gir/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Animasyonu Atla/i })).toBeInTheDocument();
 
@@ -903,7 +903,7 @@ describe('Aşama 5.0 — Tek Girişli Yürünebilir Kampüs Deneyimi ve Navigasy
       </MemoryRouter>,
     );
 
-    expect(await screen.findByRole('heading', { name: /Dijital Eğitim Kampüsü/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Yeni Nesil Külliye/i })).toBeInTheDocument();
     unmount();
 
     // B: Kapı görüldü -> Rehbersiz ve modalsız doğrudan Yürünebilir Kampüs yüklenir
