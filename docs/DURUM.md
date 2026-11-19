@@ -1,3 +1,35 @@
+# Proje Durum Raporu — Bakım ve Onarım 03A: Cihaz Tabanlı Öğrenci Profil Altyapısı ve Mimari Duvar Yazılarının Düzeltilmesi
+
+## 1. Kapsam ve Başlangıç Referansı
+- **Çalışma Dalı**: `fix/maintenance-03a-student-profiles`
+- **Başlangıç Commit'i**: `ade5e87e9936319137584020596ca414495ee026` (`origin/fix/maintenance-02-brand-identity`)
+- **İki Temel İş Paketi**:
+  1. **Bölüm A — Mimari Duvar Yazıları (Referans Görsel: `media_1795087163114_b1ad8909.jpg`)**:
+     - Taç kapıdaki ve avludaki üç öğrenme yapısındaki levha çerçeveleri, tabela kutuları, yapay kenarlıklar ve asılı tabela görüntüsü tamamen kaldırılmıştır.
+     - Yazılar (`YENİ NESİL KÜLLİYE`, `İNGİLİZCE ÖĞRENİYORUM`, `HAYALDEN GERÇEĞE`, `HİKÂYEDEN HAYATA`), doğrudan taş ve Selçuklu çinisi dokusuna kazınmış/oyulmuş 2 katmanlı rölyef mimari duvar yazısı olarak yeniden render edilmiştir.
+     - "AÇIK" ve "YAKINDA" rozetleri bina duvarlarından temizlenmiş, avludaki ahşap totem ve etkileşim balonlarında muhafaza edilmiştir.
+     - Kampüsteki 5 yapı (İngilizce Öğreniyorum, Hayalden Gerçeğe, Hikâyeden Hayata, Yolculuğum Çardağı, Büfe) eksiksiz korunmuştur.
+     - Commit 1: `c12a2c9` (`fix(visual): integrate building names directly into architectural walls`).
+  2. **Bölüm B — Cihaz Tabanlı Öğrenci Profil Altyapısı**:
+     - Kişisel veri (ad, soyad, e-posta, telefon, şifre) kesinlikle istenmeyen, cihaz tabanlı izole profil yönetimi (`StudentProfile`).
+     - Yalnızca ilkokul (2, 3 ve 4. sınıflar) seçimi desteklenir; 5, 6 ve 7. sınıflar engellenmiştir.
+     - 8 hazır takma ad çipi (Gezgin, Bilgin, Kâşif, Yıldız vb.) ve 8 Selçuklu/doğa temalı renkli avatar.
+     - Eski tekil verinin güvenli göçü (`runLegacyMigrationIfNeeded`): `dek_campus_v1_state` ve IndexedDB çizimleri veri kaybı olmadan `prof_legacy_student` (Gezgin) profiline aktarılmıştır.
+     - İki öğrenci (ör. Gezgin ve Bilgin) arasında tam durum ve çizim izolasyonu.
+     - Profil silme işlemi iki adımlı ve vazgeçilebilir onay (`confirm-delete`) ile korunmuştur.
+     - Commit 2: `f051c17` (`feat(profiles): implement device-based student profiles and isolated local storage`).
+
+## 2. 36 Doğrulama Senaryosunun Kapsamı
+- **Grup 1: İlk Açılış ve Profil Oluşturma (Senaryo 1-6)**: Profil yokken modal açılması, takma ad & avatar & sınıf seçimi, taç kapı ve avlu entegrasyonu (Doğrulandı).
+- **Grup 2: Çoklu Öğrenci ve Veri İzolasyonu (Senaryo 7-12)**: Gezgin (3. sınıf) ve Bilgin (4. sınıf) arasında geçiş, masalar, ilerleme haritaları ve bağımsız saklama (Doğrulandı).
+- **Grup 3: Çizim ve Görsel Ürün İzolasyonu (Senaryo 13-16)**: IndexedDB üzerindeki `profileId` etiketlemesi ile her öğrencinin yalnızca kendi eserlerini görmesi (Doğrulandı).
+- **Grup 4: Eski Tekil Verinin Göçü (Senaryo 17-22)**: `dek_campus_v1_state`'ten sıfır veri kaybı ile Gezgin profiline sorunsuz geçiş (Doğrulandı).
+- **Grup 5: Sınıf Düzeyi Kısıtları (Senaryo 23-28)**: 2, 3 ve 4. sınıflar dışında seçim yapılamaması; 5, 6, 7'nin reddedilmesi (Doğrulandı).
+- **Grup 6: Profil Silme ve Güvenlik (Senaryo 29-32)**: İki adımlı onay, diğer öğrencinin verisinin silinmemesi, son profil silindiğinde yeni profil modalı (Doğrulandı).
+- **Grup 7: UI Entegrasyonu ve Erişilebilirlik (Senaryo 33-36)**: `CampusTopBar` ve `WalkableControlsOverlay` üzerinde avatar, ad ve sınıf hapı; klavye, odak yönetimi ve mobil dokunma (Doğrulandı).
+
+---
+
 # Proje Durum Raporu — Bakım ve Onarım 02: Marka Kimliği ve Mimari Kitabelerin Yeniden Yapılandırılması
 
 ## Kapsam ve Temel İlke

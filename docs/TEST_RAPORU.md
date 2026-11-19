@@ -1,3 +1,31 @@
+# Test ve Kalite Güvence Raporu — Bakım ve Onarım 03A: Cihaz Tabanlı Öğrenci Profil Altyapısı ve Mimari Duvar Yazılarının Düzeltilmesi
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (Strict TypeScript tip denetimi tam uyumlu).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı** (React 19 render-phase kuralları ve storage no-empty dahil tam uyumlu).
+- **`npm run test` (`vitest run`)**: Geçti — **137 / 137 test** (%100 başarı, 5 test dosyası):
+  - `src/test/studentProfilesMaintenance.test.tsx`: **14 / 14 test** (`540ms`) — İki öğrenci (Gezgin & Bilgin) veri izolasyonu, IndexedDB çizim izolasyonu, eski tekil veri göçü (legacy migration), profil silme güvenliği ve React Context entegrasyonu.
+  - `src/test/brandIdentityMaintenance.test.tsx`: **7 / 7 test** (`481ms`) — Marka kimliği ve kitabe render doğrulaması.
+  - `src/test/primaryScopeMaintenance.test.tsx`: **9 / 9 test** (`867ms`) — İlkokul 2, 3 ve 4. sınıf kapsam doğrulaması.
+  - `src/test/campus.test.tsx`: **33 / 33 test** (`5.7s`) — Depolama güvenliği, seslendirme ve görev rotaları.
+  - `src/test/walkable.test.tsx`: **74 / 74 test** (`45.1s`) — Yürünebilir kampüs avlusu, 4 öğrenme masası ve Sultanhanı macerası.
+- **`npx playwright test e2e/student_profiles_maintenance.spec.ts`**: Geçti — **6 / 6 test** (Desktop Chromium & Mobile Chrome Pixel 5):
+  - Senaryo 1-3 & 34: İlk girişte profil oluşturma, taç kapı ve üst bar entegrasyonu (Geçti).
+  - Senaryo 7-12: İki Öğrenci (Gezgin & Bilgin) profil değişimi ve veri izolasyonu (Geçti).
+  - Senaryo 29-32: Profil Silme Onayı ve İzolasyonu (Geçti).
+- **`npx playwright test e2e/primary_school_scope_maintenance.spec.ts --project=chromium`**: Geçti — **7 / 7 test** (`14.2s`) (Geriye dönük uyumluluk ve ilkokul kapsamı tam doğrulandı).
+- **`npx playwright test e2e/brand_identity_maintenance.spec.ts`**: Geçti — **12 / 12 test** (Desktop ve Mobile Chrome'da mimari kitabeler ve marka kimliği doğrulandı).
+- **`npm run build` (`vite build`)**: Geçti — **1.22s** içinde hatasız ve optimize edilmiş üretim paketi (`dist/`) üretildi.
+- **Doğrulanan Gerçek Görsel Varlıklar (`docs/assets/`)**:
+  - `profile_created_desktop.png` (485 KB)
+  - `profile_created_mobile.png` (642 KB)
+  - `profile_modal_create_desktop.png` (45 KB)
+  - `profile_modal_select_desktop.png` (235 KB)
+  - `profile_switch_bilgin_desktop.png` (1.08 MB)
+  - `profile_switch_bilgin_mobile.png` (643 KB)
+
+---
+
 # Test ve Kalite Güvence Raporu — Bakım ve Onarım 02: Marka Kimliği ve Mimari Kitabelerin Yeniden Yapılandırılması
 
 ## 1. Çalıştırıldı ve Geçti
