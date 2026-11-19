@@ -10,7 +10,7 @@
 
 import type { PlayerCharacter } from '../types';
 import { drawCharacter } from './characterRenderer';
-import { CAMPUS_INSCRIPTION_NAMES } from '@/src/data/brandConfig';
+import { CAMPUS_ARCHITECTURAL_INSCRIPTIONS } from '@/src/data/brandConfig';
 import {
   getEnglishBuildingAsset,
   getDiscoveryBuildingAsset,
@@ -946,120 +946,53 @@ function drawPathwayGuidanceArrows(ctx: CanvasRenderingContext2D) {
 }
 
 /**
- * Mimari Taş Kitabe Çizimi (Onarım 02):
- * Selçuklu taş mimarisiyle bütünleşen, oyma taş ve zarif kabartma gölgesine sahip
- * anıtsal bina kitabesi. Modern reklam levhası veya parlak plastik tabela yerine,
- * sıcak kumtaşı/kireçtaşı dokulu taş panolar ve taşa işlenmiş kabartma harfler kullanılır.
+ * Mimari Taş Duvar Yazısı Çizimi (Onarım 03A):
+ * Selçuklu taş mimarisiyle ve referans görselle tam uyumlu biçimde, doğrudan bina
+ * cephe taşlarına ya da çini frizlerine oyulmuş iki satırlı duvar kitabesi.
+ *
+ * Kesinlikle dikdörtgen tabela kutusu, kenarlık çerçevesi, asılı pano veya
+ * köşe çivisi/rozeti YOKTUR.
+ * Cephede "AÇIK" veya "YAKINDA" gibi durum ifadeleri yer almaz.
  */
-function drawBuildingPlaque(
+function drawDirectWallInscription(
   ctx: CanvasRenderingContext2D,
   centerX: number,
-  y: number,
-  title: string,
-  status: 'AÇIK' | 'YAKINDA',
-  now: number = 0,
+  startY: number,
+  lines: readonly string[] | string[],
+  variant: 'sandstone' | 'glazed-tile' = 'sandstone',
 ) {
   ctx.save();
-  const plaqueW = Math.max(154, title.length * 8.6 + 36);
-  const plaqueH = 34;
-  const plaqueX = centerX - plaqueW / 2;
-
-  // 1. Zemin derinlik temas gölgesi
-  ctx.fillStyle = 'rgba(23, 43, 71, 0.35)';
-  ctx.beginPath();
-  if (typeof ctx.roundRect === 'function') {
-    ctx.roundRect(plaqueX + 2, y + 2, plaqueW, plaqueH, 5);
-  } else {
-    ctx.rect(plaqueX + 2, y + 2, plaqueW, plaqueH);
-  }
-  ctx.fill();
-
-  // 2. Taş Kitabe Gövdesi (Sıcak Kumtaşı / Kireçtaşı Degrade)
-  const stoneGrad = ctx.createLinearGradient(plaqueX, y, plaqueX, y + plaqueH);
-  stoneGrad.addColorStop(0, '#f9f4ea');
-  stoneGrad.addColorStop(0.5, '#eee2cc');
-  stoneGrad.addColorStop(1, '#dfceb1');
-  ctx.fillStyle = stoneGrad;
-  ctx.beginPath();
-  if (typeof ctx.roundRect === 'function') {
-    ctx.roundRect(plaqueX, y, plaqueW, plaqueH, 5);
-  } else {
-    ctx.rect(plaqueX, y, plaqueW, plaqueH);
-  }
-  ctx.fill();
-
-  // 3. Selçuklu Taş Oyma Bordür ve Çerçeve
-  const isAvailable = status === 'AÇIK';
-  ctx.strokeStyle = '#a48b68';
-  ctx.lineWidth = 1.6;
-  ctx.stroke();
-
-  // İç oyuk yiv çizgisi (Derz / Inset Line)
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(plaqueX + 2, y + 2, plaqueW - 4, plaqueH - 4);
-
-  // 4 Köşe Selçuklu Geometrik Taş Rozeti / Çivi Başı
-  ctx.fillStyle = '#8b6e49';
-  const cornerR = 2;
-  const corners = [
-    [plaqueX + 5, y + 5],
-    [plaqueX + plaqueW - 5, y + 5],
-    [plaqueX + 5, y + plaqueH - 5],
-    [plaqueX + plaqueW - 5, y + plaqueH - 5],
-  ];
-  for (const [cx, cy] of corners) {
-    ctx.beginPath();
-    ctx.arc(cx, cy, cornerR, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // 4. Taşa Oyulmuş Kitabe Metni (Kabartma / Oyma Taş Gölgesi)
-  ctx.font = 'bold 10px "Avenir Next", "Segoe UI", sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
+  ctx.font = 'bold 11px "Georgia", "Cinzel", "Times New Roman", "Avenir Next", serif';
 
-  // Alt aydınlık yansıma (Chiseled bevel highlight)
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-  ctx.fillText(title, centerX, y + 12);
+  const lineHeight = 13.5;
+  const isTile = variant === 'glazed-tile';
 
-  // Üst oyuk gölgesi (Carved inner shadow)
-  ctx.fillStyle = '#221508';
-  ctx.fillText(title, centerX, y + 11);
+  // Çini veya kumtaşı cepheye göre oyma taş ve rölyef tonları
+  const deepColor = isTile ? '#112536' : '#27170a';
+  const highlightColor = isTile ? 'rgba(255, 255, 255, 0.78)' : 'rgba(255, 255, 255, 0.82)';
+  const innerShadowColor = isTile ? 'rgba(6, 14, 22, 0.65)' : 'rgba(20, 10, 4, 0.65)';
 
-  // 5. Zarif Durum Rozeti (Mimari Taş Kartuş / Mühür)
-  const badgeW = isAvailable ? 56 : 58;
-  const badgeH = 13;
-  const badgeX = centerX - badgeW / 2;
-  const badgeY = y + 20;
+  lines.forEach((line, index) => {
+    const lineY = startY + index * lineHeight;
 
-  ctx.fillStyle = isAvailable ? '#0e768a' : '#475569';
-  ctx.beginPath();
-  if (typeof ctx.roundRect === 'function') {
-    ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 3);
-  } else {
-    ctx.rect(badgeX, badgeY, badgeW, badgeH);
-  }
-  ctx.fill();
+    // 1. Alt aydınlık taş rölyef ışıması (Güneş açısıyla ışık alan taş pahı)
+    ctx.fillStyle = highlightColor;
+    ctx.fillText(line, centerX, lineY + 1);
 
-  // Açık olan bina için hafif Selçuklu altın/turkuaz vurgusu
-  if (isAvailable) {
-    const pulse = Math.sin(now / 260) * 0.3 + 0.7;
-    ctx.strokeStyle = `rgba(253, 224, 71, ${pulse})`;
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-  } else {
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
+    // 2. Üst oyuk gölgesi (Taş oyuğunun iç gölgesi)
+    ctx.fillStyle = innerShadowColor;
+    ctx.fillText(line, centerX, lineY - 0.5);
 
-  ctx.fillStyle = isAvailable ? '#ffffff' : '#f8fafc';
-  ctx.font = 'bold 8px "Avenir Next", "Segoe UI", sans-serif';
-  ctx.fillText(isAvailable ? '● AÇIK' : 'YAKINDA', centerX, badgeY + 6.5);
+    // 3. Taşa oyulmuş ana gövde rengi
+    ctx.fillStyle = deepColor;
+    ctx.fillText(line, centerX, lineY);
+  });
 
   ctx.restore();
 }
+
 
 /**
  * Merkez Meydan Yönlendirici Totem / Tabela (Section 10).
@@ -1302,8 +1235,8 @@ function drawEnglishBuilding(
     ctx.roundRect(portalCenterX - 45, y + h - 2, 90, 6, 2);
     ctx.fill();
 
-    // 6. Mimari Bina İsim Tabelası ve Durum Rozeti [AÇIK]
-    drawBuildingPlaque(ctx, portalCenterX, y + 26, CAMPUS_INSCRIPTION_NAMES.english, 'AÇIK', now);
+    // 6. Doğrudan Mimari Duvar Yazısı (İki Satırlı Taş Kazıma)
+    drawDirectWallInscription(ctx, portalCenterX, y + 20, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.english, 'sandstone');
 
     ctx.restore();
     return;
@@ -1429,8 +1362,8 @@ function drawEnglishBuilding(
   drawLantern(ctx, portalX - 6, portalY + 22, now);
   drawLantern(ctx, portalX + portalW + 6, portalY + 22, now);
 
-  // 7. Mimari Bina İsim Tabelası ve Durum Rozeti [AÇIK]
-  drawBuildingPlaque(ctx, x + w / 2, y + 54, CAMPUS_INSCRIPTION_NAMES.english, 'AÇIK', now);
+  // 7. Doğrudan Mimari Duvar Yazısı (İki Satırlı Taş Kazıma)
+  drawDirectWallInscription(ctx, x + w / 2, y + 48, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.english, 'sandstone');
 
   ctx.restore();
 }
@@ -1477,8 +1410,8 @@ function drawDiscoveryBuilding(
     ctx.stroke();
     ctx.restore();
 
-    // 4. Selçuklu Mimari Bina İsim Tabelası ve Durum Rozeti [YAKINDA]
-    drawBuildingPlaque(ctx, portalCenterX, y + 26, CAMPUS_INSCRIPTION_NAMES.discovery, 'YAKINDA', now);
+    // 4. Doğrudan Mimari Duvar Yazısı (Çini / Taş Yüzey)
+    drawDirectWallInscription(ctx, portalCenterX, y + 20, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.discovery, 'glazed-tile');
 
     ctx.restore();
     return;
@@ -1537,8 +1470,8 @@ function drawDiscoveryBuilding(
   ctx.roundRect(portalX, portalY, portalW, portalH, [16, 16, 0, 0]);
   ctx.fill();
 
-  // Tabela ve Durum Rozeti [YAKINDA]
-  drawBuildingPlaque(ctx, x + w / 2, y + 54, CAMPUS_INSCRIPTION_NAMES.discovery, 'YAKINDA', now);
+  // Doğrudan Mimari Duvar Yazısı (Çini / Taş Yüzey)
+  drawDirectWallInscription(ctx, x + w / 2, y + 48, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.discovery, 'glazed-tile');
 
   ctx.restore();
 }
@@ -1585,8 +1518,8 @@ function drawLibraryBuilding(
     ctx.stroke();
     ctx.restore();
 
-    // 4. Selçuklu Mimari Bina İsim Tabelası ve Durum Rozeti [YAKINDA]
-    drawBuildingPlaque(ctx, portalCenterX, y + 24, CAMPUS_INSCRIPTION_NAMES.library, 'YAKINDA', now);
+    // 4. Doğrudan Mimari Duvar Yazısı (Kumtaşı Yüzey)
+    drawDirectWallInscription(ctx, portalCenterX, y + 18, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.library, 'sandstone');
 
     ctx.restore();
     return;
@@ -1651,8 +1584,8 @@ function drawLibraryBuilding(
   ctx.roundRect(portalX, portalY, portalW, portalH, [16, 16, 0, 0]);
   ctx.fill();
 
-  // Tabela ve Durum Rozeti [YAKINDA]
-  drawBuildingPlaque(ctx, x + w / 2, y + 54, CAMPUS_INSCRIPTION_NAMES.library, 'YAKINDA', now);
+  // Doğrudan Mimari Duvar Yazısı (Kumtaşı Yüzey)
+  drawDirectWallInscription(ctx, x + w / 2, y + 48, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.library, 'sandstone');
 
   ctx.restore();
 }
@@ -1697,8 +1630,8 @@ function drawJourneyPavilion(
     ctx.stroke();
     ctx.restore();
 
-    // 4. Selçuklu Mimari Bina İsim Tabelası ve Durum Rozeti [YAKINDA]
-    drawBuildingPlaque(ctx, portalCenterX, y + 16, 'KAMPÜS YOLCULUĞUM', 'YAKINDA', now);
+    // 4. Doğrudan Mimari Duvar Yazısı (Çardak Cephesi)
+    drawDirectWallInscription(ctx, portalCenterX, y + 10, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.journey, 'sandstone');
 
     ctx.restore();
     return;
@@ -1736,8 +1669,8 @@ function drawJourneyPavilion(
     ctx.fill();
   }
 
-  // Tabela ve Durum Rozeti [YAKINDA]
-  drawBuildingPlaque(ctx, x + w / 2, y + 22, 'KAMPÜS YOLCULUĞUM', 'YAKINDA', now);
+  // Doğrudan Mimari Duvar Yazısı (Çardak Cephesi)
+  drawDirectWallInscription(ctx, x + w / 2, y + 16, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.journey, 'sandstone');
 
   ctx.restore();
 }
@@ -1782,8 +1715,8 @@ function drawMissionsKiosk(
     ctx.stroke();
     ctx.restore();
 
-    // 4. Selçuklu Mimari Bina İsim Tabelası ve Durum Rozeti [YAKINDA]
-    drawBuildingPlaque(ctx, portalCenterX, y + 16, 'KEŞİF GÖREVLERİ', 'YAKINDA', now);
+    // 4. Doğrudan Mimari Duvar Yazısı (Büfe Cephesi)
+    drawDirectWallInscription(ctx, portalCenterX, y + 10, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.missions, 'sandstone');
 
     ctx.restore();
     return;
@@ -1830,8 +1763,8 @@ function drawMissionsKiosk(
   ctx.fillRect(x + 92, y + 54, 8, 4);
   ctx.fillRect(x + 144, y + 54, 8, 4);
 
-  // Tabela ve Durum Rozeti [YAKINDA]
-  drawBuildingPlaque(ctx, x + w / 2, y + 22, 'KEŞİF GÖREVLERİ', 'YAKINDA', now);
+  // Doğrudan Mimari Duvar Yazısı (Büfe Cephesi)
+  drawDirectWallInscription(ctx, x + w / 2, y + 16, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.missions, 'sandstone');
 
   ctx.restore();
 }

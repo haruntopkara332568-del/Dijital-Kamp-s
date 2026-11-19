@@ -34,3 +34,15 @@ export const CAMPUS_INSCRIPTION_NAMES = {
   /** Hikâye binası mimari kitabesi (Büyük Harf) */
   library: 'HİKÂYEDEN HAYATA',
 } as const;
+
+/**
+ * Onarım 03A — Doğrudan Mimari Taş Duvar Yazıları (İki Satırlı Doğal Tipografi)
+ * Levha/kutu/tabela olmaksızın, doğrudan bina cephe taşlarına kazınan isimler.
+ */
+export const CAMPUS_ARCHITECTURAL_INSCRIPTIONS = {
+  english: ['İngilizce', 'Öğreniyorum'],
+  discovery: ['Hayalden', 'Gerçeğe'],
+  library: ['Hikâyeden', 'Hayata'],
+  journey: ['Kampüs', 'Yolculuğum'],
+  missions: ['Keşif', 'Görevleri'],
+} as const;

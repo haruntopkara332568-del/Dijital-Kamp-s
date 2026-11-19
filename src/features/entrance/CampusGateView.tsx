@@ -7,51 +7,37 @@ interface CampusGateViewProps {
 }
 
 /**
- * Ana Giriş Kapısı Mimari Taş Kitabesi (Onarım 02):
- * Selçuklu mimarisine uygun taş kitabe görünümü, taşa işlenmiş kabartma etkisi,
- * sıcak kumtaşı renkleri ve kesinleşmiş görsel hiyerarşi:
- * 1. YENİ NESİL KÜLLİYE (Büyük harf, en belirgin)
- * 2. Dijital Öğrenme Kampüsü (Alt başlık)
- * 3. Geçmişin bilgeliği, geleceğin öğrenme dünyası (Slogan)
+ * Ana Giriş Taç Kapısı Mimari Taş Duvar Yazısı (Onarım 03A):
+ * Referans görseldeki gibi doğrudan taş cephe yüzeyine kazınmış anıtsal kitabe.
+ * Kesinlikle yapay levha çerçevesi, kutu, kenarlık veya köşe rozeti YOKTUR.
+ * 1. YENİ NESİL KÜLLİYE (Büyük harf, belirgin oyma taş rölyefi)
+ * 2. Dijital Öğrenme Kampüsü (Dengeli alt başlık)
+ * 3. Geçmişin bilgeliği, geleceğin öğrenme dünyası (Doğal taşla bütünleşik slogan)
  */
 function ArchitecturalPortalInscription({ isOpening }: { isOpening: boolean }) {
   return (
     <div
       aria-hidden="true"
-      className={`absolute top-[16%] left-1/2 -translate-x-1/2 w-[52%] sm:w-[42%] max-w-[325px] pointer-events-none transition-transform duration-700 ease-out ${
+      className={`absolute top-[16%] left-1/2 -translate-x-1/2 w-[54%] sm:w-[44%] max-w-[340px] pointer-events-none transition-transform duration-700 ease-out ${
         isOpening ? 'scale-105 filter brightness-110' : ''
       }`}
     >
-      <div className="relative px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xs bg-gradient-to-b from-[#f4e9d3]/96 via-[#e8d6b8]/96 to-[#d7c19c]/96 border border-[#8f7350]/85 shadow-[0_2px_8px_rgba(30,20,10,0.5),inset_0_1px_1px_rgba(255,255,255,0.85),inset_0_-1px_2px_rgba(50,35,18,0.4)] backdrop-blur-[0.5px]">
-        {/* İnce Taş Oyma Derz Çerçevesi */}
-        <div className="absolute inset-[2.5px] border border-[#a48a68]/50 rounded-2xs pointer-events-none" />
+      {/* Doğrudan Taş Yüzeyine Kazınmış / Oyulmuş Duvar Yazısı (Tabela Kutusu veya Çerçeve Yoktur) */}
+      <div className="flex flex-col items-center justify-center text-center space-y-0.5 select-none px-2 py-1">
+        {/* 1. Ana Marka Adı (Büyük Harf, En Belirgin, Oyma Taş Rölyef Etkisi) */}
+        <span className="text-[11px] xs:text-[12px] sm:text-[14px] md:text-[15px] font-extrabold tracking-[0.09em] sm:tracking-[0.13em] text-[#221306] drop-shadow-[0_1px_0_rgba(255,255,255,0.85)] font-serif uppercase leading-tight [text-shadow:_0_1px_1px_rgba(255,255,255,0.7),_0_-1px_1px_rgba(34,19,6,0.6)]">
+          {CAMPUS_INSCRIPTION_NAMES.brand}
+        </span>
 
-        {/* Dört Köşe Selçuklu Oyma Taş Rozetleri */}
-        <span className="absolute top-1 left-1.5 text-[7px] text-[#785b37] leading-none select-none">❖</span>
-        <span className="absolute top-1 right-1.5 text-[7px] text-[#785b37] leading-none select-none">❖</span>
-        <span className="absolute bottom-1 left-1.5 text-[7px] text-[#785b37] leading-none select-none">❖</span>
-        <span className="absolute bottom-1 right-1.5 text-[7px] text-[#785b37] leading-none select-none">❖</span>
+        {/* 2. Alt Başlık (Daha Küçük, Zarif Taş Oyma) */}
+        <span className="text-[8.5px] xs:text-[9.5px] sm:text-[11px] font-semibold tracking-wide text-[#3d2611] drop-shadow-[0_1px_0_rgba(255,255,255,0.75)] leading-tight [text-shadow:_0_0.5px_1px_rgba(255,255,255,0.6)]">
+          {CAMPUS_BRAND.subtitle}
+        </span>
 
-        {/* Kitabe Metin Hiyerarşisi */}
-        <div className="flex flex-col items-center justify-center text-center space-y-0.5">
-          {/* 1. Ana Marka Adı (Büyük Harf, En Belirgin, Oyma Taş Etkisi) */}
-          <span className="text-[10.5px] xs:text-[11.5px] sm:text-[13.5px] md:text-[14.5px] font-extrabold tracking-[0.08em] sm:tracking-[0.12em] text-[#221407] drop-shadow-[0_1px_0_rgba(255,255,255,0.8)] font-serif uppercase leading-tight">
-            {CAMPUS_INSCRIPTION_NAMES.brand}
-          </span>
-
-          {/* 2. Alt Başlık (Daha Küçük, Dengeli) */}
-          <span className="text-[8.5px] xs:text-[9px] sm:text-[10.5px] font-semibold tracking-wide text-[#4f361c] drop-shadow-[0_0.5px_0_rgba(255,255,255,0.6)] leading-tight">
-            {CAMPUS_BRAND.subtitle}
-          </span>
-
-          {/* İnce Taş Ayırıcı Çizgi */}
-          <div className="w-14 sm:w-20 h-[1px] bg-gradient-to-r from-transparent via-[#8f7350]/65 to-transparent my-0.5" />
-
-          {/* 3. Slogan (En Küçük, Okunabilir, İki Satıra İzinli) */}
-          <span className="text-[7px] xs:text-[7.5px] sm:text-[9px] font-medium text-[#684a2b] leading-snug drop-shadow-[0_0.5px_0_rgba(255,255,255,0.5)]">
-            {CAMPUS_BRAND.slogan}
-          </span>
-        </div>
+        {/* 3. Slogan (En Küçük, Okunabilir, Doğal Taşla Bütünleşik) */}
+        <span className="text-[7px] xs:text-[7.5px] sm:text-[9px] font-medium text-[#573b1f] leading-snug drop-shadow-[0_0.5px_0_rgba(255,255,255,0.65)] [text-shadow:_0_0.5px_0.5px_rgba(255,255,255,0.5)] mt-0.5">
+          {CAMPUS_BRAND.slogan}
+        </span>
       </div>
     </div>
   );
