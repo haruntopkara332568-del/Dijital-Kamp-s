@@ -42,7 +42,15 @@ function RouteLoadingFallback() {
 }
 
 export function HomeRoutePage() {
-  const { hydrated, state, markGateSeen, replayWelcomeFlow } = useCampus();
+  const {
+    hydrated,
+    state,
+    markGateSeen,
+    replayWelcomeFlow,
+    profiles,
+    activeProfile,
+    openProfileModal,
+  } = useCampus();
 
   if (!hydrated) {
     return (
@@ -58,7 +66,14 @@ export function HomeRoutePage() {
   if (!state.hasSeenGate) {
     return (
       <Suspense fallback={<RouteLoadingFallback />}>
-        <CampusGateView onEnterCourtyard={markGateSeen} />
+        <CampusGateView
+          onEnterCourtyard={() => {
+            markGateSeen();
+            if (profiles.length === 0 || !activeProfile) {
+              openProfileModal();
+            }
+          }}
+        />
       </Suspense>
     );
   }

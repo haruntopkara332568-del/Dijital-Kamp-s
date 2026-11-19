@@ -5,6 +5,41 @@ export const LEGACY_GRADES = [2, 3, 4, 5, 6, 7] as const;
 export type LegacyGradeLevel = (typeof LEGACY_GRADES)[number];
 
 /**
+ * Onarım 03A: Cihaz Tabanlı Yerel Öğrenci Profil Modeli
+ * Kişisel veri (ad, soyad, e-posta, şifre) içermeyen, takma ad ve avatar odaklı yerel profil.
+ */
+export interface StudentProfile {
+  id: string; // crypto.randomUUID() veya benzersiz teknik kimlik
+  alias: string; // Takma ad (Gezgin, Bilgin, Kâşif vb.)
+  avatarId: string; // Seçilen avatar kimliği
+  selectedGrade: SupportedGrade; // Yalnızca 2, 3 veya 4. sınıf
+  createdAt: string; // ISO
+  lastUsedAt: string; // ISO
+}
+
+export const STUDENT_ALIASES = [
+  'Gezgin',
+  'Bilgin',
+  'Kâşif',
+  'Yıldız',
+  'Pusula',
+  'Deniz',
+  'Atlas',
+  'Çınar',
+] as const;
+
+export const STUDENT_AVATARS = [
+  { id: 'avatar_1', label: 'Gezgin', color: '#0e768a', emoji: '🧭', bgGradient: 'from-[#0e768a] to-[#0a5969]' },
+  { id: 'avatar_2', label: 'Bilgin', color: '#b88126', emoji: '📜', bgGradient: 'from-[#b88126] to-[#7a4e10]' },
+  { id: 'avatar_3', label: 'Kâşif', color: '#257448', emoji: '🌿', bgGradient: 'from-[#257448] to-[#1c5535]' },
+  { id: 'avatar_4', label: 'Yıldız', color: '#172b47', emoji: '✨', bgGradient: 'from-[#172b47] to-[#0f1d30]' },
+  { id: 'avatar_5', label: 'Sanatçı', color: '#a6442e', emoji: '🎨', bgGradient: 'from-[#a6442e] to-[#7d2f1f]' },
+  { id: 'avatar_6', label: 'Doğa Dostu', color: '#3b7a57', emoji: '🌱', bgGradient: 'from-[#3b7a57] to-[#2b593f]' },
+  { id: 'avatar_7', label: 'Kitap Kurdu', color: '#684534', emoji: '📚', bgGradient: 'from-[#684534] to-[#4c3124]' },
+  { id: 'avatar_8', label: 'Güneş', color: '#d8972b', emoji: '☀️', bgGradient: 'from-[#d8972b] to-[#b37517]' },
+] as const;
+
+/**
  * Aktif kullanıcı deneyiminde ve sınıf seçiminde geçerli sınıf seviyesi (Yalnızca İlkokul: 2, 3, 4).
  */
 export type GradeLevel = SupportedGrade;
@@ -306,6 +341,7 @@ export interface MissionProgress {
 
 export interface SavedArtifact {
   id: string;
+  profileId?: string; // Öğrenci profil izolasyonu kimliği (Onarım 03A)
   missionId: string;
   missionVersion: string;
   grade: LegacyGradeLevel;

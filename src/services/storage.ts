@@ -5,12 +5,19 @@ import {
   type LegacyGradeLevel,
   type MissionProgress,
   type SavedArtifact,
+  type StudentProfile,
+  type SupportedGrade,
   isSupportedGrade,
   isLegacyGrade,
 } from '@/src/types/campus';
 
 export const STORAGE_SCHEMA_VERSION = 1;
 export const LOCAL_STORAGE_KEY = 'dek_campus_v1_state';
+export const LOCAL_STORAGE_PROFILES_KEY = 'dek_campus_profiles_v1';
+export const LOCAL_STORAGE_ACTIVE_PROFILE_KEY = 'dek_campus_active_profile_id_v1';
+export const LOCAL_STORAGE_MIGRATED_KEY = 'dek_campus_migrated_v1';
+export const PROFILE_STATE_KEY_PREFIX = 'dek_campus_profile_v1:';
+
 export const INDEXED_DB_NAME = 'dek_campus_db';
 export const INDEXED_DB_VERSION = 1;
 export const ARTIFACTS_STORE = 'artifacts';
@@ -19,6 +26,367 @@ export interface StorageStatus {
   mode: 'persistent' | 'memory-fallback';
   persisted: boolean;
   warningMessage: string | null;
+}
+
+let inMemoryProfiles: StudentProfile[] = [];
+let inMemoryActiveProfileId: string | null = null;
+let inMemoryProfileStates: Record<string, CampusStudentState> = {};
+
+export function getProfileStateKey(profileId: string): string {
+  return `${PROFILE_STATE_KEY_PREFIX}${profileId}:state`;
+}
+
+export function generateProfileId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `prof_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
+  }
+  return `prof_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * Onarım 03A: Eski Tekil Verinin Güvenli Göçü (Legacy Migration)
+ * Eğer dek_campus_v1_state varsa ve henüz profil listesi oluşturulmamışsa,
+ * mevcut veriyi koruyarak 'Gezgin' takma adlı bir geçiş profiline dönüştürür.
+ * dek_campus_migrated_v1 bayrağı ile göçün tekrarlanması veya döngü engellenir.
+ */
+export function runLegacyMigrationIfNeeded(): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const isMigrated = window.localStorage.getItem(LOCAL_STORAGE_MIGRATED_KEY);
+    if (isMigrated === 'true') {
+      return;
+    }
+
+    const legacyRaw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+    const existingProfilesRaw = window.localStorage.getItem(LOCAL_STORAGE_PROFILES_KEY);
+
+    if (existingProfilesRaw) {
+      window.localStorage.setItem(LOCAL_STORAGE_MIGRATED_KEY, 'true');
+      return;
+    }
+
+    if (legacyRaw) {
+      const parsed = JSON.parse(legacyRaw);
+      const validated = migrateOrValidateState(parsed);
+      if (validated.ok) {
+        const legacyGrade: SupportedGrade = isSupportedGrade(validated.state.selectedGrade)
+          ? validated.state.selectedGrade
+          : 3;
+
+        const legacyProfile: StudentProfile = {
+          id: 'prof_legacy_student',
+          alias: 'Gezgin',
+          avatarId: 'avatar_1',
+          selectedGrade: legacyGrade,
+          createdAt: validated.state.updatedAt || new Date().toISOString(),
+          lastUsedAt: new Date().toISOString(),
+        };
+
+        window.localStorage.setItem(LOCAL_STORAGE_PROFILES_KEY, JSON.stringify([legacyProfile]));
+        window.localStorage.setItem(LOCAL_STORAGE_ACTIVE_PROFILE_KEY, legacyProfile.id);
+        window.localStorage.setItem(
+          getProfileStateKey(legacyProfile.id),
+          JSON.stringify(validated.state),
+        );
+        // Eski tekil anahtarı da doğrulanmış/normalize edilmiş durumla güncelle
+        window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(validated.state));
+        inMemoryProfiles = [legacyProfile];
+        inMemoryActiveProfileId = legacyProfile.id;
+        inMemoryProfileStates[legacyProfile.id] = validated.state;
+        inMemoryState = validated.state;
+
+        // IndexedDB çizimlerine profileId ata
+        void migrateIndexedDbDrawings(legacyProfile.id);
+      }
+    }
+
+    window.localStorage.setItem(LOCAL_STORAGE_MIGRATED_KEY, 'true');
+  } catch (err) {
+    console.warn('runLegacyMigrationIfNeeded hata:', err);
+  }
+}
+
+export function loadStudentProfiles(): StudentProfile[] {
+  if (typeof window === 'undefined') {
+    return inMemoryProfiles;
+  }
+
+  runLegacyMigrationIfNeeded();
+
+  try {
+    const raw = window.localStorage.getItem(LOCAL_STORAGE_PROFILES_KEY);
+    if (!raw) {
+      return inMemoryProfiles;
+    }
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return inMemoryProfiles;
+    }
+
+    const validProfiles: StudentProfile[] = [];
+    for (const p of parsed) {
+      if (
+        p &&
+        typeof p === 'object' &&
+        typeof p.id === 'string' &&
+        typeof p.alias === 'string' &&
+        typeof p.avatarId === 'string' &&
+        isSupportedGrade(p.selectedGrade)
+      ) {
+        validProfiles.push({
+          id: p.id,
+          alias: p.alias.trim(),
+          avatarId: p.avatarId,
+          selectedGrade: p.selectedGrade,
+          createdAt: typeof p.createdAt === 'string' ? p.createdAt : new Date().toISOString(),
+          lastUsedAt: typeof p.lastUsedAt === 'string' ? p.lastUsedAt : new Date().toISOString(),
+        });
+      }
+    }
+    inMemoryProfiles = validProfiles;
+    return validProfiles;
+  } catch {
+    return inMemoryProfiles;
+  }
+}
+
+export function saveStudentProfiles(profiles: StudentProfile[]): void {
+  inMemoryProfiles = profiles;
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(LOCAL_STORAGE_PROFILES_KEY, JSON.stringify(profiles));
+  } catch (err) {
+    console.warn('saveStudentProfiles hata:', err);
+  }
+}
+
+export function getActiveProfileId(): string | null {
+  if (typeof window === 'undefined') {
+    return inMemoryActiveProfileId;
+  }
+
+  try {
+    const id = window.localStorage.getItem(LOCAL_STORAGE_ACTIVE_PROFILE_KEY);
+    if (id) {
+      inMemoryActiveProfileId = id;
+      return id;
+    }
+    const profiles = loadStudentProfiles();
+    if (profiles.length > 0) {
+      const firstId = profiles[0].id;
+      setActiveProfileId(firstId);
+      return firstId;
+    }
+    return null;
+  } catch {
+    return inMemoryActiveProfileId;
+  }
+}
+
+export function setActiveProfileId(profileId: string | null): void {
+  inMemoryActiveProfileId = profileId;
+  if (typeof window === 'undefined') return;
+
+  try {
+    if (profileId) {
+      window.localStorage.setItem(LOCAL_STORAGE_ACTIVE_PROFILE_KEY, profileId);
+      // Profilin lastUsedAt tarihini güncelle
+      const profiles = loadStudentProfiles();
+      const updated = profiles.map((p) =>
+        p.id === profileId ? { ...p, lastUsedAt: new Date().toISOString() } : p,
+      );
+      saveStudentProfiles(updated);
+    } else {
+      window.localStorage.removeItem(LOCAL_STORAGE_ACTIVE_PROFILE_KEY);
+    }
+  } catch (err) {
+    console.warn('setActiveProfileId hata:', err);
+  }
+}
+
+export function createStudentProfile(
+  alias: string,
+  avatarId: string,
+  selectedGrade: SupportedGrade,
+): StudentProfile {
+  if (!isSupportedGrade(selectedGrade)) {
+    throw new Error('Yalnızca 2, 3 veya 4. sınıf düzeyleri seçilebilir.');
+  }
+  const cleanAlias = alias.trim();
+  if (!cleanAlias) {
+    throw new Error('Öğrenci takma adı boş bırakılamaz.');
+  }
+
+  const newProfile: StudentProfile = {
+    id: generateProfileId(),
+    alias: cleanAlias,
+    avatarId,
+    selectedGrade,
+    createdAt: new Date().toISOString(),
+    lastUsedAt: new Date().toISOString(),
+  };
+
+  const currentProfiles = loadStudentProfiles();
+  const nextProfiles = [...currentProfiles, newProfile];
+  saveStudentProfiles(nextProfiles);
+  setActiveProfileId(newProfile.id);
+
+  // Bu öğrenciye özel başlangıç durumu (izole)
+  const initialState: CampusStudentState = {
+    ...createInitialStudentState(),
+    selectedGrade,
+    hasSeenGate: true,
+    hasCompletedOnboarding: true,
+  };
+  saveStudentStateForProfile(initialState, newProfile.id);
+
+  return newProfile;
+}
+
+export function updateStudentProfile(
+  profileId: string,
+  updates: Partial<Pick<StudentProfile, 'alias' | 'avatarId' | 'selectedGrade'>>,
+): StudentProfile | null {
+  const profiles = loadStudentProfiles();
+  const target = profiles.find((p) => p.id === profileId);
+  if (!target) return null;
+
+  const nextGrade =
+    updates.selectedGrade && isSupportedGrade(updates.selectedGrade)
+      ? updates.selectedGrade
+      : target.selectedGrade;
+
+  const updated: StudentProfile = {
+    ...target,
+    alias: updates.alias ? updates.alias.trim() : target.alias,
+    avatarId: updates.avatarId ?? target.avatarId,
+    selectedGrade: nextGrade,
+    lastUsedAt: new Date().toISOString(),
+  };
+
+  const nextList = profiles.map((p) => (p.id === profileId ? updated : p));
+  saveStudentProfiles(nextList);
+
+  if (updates.selectedGrade) {
+    const state = loadStudentStateForProfile(profileId);
+    state.selectedGrade = nextGrade;
+    saveStudentStateForProfile(state, profileId);
+  }
+
+  return updated;
+}
+
+export async function deleteStudentProfile(profileId: string): Promise<{
+  remainingProfiles: StudentProfile[];
+  nextActiveProfileId: string | null;
+}> {
+  // 1. Profil state kaydını sil
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.removeItem(getProfileStateKey(profileId));
+    } catch {
+      // LocalStorage erişim engeli yoksayılır
+    }
+  }
+  delete inMemoryProfileStates[profileId];
+
+  // 2. Bu profile ait çizimleri IndexedDB ve bellekten sil
+  await deleteArtifactsForProfile(profileId);
+
+  // 3. Profil defterinden çıkar
+  const currentProfiles = loadStudentProfiles();
+  const remaining = currentProfiles.filter((p) => p.id !== profileId);
+  saveStudentProfiles(remaining);
+
+  // 4. Aktif profil silindiyse bir sonrakine geç
+  let nextActive: string | null = null;
+  const currentActive = getActiveProfileId();
+  if (currentActive === profileId) {
+    nextActive = remaining[0]?.id ?? null;
+    setActiveProfileId(nextActive);
+  } else {
+    nextActive = currentActive;
+  }
+
+  return { remainingProfiles: remaining, nextActiveProfileId: nextActive };
+}
+
+export function loadStudentStateForProfile(profileId?: string | null): CampusStudentState {
+  const activeId = profileId ?? getActiveProfileId();
+  if (!activeId) {
+    return loadStudentState();
+  }
+
+  if (typeof window === 'undefined') {
+    return inMemoryProfileStates[activeId] ?? createInitialStudentState();
+  }
+
+  try {
+    const rawText = window.localStorage.getItem(getProfileStateKey(activeId));
+    if (!rawText) {
+      const profiles = loadStudentProfiles();
+      const prof = profiles.find((p) => p.id === activeId);
+      const fresh: CampusStudentState = {
+        ...createInitialStudentState(),
+        selectedGrade: prof?.selectedGrade ?? null,
+      };
+      inMemoryProfileStates[activeId] = fresh;
+      return fresh;
+    }
+
+    const parsed = JSON.parse(rawText);
+    const validated = migrateOrValidateState(parsed);
+    if (!validated.ok) {
+      const fresh = createInitialStudentState();
+      inMemoryProfileStates[activeId] = fresh;
+      return fresh;
+    }
+
+    inMemoryProfileStates[activeId] = validated.state;
+    return validated.state;
+  } catch {
+    return inMemoryProfileStates[activeId] ?? createInitialStudentState();
+  }
+}
+
+export function saveStudentStateForProfile(
+  state: CampusStudentState,
+  profileId?: string | null,
+): StorageStatus {
+  const activeId = profileId ?? getActiveProfileId();
+  const nextState: CampusStudentState = {
+    ...state,
+    schemaVersion: STORAGE_SCHEMA_VERSION,
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (activeId) {
+    inMemoryProfileStates[activeId] = nextState;
+  }
+  inMemoryState = nextState;
+
+  if (typeof window === 'undefined') {
+    return lastStorageStatus;
+  }
+
+  try {
+    if (activeId) {
+      window.localStorage.setItem(getProfileStateKey(activeId), JSON.stringify(nextState));
+    }
+    // Geriye dönük uyumluluk ve eski testler için ayna kayıt
+    window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(nextState));
+    lastStorageStatus = { mode: 'persistent', persisted: true, warningMessage: null };
+  } catch {
+    lastStorageStatus = {
+      mode: 'memory-fallback',
+      persisted: false,
+      warningMessage:
+        'Depolama alanı dolu veya kapalı olduğu için ilerlemen yalnızca bu oturumda tutulabiliyor.',
+    };
+  }
+
+  return lastStorageStatus;
 }
 
 export function createInitialStudentState(): CampusStudentState {
@@ -137,6 +505,11 @@ function migrateOrValidateState(raw: unknown): { ok: true; state: CampusStudentS
 }
 
 export function loadStudentState(): CampusStudentState {
+  const activeId = getActiveProfileId();
+  if (activeId) {
+    return loadStudentStateForProfile(activeId);
+  }
+
   if (typeof window === 'undefined') {
     return createInitialStudentState();
   }
@@ -181,6 +554,11 @@ export function loadStudentState(): CampusStudentState {
 }
 
 export function saveStudentState(state: CampusStudentState): StorageStatus {
+  const activeId = getActiveProfileId();
+  if (activeId) {
+    return saveStudentStateForProfile(state, activeId);
+  }
+
   const nextState: CampusStudentState = {
     ...state,
     schemaVersion: STORAGE_SCHEMA_VERSION,
@@ -230,12 +608,81 @@ function openArtifactsDb(): Promise<IDBDatabase | null> {
   });
 }
 
-export async function saveArtifact(artifact: SavedArtifact): Promise<StorageStatus> {
+async function migrateIndexedDbDrawings(targetProfileId: string): Promise<void> {
+  const db = await openArtifactsDb();
+  if (!db) return;
+  try {
+    const tx = db.transaction(ARTIFACTS_STORE, 'readwrite');
+    const store = tx.objectStore(ARTIFACTS_STORE);
+    const req = store.getAll();
+    req.onsuccess = () => {
+      const items = req.result as SavedArtifact[];
+      for (const item of items) {
+        if (!item.profileId) {
+          item.profileId = targetProfileId;
+          store.put(item);
+        }
+      }
+    };
+    tx.oncomplete = () => db.close();
+    tx.onerror = () => db.close();
+  } catch {
+    db.close();
+  }
+}
+
+export async function deleteArtifactsForProfile(profileId: string): Promise<void> {
+  for (const [id, item] of Object.entries(inMemoryArtifacts)) {
+    if (item.profileId === profileId || (!item.profileId && profileId === 'prof_legacy_student')) {
+      delete inMemoryArtifacts[id];
+    }
+  }
+
+  const db = await openArtifactsDb();
+  if (!db) return;
+
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(ARTIFACTS_STORE, 'readwrite');
+      const store = tx.objectStore(ARTIFACTS_STORE);
+      const req = store.getAll();
+      req.onsuccess = () => {
+        const items = req.result as SavedArtifact[];
+        for (const item of items) {
+          if (item.profileId === profileId || (!item.profileId && profileId === 'prof_legacy_student')) {
+            store.delete(item.id);
+          }
+        }
+      };
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      tx.onerror = () => {
+        db.close();
+        resolve();
+      };
+    } catch {
+      db.close();
+      resolve();
+    }
+  });
+}
+
+export async function saveArtifact(
+  artifact: SavedArtifact,
+  profileId?: string,
+): Promise<StorageStatus> {
+  const targetProfileId = profileId || artifact.profileId || getActiveProfileId() || 'prof_legacy_student';
+  const targetArtifact: SavedArtifact = {
+    ...artifact,
+    profileId: targetProfileId,
+  };
   const db = await openArtifactsDb();
 
   if (!db) {
-    const sessionArtifact: SavedArtifact = { ...artifact, storageLocation: 'session-only' };
-    inMemoryArtifacts[artifact.id] = sessionArtifact;
+    const sessionArtifact: SavedArtifact = { ...targetArtifact, storageLocation: 'session-only' };
+    inMemoryArtifacts[targetArtifact.id] = sessionArtifact;
     lastStorageStatus = {
       mode: 'memory-fallback',
       persisted: false,
@@ -247,19 +694,19 @@ export async function saveArtifact(artifact: SavedArtifact): Promise<StorageStat
 
   return new Promise((resolve) => {
     try {
-      const deviceArtifact: SavedArtifact = { ...artifact, storageLocation: 'device' };
+      const deviceArtifact: SavedArtifact = { ...targetArtifact, storageLocation: 'device' };
       const tx = db.transaction(ARTIFACTS_STORE, 'readwrite');
       const store = tx.objectStore(ARTIFACTS_STORE);
       store.put(deviceArtifact);
       tx.oncomplete = () => {
         db.close();
-        inMemoryArtifacts[artifact.id] = deviceArtifact;
+        inMemoryArtifacts[targetArtifact.id] = deviceArtifact;
         lastStorageStatus = { mode: 'persistent', persisted: true, warningMessage: null };
         resolve(lastStorageStatus);
       };
       tx.onerror = () => {
         db.close();
-        inMemoryArtifacts[artifact.id] = { ...artifact, storageLocation: 'session-only' };
+        inMemoryArtifacts[targetArtifact.id] = { ...targetArtifact, storageLocation: 'session-only' };
         lastStorageStatus = {
           mode: 'memory-fallback',
           persisted: false,
@@ -270,7 +717,7 @@ export async function saveArtifact(artifact: SavedArtifact): Promise<StorageStat
       };
     } catch {
       db.close();
-      inMemoryArtifacts[artifact.id] = { ...artifact, storageLocation: 'session-only' };
+      inMemoryArtifacts[targetArtifact.id] = { ...targetArtifact, storageLocation: 'session-only' };
       lastStorageStatus = {
         mode: 'memory-fallback',
         persisted: false,
@@ -282,10 +729,17 @@ export async function saveArtifact(artifact: SavedArtifact): Promise<StorageStat
   });
 }
 
-export async function listArtifacts(): Promise<SavedArtifact[]> {
+export async function listArtifacts(profileId?: string): Promise<SavedArtifact[]> {
+  const activeProfile = profileId ?? getActiveProfileId();
   const db = await openArtifactsDb();
   if (!db) {
-    return Object.values(inMemoryArtifacts).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    const all = Object.values(inMemoryArtifacts);
+    const filtered = activeProfile
+      ? all.filter(
+          (a) => a.profileId === activeProfile || (!a.profileId && activeProfile === 'prof_legacy_student'),
+        )
+      : all;
+    return filtered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }
 
   return new Promise((resolve) => {
@@ -309,14 +763,25 @@ export async function listArtifacts(): Promise<SavedArtifact[]> {
             storageLocation: 'device',
           });
         }
-        const sorted = Array.from(mergedMap.values()).sort((a, b) =>
-          b.updatedAt.localeCompare(a.updatedAt),
-        );
+        const allItems = Array.from(mergedMap.values());
+        const filtered = activeProfile
+          ? allItems.filter(
+              (a) =>
+                a.profileId === activeProfile || (!a.profileId && activeProfile === 'prof_legacy_student'),
+            )
+          : allItems;
+        const sorted = filtered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
         resolve(sorted);
       };
       req.onerror = () => {
         db.close();
-        resolve(Object.values(inMemoryArtifacts).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+        const all = Object.values(inMemoryArtifacts);
+        const filtered = activeProfile
+          ? all.filter(
+              (a) => a.profileId === activeProfile || (!a.profileId && activeProfile === 'prof_legacy_student'),
+            )
+          : all;
+        resolve(filtered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
       };
     } catch {
       db.close();
@@ -333,11 +798,14 @@ export async function getArtifactById(id: string): Promise<SavedArtifact | null>
 export async function clearAllCampusData(): Promise<void> {
   inMemoryState = createInitialStudentState();
   inMemoryArtifacts = {};
+  inMemoryProfiles = [];
+  inMemoryActiveProfileId = null;
+  inMemoryProfileStates = {};
 
   if (typeof window === 'undefined') return;
 
   try {
-    // Yalnızca bu uygulamanın kendi anahtarlarını temizle
+    // Yalnızca dek_ önekli anahtarları temizle
     const keysToRemove: string[] = [];
     for (let i = 0; i < window.localStorage.length; i++) {
       const key = window.localStorage.key(i);

@@ -14,6 +14,7 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { useOptionalCampus } from '@/src/app/CampusProviders';
+import { STUDENT_AVATARS } from '@/src/types/campus';
 import type { InteractiveZone } from '../types';
 
 interface WalkableControlsOverlayProps {
@@ -38,6 +39,9 @@ export function WalkableControlsOverlay({
   const campus = useOptionalCampus();
   const selectedGrade = campus?.state.selectedGrade ?? null;
   const speechEnabled = campus?.state.speechEnabled ?? false;
+  const activeProfile = campus?.activeProfile ?? null;
+  const currentAvatar =
+    STUDENT_AVATARS.find((a) => a.id === activeProfile?.avatarId) ?? STUDENT_AVATARS[0];
 
   const [guideMapOpen, setGuideMapOpen] = useState(false);
 
@@ -79,6 +83,31 @@ export function WalkableControlsOverlay({
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2">
+          {/* Aktif Öğrenci Profili ve Değiştirme Düğmesi */}
+          {activeProfile ? (
+            <button
+              type="button"
+              onClick={() => campus?.openProfileModal()}
+              aria-label={`Öğrenci Profili: ${activeProfile.alias}. Öğrenci değiştirmek için tıkla.`}
+              title="Öğrenci Değiştir"
+              className="min-h-[44px] px-3 py-1.5 rounded-xl border border-[var(--campus-border)] bg-[var(--campus-surface)]/95 backdrop-blur-xs hover:bg-[var(--stone-cream)] text-xs font-bold text-[var(--seljuk-navy)] inline-flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+            >
+              <span className="text-base" aria-hidden="true">{currentAvatar.emoji}</span>
+              <span className="truncate max-w-[80px] sm:max-w-[120px]">{activeProfile.alias}</span>
+              <span className="text-[10px] font-bold text-[var(--seljuk-teal)] bg-[var(--seljuk-teal)]/10 px-1.5 py-0.5 rounded-md inline-block tabular-nums">
+                {selectedGrade || activeProfile.selectedGrade}. Sınıf
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => campus?.openProfileModal()}
+              className="min-h-[44px] px-3 py-1.5 rounded-xl border border-[var(--seljuk-teal)]/50 bg-[var(--seljuk-teal)]/10 text-xs font-bold text-[var(--seljuk-teal)] inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <span>Öğrenci Seç</span>
+            </button>
+          )}
+
           {/* Sultanhanı Meydanındayken Hızlı Sınıfa Dönüş Düğmesi */}
           {currentScene === 'sultanhani_square' && onExitClassroom && (
             <button

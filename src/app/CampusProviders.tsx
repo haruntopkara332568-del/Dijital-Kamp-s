@@ -14,6 +14,14 @@ import {
   getStorageStatus,
   loadStudentState,
   saveStudentState,
+  loadStudentProfiles,
+  getActiveProfileId,
+  setActiveProfileId,
+  createStudentProfile,
+  updateStudentProfile,
+  deleteStudentProfile,
+  loadStudentStateForProfile,
+  saveStudentStateForProfile,
   type StorageStatus,
 } from '@/src/services/storage';
 import type {
@@ -21,14 +29,29 @@ import type {
   DiscoveryPreference,
   GradeLevel,
   MissionProgress,
+  StudentProfile,
+  SupportedGrade,
 } from '@/src/types/campus';
 import { getGradeProfile } from '@/src/data/gradeProfiles';
+import { ProfileSelectionModal } from '@/src/features/profile/ProfileSelectionModal';
 
 interface CampusContextValue {
   hydrated: boolean;
   state: CampusStudentState;
   storageStatus: StorageStatus;
   activeGradeProfile: ReturnType<typeof getGradeProfile>;
+  profiles: StudentProfile[];
+  activeProfile: StudentProfile | null;
+  createProfile: (alias: string, avatarId: string, grade: SupportedGrade) => StudentProfile;
+  switchProfile: (profileId: string) => void;
+  updateProfile: (
+    profileId: string,
+    updates: Partial<Pick<StudentProfile, 'alias' | 'avatarId' | 'selectedGrade'>>,
+  ) => void;
+  deleteProfile: (profileId: string) => Promise<void>;
+  isProfileModalOpen: boolean;
+  openProfileModal: () => void;
+  closeProfileModal: () => void;
   markGateSeen: () => void;
   setDiscoveryPreference: (pref: DiscoveryPreference) => void;
   setGrade: (grade: GradeLevel) => void;
@@ -54,6 +77,14 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
     () => false,
   );
 
+  const [profiles, setProfiles] = useState<StudentProfile[]>(() =>
+    typeof window !== 'undefined' ? loadStudentProfiles() : [],
+  );
+  const [activeProfileId, setActiveProfileIdState] = useState<string | null>(() =>
+    typeof window !== 'undefined' ? getActiveProfileId() : null,
+  );
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
   const [state, setState] = useState<CampusStudentState>(() =>
     typeof window !== 'undefined' ? loadStudentState() : createInitialStudentState(),
   );
@@ -63,17 +94,82 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
       : { mode: 'persistent', persisted: true, warningMessage: null },
   );
 
+  const activeProfile = useMemo<StudentProfile | null>(() => {
+    if (!activeProfileId) return profiles[0] ?? null;
+    return profiles.find((p) => p.id === activeProfileId) ?? profiles[0] ?? null;
+  }, [profiles, activeProfileId]);
+
   const updateAndPersist = useCallback(
     (updater: (prev: CampusStudentState) => CampusStudentState) => {
       setState((prev) => {
         const next = updater(prev);
-        const status = saveStudentState(next);
+        const status = activeProfileId
+          ? saveStudentStateForProfile(next, activeProfileId)
+          : saveStudentState(next);
         setStorageStatus(status);
         return next;
       });
     },
+    [activeProfileId],
+  );
+
+  const createProfile = useCallback(
+    (alias: string, avatarId: string, grade: SupportedGrade): StudentProfile => {
+      const newProf = createStudentProfile(alias, avatarId, grade);
+      const updatedList = loadStudentProfiles();
+      setProfiles(updatedList);
+      setActiveProfileIdState(newProf.id);
+      const newState = loadStudentStateForProfile(newProf.id);
+      setState(newState);
+      setIsProfileModalOpen(false);
+      return newProf;
+    },
     [],
   );
+
+  const switchProfile = useCallback((profileId: string) => {
+    setActiveProfileId(profileId);
+    setActiveProfileIdState(profileId);
+    setProfiles(loadStudentProfiles());
+    const newState = loadStudentStateForProfile(profileId);
+    setState(newState);
+    setIsProfileModalOpen(false);
+  }, []);
+
+  const updateProfile = useCallback(
+    (
+      profileId: string,
+      updates: Partial<Pick<StudentProfile, 'alias' | 'avatarId' | 'selectedGrade'>>,
+    ) => {
+      const updated = updateStudentProfile(profileId, updates);
+      if (updated) {
+        setProfiles(loadStudentProfiles());
+        if (profileId === activeProfileId && updates.selectedGrade) {
+          setState((prev) => ({ ...prev, selectedGrade: updates.selectedGrade! }));
+        }
+      }
+    },
+    [activeProfileId],
+  );
+
+  const deleteProfile = useCallback(
+    async (profileId: string) => {
+      const { remainingProfiles, nextActiveProfileId } = await deleteStudentProfile(profileId);
+      setProfiles(remainingProfiles);
+      setActiveProfileIdState(nextActiveProfileId);
+      if (nextActiveProfileId) {
+        const newState = loadStudentStateForProfile(nextActiveProfileId);
+        setState(newState);
+      } else {
+        setState(createInitialStudentState());
+        setIsProfileModalOpen(true);
+      }
+    },
+    [],
+  );
+
+  const openProfileModal = useCallback(() => setIsProfileModalOpen(true), []);
+  const closeProfileModal = useCallback(() => setIsProfileModalOpen(false), []);
 
   const markGateSeen = useCallback(() => {
     updateAndPersist((prev) => ({
@@ -95,8 +191,14 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
     (grade: GradeLevel) => {
       // Sınıf değiştiğinde önceki çalışmalar silinmez; yalnızca aktif sınıf güncellenir.
       updateAndPersist((prev) => ({ ...prev, selectedGrade: grade }));
+      if (activeProfileId) {
+        const updated = updateStudentProfile(activeProfileId, { selectedGrade: grade });
+        if (updated) {
+          setProfiles((prev) => prev.map((p) => (p.id === activeProfileId ? updated : p)));
+        }
+      }
     },
-    [updateAndPersist],
+    [activeProfileId, updateAndPersist],
   );
 
   const completeGuidedTour = useCallback(() => {
@@ -175,6 +277,8 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
 
   const resetAllData = useCallback(async () => {
     await clearAllCampusData();
+    setProfiles([]);
+    setActiveProfileIdState(null);
     setState(createInitialStudentState());
     setStorageStatus(getStorageStatus());
   }, []);
@@ -190,6 +294,15 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
       state,
       storageStatus,
       activeGradeProfile,
+      profiles,
+      activeProfile,
+      createProfile,
+      switchProfile,
+      updateProfile,
+      deleteProfile,
+      isProfileModalOpen,
+      openProfileModal,
+      closeProfileModal,
       markGateSeen,
       setDiscoveryPreference,
       setGrade,
@@ -208,6 +321,15 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
       state,
       storageStatus,
       activeGradeProfile,
+      profiles,
+      activeProfile,
+      createProfile,
+      switchProfile,
+      updateProfile,
+      deleteProfile,
+      isProfileModalOpen,
+      openProfileModal,
+      closeProfileModal,
       markGateSeen,
       setDiscoveryPreference,
       setGrade,
@@ -225,7 +347,10 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <CampusContext.Provider value={value}>{children}</CampusContext.Provider>
+      <CampusContext.Provider value={value}>
+        {children}
+        <ProfileSelectionModal open={isProfileModalOpen} onClose={closeProfileModal} />
+      </CampusContext.Provider>
     </MotionConfig>
   );
 }
