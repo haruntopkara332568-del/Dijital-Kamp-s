@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { act, render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { GRADE_PROFILES, getGradeProfile } from '@/src/data/gradeProfiles';
 import { APPROVED_WELCOME_TEXT, MISSION_GUIDE_PROMPTS, WELCOME_DIALOGUE } from '@/src/data/dialogues';
@@ -115,7 +115,7 @@ describe('Depolama Güvenliği, Bozuk Veri ve Silme', () => {
   it('Verilerimi Sil yalnızca dek_ önekli uygulama anahtarlarını temizler', async () => {
     window.localStorage.setItem('baska_uygulama_anahtari', 'korunmali');
     const initial = createInitialStudentState();
-    initial.selectedGrade = 6;
+    initial.selectedGrade = 4;
     saveStudentState(initial);
 
     expect(window.localStorage.getItem(LOCAL_STORAGE_KEY)).not.toBeNull();
@@ -227,7 +227,11 @@ describe('Arayüz Akışları ve İki Adımlı Silme Onayı', () => {
     fireEvent.click(screen.getByRole('button', { name: /Kendim keşfedeceğim/i }));
     expect(screen.getByText(/Kaçıncı sınıfa gidiyorsun/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /5\. Sınıf/i }));
+    expect(screen.queryByRole('button', { name: /5\. Sınıf/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /6\. Sınıf/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /7\. Sınıf/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /3\. Sınıf/i }));
     expect(onFinish).toHaveBeenCalledTimes(1);
   });
 
@@ -397,7 +401,7 @@ describe('Görev Akışı, Sınıf Düzeyi Farkları ve Kampüs Yolculuğum', ()
 
   it('Üret adımında boş bırakılan veya yalnızca isim girilen çalışmayla Paylaş adımına geçilmez', () => {
     const st = createInitialStudentState();
-    st.selectedGrade = 5;
+    st.selectedGrade = 4;
     st.hasSeenGate = true;
     st.hasCompletedOnboarding = true;
     saveStudentState(st);
@@ -411,10 +415,10 @@ describe('Görev Akışı, Sınıf Düzeyi Farkları ve Kampüs Yolculuğum', ()
     );
 
     fireEvent.click(screen.getByRole('button', { name: /3\. Üret/i }));
-    fireEvent.change(screen.getByLabelText(/Tasarladığın Kapının Adı/i), {
+    fireEvent.change(screen.getByLabelText(/Kapına Kısa Bir Ad Ver/i), {
       target: { value: 'Yalnızca İsim' },
     });
-    fireEvent.change(screen.getByLabelText(/Kapı Tasarımını ve Seçim Gerekçeni Açıkla/i), {
+    fireEvent.change(screen.getByLabelText(/Kapıdan geçince ne gördüğünü kısaca yaz/i), {
       target: { value: '   ' },
     });
     fireEvent.click(screen.getByRole('button', { name: /Kaydet ve Paylaş Adımına Geç/i }));
@@ -423,7 +427,7 @@ describe('Görev Akışı, Sınıf Düzeyi Farkları ve Kampüs Yolculuğum', ()
     expect(screen.queryByText(/Çalışman Hazır!/i)).not.toBeInTheDocument();
   });
 
-  it('2. sınıf ile 7. sınıf arasında araçlar, cümle başlangıçları ve öz değerlendirme farklılaşır', () => {
+  it('2. sınıf ile 4. sınıf arasında araçlar, cümle başlangıçları ve öz değerlendirme farklılaşır', () => {
     const st2 = createInitialStudentState();
     st2.selectedGrade = 2;
     st2.hasSeenGate = true;
@@ -444,11 +448,11 @@ describe('Görev Akışı, Sınıf Düzeyi Farkları ve Kampüs Yolculuğum', ()
     expect(screen.getByRole('button', { name: /\+ Kapıdan geçince \.\.\. gördüm\./i })).toBeInTheDocument();
     unmount();
 
-    const st7 = createInitialStudentState();
-    st7.selectedGrade = 7;
-    st7.hasSeenGate = true;
-    st7.hasCompletedOnboarding = true;
-    saveStudentState(st7);
+    const st4 = createInitialStudentState();
+    st4.selectedGrade = 4;
+    st4.hasSeenGate = true;
+    st4.hasCompletedOnboarding = true;
+    saveStudentState(st4);
 
     render(
       <MemoryRouter>
@@ -460,13 +464,12 @@ describe('Görev Akışı, Sınıf Düzeyi Farkları ve Kampüs Yolculuğum', ()
 
     fireEvent.click(screen.getByRole('button', { name: /3\. Üret/i }));
     expect(screen.queryByRole('button', { name: /Daha Fazla Araç ve Şekil/i })).not.toBeInTheDocument();
-    expect(screen.getByText(/Tasarım Malzemesi Seç/i)).toBeInTheDocument();
-    expect(screen.queryByText(/İstersen bir başlangıç cümlesine dokunarak ekle/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /\+ Seçtiğim kapının arkasında \.\.\. var\./i })).toBeInTheDocument();
   });
 
   it('Yalnızca yazılı anlatım ile Paylaş adımına geçilebilir ve Görevi Tamamla olmadan tamamlandı sayılmaz', async () => {
     const st = createInitialStudentState();
-    st.selectedGrade = 6;
+    st.selectedGrade = 4;
     st.hasSeenGate = true;
     st.hasCompletedOnboarding = true;
     saveStudentState(st);
@@ -480,7 +483,7 @@ describe('Görev Akışı, Sınıf Düzeyi Farkları ve Kampüs Yolculuğum', ()
     );
 
     fireEvent.click(screen.getByRole('button', { name: /3\. Üret/i }));
-    fireEvent.change(screen.getByLabelText(/Kapı Tasarımını ve Seçim Gerekçeni Açıkla/i), {
+    fireEvent.change(screen.getByLabelText(/Kapıdan geçince ne gördüğünü kısaca yaz/i), {
       target: { value: 'Taş malzeme kullandım çünkü uzun yıllar dayanır ve avluyu korur.' },
     });
 
@@ -489,7 +492,7 @@ describe('Görev Akışı, Sınıf Düzeyi Farkları ve Kampüs Yolculuğum', ()
     });
 
     expect(screen.getByText(/Çalışman Hazır!/i)).toBeInTheDocument();
-    expect(loadStudentState().missionProgressByKey['kapilarin-anlattigi-hikaye::grade-6']?.completed).toBe(
+    expect(loadStudentState().missionProgressByKey['kapilarin-anlattigi-hikaye::grade-4']?.completed).toBe(
       false,
     );
 
@@ -498,7 +501,7 @@ describe('Görev Akışı, Sınıf Düzeyi Farkları ve Kampüs Yolculuğum', ()
     });
 
     expect(screen.getByText(/Görev Tamamlandı \(Çalışman Geçici Tutuluyor\)/i)).toBeInTheDocument();
-    expect(loadStudentState().missionProgressByKey['kapilarin-anlattigi-hikaye::grade-6']?.completed).toBe(
+    expect(loadStudentState().missionProgressByKey['kapilarin-anlattigi-hikaye::grade-4']?.completed).toBe(
       true,
     );
   });
@@ -526,11 +529,11 @@ describe('Görev Akışı, Sınıf Düzeyi Farkları ve Kampüs Yolculuğum', ()
 
   it('Kampüs Yolculuğum sayfası Görevlerim, Öğrenme Yolculuğum ve Çalışmalarım bölümlerini gösterir', async () => {
     const st = createInitialStudentState();
-    st.selectedGrade = 5;
-    st.missionProgressByKey['kapilarin-anlattigi-hikaye::grade-5'] = {
+    st.selectedGrade = 4;
+    st.missionProgressByKey['kapilarin-anlattigi-hikaye::grade-4'] = {
       missionId: 'kapilarin-anlattigi-hikaye',
       missionVersion: '1.0.0',
-      grade: 5,
+      grade: 4,
       currentStage: 'paylas',
       completedStages: ['kesfet', 'ogren', 'uret', 'paylas'],
       selections: {
@@ -544,8 +547,8 @@ describe('Görev Akışı, Sınıf Düzeyi Farkları ve Kampüs Yolculuğum', ()
         materialChoice: 'Taş',
         usedEnglishWords: ['Stone'],
       },
-      draftArtifactId: 'art-kapilarin-anlattigi-hikaye-g5',
-      savedArtifactId: 'art-kapilarin-anlattigi-hikaye-g5',
+      draftArtifactId: 'art-kapilarin-anlattigi-hikaye-g4',
+      savedArtifactId: 'art-kapilarin-anlattigi-hikaye-g4',
       artifactSavedAt: new Date().toISOString(),
       selfEvaluation: { selectedOptionId: 'learned', note: '' },
       completed: true,
@@ -699,9 +702,9 @@ describe('Aşama 2 — Aksaray Kültürel Miras Rotası Veri ve Akış Doğrulam
     ).toBe(true);
   });
 
-  it('6. sınıfta Aksaray rotasını 5 kelime, örnek cümle ve yalnızca yazılı anlatımla tamamlar', async () => {
+  it('4. sınıfta Aksaray rotasını kemer eşleştirmesi ve yazılı anlatımla tamamlar', async () => {
     const st = createInitialStudentState();
-    st.selectedGrade = 6;
+    st.selectedGrade = 4;
     st.hasSeenGate = true;
     st.hasCompletedOnboarding = true;
     saveStudentState(st);
@@ -715,20 +718,23 @@ describe('Aşama 2 — Aksaray Kültürel Miras Rotası Veri ve Akış Doğrulam
     );
 
     fireEvent.click(screen.getByRole('button', { name: /2\. Öğren/i }));
-    expect(screen.getByText(/This courtyard has a stone arch and red brick walls\./i)).toBeInTheDocument();
-    expect(screen.getByText(/Kelime Eşleştirme \(0 \/ 5\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Yeni Kelimemiz: Arch — Kemer/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /^Courtyard$/ }));
-    fireEvent.click(screen.getByRole('button', { name: /^Avlu$/ }));
-    expect(screen.getByText(/Kelime Eşleştirme \(1 \/ 5\)/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Kemer Kapı veya avlu/i }));
+    expect(
+      screen.getByText(/Harika! "Arch", taş kapılarda ve medrese girişlerinde/i),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /3\. Üret/i }));
-    fireEvent.change(screen.getByLabelText(/Aksaray Gözlemini ve Tasarım Gerekçeni Açıkla/i), {
-      target: {
-        value:
-          'Sultanhanı Kervansarayı taş taç kapısıyla, Eğri Minare kırmızı tuğla gövdesiyle ve Ihlara Vadisi doğal kanyon yapısıyla öne çıkar.',
+    fireEvent.change(
+      screen.getByLabelText(/Seçtiğin durak hakkında gördüklerini kısaca yaz/i),
+      {
+        target: {
+          value:
+            'Sultanhanı Kervansarayı taş taç kapısıyla, Eğri Minare kırmızı tuğla gövdesiyle öne çıkar.',
+        },
       },
-    });
+    );
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /Kaydet ve Paylaş Adımına Geç/i }));
@@ -739,7 +745,7 @@ describe('Aşama 2 — Aksaray Kültürel Miras Rotası Veri ve Akış Doğrulam
       fireEvent.click(screen.getByRole('button', { name: /Görevi Tamamla/i }));
     });
     expect(
-      loadStudentState().missionProgressByKey['aksaray-kulturel-miras-rotasi::grade-6']?.completed,
+      loadStudentState().missionProgressByKey['aksaray-kulturel-miras-rotasi::grade-4']?.completed,
     ).toBe(true);
   });
 });
@@ -759,17 +765,22 @@ import { AnatolianMotifSvg } from '@/src/components/svg/AnatolianMotifSvg';
 import { DesignSystemPreviewView } from '@/src/features/design-system/DesignSystemPreviewView';
 
 describe('Tasarım Sistemi Belirteçleri, Bileşenler ve Ön İzleme', () => {
-  it('ortak renk belirteçleri, Türkçe yerel yazı tipi ve 2–7. sınıf uyarlanabilir görsel dilini tanımlar', () => {
+  it('ortak renk belirteçleri, Türkçe yerel yazı tipi ve ilkokul 2–4. sınıf uyarlanabilir görsel dilini tanımlar', () => {
     expect(DESIGN_COLOR_GROUPS.flatMap((g) => g.tokens).length).toBe(12);
     expect(TURKISH_FONT_STACK).toContain('system-ui');
     expect(TURKISH_FONT_STACK).not.toMatch(/fonts\.googleapis|https?:\/\//i);
 
     const g2 = getVisualLanguageSpec(2);
-    const g7 = getVisualLanguageSpec(7);
+    const g4 = getVisualLanguageSpec(4);
     expect(g2.tier).toBe('ilkokul');
     expect(g2.touchMinHeightClass).toBe('min-h-[48px]');
-    expect(g7.tier).toBe('ortaokul');
-    expect(g7.touchMinHeightClass).toBe('min-h-[44px]');
+    expect(g4.tier).toBe('ilkokul');
+    expect(g4.touchMinHeightClass).toBe('min-h-[48px]');
+
+    // Desteklenmeyen veya eski sınıflar güvenle 2. sınıf ferah düzenine yedeklenir
+    const legacyFall = getVisualLanguageSpec(7);
+    expect(legacyFall.tier).toBe('ilkokul');
+    expect(legacyFall.grade).toBe(2);
   });
 
   it('yeniden kullanılabilir düğme, kart, ilerleme göstergesi, rozet ve Anadolu motif SVG bileşenlerini render eder', () => {
@@ -807,9 +818,14 @@ describe('Tasarım Sistemi Belirteçleri, Bileşenler ve Ön İzleme', () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Sınıf Düzeyi Görsel Dil Ön İzlemesi \(2\. Sınıf\)/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /^7\. Sınıf$/ }));
-    expect(screen.getByText(/Sınıf Düzeyi Görsel Dil Ön İzlemesi \(7\. Sınıf\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/En çok 25 sözcüklü yönerge/i)).toBeInTheDocument();
+    const previewGroup = screen.getByRole('group', { name: 'Sınıf düzeyi görsel dil ön izlemesi' });
+    expect(within(previewGroup).queryByRole('button', { name: /^5\. Sınıf$/ })).not.toBeInTheDocument();
+    expect(within(previewGroup).queryByRole('button', { name: /^7\. Sınıf$/ })).not.toBeInTheDocument();
+
+    const grade4Btn = within(previewGroup).getByRole('button', { name: /^4\. Sınıf$/ });
+    fireEvent.click(grade4Btn);
+    expect(screen.getByText(/Sınıf Düzeyi Görsel Dil Ön İzlemesi \(4\. Sınıf\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/En çok 12 sözcüklü yönerge/i)).toBeInTheDocument();
   });
 });
 

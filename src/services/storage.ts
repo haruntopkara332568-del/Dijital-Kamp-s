@@ -1,9 +1,12 @@
-import type {
-  CampusStudentState,
-  DiscoveryPreference,
-  GradeLevel,
-  MissionProgress,
-  SavedArtifact,
+import {
+  type CampusStudentState,
+  type DiscoveryPreference,
+  type GradeLevel,
+  type LegacyGradeLevel,
+  type MissionProgress,
+  type SavedArtifact,
+  isSupportedGrade,
+  isLegacyGrade,
 } from '@/src/types/campus';
 
 export const STORAGE_SCHEMA_VERSION = 1;
@@ -41,12 +44,12 @@ export function getStorageStatus(): StorageStatus {
   return lastStorageStatus;
 }
 
-export function getMissionProgressKey(missionId: string, grade: GradeLevel): string {
+export function getMissionProgressKey(missionId: string, grade: GradeLevel | LegacyGradeLevel): string {
   return `${missionId}::grade-${grade}`;
 }
 
-function isValidGrade(value: unknown): value is GradeLevel {
-  return value === 2 || value === 3 || value === 4 || value === 5 || value === 6 || value === 7;
+export function isValidGrade(value: unknown): value is GradeLevel {
+  return isSupportedGrade(value);
 }
 
 function isValidPreference(value: unknown): value is DiscoveryPreference {
@@ -65,13 +68,17 @@ function migrateOrValidateState(raw: unknown): { ok: true; state: CampusStudentS
   }
 
   const base = createInitialStudentState();
-  const safeGrade = isValidGrade(candidate.selectedGrade) ? candidate.selectedGrade : null;
+  // Durum A (2, 3, 4): Sınıf korunur.
+  // Durum B (5, 6, 7): Otomatik atanmaz; güvenli biçimde null yapılır, öğrenci 2-4 arasında seçim yapar.
+  // Durum D (bozuk/geçersiz): null yapılır; diğer veriler silinmez.
+  const safeGrade = isSupportedGrade(candidate.selectedGrade) ? candidate.selectedGrade : null;
   const safePref = isValidPreference(candidate.discoveryPreference) ? candidate.discoveryPreference : null;
 
   const progressMap: Record<string, MissionProgress> = {};
   if (candidate.missionProgressByKey && typeof candidate.missionProgressByKey === 'object') {
     for (const [k, v] of Object.entries(candidate.missionProgressByKey)) {
-      if (v && typeof v === 'object' && typeof v.missionId === 'string' && isValidGrade(v.grade)) {
+      // Eski 5, 6, 7 ilerleme kayıtları da silinmez, depolamada korunur.
+      if (v && typeof v === 'object' && typeof v.missionId === 'string' && isLegacyGrade(v.grade)) {
         const legacySavedId =
           typeof v.savedArtifactId === 'string'
             ? v.savedArtifactId
@@ -156,6 +163,9 @@ export function loadStudentState(): CampusStudentState {
     }
 
     inMemoryState = migrated.state;
+    if ((parsed as { selectedGrade?: unknown })?.selectedGrade !== migrated.state.selectedGrade) {
+      saveStudentState(migrated.state);
+    }
     lastStorageStatus = { mode: 'persistent', persisted: true, warningMessage: null };
     return migrated.state;
   } catch {

@@ -1,4 +1,21 @@
-export type GradeLevel = 2 | 3 | 4 | 5 | 6 | 7;
+export const SUPPORTED_GRADES = [2, 3, 4] as const;
+export type SupportedGrade = (typeof SUPPORTED_GRADES)[number];
+
+export const LEGACY_GRADES = [2, 3, 4, 5, 6, 7] as const;
+export type LegacyGradeLevel = (typeof LEGACY_GRADES)[number];
+
+/**
+ * Aktif kullanıcı deneyiminde ve sınıf seçiminde geçerli sınıf seviyesi (Yalnızca İlkokul: 2, 3, 4).
+ */
+export type GradeLevel = SupportedGrade;
+
+export function isSupportedGrade(grade: unknown): grade is SupportedGrade {
+  return typeof grade === 'number' && (SUPPORTED_GRADES as readonly number[]).includes(grade);
+}
+
+export function isLegacyGrade(grade: unknown): grade is LegacyGradeLevel {
+  return typeof grade === 'number' && (LEGACY_GRADES as readonly number[]).includes(grade);
+}
 
 export type GradeTier = 'ilkokul' | 'ortaokul';
 
@@ -7,12 +24,12 @@ export type VerificationStatus = 'dogrulandi' | 'taslak' | 'TODO: kaynak doğrul
 export interface ContentProvenance {
   source: string;
   verificationStatus: VerificationStatus;
-  targetGrades: GradeLevel[];
+  targetGrades: LegacyGradeLevel[];
   contentVersion: string;
 }
 
 export interface GradeProfile {
-  grade: GradeLevel;
+  grade: LegacyGradeLevel;
   tier: GradeTier;
   label: string;
   maxInstructionWords: number;
@@ -34,6 +51,10 @@ export interface GradeProfile {
   selfEvaluationStyle: 'icons' | 'statements' | 'statements-with-note' | 'statements-with-justified-note';
   selfEvaluationNoteRequired: boolean;
 }
+
+export type SupportedGradeProfile = Omit<GradeProfile, 'grade'> & {
+  grade: SupportedGrade;
+};
 
 export type CampusNodeType = 'learning-area' | 'utility';
 
@@ -179,7 +200,7 @@ export interface MissionDefinition extends ContentProvenance {
   title: string;
   version: string;
   status: AreaStatus;
-  gradeRange: GradeLevel[];
+  gradeRange: LegacyGradeLevel[];
   relatedAreaIds: string[];
   routeKind?: 'thematic-digital-route' | 'observation-mission';
   guidePromptGroup?: 'door' | 'aksaray';
@@ -197,7 +218,7 @@ export interface MissionDefinition extends ContentProvenance {
       english: string;
       turkish: string;
     };
-    sentenceStartersByGrade: Partial<Record<GradeLevel, string[]>>;
+    sentenceStartersByGrade: Partial<Record<LegacyGradeLevel, string[]>>;
   };
   uiCopy?: MissionUiCopy;
   options: {
@@ -270,7 +291,7 @@ export interface SelfEvaluationRecord {
 export interface MissionProgress {
   missionId: string;
   missionVersion: string;
-  grade: GradeLevel;
+  grade: LegacyGradeLevel;
   currentStage: MissionStageId;
   completedStages: MissionStageId[];
   selections: MissionSelections;
@@ -287,7 +308,7 @@ export interface SavedArtifact {
   id: string;
   missionId: string;
   missionVersion: string;
-  grade: GradeLevel;
+  grade: LegacyGradeLevel;
   title: string;
   doorName: string;
   writtenText: string;

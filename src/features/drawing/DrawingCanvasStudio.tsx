@@ -69,7 +69,7 @@ export function createEmptyDrawing(): DrawingDocument {
 export function DrawingCanvasStudio({
   value,
   onChange,
-  grade = 5,
+  grade = 4,
 }: DrawingCanvasStudioProps) {
   const isEarlyPrimary = grade === 2 || grade === 3;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

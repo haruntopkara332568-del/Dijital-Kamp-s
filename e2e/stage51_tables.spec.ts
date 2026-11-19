@@ -83,7 +83,7 @@ test.describe('Aşama 5.1 — İngilizce Sınıfında Dört Etkileşimli Masa ve
     });
     await expect(page.getByText(/Önce Sınıf Seçim Panosu'ndan sınıfını seç/i)).toBeVisible();
 
-    // 8. Sınıf Seçim Panosuna git (x: 270, y: 160) ve 5. sınıfı seç
+    // 8. Sınıf Seçim Panosuna git (x: 270, y: 160) ve 2. sınıfı seç
     await page.evaluate(() => {
       const engine = (
         window as unknown as {
@@ -111,7 +111,7 @@ test.describe('Aşama 5.1 — İngilizce Sınıfında Dört Etkileşimli Masa ve
 
     const gradeBoardDialog = page.getByRole('dialog');
     await expect(gradeBoardDialog).toBeVisible();
-    await page.getByRole('button', { name: /5\. Sınıf/i }).click();
+    await page.getByRole('button', { name: /2\. Sınıf/i }).click();
     await page.waitForTimeout(400);
 
     // 9. KEŞFET MASASI (x: 265, y: 240)

@@ -17,7 +17,8 @@ import {
 import { useCampus } from '@/src/app/CampusProviders';
 import { getMissionById } from '@/src/data/missions';
 import { listArtifacts } from '@/src/services/storage';
-import type { GradeLevel, MissionStageId, SavedArtifact } from '@/src/types/campus';
+import type { MissionStageId, SavedArtifact } from '@/src/types/campus';
+import { isSupportedGrade } from '@/src/types/campus';
 import { CampusTopBar } from '@/src/components/CampusTopBar';
 import { DeleteDataModal } from '@/src/components/DeleteDataModal';
 import { CampusBuildingSvg } from '@/src/components/svg/CampusBuildingSvg';
@@ -56,7 +57,8 @@ export function JourneyView() {
   const completedEntries = progressEntries.filter((p) => p.completed);
   const hasSessionOnlyArtifacts = artifacts.some((a) => a.storageLocation === 'session-only');
 
-  const handleOpenMissionForGrade = (grade: GradeLevel) => {
+  const handleOpenMissionForGrade = (grade: number) => {
+    if (!isSupportedGrade(grade)) return;
     if (state.selectedGrade !== grade) {
       setGrade(grade);
     }
@@ -196,14 +198,20 @@ export function JourneyView() {
                         Şu anki adım: {activeStageTitle}
                       </p>
                     </div>
-                    <Link
-                      to={`/gorev/${entry.missionId}`}
-                      onClick={() => handleOpenMissionForGrade(entry.grade)}
-                      className="min-h-[44px] px-4 py-2 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-xs font-semibold inline-flex items-center gap-2 transition-colors"
-                    >
-                      <Play className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>Kaldığım Yerden Devam Et</span>
-                    </Link>
+                    {isSupportedGrade(entry.grade) ? (
+                      <Link
+                        to={`/gorev/${entry.missionId}`}
+                        onClick={() => handleOpenMissionForGrade(entry.grade)}
+                        className="min-h-[44px] px-4 py-2 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-xs font-semibold inline-flex items-center gap-2 transition-colors"
+                      >
+                        <Play className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>Kaldığım Yerden Devam Et</span>
+                      </Link>
+                    ) : (
+                      <span className="min-h-[44px] px-3.5 py-2 rounded-lg bg-[var(--stone-cream)] border border-[var(--campus-border)] text-xs font-semibold text-[var(--campus-ink-muted)] inline-flex items-center gap-2">
+                        <span>Arşiv Kaydı ({entry.grade}. Sınıf)</span>
+                      </span>
+                    )}
                   </div>
                 );
               })}
@@ -236,14 +244,20 @@ export function JourneyView() {
                         {entry.selfEvaluation?.note ? ` — "${entry.selfEvaluation.note}"` : ''}
                       </p>
                     )}
-                    <Link
-                      to={`/gorev/${entry.missionId}`}
-                      onClick={() => handleOpenMissionForGrade(entry.grade)}
-                      className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-2 transition-colors"
-                    >
-                      <Eye className="w-3.5 h-3.5 text-[var(--seljuk-teal)]" aria-hidden="true" />
-                      <span>Tamamlanan Görevi İncele</span>
-                    </Link>
+                    {isSupportedGrade(entry.grade) ? (
+                      <Link
+                        to={`/gorev/${entry.missionId}`}
+                        onClick={() => handleOpenMissionForGrade(entry.grade)}
+                        className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-2 transition-colors"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-[var(--seljuk-teal)]" aria-hidden="true" />
+                        <span>Tamamlanan Görevi İncele</span>
+                      </Link>
+                    ) : (
+                      <span className="min-h-[44px] px-3.5 py-2 rounded-lg bg-[var(--stone-cream)] border border-[var(--campus-border)] text-xs font-semibold text-[var(--campus-ink-muted)] inline-flex items-center gap-2">
+                        <span>Arşiv Kaydı ({entry.grade}. Sınıf)</span>
+                      </span>
+                    )}
                   </div>
                 );
               })}
@@ -425,13 +439,19 @@ export function JourneyView() {
                         <span>PNG İndir</span>
                       </button>
 
-                      <Link
-                        to={`/gorev/${art.missionId}`}
-                        onClick={() => handleOpenMissionForGrade(art.grade)}
-                        className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--seljuk-navy)] inline-flex items-center transition-colors"
-                      >
-                        <span>Göreve Git</span>
-                      </Link>
+                      {isSupportedGrade(art.grade) ? (
+                        <Link
+                          to={`/gorev/${art.missionId}`}
+                          onClick={() => handleOpenMissionForGrade(art.grade)}
+                          className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-xs font-semibold text-[var(--seljuk-navy)] inline-flex items-center transition-colors"
+                        >
+                          <span>Göreve Git</span>
+                        </Link>
+                      ) : (
+                        <span className="min-h-[44px] px-3.5 py-2 rounded-lg bg-[var(--stone-cream)] border border-[var(--campus-border)] text-xs font-medium text-[var(--campus-ink-muted)] inline-flex items-center">
+                          Arşiv Kaydı ({art.grade}. Sınıf)
+                        </span>
+                      )}
                     </div>
                   </article>
                 );

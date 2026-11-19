@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { Link, Navigate, useParams } from 'react-router';
 import { useCampus } from '@/src/app/CampusProviders';
+import { isSupportedGrade } from '@/src/types/campus';
 import { CampusTopBar } from '@/src/components/CampusTopBar';
 
 const CampusGateView = lazy(() =>
@@ -77,6 +78,10 @@ export function CampusMapRoutePage() {
 
 export function LearningAreaRoutePage() {
   const { id } = useParams<{ id: string }>();
+  const { state } = useCampus();
+  if (!state.selectedGrade || !isSupportedGrade(state.selectedGrade)) {
+    return <Navigate to="/" replace />;
+  }
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
       <LearningAreaView areaId={id ?? ''} />
@@ -86,6 +91,10 @@ export function LearningAreaRoutePage() {
 
 export function MissionRoutePage() {
   const { id } = useParams<{ id: string }>();
+  const { state } = useCampus();
+  if (!state.selectedGrade || !isSupportedGrade(state.selectedGrade)) {
+    return <Navigate to="/" replace />;
+  }
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
       <MissionRunnerView missionId={id ?? ''} />

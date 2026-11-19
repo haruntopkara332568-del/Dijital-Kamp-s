@@ -154,6 +154,11 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
                   <p className="text-xs text-[var(--campus-ink-muted)]">
                     Sınıfını değiştirdiğinde önceki çalışmaların silinmez; ilgili sınıf düzeyiyle saklanır.
                   </p>
+                  {!state.selectedGrade && (
+                    <p className="mt-2 text-xs text-[var(--seljuk-navy)] bg-[var(--seljuk-teal)]/10 border border-[var(--seljuk-teal)]/20 p-2.5 rounded-lg font-medium leading-relaxed">
+                      Kampüsümüz artık 2, 3 ve 4. sınıflara yönelik çalışmalar sunuyor. Devam etmek için sınıfını seçebilirsin.
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-2" role="group" aria-label="Sınıf seçimi">

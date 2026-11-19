@@ -1,3 +1,23 @@
+# Test ve Kalite Güvence Raporu — Bakım ve Onarım 01: Proje Kapsamının İlkokul Düzeyiyle Sınırlandırılması (2, 3, 4. Sınıflar)
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (Strict TypeScript).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **116 / 116 test** (`src/test/primaryScopeMaintenance.test.tsx` [9 test] + `src/test/walkable.test.tsx` [74 test] + `src/test/campus.test.tsx` [33 test], `45.24s`).
+- **`npx playwright test e2e/primary_school_scope_maintenance.spec.ts --project=chromium`**: Geçti — **7 / 7 test** (`9.1s`):
+  - Senaryo 1 & 5: Sınıf Seçim Panosu yalnızca 2, 3 ve 4. sınıfları sunar; 5, 6, 7 kesinlikle yoktur (Geçti).
+  - Senaryo 6, 7, 8, 9: Eski 5, 6 veya 7. sınıf öğrencisinin verisi korunur, selectedGrade null olur ve bilgilendirme sunulur (Geçti).
+  - Senaryo 10: Bozuk veya geçersiz sınıf verisi uygulamanın çökmesini engeller (Geçti).
+  - Senaryo 11: Desteklenmeyen veya seçilmemiş sınıfla doğrudan görev URL erişimi ana sayfaya yönlendirir (Geçti).
+  - Senaryo 12: Sınıf seçilmemişken masalara veya tahtaya yaklaşıldığında yönlendirme mesajı sunulur (Geçti).
+  - Senaryo 2 & 4: 2. ve 4. sınıflar için akıllı tahta koruma altındadır (Geçti).
+  - Senaryo 3, 13, 14, 15, 16, 17: 3. Sınıf 4 Masası ve Sultanhanı Kervansarayı taç kapı yürüyüşü (Geçti).
+- **`npx playwright test e2e/primary_school_scope_maintenance.spec.ts --project=mobile-chrome`**: Geçti — **7 / 7 test** (`9.3s`):
+  - Senaryo 18: Mobil Chrome (Pixel 5) emülatöründe tüm 18 senaryonun mobil dokunma, kadraj ve arayüz uyumluluğu (Geçti).
+- **`npm run build` (`vite build`)**: Geçti — **822ms** içinde hatasız ve optimize edilmiş üretim derlemesi üretildi.
+
+---
+
 # Test ve Kalite Güvence Raporu — Sürüm 6.5.4 (Aşama 6.5: Sultanhanı Meydanında Aynı Karakterle Yürüyüş ve Taç Kapıdan Geçiş / İlk Teslim)
 
 ## 1. Çalıştırıldı ve Geçti

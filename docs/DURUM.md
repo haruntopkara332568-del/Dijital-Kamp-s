@@ -1,3 +1,53 @@
+# Proje Durum Raporu — Bakım ve Onarım 01: Proje Kapsamının İlkokul Düzeyiyle Sınırlandırılması (2, 3, 4. Sınıflar)
+
+## Kapsam ve Temel İlke
+- **Çalışma Dalı**: `fix/maintenance-01-primary-school-scope`
+- **Başlangıç Referansı**: `496d1303ce4b968a57e3dfd368e5ff2fa10e75a6` (`origin/main`)
+- **İlkokul Sınırlandırması**: Dijital Eğitim Kampüsü yalnızca ilkokul 2, 3 ve 4. sınıf düzeylerine hizmet verecek şekilde daraltılmıştır. 5, 6 ve 7. sınıflar aktif kullanıcı deneyiminden, sınıf seçim alanlarından ve erişilebilir öğrenme akışlarından tamamen çıkarılmıştır. 1. sınıf sisteme eklenmemiştir.
+- **Korunan Sistemler (%100 Dokunulmadı)**:
+  - Selçuklu Taç Kapı giriş sahnesi ve animasyon geçişi,
+  - Yürünebilir kampüs avlusu, izometrik yapılar ve karakter hareket motoru,
+  - İngilizce sınıfı mimarisi, Sınıf Panosu ve Akıllı Tahta kilidi,
+  - 3. sınıfın dört öğrenme masası (Keşfet, Öğren, Üret [6.3.1 sıralama düzeltmesiyle], Paylaş),
+  - Sultanhanı Kervansarayı meydanında aynı karakterle yürüyüş ve taç kapıdan geçiş macerası,
+  - Seslendirme servisi, tasarım sistemi belirteçleri ve depolama mimarisi.
+- **Veri Güvenliği ve Geçmiş Kayıtların Korunması**:
+  - `dek_campus_v1_state` içindeki mevcut 5, 6, 7. sınıf görev kayıtları (`missionProgressByKey`) ve çizimleri ASLA silinmemiş, güvenle muhafaza edilmiştir.
+  - Tarayıcısında önceden 5, 6 veya 7. sınıf seçili kalan öğrenciler için `selectedGrade` otomatik ve sessizce `null` (seçilmemiş) durumuna getirilmiş, nazik bilgilendirme sunulmuştur:
+    *"Kampüsümüz artık 2, 3 ve 4. sınıflara yönelik çalışmalar sunuyor. Devam etmek için sınıfını seçebilirsin."*
+  - Yolculuğum sayfasında eski ortaokul kayıtları "Arşiv Kaydı" etiketiyle korunmuş, ortaokul görev başlatma butonları devre dışı bırakılmıştır.
+
+## 18 Senaryo Doğrulama Özeti
+1. **Senaryo 1 (Sınıf Panosu İlk Açılış)**: Sınıf panosu açıldığında yalnızca 2, 3 ve 4. sınıflar listelenir (DOĞRULANDI).
+2. **Senaryo 2 (2. Sınıf Seçimi)**: 2. sınıf seçildiğinde akıllı tahta koruma altındadır; öğrenci masalara yönlendirilir (DOĞRULANDI).
+3. **Senaryo 3 (3. Sınıf Seçimi)**: 3. sınıf seçildiğinde 4 masa bitirilince Sultanhanı açılır (DOĞRULANDI).
+4. **Senaryo 4 (4. Sınıf Seçimi)**: 4. sınıf seçildiğinde akıllı tahta koruma altındadır (DOĞRULANDI).
+5. **Senaryo 5 (Ortaokul Butonlarının Yokluğu)**: Sınıf panosunda 5, 6, 7 seçenekleri ve "Ortaokul Kademesi" kesinlikle yoktur (DOĞRULANDI).
+6. **Senaryo 6 (Eski 5. Sınıf Verisiyle Giriş)**: `selectedGrade` null olur; bilgilendirme mesajı gösterilir (DOĞRULANDI).
+7. **Senaryo 7 (Eski 6. Sınıf Verisiyle Giriş)**: `selectedGrade` null olur; bilgilendirme mesajı gösterilir (DOĞRULANDI).
+8. **Senaryo 8 (Eski 7. Sınıf Verisiyle Giriş)**: `selectedGrade` null olur; bilgilendirme mesajı gösterilir (DOĞRULANDI).
+9. **Senaryo 9 (Eski Öğrenci İlerleme Kayıtlarının Korunması)**: 5, 6, 7. sınıf çizim ve ilerlemeleri localStorage'da saklanır (DOĞRULANDI).
+10. **Senaryo 10 (Bozuk / Geçersiz Sınıf Verisi)**: 99, "abc", -1 verilerinde sistem çökmez; null'a döner (DOĞRULANDI).
+11. **Senaryo 11 (Doğrudan URL ile Görev Açma Denemesi)**: Desteklenmeyen/seçilmemiş sınıfla `/gorev/...` veya `/alan/...` erişimi doğrudan ana sayfaya yönlendirir (DOĞRULANDI).
+12. **Senaryo 12 (İngilizce Sınıfında Sınıf Seçimsiz Etkileşim)**: Masalara veya tahtaya tıklandığında nazik yönlendirme uyarısı verilir (DOĞRULANDI).
+13. **Senaryo 13 (3. Sınıf Keşfet Masası)**: Tanışma Bahçesi etkinliği sorunsuz çalışır (DOĞRULANDI).
+14. **Senaryo 14 (3. Sınıf Öğren Masası)**: Selamlaşma Kartları sorunsuz çalışır (DOĞRULANDI).
+15. **Senaryo 15 (3. Sınıf Üret Masası)**: 6.3.1 hata düzeltmesi teyitlidir; "Good morning" seçiminde takılma yaşanmaz (DOĞRULANDI).
+16. **Senaryo 16 (3. Sınıf Paylaş Masası)**: Kısa Konuşma etkinliği ve tamamlama kaydı sorunsuz çalışır (DOĞRULANDI).
+17. **Senaryo 17 (3. Sınıf Akıllı Tahta)**: Kervansaray meydanında aynı karakterle yürüyüş ve taç kapıdan geçiş çalışır (DOĞRULANDI).
+18. **Senaryo 18 (Masaüstü ve Mobil Uyumu)**: Desktop Chromium ve Mobile Chrome üzerinde tam uyum teyit edilmiştir (DOĞRULANDI).
+
+## Kalite Güvencesi ve Test Sonuçları
+- **`npm run typecheck`**: 0 hata (Strict TypeScript uyumu).
+- **`npm run lint`**: 0 hata, 0 uyarı (ESLint).
+- **`npm run test`**: 116 / 116 test GEÇTİ (%100 başarı; `campus.test.tsx` [33], `walkable.test.tsx` [74], `primaryScopeMaintenance.test.tsx` [9]).
+- **Playwright E2E (`e2e/primary_school_scope_maintenance.spec.ts`)**:
+  - Chromium (Desktop): 7 / 7 test GEÇTİ (9.1s)
+  - Mobile Chrome (Pixel 5): 7 / 7 test GEÇTİ (9.3s)
+- **`npm run build`**: 822ms içinde hatasız ve optimize edilmiş üretim paketi (`dist/`).
+
+---
+
 # Proje Durum Raporu — Sürüm 6.5.4 (Aşama 6.5: Sultanhanı Meydanında Aynı Karakterle Yürüyüş ve Taç Kapıdan Geçiş / İlk Teslim)
 
 ## 3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Yürünebilir Meydan & Taç Kapı Açıklığından Geçiş (`feat/english-four-learning-tables`)

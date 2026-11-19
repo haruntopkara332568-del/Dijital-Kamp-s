@@ -205,8 +205,10 @@ export function WalkableCampusView({
             radius: 80,
             action: () => {
               if (!selectedGradeRef.current) {
-                setUnreachableMessage("Önce Sınıf Seçim Panosu'ndan sınıfını seç.");
-                setTimeout(() => setUnreachableMessage(null), 3000);
+                setUnreachableMessage(
+                  'Kampüsümüz artık 2, 3 ve 4. sınıflara yönelik çalışmalar sunuyor. Devam etmek için sınıfını seçebilirsin.',
+                );
+                setTimeout(() => setUnreachableMessage(null), 3500);
                 return;
               }
 
@@ -270,8 +272,10 @@ export function WalkableCampusView({
             radius: 75,
             action: () => {
               if (!selectedGradeRef.current) {
-                setUnreachableMessage("Önce Sınıf Seçim Panosu'ndan sınıfını seç.");
-                setTimeout(() => setUnreachableMessage(null), 3000);
+                setUnreachableMessage(
+                  'Kampüsümüz artık 2, 3 ve 4. sınıflara yönelik çalışmalar sunuyor. Devam etmek için sınıfını seçebilirsin.',
+                );
+                setTimeout(() => setUnreachableMessage(null), 3500);
                 return;
               }
               setActiveTableStage('kesfet');
@@ -292,8 +296,10 @@ export function WalkableCampusView({
             radius: 75,
             action: () => {
               if (!selectedGradeRef.current) {
-                setUnreachableMessage("Önce Sınıf Seçim Panosu'ndan sınıfını seç.");
-                setTimeout(() => setUnreachableMessage(null), 3000);
+                setUnreachableMessage(
+                  'Kampüsümüz artık 2, 3 ve 4. sınıflara yönelik çalışmalar sunuyor. Devam etmek için sınıfını seçebilirsin.',
+                );
+                setTimeout(() => setUnreachableMessage(null), 3500);
                 return;
               }
               if (!completedStagesRef.current.includes('kesfet')) {
@@ -319,8 +325,10 @@ export function WalkableCampusView({
             radius: 75,
             action: () => {
               if (!selectedGradeRef.current) {
-                setUnreachableMessage("Önce Sınıf Seçim Panosu'ndan sınıfını seç.");
-                setTimeout(() => setUnreachableMessage(null), 3000);
+                setUnreachableMessage(
+                  'Kampüsümüz artık 2, 3 ve 4. sınıflara yönelik çalışmalar sunuyor. Devam etmek için sınıfını seçebilirsin.',
+                );
+                setTimeout(() => setUnreachableMessage(null), 3500);
                 return;
               }
               if (!completedStagesRef.current.includes('ogren')) {
@@ -346,8 +354,10 @@ export function WalkableCampusView({
             radius: 75,
             action: () => {
               if (!selectedGradeRef.current) {
-                setUnreachableMessage("Önce Sınıf Seçim Panosu'ndan sınıfını seç.");
-                setTimeout(() => setUnreachableMessage(null), 3000);
+                setUnreachableMessage(
+                  'Kampüsümüz artık 2, 3 ve 4. sınıflara yönelik çalışmalar sunuyor. Devam etmek için sınıfını seçebilirsin.',
+                );
+                setTimeout(() => setUnreachableMessage(null), 3500);
                 return;
               }
               if (!completedStagesRef.current.includes('uret')) {
