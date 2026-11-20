@@ -1235,9 +1235,6 @@ function drawEnglishBuilding(
     ctx.roundRect(portalCenterX - 45, y + h - 2, 90, 6, 2);
     ctx.fill();
 
-    // 6. Doğrudan Mimari Duvar Yazısı (İki Satırlı Taş Kazıma)
-    drawDirectWallInscription(ctx, portalCenterX, y + 20, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.english, 'sandstone');
-
     ctx.restore();
     return;
   }
@@ -1361,9 +1358,6 @@ function drawEnglishBuilding(
   // Giriş Yan Fenerleri (Selçuklu Kandilleri)
   drawLantern(ctx, portalX - 6, portalY + 22, now);
   drawLantern(ctx, portalX + portalW + 6, portalY + 22, now);
-
-  // 7. Doğrudan Mimari Duvar Yazısı (İki Satırlı Taş Kazıma)
-  drawDirectWallInscription(ctx, x + w / 2, y + 48, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.english, 'sandstone');
 
   ctx.restore();
 }
