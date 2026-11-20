@@ -1404,9 +1404,6 @@ function drawDiscoveryBuilding(
     ctx.stroke();
     ctx.restore();
 
-    // 4. Doğrudan Mimari Duvar Yazısı (Çini / Taş Yüzey)
-    drawDirectWallInscription(ctx, portalCenterX, y + 20, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.discovery, 'glazed-tile');
-
     ctx.restore();
     return;
   }
@@ -1463,9 +1460,6 @@ function drawDiscoveryBuilding(
   ctx.beginPath();
   ctx.roundRect(portalX, portalY, portalW, portalH, [16, 16, 0, 0]);
   ctx.fill();
-
-  // Doğrudan Mimari Duvar Yazısı (Çini / Taş Yüzey)
-  drawDirectWallInscription(ctx, x + w / 2, y + 48, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.discovery, 'glazed-tile');
 
   ctx.restore();
 }
