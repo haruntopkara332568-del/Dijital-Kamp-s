@@ -1,46 +1,9 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, SkipForward, Sparkles } from 'lucide-react';
-import { CAMPUS_BRAND, CAMPUS_INSCRIPTION_NAMES } from '@/src/data/brandConfig';
+import { CAMPUS_BRAND } from '@/src/data/brandConfig';
 
 interface CampusGateViewProps {
   onEnterCourtyard: () => void;
-}
-
-/**
- * Ana Giriş Taç Kapısı Mimari Taş Duvar Yazısı (Onarım 03A):
- * Referans görseldeki gibi doğrudan taş cephe yüzeyine kazınmış anıtsal kitabe.
- * Kesinlikle yapay levha çerçevesi, kutu, kenarlık veya köşe rozeti YOKTUR.
- * 1. YENİ NESİL KÜLLİYE (Büyük harf, belirgin oyma taş rölyefi)
- * 2. Dijital Öğrenme Kampüsü (Dengeli alt başlık)
- * 3. Geçmişin bilgeliği, geleceğin öğrenme dünyası (Doğal taşla bütünleşik slogan)
- */
-function ArchitecturalPortalInscription({ isOpening }: { isOpening: boolean }) {
-  return (
-    <div
-      aria-hidden="true"
-      className={`absolute top-[16%] left-1/2 -translate-x-1/2 w-[54%] sm:w-[44%] max-w-[340px] pointer-events-none transition-transform duration-700 ease-out ${
-        isOpening ? 'scale-105 filter brightness-110' : ''
-      }`}
-    >
-      {/* Doğrudan Taş Yüzeyine Kazınmış / Oyulmuş Duvar Yazısı (Tabela Kutusu veya Çerçeve Yoktur) */}
-      <div className="flex flex-col items-center justify-center text-center space-y-0.5 select-none px-2 py-1">
-        {/* 1. Ana Marka Adı (Büyük Harf, En Belirgin, Oyma Taş Rölyef Etkisi) */}
-        <span className="text-[11px] xs:text-[12px] sm:text-[14px] md:text-[15px] font-extrabold tracking-[0.09em] sm:tracking-[0.13em] text-[#221306] drop-shadow-[0_1px_0_rgba(255,255,255,0.85)] font-serif uppercase leading-tight [text-shadow:_0_1px_1px_rgba(255,255,255,0.7),_0_-1px_1px_rgba(34,19,6,0.6)]">
-          {CAMPUS_INSCRIPTION_NAMES.brand}
-        </span>
-
-        {/* 2. Alt Başlık (Daha Küçük, Zarif Taş Oyma) */}
-        <span className="text-[8.5px] xs:text-[9.5px] sm:text-[11px] font-semibold tracking-wide text-[#3d2611] drop-shadow-[0_1px_0_rgba(255,255,255,0.75)] leading-tight [text-shadow:_0_0.5px_1px_rgba(255,255,255,0.6)]">
-          {CAMPUS_BRAND.subtitle}
-        </span>
-
-        {/* 3. Slogan (En Küçük, Okunabilir, Doğal Taşla Bütünleşik) */}
-        <span className="text-[7px] xs:text-[7.5px] sm:text-[9px] font-medium text-[#573b1f] leading-snug drop-shadow-[0_0.5px_0_rgba(255,255,255,0.65)] [text-shadow:_0_0.5px_0.5px_rgba(255,255,255,0.5)] mt-0.5">
-          {CAMPUS_BRAND.slogan}
-        </span>
-      </div>
-    </div>
-  );
 }
 
 export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
@@ -75,15 +38,12 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
           />
 
           <div className="px-3.5 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6 space-y-3.5">
-            <header className="space-y-1 max-w-xl mx-auto">
-              <p className="text-[11px] sm:text-xs font-semibold text-[var(--seljuk-teal)] tracking-wide">
-                {CAMPUS_BRAND.subtitle}
-              </p>
+            <header className="space-y-1.5 max-w-xl mx-auto">
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--seljuk-navy)]">
-                {CAMPUS_BRAND.name}
+                {CAMPUS_BRAND.subtitle}
               </h1>
-              <p className="text-xs sm:text-sm text-[var(--campus-ink-muted)]">
-                Tarihî taç kapıya dokunarak veya aşağıdaki düğmeyi kullanarak aydınlık keşif avlusuna adım atabilirsin.
+              <p className="text-xs sm:text-sm font-medium text-[var(--campus-ink-muted)]">
+                {CAMPUS_BRAND.slogan}
               </p>
             </header>
 
@@ -105,9 +65,6 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
                   loading="eager"
                   decoding="sync"
                 />
-
-                {/* Mimari Taş Kitabe Katmanı */}
-                <ArchitecturalPortalInscription isOpening={isOpening} />
 
                 {/* Açılış Işıması Katmanı (Aura / Işık Patlaması) */}
                 <div
