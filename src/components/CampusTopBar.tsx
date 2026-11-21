@@ -5,6 +5,7 @@ import { useCampus } from '@/src/app/CampusProviders';
 import { GRADE_LIST } from '@/src/data/gradeProfiles';
 import { CAMPUS_BRAND } from '@/src/data/brandConfig';
 import { STUDENT_AVATARS, type GradeLevel } from '@/src/types/campus';
+import { FullscreenButton } from './FullscreenButton';
 import { DeleteDataModal } from './DeleteDataModal';
 
 interface CampusTopBarProps {
@@ -128,6 +129,8 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
                 <span>Öğrenci Seç</span>
               </button>
             )}
+
+            <FullscreenButton variant="header" />
 
             <button
               type="button"

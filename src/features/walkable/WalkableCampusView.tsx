@@ -19,6 +19,7 @@ import {
   renderSultanhaniEntities,
   SULTANHANI_SQUARE,
 } from './engine/sultanhaniSceneRenderer';
+import { ensureClassroomAssetsLoaded } from './engine/assetLoader';
 import { WalkableControlsOverlay } from './components/WalkableControlsOverlay';
 import { SmartBoardModal } from './components/SmartBoardModal';
 import { GradeBoardModal } from './components/GradeBoardModal';
@@ -115,8 +116,68 @@ export function WalkableCampusView({
     }
   }, [onBackToMap, navigate]);
 
-  useEffect(() => () => {
-    if (sceneTransitionTimer.current !== null) clearTimeout(sceneTransitionTimer.current);
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (sceneTransitionTimer.current !== null) clearTimeout(sceneTransitionTimer.current);
+    };
+  }, []);
+
+  const handleEnterEnglishClassroom = useCallback(() => {
+    if (sceneTransitionTimer.current !== null) return;
+    engineRef.current?.setInputDisabled(true);
+    setActiveZone(null);
+    setTeleportMessage("İngilizce Sınıfı'na Giriliyor... 🎒✨");
+    setIsTeleporting(true);
+
+    const minTransitionDuration = new Promise((resolve) => setTimeout(resolve, 400));
+
+    void Promise.all([
+      ensureClassroomAssetsLoaded(4000),
+      minTransitionDuration,
+    ]).then(([loaded]) => {
+      if (!isMountedRef.current) return;
+      if (!loaded) {
+        setIsTeleporting(false);
+        engineRef.current?.setInputDisabled(false);
+        sceneTransitionTimer.current = null;
+        setUnreachableMessage(
+          'Sinematik sınıf sahnesi yüklenemedi. Lütfen internet bağlantını kontrol edip tekrar dene.',
+        );
+        setTimeout(() => {
+          if (isMountedRef.current) setUnreachableMessage(null);
+        }, 4000);
+        return;
+      }
+
+      lastClassroomPosRef.current = { x: 480, y: 520 };
+      setCurrentScene('classroom');
+
+      sceneTransitionTimer.current = setTimeout(() => {
+        sceneTransitionTimer.current = null;
+        if (isMountedRef.current) {
+          setIsTeleporting(false);
+        }
+      }, 150);
+    });
+  }, []);
+
+  const handleExitClassroomToCourtyard = useCallback(() => {
+    if (sceneTransitionTimer.current !== null) return;
+    engineRef.current?.setInputDisabled(true);
+    setActiveZone(null);
+    setTeleportMessage("Kampüs Avlusu'na Çıkılıyor... 🌳✨");
+    setIsTeleporting(true);
+    sceneTransitionTimer.current = setTimeout(() => {
+      sceneTransitionTimer.current = null;
+      if (isMountedRef.current) {
+        setIsTeleporting(false);
+        lastCourtyardPosRef.current = { x: 970, y: 350 };
+        setCurrentScene('courtyard');
+      }
+    }, 400);
   }, []);
 
   const handleExitSultanhani = useCallback(() => {
@@ -127,9 +188,11 @@ export function WalkableCampusView({
     setIsTeleporting(true);
     sceneTransitionTimer.current = setTimeout(() => {
       sceneTransitionTimer.current = null;
-      setIsTeleporting(false);
-      lastClassroomPosRef.current = { x: 480, y: 180 };
-      setCurrentScene('classroom');
+      if (isMountedRef.current) {
+        setIsTeleporting(false);
+        lastClassroomPosRef.current = { x: 480, y: 180 };
+        setCurrentScene('classroom');
+      }
     }, 600);
   }, []);
 
@@ -377,11 +440,7 @@ export function WalkableCampusView({
             x: 480,
             y: 590,
             radius: 65,
-            action: () => {
-              // Avluya dönerken İngilizce binasının kapı önüne çık
-              lastCourtyardPosRef.current = { x: 970, y: 350 };
-              setCurrentScene('courtyard');
-            },
+            action: handleExitClassroomToCourtyard,
           },
         ];
 
@@ -419,11 +478,7 @@ export function WalkableCampusView({
           x: 970,
           y: 335,
           radius: 75,
-          action: () => {
-            lastClassroomPosRef.current = { x: 480, y: 520 };
-            setActiveZone(null);
-            setCurrentScene('classroom');
-          },
+          action: handleEnterEnglishClassroom,
         },
         // 2. Hayalden Gerçeğe Binası (Görsel olarak durur - Yakında)
         {
@@ -526,7 +581,7 @@ export function WalkableCampusView({
         interactiveZones,
       };
     },
-    [handleExitSultanhani],
+    [handleExitSultanhani, handleEnterEnglishClassroom, handleExitClassroomToCourtyard],
   );
 
   // Sınıf seçimi veya aşama tamamlanma durumunda etkileşim bölgelerini (prompt ve kilitleri) dinamik güncelle
@@ -547,15 +602,18 @@ export function WalkableCampusView({
 
     const config = getSceneConfig(currentScene);
 
-    // Canvas boyutunu container'a göre uyarla
+    // Canvas boyutunu container ve ekran alanına göre tam uyarla
     const updateCanvasSize = () => {
       const rect = container.getBoundingClientRect();
-      const newW = Math.max(320, Math.floor(rect.width));
-      const newH = Math.max(240, Math.floor(rect.height));
-      canvas.width = newW;
-      canvas.height = newH;
+      const rawW = rect.width || container.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 800);
+      const rawH = rect.height || container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 600);
+      const newW = Math.max(320, Math.round(rawW));
+      const newH = Math.max(240, Math.round(rawH));
       if (engineRef.current) {
         engineRef.current.updateDimensions(newW, newH);
+      } else {
+        canvas.width = newW;
+        canvas.height = newH;
       }
     };
 
@@ -661,15 +719,22 @@ export function WalkableCampusView({
         for (const entry of entries) {
           const { width, height } = entry.contentRect;
           if (width > 0 && height > 0 && engineRef.current) {
-            engineRef.current.updateDimensions(Math.floor(width), Math.floor(height));
+            engineRef.current.updateDimensions(Math.round(width), Math.round(height));
           }
         }
       });
       ro.observe(container);
     }
 
+    window.addEventListener('resize', updateCanvasSize);
+    document.addEventListener('fullscreenchange', updateCanvasSize);
+    document.addEventListener('webkitfullscreenchange', updateCanvasSize);
+
     return () => {
       ro?.disconnect();
+      window.removeEventListener('resize', updateCanvasSize);
+      document.removeEventListener('fullscreenchange', updateCanvasSize);
+      document.removeEventListener('webkitfullscreenchange', updateCanvasSize);
       if (typeof window !== 'undefined') {
         delete (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine }).__WALKABLE_ENGINE__;
       }
@@ -727,10 +792,7 @@ export function WalkableCampusView({
         onBackToMap={handleBackToMap}
         onExitClassroom={
           currentScene === 'classroom'
-            ? () => {
-                lastCourtyardPosRef.current = { x: 970, y: 350 };
-                setCurrentScene('courtyard');
-              }
+            ? handleExitClassroomToCourtyard
             : currentScene === 'sultanhani_square'
               ? handleExitSultanhani
               : undefined

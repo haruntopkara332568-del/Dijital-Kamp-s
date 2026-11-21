@@ -1,3 +1,19 @@
+# Test ve Kalite Güvence Raporu — Gerçek Tam Ekran Sahne Yerleşimi, Kenar Boşluklarının Giderilmesi ve Kesintisiz Tam Ekran Deneyimi
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (Strict TypeScript tip denetimi tam uyumlu).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı** (`useSyncExternalStore` ile sıfır cascading render, tam ESLint ve React Compiler uyumu).
+- **`npm run test` (`vitest run`)**: Geçti — **146 / 146 test** (%100 başarı, 6 test dosyası):
+  - `src/test/fullscreen.test.tsx`: **9 / 9 test** (`436ms`) — Özellik denetimi (desteklenmeyen iOS/tarayıcılarda butonu gizleme), kapı önünde erişim, "Tam ekrana geç" -> "Tam ekrandan çık" durum güncellemesi, ESC ve `fullscreenchange` dinleyicisi, kök öğe (`document.documentElement`) hedefiyle sahne geçişi kalıcılığı, İngilizce sınıfı (`960×640`) ve kampüs avlusu (`1400×900`) tam ekran ölçeklendirme (`zoom`), sağ/alt boşlukların giderilmesi, karakter konumunun korunması ve zoom altında fare tıklama (`pointerdown`) dünya koordinatı dönüşümü.
+  - `src/test/brandIdentityMaintenance.test.tsx`: **7 / 7 test** (`340ms`) — Marka kimliği ve kitabe render doğrulaması.
+  - `src/test/studentProfilesMaintenance.test.tsx`: **14 / 14 test** (`419ms`) — İki öğrenci (Gezgin & Bilgin) veri izolasyonu ve profil yönetimi.
+  - `src/test/primaryScopeMaintenance.test.tsx`: **9 / 9 test** (`631ms`) — İlkokul 2, 3 ve 4. sınıf kapsam doğrulaması.
+  - `src/test/campus.test.tsx`: **33 / 33 test** (`4.0s`) — Depolama güvenliği, seslendirme ve görev rotaları.
+  - `src/test/walkable.test.tsx`: **74 / 74 test** (`43.6s`) — Yürünebilir kampüs avlusu, 4 öğrenme masası ve Sultanhanı sahnesi.
+- **`npm run build` (`vite build`)**: Geçti — **1.03s** içinde hatasız ve optimize edilmiş üretim paketi (`dist/`) üretildi.
+
+---
+
 # Test ve Kalite Güvence Raporu — Bakım ve Onarım 03A: Cihaz Tabanlı Öğrenci Profil Altyapısı ve Mimari Duvar Yazılarının Düzeltilmesi
 
 ## 1. Çalıştırıldı ve Geçti

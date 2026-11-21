@@ -1506,9 +1506,6 @@ function drawLibraryBuilding(
     ctx.stroke();
     ctx.restore();
 
-    // 4. Doğrudan Mimari Duvar Yazısı (Kumtaşı Yüzey)
-    drawDirectWallInscription(ctx, portalCenterX, y + 18, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.library, 'sandstone');
-
     ctx.restore();
     return;
   }

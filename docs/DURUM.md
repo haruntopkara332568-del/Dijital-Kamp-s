@@ -1,3 +1,28 @@
+# Proje Durum Raporu — Gerçek Tam Ekran Sahne Yerleşimi, Kenar Boşluklarının Giderilmesi ve Kesintisiz Tam Ekran Deneyimi
+
+## 1. Kapsam ve Uygulanan Tam Ekran Sahne Mimarisi
+- **Kök Sorun Tespiti**:
+  - `WalkableCanvasEngine` içinde sahne dünyası (`courtyard`: `1400×900`, `classroom`: `960×640`, `sultanhani_square`: `1106×932`) ekran çözünürlüğünden bağımsız olarak `1:1` (`zoom = 1`) çiziliyordu. Bu nedenle `960×640`'tan veya `1400×900`'den büyük ekranlarda (ör. `1280×720`, `1366×768`, `1920×1080`) sahne sol üste sıkışıyor, sağda ve altta geniş boş alanlar oluşuyordu.
+  - Karşılama ekranında (`CampusGateView`) `max-w-3xl` (`768px`) ve `max-w-[680px]` (`680px`) sabit sınırları taç kapı sahnesini ekranın ortasında küçük bir kutuya hapsediyordu.
+- **Tek Koordinat ve En-Boy Oranı Koruyucu Ölçeklendirme (`WalkableCanvasEngine.ts`)**:
+  - `calculateZoom()` ile kullanılabilir ekran genişliği ve yüksekliğine göre tekil ölçek katsayısı (`this.zoom`) hesaplanır (`ctx.scale(zoom, zoom)`). Görseller yatay veya dikey esnetilmez; binalar, masalar ve karakter orantısız büyütülmez.
+  - `config.width * zoom >= canvas.width` ve `config.height * zoom >= canvas.height` kuralı sayesinde sağda, solda, üstte veya altta tek piksel dahi boşluk kalmaz.
+  - Geniş ekran (`16:9` vb.) dikey kadraj yönetimi (`updateCamera`) ile yalnızca üst ve alt dekoratif kenarlar kırpılarak sınıftaki akıllı tahta, sınıf panosu, dört etkinlik masası, çıkış eşiği ve karakter; avluda ise tüm binalar, kubbeler, taş kitabeler ve şadırvan aynı anda görünür kadrajda tutulur.
+  - Fare ve dokunmatik tıklama koordinatları (`handlePointerDown`), `worldX = clickX / zoom + camera.x` ve `worldY = clickY / zoom + camera.y` dönüşümüyle ölçeklendirilmiş sahneyle birebir eşleşir; W-A-S-D, yön tuşları, `[E]` etkileşimi ve çarpışma kutuları %100 korunur.
+  - Tam ekran açılıp kapatıldığında veya pencere boyutu değiştiğinde (`ResizeObserver`, `resize`, `fullscreenchange`) `updateDimensions` sahneyi anında yeniden boyutlandırır ve karakterin konumunu sıfırlamaz.
+- **Karşılama ve Taç Kapı Sahnesi (`CampusGateView.tsx`)**:
+  - Sabit `max-w-3xl` ve `max-w-[680px]` kısıtları kaldırılarak `100dvh` ve `100vw` tabanlı, `16:9` en-boy oranını koruyan responsive sahne yerleşimine geçildi. Türk bayrağı, mukarnas süslemeler, başlıklar ve giriş düğmeleri taşma olmadan tam görünür biçimde korundu.
+- **Kesintisiz Tam Ekran Kontrolü (`fullscreen.ts`, `useFullscreen.ts`, `FullscreenButton.tsx`)**:
+  - `document.documentElement` üzerinde tetiklenen tam ekran modu **Taç Kapı → Avlu → Sınıf → Avlu** geçişlerinde kesintisiz devam eder.
+
+## 2. Doğrulama Durumu
+- `npm run typecheck`: 0 hata.
+- `npm run lint`: 0 hata, 0 uyarı.
+- `npm run test`: 146 / 146 test geçti (6 test dosyası, `src/test/fullscreen.test.tsx` [9 test] dahil).
+- `npm run build`: 1.03s içinde hatasız üretim derlemesi.
+
+---
+
 # Proje Durum Raporu — Bakım ve Onarım 03A: Cihaz Tabanlı Öğrenci Profil Altyapısı ve Mimari Duvar Yazılarının Düzeltilmesi
 
 ## 1. Kapsam ve Başlangıç Referansı

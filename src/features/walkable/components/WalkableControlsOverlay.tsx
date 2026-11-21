@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useOptionalCampus } from '@/src/app/CampusProviders';
 import { STUDENT_AVATARS } from '@/src/types/campus';
+import { FullscreenButton } from '@/src/components/FullscreenButton';
 import type { InteractiveZone } from '../types';
 
 interface WalkableControlsOverlayProps {
@@ -190,6 +191,9 @@ export function WalkableControlsOverlay({
               </>
             )}
           </button>
+
+          {/* Tam Ekran Açma / Çıkış Kontrolü */}
+          <FullscreenButton variant="header" />
         </div>
       </header>
 

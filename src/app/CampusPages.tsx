@@ -30,6 +30,9 @@ const WalkableCampusView = lazy(() =>
     default: m.WalkableCampusView,
   })),
 );
+const CampusMapView = lazy(() =>
+  import('@/src/features/campus-map/CampusMapView').then((m) => ({ default: m.CampusMapView })),
+);
 
 function RouteLoadingFallback() {
   return (
@@ -87,8 +90,12 @@ export function HomeRoutePage() {
 }
 
 export function CampusMapRoutePage() {
-  // Eski /harita URL'si açıldığında yönlendirme döngüsü veya 404 olmadan doğrudan yürünebilir kampüse geç
-  return <Navigate to="/" replace />;
+  return (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <CampusTopBar />
+      <CampusMapView />
+    </Suspense>
+  );
 }
 
 export function LearningAreaRoutePage() {
