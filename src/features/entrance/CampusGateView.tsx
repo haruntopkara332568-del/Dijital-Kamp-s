@@ -29,8 +29,8 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
   };
 
   return (
-    <main className="min-h-dvh flex flex-col items-center justify-center px-3 sm:px-6 py-4 sm:py-6 bg-gradient-to-b from-[var(--sky-warm-top)]/40 via-[var(--campus-canvas)] to-[var(--stone-light)]/45 select-none">
-      <div className="w-full max-w-3xl flex flex-col space-y-3.5 text-center">
+    <main className="min-h-dvh w-full flex flex-col items-center justify-center px-2 sm:px-5 py-2 sm:py-3 bg-gradient-to-b from-[var(--sky-warm-top)]/40 via-[var(--campus-canvas)] to-[var(--stone-light)]/45 select-none">
+      <div className="w-full max-w-[min(98vw,calc((100dvh-165px)*16/9+40px))] flex flex-col space-y-2 text-center">
         <FullscreenButton className="self-end" showText={false} />
         {/* Taç Kapı Ana Sahne Kartı: Sinematik 3D Animasyon Taç Kapı */}
         <div className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] shadow-md overflow-hidden">
@@ -39,8 +39,8 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
             className="h-1.5 w-full bg-gradient-to-r from-[var(--seljuk-navy)] via-[var(--seljuk-teal)] to-[var(--terracotta)]"
           />
 
-          <div className="px-3.5 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6 space-y-3.5">
-            <header className="mx-auto max-w-xl space-y-1.5 px-1">
+          <div className="px-3 pt-2.5 pb-3.5 sm:px-5 sm:pt-3.5 sm:pb-4 space-y-2.5">
+            <header className="mx-auto max-w-2xl space-y-0.5 px-1">
               <h1 className="sr-only">{CAMPUS_BRAND.name}</h1>
               <p className="text-sm sm:text-base font-semibold leading-snug text-[var(--seljuk-navy)]">
                 {CAMPUS_BRAND.subtitle}
@@ -51,7 +51,7 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
             </header>
 
             {/* Sinematik 3D Taç Kapı Görsel Çerçevesi */}
-            <div className="relative rounded-xl overflow-hidden border border-[var(--campus-border)] shadow-inner max-w-[680px] mx-auto bg-[var(--stone-cream)]">
+            <div className="relative rounded-xl overflow-hidden border border-[var(--campus-border)] shadow-inner w-full max-w-[min(100%,calc((100dvh-215px)*16/9))] mx-auto bg-[var(--stone-cream)]">
               <button
                 type="button"
                 onClick={handleOpenGate}

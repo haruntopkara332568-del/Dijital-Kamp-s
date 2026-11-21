@@ -547,15 +547,18 @@ export function WalkableCampusView({
 
     const config = getSceneConfig(currentScene);
 
-    // Canvas boyutunu container'a göre uyarla
+    // Canvas boyutunu container ve ekran alanına göre tam uyarla
     const updateCanvasSize = () => {
       const rect = container.getBoundingClientRect();
-      const newW = Math.max(320, Math.floor(rect.width));
-      const newH = Math.max(240, Math.floor(rect.height));
-      canvas.width = newW;
-      canvas.height = newH;
+      const rawW = rect.width || container.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 800);
+      const rawH = rect.height || container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 600);
+      const newW = Math.max(320, Math.round(rawW));
+      const newH = Math.max(240, Math.round(rawH));
       if (engineRef.current) {
         engineRef.current.updateDimensions(newW, newH);
+      } else {
+        canvas.width = newW;
+        canvas.height = newH;
       }
     };
 
@@ -661,15 +664,22 @@ export function WalkableCampusView({
         for (const entry of entries) {
           const { width, height } = entry.contentRect;
           if (width > 0 && height > 0 && engineRef.current) {
-            engineRef.current.updateDimensions(Math.floor(width), Math.floor(height));
+            engineRef.current.updateDimensions(Math.round(width), Math.round(height));
           }
         }
       });
       ro.observe(container);
     }
 
+    window.addEventListener('resize', updateCanvasSize);
+    document.addEventListener('fullscreenchange', updateCanvasSize);
+    document.addEventListener('webkitfullscreenchange', updateCanvasSize);
+
     return () => {
       ro?.disconnect();
+      window.removeEventListener('resize', updateCanvasSize);
+      document.removeEventListener('fullscreenchange', updateCanvasSize);
+      document.removeEventListener('webkitfullscreenchange', updateCanvasSize);
       if (typeof window !== 'undefined') {
         delete (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine }).__WALKABLE_ENGINE__;
       }
