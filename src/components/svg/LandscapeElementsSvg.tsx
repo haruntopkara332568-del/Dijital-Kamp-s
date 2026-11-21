@@ -43,26 +43,26 @@ export function IsometricSignpost({ x, y }: { x: number; y: number }) {
       />
       <rect x="-2.5" y="-74" width="5" height="74" rx="1" fill="var(--wood-deep)" />
 
-      {/* Sol Üst Ok: Gezi ve Keşif */}
+      {/* Sol Üst Ok: Hayalden Gerçeğe */}
       <path
-        d="M -68 -68 L -1 -68 L -1 -53 L -68 -53 L -75 -60.5 Z"
+        d="M -76 -68 L -1 -68 L -1 -53 L -76 -53 L -83 -60.5 Z"
         fill="var(--campus-surface)"
         stroke="var(--terracotta)"
         strokeWidth="1.4"
       />
-      <text x="-36" y="-57.5" textAnchor="middle" fontSize="8.2" fontWeight="700" fill="var(--seljuk-navy)">
-        ← Gezi ve Keşif
+      <text x="-40" y="-57.5" textAnchor="middle" fontSize="7.8" fontWeight="700" fill="var(--seljuk-navy)">
+        ← Hayalden Gerçeğe
       </text>
 
-      {/* Sağ Orta Ok: Kitap ve Hikâye */}
+      {/* Sağ Orta Ok: Hikâyeden Hayata */}
       <path
-        d="M 1 -44 L 70 -44 L 77 -36.5 L 70 -29 L 1 -29 Z"
+        d="M 1 -44 L 76 -44 L 83 -36.5 L 76 -29 L 1 -29 Z"
         fill="var(--seljuk-teal-soft)"
         stroke="var(--seljuk-teal)"
         strokeWidth="1.4"
       />
-      <text x="37" y="-33.5" textAnchor="middle" fontSize="8.2" fontWeight="700" fill="var(--seljuk-navy)">
-        Kitap ve Hikâye →
+      <text x="40" y="-33.5" textAnchor="middle" fontSize="7.8" fontWeight="700" fill="var(--seljuk-navy)">
+        Hikâyeden Hayata →
       </text>
 
       {/* Alt Plaka: Merkez Meydan */}

@@ -19,10 +19,12 @@ import {
   renderSultanhaniEntities,
   SULTANHANI_SQUARE,
 } from './engine/sultanhaniSceneRenderer';
+import { ensureClassroomAssetsLoaded } from './engine/assetLoader';
 import { WalkableControlsOverlay } from './components/WalkableControlsOverlay';
 import { SmartBoardModal } from './components/SmartBoardModal';
 import { GradeBoardModal } from './components/GradeBoardModal';
 import { TableStationModal } from './components/TableStationModal';
+import { CAMPUS_BUILDING_NAMES } from '@/src/data/brandConfig';
 import { useOptionalCampus } from '../../app/CampusProviders';
 import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } from './types';
 import type { MissionStageId } from '@/src/types/campus';
@@ -114,8 +116,68 @@ export function WalkableCampusView({
     }
   }, [onBackToMap, navigate]);
 
-  useEffect(() => () => {
-    if (sceneTransitionTimer.current !== null) clearTimeout(sceneTransitionTimer.current);
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (sceneTransitionTimer.current !== null) clearTimeout(sceneTransitionTimer.current);
+    };
+  }, []);
+
+  const handleEnterEnglishClassroom = useCallback(() => {
+    if (sceneTransitionTimer.current !== null) return;
+    engineRef.current?.setInputDisabled(true);
+    setActiveZone(null);
+    setTeleportMessage("İngilizce Sınıfı'na Giriliyor... 🎒✨");
+    setIsTeleporting(true);
+
+    const minTransitionDuration = new Promise((resolve) => setTimeout(resolve, 400));
+
+    void Promise.all([
+      ensureClassroomAssetsLoaded(4000),
+      minTransitionDuration,
+    ]).then(([loaded]) => {
+      if (!isMountedRef.current) return;
+      if (!loaded) {
+        setIsTeleporting(false);
+        engineRef.current?.setInputDisabled(false);
+        sceneTransitionTimer.current = null;
+        setUnreachableMessage(
+          'Sinematik sınıf sahnesi yüklenemedi. Lütfen internet bağlantını kontrol edip tekrar dene.',
+        );
+        setTimeout(() => {
+          if (isMountedRef.current) setUnreachableMessage(null);
+        }, 4000);
+        return;
+      }
+
+      lastClassroomPosRef.current = { x: 480, y: 520 };
+      setCurrentScene('classroom');
+
+      sceneTransitionTimer.current = setTimeout(() => {
+        sceneTransitionTimer.current = null;
+        if (isMountedRef.current) {
+          setIsTeleporting(false);
+        }
+      }, 150);
+    });
+  }, []);
+
+  const handleExitClassroomToCourtyard = useCallback(() => {
+    if (sceneTransitionTimer.current !== null) return;
+    engineRef.current?.setInputDisabled(true);
+    setActiveZone(null);
+    setTeleportMessage("Kampüs Avlusu'na Çıkılıyor... 🌳✨");
+    setIsTeleporting(true);
+    sceneTransitionTimer.current = setTimeout(() => {
+      sceneTransitionTimer.current = null;
+      if (isMountedRef.current) {
+        setIsTeleporting(false);
+        lastCourtyardPosRef.current = { x: 970, y: 350 };
+        setCurrentScene('courtyard');
+      }
+    }, 400);
   }, []);
 
   const handleExitSultanhani = useCallback(() => {
@@ -126,9 +188,11 @@ export function WalkableCampusView({
     setIsTeleporting(true);
     sceneTransitionTimer.current = setTimeout(() => {
       sceneTransitionTimer.current = null;
-      setIsTeleporting(false);
-      lastClassroomPosRef.current = { x: 480, y: 180 };
-      setCurrentScene('classroom');
+      if (isMountedRef.current) {
+        setIsTeleporting(false);
+        lastClassroomPosRef.current = { x: 480, y: 180 };
+        setCurrentScene('classroom');
+      }
     }, 600);
   }, []);
 
@@ -205,8 +269,10 @@ export function WalkableCampusView({
             radius: 80,
             action: () => {
               if (!selectedGradeRef.current) {
-                setUnreachableMessage("Önce Sınıf Seçim Panosu'ndan sınıfını seç.");
-                setTimeout(() => setUnreachableMessage(null), 3000);
+                setUnreachableMessage(
+                  'Kampüsümüz artık 2, 3 ve 4. sınıflara yönelik çalışmalar sunuyor. Devam etmek için sınıfını seçebilirsin.',
+                );
+                setTimeout(() => setUnreachableMessage(null), 3500);
                 return;
               }
 
@@ -270,8 +336,10 @@ export function WalkableCampusView({
             radius: 75,
             action: () => {
               if (!selectedGradeRef.current) {
-                setUnreachableMessage("Önce Sınıf Seçim Panosu'ndan sınıfını seç.");
-                setTimeout(() => setUnreachableMessage(null), 3000);
+                setUnreachableMessage(
+                  'Kampüsümüz artık 2, 3 ve 4. sınıflara yönelik çalışmalar sunuyor. Devam etmek için sınıfını seçebilirsin.',
+                );
+                setTimeout(() => setUnreachableMessage(null), 3500);
                 return;
               }
               setActiveTableStage('kesfet');
@@ -292,8 +360,10 @@ export function WalkableCampusView({
             radius: 75,
             action: () => {
               if (!selectedGradeRef.current) {
-                setUnreachableMessage("Önce Sınıf Seçim Panosu'ndan sınıfını seç.");
-                setTimeout(() => setUnreachableMessage(null), 3000);
+                setUnreachableMessage(
+                  'Kampüsümüz artık 2, 3 ve 4. sınıflara yönelik çalışmalar sunuyor. Devam etmek için sınıfını seçebilirsin.',
+                );
+                setTimeout(() => setUnreachableMessage(null), 3500);
                 return;
               }
               if (!completedStagesRef.current.includes('kesfet')) {
@@ -319,8 +389,10 @@ export function WalkableCampusView({
             radius: 75,
             action: () => {
               if (!selectedGradeRef.current) {
-                setUnreachableMessage("Önce Sınıf Seçim Panosu'ndan sınıfını seç.");
-                setTimeout(() => setUnreachableMessage(null), 3000);
+                setUnreachableMessage(
+                  'Kampüsümüz artık 2, 3 ve 4. sınıflara yönelik çalışmalar sunuyor. Devam etmek için sınıfını seçebilirsin.',
+                );
+                setTimeout(() => setUnreachableMessage(null), 3500);
                 return;
               }
               if (!completedStagesRef.current.includes('ogren')) {
@@ -346,8 +418,10 @@ export function WalkableCampusView({
             radius: 75,
             action: () => {
               if (!selectedGradeRef.current) {
-                setUnreachableMessage("Önce Sınıf Seçim Panosu'ndan sınıfını seç.");
-                setTimeout(() => setUnreachableMessage(null), 3000);
+                setUnreachableMessage(
+                  'Kampüsümüz artık 2, 3 ve 4. sınıflara yönelik çalışmalar sunuyor. Devam etmek için sınıfını seçebilirsin.',
+                );
+                setTimeout(() => setUnreachableMessage(null), 3500);
                 return;
               }
               if (!completedStagesRef.current.includes('uret')) {
@@ -366,11 +440,7 @@ export function WalkableCampusView({
             x: 480,
             y: 590,
             radius: 65,
-            action: () => {
-              // Avluya dönerken İngilizce binasının kapı önüne çık
-              lastCourtyardPosRef.current = { x: 970, y: 350 };
-              setCurrentScene('courtyard');
-            },
+            action: handleExitClassroomToCourtyard,
           },
         ];
 
@@ -385,12 +455,12 @@ export function WalkableCampusView({
 
       // 'courtyard' (Kampüs Avlusu)
       const obstacles: SceneObstacle[] = [
-        // İngilizce Dünyası Binası
-        { id: 'bldg-english', name: 'İngilizce Dünyası', x: 860, y: 140, width: 220, height: 180 },
-        // Gezi ve Keşif Binası
-        { id: 'bldg-discovery', name: 'Gezi ve Keşif', x: 180, y: 140, width: 220, height: 180 },
-        // Kitap ve Hikâye Dünyası
-        { id: 'bldg-library', name: 'Kitap Dünyası', x: 580, y: 100, width: 240, height: 170 },
+        // İngilizce Öğreniyorum Binası
+        { id: 'bldg-english', name: CAMPUS_BUILDING_NAMES.english, x: 860, y: 140, width: 220, height: 180 },
+        // Hayalden Gerçeğe Binası
+        { id: 'bldg-discovery', name: CAMPUS_BUILDING_NAMES.discovery, x: 180, y: 140, width: 220, height: 180 },
+        // Hikâyeden Hayata Binası
+        { id: 'bldg-library', name: CAMPUS_BUILDING_NAMES.library, x: 580, y: 100, width: 240, height: 170 },
         // Kampüs Yolculuğum Köşkü
         { id: 'pavilion-journey', name: 'Kampüs Yolculuğum', x: 220, y: 560, width: 190, height: 140 },
         // Keşif Görevleri Panosu
@@ -400,47 +470,42 @@ export function WalkableCampusView({
       ];
 
       const interactiveZones: InteractiveZone[] = [
-        // 1. İngilizce Dünyası Binası (Sinematik Sınıf ve Akıllı Tahta)
-        // 1. İngilizce Dünyası Binası (Şu aşamada tek aktif sınıf)
+        // 1. İngilizce Öğreniyorum Binası (Sinematik Sınıf ve Akıllı Tahta)
         {
           id: 'enter-english',
-          name: 'İngilizce Dünyası',
+          name: CAMPUS_BUILDING_NAMES.english,
           prompt: 'İngilizce Sınıfına Gir',
           x: 970,
           y: 335,
           radius: 75,
-          action: () => {
-            lastClassroomPosRef.current = { x: 480, y: 520 };
-            setActiveZone(null);
-            setCurrentScene('classroom');
-          },
+          action: handleEnterEnglishClassroom,
         },
-        // 2. Gezi ve Keşif Binası (Görsel olarak durur - Yakında)
+        // 2. Hayalden Gerçeğe Binası (Görsel olarak durur - Yakında)
         {
           id: 'enter-discovery',
-          name: 'Gezi ve Keşif',
+          name: CAMPUS_BUILDING_NAMES.discovery,
           prompt: 'Yakında Açılacak',
           x: 290,
           y: 335,
           radius: 70,
           action: () => {
             setUnreachableMessage(
-              'Gezi ve Keşif binası yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+              'Hayalden Gerçeğe binası yakında açılacak. Şu an İngilizce Öğreniyorum sınıfı aktiftir.',
             );
             setTimeout(() => setUnreachableMessage(null), 3500);
           },
         },
-        // 3. Kitap ve Hikâye Dünyası Binası (Görsel olarak durur - Yakında)
+        // 3. Hikâyeden Hayata Binası (Görsel olarak durur - Yakında)
         {
           id: 'enter-library',
-          name: 'Kitap ve Hikâye Dünyası',
+          name: CAMPUS_BUILDING_NAMES.library,
           prompt: 'Yakında Açılacak',
           x: 700,
           y: 285,
           radius: 70,
           action: () => {
             setUnreachableMessage(
-              'Kitap ve Hikâye Dünyası yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+              'Hikâyeden Hayata binası yakında açılacak. Şu an İngilizce Öğreniyorum sınıfı aktiftir.',
             );
             setTimeout(() => setUnreachableMessage(null), 3500);
           },
@@ -455,7 +520,7 @@ export function WalkableCampusView({
           radius: 70,
           action: () => {
             setUnreachableMessage(
-              'Kampüs Yolculuğum köşkü yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+              'Kampüs Yolculuğum köşkü yakında açılacak. Şu an İngilizce Öğreniyorum sınıfı aktiftir.',
             );
             setTimeout(() => setUnreachableMessage(null), 3500);
           },
@@ -470,7 +535,7 @@ export function WalkableCampusView({
           radius: 70,
           action: () => {
             setUnreachableMessage(
-              'Görev panosu yakında açılacak. Şu an İngilizce Dünyası sınıfı aktiftir.',
+              'Görev panosu yakında açılacak. Şu an İngilizce Öğreniyorum sınıfı aktiftir.',
             );
             setTimeout(() => setUnreachableMessage(null), 3500);
           },
@@ -516,7 +581,7 @@ export function WalkableCampusView({
         interactiveZones,
       };
     },
-    [handleExitSultanhani],
+    [handleExitSultanhani, handleEnterEnglishClassroom, handleExitClassroomToCourtyard],
   );
 
   // Sınıf seçimi veya aşama tamamlanma durumunda etkileşim bölgelerini (prompt ve kilitleri) dinamik güncelle
@@ -537,15 +602,18 @@ export function WalkableCampusView({
 
     const config = getSceneConfig(currentScene);
 
-    // Canvas boyutunu container'a göre uyarla
+    // Canvas boyutunu container ve ekran alanına göre tam uyarla
     const updateCanvasSize = () => {
       const rect = container.getBoundingClientRect();
-      const newW = Math.max(320, Math.floor(rect.width));
-      const newH = Math.max(240, Math.floor(rect.height));
-      canvas.width = newW;
-      canvas.height = newH;
+      const rawW = rect.width || container.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 800);
+      const rawH = rect.height || container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 600);
+      const newW = Math.max(320, Math.round(rawW));
+      const newH = Math.max(240, Math.round(rawH));
       if (engineRef.current) {
         engineRef.current.updateDimensions(newW, newH);
+      } else {
+        canvas.width = newW;
+        canvas.height = newH;
       }
     };
 
@@ -651,15 +719,22 @@ export function WalkableCampusView({
         for (const entry of entries) {
           const { width, height } = entry.contentRect;
           if (width > 0 && height > 0 && engineRef.current) {
-            engineRef.current.updateDimensions(Math.floor(width), Math.floor(height));
+            engineRef.current.updateDimensions(Math.round(width), Math.round(height));
           }
         }
       });
       ro.observe(container);
     }
 
+    window.addEventListener('resize', updateCanvasSize);
+    document.addEventListener('fullscreenchange', updateCanvasSize);
+    document.addEventListener('webkitfullscreenchange', updateCanvasSize);
+
     return () => {
       ro?.disconnect();
+      window.removeEventListener('resize', updateCanvasSize);
+      document.removeEventListener('fullscreenchange', updateCanvasSize);
+      document.removeEventListener('webkitfullscreenchange', updateCanvasSize);
       if (typeof window !== 'undefined') {
         delete (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine }).__WALKABLE_ENGINE__;
       }
@@ -717,10 +792,7 @@ export function WalkableCampusView({
         onBackToMap={handleBackToMap}
         onExitClassroom={
           currentScene === 'classroom'
-            ? () => {
-                lastCourtyardPosRef.current = { x: 970, y: 350 };
-                setCurrentScene('courtyard');
-              }
+            ? handleExitClassroomToCourtyard
             : currentScene === 'sultanhani_square'
               ? handleExitSultanhani
               : undefined

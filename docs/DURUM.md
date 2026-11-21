@@ -1,3 +1,195 @@
+# Proje Durum Raporu — Gerçek Tam Ekran Sahne Yerleşimi, Kenar Boşluklarının Giderilmesi ve Kesintisiz Tam Ekran Deneyimi
+
+## 1. Kapsam ve Uygulanan Tam Ekran Sahne Mimarisi
+- **Kök Sorun Tespiti**:
+  - `WalkableCanvasEngine` içinde sahne dünyası (`courtyard`: `1400×900`, `classroom`: `960×640`, `sultanhani_square`: `1106×932`) ekran çözünürlüğünden bağımsız olarak `1:1` (`zoom = 1`) çiziliyordu. Bu nedenle `960×640`'tan veya `1400×900`'den büyük ekranlarda (ör. `1280×720`, `1366×768`, `1920×1080`) sahne sol üste sıkışıyor, sağda ve altta geniş boş alanlar oluşuyordu.
+  - Karşılama ekranında (`CampusGateView`) `max-w-3xl` (`768px`) ve `max-w-[680px]` (`680px`) sabit sınırları taç kapı sahnesini ekranın ortasında küçük bir kutuya hapsediyordu.
+- **Tek Koordinat ve En-Boy Oranı Koruyucu Ölçeklendirme (`WalkableCanvasEngine.ts`)**:
+  - `calculateZoom()` ile kullanılabilir ekran genişliği ve yüksekliğine göre tekil ölçek katsayısı (`this.zoom`) hesaplanır (`ctx.scale(zoom, zoom)`). Görseller yatay veya dikey esnetilmez; binalar, masalar ve karakter orantısız büyütülmez.
+  - `config.width * zoom >= canvas.width` ve `config.height * zoom >= canvas.height` kuralı sayesinde sağda, solda, üstte veya altta tek piksel dahi boşluk kalmaz.
+  - Geniş ekran (`16:9` vb.) dikey kadraj yönetimi (`updateCamera`) ile yalnızca üst ve alt dekoratif kenarlar kırpılarak sınıftaki akıllı tahta, sınıf panosu, dört etkinlik masası, çıkış eşiği ve karakter; avluda ise tüm binalar, kubbeler, taş kitabeler ve şadırvan aynı anda görünür kadrajda tutulur.
+  - Fare ve dokunmatik tıklama koordinatları (`handlePointerDown`), `worldX = clickX / zoom + camera.x` ve `worldY = clickY / zoom + camera.y` dönüşümüyle ölçeklendirilmiş sahneyle birebir eşleşir; W-A-S-D, yön tuşları, `[E]` etkileşimi ve çarpışma kutuları %100 korunur.
+  - Tam ekran açılıp kapatıldığında veya pencere boyutu değiştiğinde (`ResizeObserver`, `resize`, `fullscreenchange`) `updateDimensions` sahneyi anında yeniden boyutlandırır ve karakterin konumunu sıfırlamaz.
+- **Karşılama ve Taç Kapı Sahnesi (`CampusGateView.tsx`)**:
+  - Sabit `max-w-3xl` ve `max-w-[680px]` kısıtları kaldırılarak `100dvh` ve `100vw` tabanlı, `16:9` en-boy oranını koruyan responsive sahne yerleşimine geçildi. Türk bayrağı, mukarnas süslemeler, başlıklar ve giriş düğmeleri taşma olmadan tam görünür biçimde korundu.
+- **Kesintisiz Tam Ekran Kontrolü (`fullscreen.ts`, `useFullscreen.ts`, `FullscreenButton.tsx`)**:
+  - `document.documentElement` üzerinde tetiklenen tam ekran modu **Taç Kapı → Avlu → Sınıf → Avlu** geçişlerinde kesintisiz devam eder.
+
+## 2. Doğrulama Durumu
+- `npm run typecheck`: 0 hata.
+- `npm run lint`: 0 hata, 0 uyarı.
+- `npm run test`: 146 / 146 test geçti (6 test dosyası, `src/test/fullscreen.test.tsx` [9 test] dahil).
+- `npm run build`: 1.03s içinde hatasız üretim derlemesi.
+
+---
+
+# Proje Durum Raporu — Bakım ve Onarım 03A: Cihaz Tabanlı Öğrenci Profil Altyapısı ve Mimari Duvar Yazılarının Düzeltilmesi
+
+## 1. Kapsam ve Başlangıç Referansı
+- **Çalışma Dalı**: `fix/maintenance-03a-student-profiles`
+- **Başlangıç Commit'i**: `ade5e87e9936319137584020596ca414495ee026` (`origin/fix/maintenance-02-brand-identity`)
+- **İki Temel İş Paketi**:
+  1. **Bölüm A — Mimari Duvar Yazıları (Referans Görsel: `media_1795087163114_b1ad8909.jpg`)**:
+     - Taç kapıdaki ve avludaki üç öğrenme yapısındaki levha çerçeveleri, tabela kutuları, yapay kenarlıklar ve asılı tabela görüntüsü tamamen kaldırılmıştır.
+     - Yazılar (`YENİ NESİL KÜLLİYE`, `İNGİLİZCE ÖĞRENİYORUM`, `HAYALDEN GERÇEĞE`, `HİKÂYEDEN HAYATA`), doğrudan taş ve Selçuklu çinisi dokusuna kazınmış/oyulmuş 2 katmanlı rölyef mimari duvar yazısı olarak yeniden render edilmiştir.
+     - "AÇIK" ve "YAKINDA" rozetleri bina duvarlarından temizlenmiş, avludaki ahşap totem ve etkileşim balonlarında muhafaza edilmiştir.
+     - Kampüsteki 5 yapı (İngilizce Öğreniyorum, Hayalden Gerçeğe, Hikâyeden Hayata, Yolculuğum Çardağı, Büfe) eksiksiz korunmuştur.
+     - Commit 1: `c12a2c9` (`fix(visual): integrate building names directly into architectural walls`).
+  2. **Bölüm B — Cihaz Tabanlı Öğrenci Profil Altyapısı**:
+     - Kişisel veri (ad, soyad, e-posta, telefon, şifre) kesinlikle istenmeyen, cihaz tabanlı izole profil yönetimi (`StudentProfile`).
+     - Yalnızca ilkokul (2, 3 ve 4. sınıflar) seçimi desteklenir; 5, 6 ve 7. sınıflar engellenmiştir.
+     - 8 hazır takma ad çipi (Gezgin, Bilgin, Kâşif, Yıldız vb.) ve 8 Selçuklu/doğa temalı renkli avatar.
+     - Eski tekil verinin güvenli göçü (`runLegacyMigrationIfNeeded`): `dek_campus_v1_state` ve IndexedDB çizimleri veri kaybı olmadan `prof_legacy_student` (Gezgin) profiline aktarılmıştır.
+     - İki öğrenci (ör. Gezgin ve Bilgin) arasında tam durum ve çizim izolasyonu.
+     - Profil silme işlemi iki adımlı ve vazgeçilebilir onay (`confirm-delete`) ile korunmuştur.
+     - Commit 2: `f051c17` (`feat(profiles): implement device-based student profiles and isolated local storage`).
+
+## 2. 36 Doğrulama Senaryosunun Kapsamı
+- **Grup 1: İlk Açılış ve Profil Oluşturma (Senaryo 1-6)**: Profil yokken modal açılması, takma ad & avatar & sınıf seçimi, taç kapı ve avlu entegrasyonu (Doğrulandı).
+- **Grup 2: Çoklu Öğrenci ve Veri İzolasyonu (Senaryo 7-12)**: Gezgin (3. sınıf) ve Bilgin (4. sınıf) arasında geçiş, masalar, ilerleme haritaları ve bağımsız saklama (Doğrulandı).
+- **Grup 3: Çizim ve Görsel Ürün İzolasyonu (Senaryo 13-16)**: IndexedDB üzerindeki `profileId` etiketlemesi ile her öğrencinin yalnızca kendi eserlerini görmesi (Doğrulandı).
+- **Grup 4: Eski Tekil Verinin Göçü (Senaryo 17-22)**: `dek_campus_v1_state`'ten sıfır veri kaybı ile Gezgin profiline sorunsuz geçiş (Doğrulandı).
+- **Grup 5: Sınıf Düzeyi Kısıtları (Senaryo 23-28)**: 2, 3 ve 4. sınıflar dışında seçim yapılamaması; 5, 6, 7'nin reddedilmesi (Doğrulandı).
+- **Grup 6: Profil Silme ve Güvenlik (Senaryo 29-32)**: İki adımlı onay, diğer öğrencinin verisinin silinmemesi, son profil silindiğinde yeni profil modalı (Doğrulandı).
+- **Grup 7: UI Entegrasyonu ve Erişilebilirlik (Senaryo 33-36)**: `CampusTopBar` ve `WalkableControlsOverlay` üzerinde avatar, ad ve sınıf hapı; klavye, odak yönetimi ve mobil dokunma (Doğrulandı).
+
+---
+
+# Proje Durum Raporu — Bakım ve Onarım 02: Marka Kimliği ve Mimari Kitabelerin Yeniden Yapılandırılması
+
+## Kapsam ve Temel İlke
+- **Çalışma Dalı**: `fix/maintenance-02-brand-identity`
+- **Başlangıç Referansı**: `33dcf4a07cbc680dd3f7c212fd03f42af9e34c58` (`origin/fix/maintenance-01-primary-school-scope`)
+- **Kesinleşmiş Marka Kimliği**:
+  - **Ana Marka Adı**: Yeni Nesil Külliye (Mimari kitabelerde: `YENİ NESİL KÜLLİYE`)
+  - **Alt Başlık**: Dijital Öğrenme Kampüsü
+  - **Slogan**: Geçmişin bilgeliği, geleceğin öğrenme dünyası
+- **Kesinleşmiş Bina İsimleri**:
+  - `ingilizce-dunyasi` → **İngilizce Öğreniyorum** (Kitabe: `İNGİLİZCE ÖĞRENİYORUM`)
+  - `gezi-ve-kesif` → **Hayalden Gerçeğe** (Kitabe: `HAYALDEN GERÇEĞE`)
+  - `kitap-ve-hikaye-dunyasi` → **Hikâyeden Hayata** (Kitabe: `HİKÂYEDEN HAYATA`)
+  - *Teknik ID'ler, rota adresleri ve ilerleme anahtarları geriye dönük uyumluluk için değiştirilmemiştir.*
+- **Merkezî Yapılandırma Kaynağı**: `src/data/brandConfig.ts` tek ve güvenilir kaynak (Single Source of Truth) olarak oluşturulmuş; tüm aktif arayüzler, başlıklar, Canvas kitabeleri ve SVG çizimleri bu yapılandırmadan beslenmiştir.
+- **Mimari Kitabe Uygulamaları**:
+  - **Ana Taç Kapı**: Selçuklu taş mimarisine tam uyumlu, sıcak kumtaşı renkli, oyma taş kabartma efektli ve köşelerinde Selçuklu rozetleri bulunan mimari taş kitabe katmanı entegre edilmiştir. Tıklamayı engellemez (`pointer-events-none`) ve kapı açılışında perspektifle orantılı genişler.
+  - **Üç Öğrenme Binası**: Canvas tabanlı avlu sahnesinde modern reklam tabelası yerine, sıcak kumtaşı/kireçtaşı dokulu taş kitabeler, taşa işlenmiş derinlikli harfler ve Selçuklu çinisi esintili zarif durum mühürleri (`● AÇIK` / `YAKINDA`) çizilmiştir.
+  - **Avlu Yön Totemi**: Yön levhaları yeni bina isimleriyle (`İngilizce Öğreniyorum ➜`, `⇦ Hayalden Gerçeğe`, `⇧ Hikâyeden Hayata`) güncellenmiş; eski isimlerin yeni kitabelerle aynı anda görünmesi kesinlikle engellenmiştir.
+
+## Onaylanmış Pedagojik Kararlar (Gelecek Geliştirmeler İçin Kayıt)
+Aşağıdaki modeller proje için kesinleşmiş pedagojik çerçevedir (Bu aşamada yeni kod yazılmamış, belgelenmiştir):
+1. **İngilizce Öğreniyorum**:
+   - Keşfet
+   - Öğren
+   - Üret
+   - Paylaş
+   - Büyük Görev — Gerçek Yaşam Deneyimi (Çalışan öğrenme masaları ve akıllı tahta altyapısı korunacaktır).
+2. **Hayalden Gerçeğe**:
+   - Merak Et
+   - Yola Çık
+   - Keşfet
+   - Deneyimle
+   - Gerçeğe Taşı (Kültürel miras ve doğal mekânların deneyimleyerek öğrenilmesi).
+3. **Hikâyeden Hayata**:
+   - Oku
+   - Hikâyenin İçine Gir (Öğrenci okuduğu hikâyenin mekânını keşfeder, karakterlerle etkileşime girer ve kararlarıyla olayların akışını değiştirebilir).
+   - Hayal Et
+   - Kendi Hikâyeni Yaz
+   - Hikâyeni Canlandır (Öğrenci yazdığı hikâyeyi hazır karakterler, mekânlar ve hareketli animasyonlar yardımıyla canlandırabilir; ilk sürümde ücretsiz, hazır sahneler ve tekrar kullanılabilir animasyonlar esas alınacaktır).
+
+## 20 Senaryo Doğrulama Özeti
+1. **Senaryo 1 (Ana Giriş Ekranı)**: Doğru marka adı, alt başlık ve slogan eksiksiz görünür (DOĞRULANDI).
+2. **Senaryo 2 (Kapı Geçişi)**: Mevcut sinematik kapı açılış ve avluya geçiş animasyonu çalışır (DOĞRULANDI).
+3. **Senaryo 3 (Kampüs Avlusu)**: Üç yeni bina adı (`İngilizce Öğreniyorum`, `Hayalden Gerçeğe`, `Hikâyeden Hayata`) görünür (DOĞRULANDI).
+4. **Senaryo 4 (Kamera Hareketi)**: Kitabeler binaların sahne koordinatlarına bağlıdır ve kamerayla birlikte hareket eder (DOĞRULANDI).
+5. **Senaryo 5 (İngilizce Binasına Giriş)**: Kapıya yaklaşıldığında "İngilizce Sınıfına Gir" çalışır ve sınıf açılır (DOĞRULANDI).
+6. **Senaryo 6 (Sınıf Seçim Panosu)**: Sınıf panosunda yalnızca 2, 3 ve 4. sınıflar görünür; 5, 6, 7 kesinlikle yoktur (DOĞRULANDI).
+7. **Senaryo 7 (Keşfet Masası)**: 3. sınıf Tanışma Bahçesi etkinliği sorunsuz tamamlanır (DOĞRULANDI).
+8. **Senaryo 8 (Öğren Masası)**: Selamlaşma Kartları ve seslendirmeler sorunsuz çalışır (DOĞRULANDI).
+9. **Senaryo 9 (Üret Masası)**: 6.3.1 hata düzeltmesi teyitlidir; kelime seçimleri ve otomatik geçişler çalışır (DOĞRULANDI).
+10. **Senaryo 10 (Paylaş Masası)**: Kısa Konuşma ve tamamlama kaydı sorunsuz çalışır (DOĞRULANDI).
+11. **Senaryo 11 (Akıllı Tahta Kilidi)**: Dört masa tamamlanmadan tahta açılmaz kuralı korunur (DOĞRULANDI).
+12. **Senaryo 12 (Sultanhanı Macerası)**: Kervansaray meydanında aynı karakterle yürüyüş ve taç kapı eşiğinden geçiş çalışır (DOĞRULANDI).
+13. **Senaryo 13 (Gezi Binası / Hayalden Gerçeğe)**: Yaklaşıldığında "Hayalden Gerçeğe binası yakında açılacak" uyarısı verir (DOĞRULANDI).
+14. **Senaryo 14 (Hikâye Binası / Hikâyeden Hayata)**: Yaklaşıldığında "Hikâyeden Hayata binası yakında açılacak" uyarısı verir (DOĞRULANDI).
+15. **Senaryo 15 (Tarayıcı Başlığı)**: `<title>Yeni Nesil Külliye — Dijital Öğrenme Kampüsü</title>` görünür (DOĞRULANDI).
+16. **Senaryo 16 (Eski Öğrenci Kayıtları)**: 5, 6, 7. sınıf ilerlemeleri Yolculuğum'da Arşiv Kaydı olarak korunur (DOĞRULANDI).
+17. **Senaryo 17 (Mobil Giriş Ekranı)**: Mobil cihazlarda kitabe kesilmez, taşmaz ve orantılı ölçeklenir (DOĞRULANDI).
+18. **Senaryo 18 (Mobil Kampüs Avlusu)**: Mobilde bina kitabeleri ve dokunmatik kontroller sorunsuz çalışır (DOĞRULANDI).
+19. **Senaryo 19 (Ekran Boyutu Değişikliği)**: Responsive değişimlerde kitabe konumu kapı ve binalardan ayrılmaz (DOĞRULANDI).
+20. **Senaryo 20 (Sayfa Yenileme)**: Yenilemede marka adı ve öğrenci ilerleme kayıtları korunur (DOĞRULANDI).
+
+## Kalite Güvencesi ve Test Sonuçları
+- **`npm run typecheck`**: 0 hata (Tam TypeScript tip uyumu).
+- **`npm run lint`**: 0 hata, 0 uyarı (ESLint temiz).
+- **`npm run test`**: 123 / 123 test GEÇTİ (%100 başarı; `brandIdentityMaintenance.test.tsx` [7], `campus.test.tsx` [33], `primaryScopeMaintenance.test.tsx` [9], `walkable.test.tsx` [74]).
+- **Playwright E2E (`e2e/brand_identity_maintenance.spec.ts`)**:
+  - Chromium (Desktop): 6 / 6 test GEÇTİ (8.2s).
+  - Mobile Chrome (Pixel 5): 6 / 6 test GEÇTİ (5.8s).
+- **Playwright E2E (`e2e/primary_school_scope_maintenance.spec.ts`)**:
+  - Chromium (Desktop): 7 / 7 test GEÇTİ (9.4s).
+- **`npm run build`**: 913ms içinde hatasız ve optimize edilmiş üretim paketi (`dist/`).
+- **Görsel Kanıt Dosyaları (`docs/assets/`)**:
+  - `brand_gate_desktop.png` (Masaüstü Taç Kapı Kitabesi)
+  - `brand_gate_mobile.png` (Mobil Taç Kapı Kitabesi)
+  - `brand_courtyard_desktop.png` (Masaüstü Avlu Genel Görünümü)
+  - `brand_courtyard_mobile.png` (Mobil Avlu Genel Görünümü)
+  - `brand_english_building_close.png` (İngilizce Öğreniyorum Bina Kitabesi Yakın Görünüm)
+  - `brand_discovery_building_close.png` (Hayalden Gerçeğe Bina Kitabesi Yakın Görünüm)
+  - `brand_library_building_close.png` (Hikâyeden Hayata Bina Kitabesi Yakın Görünüm)
+  - `brand_classroom_grade_board.png` (Sınıf İçi ve 2, 3, 4. Sınıf Seçim Panosu)
+
+---
+
+# Proje Durum Raporu — Bakım ve Onarım 01: Proje Kapsamının İlkokul Düzeyiyle Sınırlandırılması (2, 3, 4. Sınıflar)
+
+## Kapsam ve Temel İlke
+- **Çalışma Dalı**: `fix/maintenance-01-primary-school-scope`
+- **Başlangıç Referansı**: `496d1303ce4b968a57e3dfd368e5ff2fa10e75a6` (`origin/main`)
+- **İlkokul Sınırlandırması**: Dijital Eğitim Kampüsü yalnızca ilkokul 2, 3 ve 4. sınıf düzeylerine hizmet verecek şekilde daraltılmıştır. 5, 6 ve 7. sınıflar aktif kullanıcı deneyiminden, sınıf seçim alanlarından ve erişilebilir öğrenme akışlarından tamamen çıkarılmıştır. 1. sınıf sisteme eklenmemiştir.
+- **Korunan Sistemler (%100 Dokunulmadı)**:
+  - Selçuklu Taç Kapı giriş sahnesi ve animasyon geçişi,
+  - Yürünebilir kampüs avlusu, izometrik yapılar ve karakter hareket motoru,
+  - İngilizce sınıfı mimarisi, Sınıf Panosu ve Akıllı Tahta kilidi,
+  - 3. sınıfın dört öğrenme masası (Keşfet, Öğren, Üret [6.3.1 sıralama düzeltmesiyle], Paylaş),
+  - Sultanhanı Kervansarayı meydanında aynı karakterle yürüyüş ve taç kapıdan geçiş macerası,
+  - Seslendirme servisi, tasarım sistemi belirteçleri ve depolama mimarisi.
+- **Veri Güvenliği ve Geçmiş Kayıtların Korunması**:
+  - `dek_campus_v1_state` içindeki mevcut 5, 6, 7. sınıf görev kayıtları (`missionProgressByKey`) ve çizimleri ASLA silinmemiş, güvenle muhafaza edilmiştir.
+  - Tarayıcısında önceden 5, 6 veya 7. sınıf seçili kalan öğrenciler için `selectedGrade` otomatik ve sessizce `null` (seçilmemiş) durumuna getirilmiş, nazik bilgilendirme sunulmuştur:
+    *"Kampüsümüz artık 2, 3 ve 4. sınıflara yönelik çalışmalar sunuyor. Devam etmek için sınıfını seçebilirsin."*
+  - Yolculuğum sayfasında eski ortaokul kayıtları "Arşiv Kaydı" etiketiyle korunmuş, ortaokul görev başlatma butonları devre dışı bırakılmıştır.
+
+## 18 Senaryo Doğrulama Özeti
+1. **Senaryo 1 (Sınıf Panosu İlk Açılış)**: Sınıf panosu açıldığında yalnızca 2, 3 ve 4. sınıflar listelenir (DOĞRULANDI).
+2. **Senaryo 2 (2. Sınıf Seçimi)**: 2. sınıf seçildiğinde akıllı tahta koruma altındadır; öğrenci masalara yönlendirilir (DOĞRULANDI).
+3. **Senaryo 3 (3. Sınıf Seçimi)**: 3. sınıf seçildiğinde 4 masa bitirilince Sultanhanı açılır (DOĞRULANDI).
+4. **Senaryo 4 (4. Sınıf Seçimi)**: 4. sınıf seçildiğinde akıllı tahta koruma altındadır (DOĞRULANDI).
+5. **Senaryo 5 (Ortaokul Butonlarının Yokluğu)**: Sınıf panosunda 5, 6, 7 seçenekleri ve "Ortaokul Kademesi" kesinlikle yoktur (DOĞRULANDI).
+6. **Senaryo 6 (Eski 5. Sınıf Verisiyle Giriş)**: `selectedGrade` null olur; bilgilendirme mesajı gösterilir (DOĞRULANDI).
+7. **Senaryo 7 (Eski 6. Sınıf Verisiyle Giriş)**: `selectedGrade` null olur; bilgilendirme mesajı gösterilir (DOĞRULANDI).
+8. **Senaryo 8 (Eski 7. Sınıf Verisiyle Giriş)**: `selectedGrade` null olur; bilgilendirme mesajı gösterilir (DOĞRULANDI).
+9. **Senaryo 9 (Eski Öğrenci İlerleme Kayıtlarının Korunması)**: 5, 6, 7. sınıf çizim ve ilerlemeleri localStorage'da saklanır (DOĞRULANDI).
+10. **Senaryo 10 (Bozuk / Geçersiz Sınıf Verisi)**: 99, "abc", -1 verilerinde sistem çökmez; null'a döner (DOĞRULANDI).
+11. **Senaryo 11 (Doğrudan URL ile Görev Açma Denemesi)**: Desteklenmeyen/seçilmemiş sınıfla `/gorev/...` veya `/alan/...` erişimi doğrudan ana sayfaya yönlendirir (DOĞRULANDI).
+12. **Senaryo 12 (İngilizce Sınıfında Sınıf Seçimsiz Etkileşim)**: Masalara veya tahtaya tıklandığında nazik yönlendirme uyarısı verilir (DOĞRULANDI).
+13. **Senaryo 13 (3. Sınıf Keşfet Masası)**: Tanışma Bahçesi etkinliği sorunsuz çalışır (DOĞRULANDI).
+14. **Senaryo 14 (3. Sınıf Öğren Masası)**: Selamlaşma Kartları sorunsuz çalışır (DOĞRULANDI).
+15. **Senaryo 15 (3. Sınıf Üret Masası)**: 6.3.1 hata düzeltmesi teyitlidir; "Good morning" seçiminde takılma yaşanmaz (DOĞRULANDI).
+16. **Senaryo 16 (3. Sınıf Paylaş Masası)**: Kısa Konuşma etkinliği ve tamamlama kaydı sorunsuz çalışır (DOĞRULANDI).
+17. **Senaryo 17 (3. Sınıf Akıllı Tahta)**: Kervansaray meydanında aynı karakterle yürüyüş ve taç kapıdan geçiş çalışır (DOĞRULANDI).
+18. **Senaryo 18 (Masaüstü ve Mobil Uyumu)**: Desktop Chromium ve Mobile Chrome üzerinde tam uyum teyit edilmiştir (DOĞRULANDI).
+
+## Kalite Güvencesi ve Test Sonuçları
+- **`npm run typecheck`**: 0 hata (Strict TypeScript uyumu).
+- **`npm run lint`**: 0 hata, 0 uyarı (ESLint).
+- **`npm run test`**: 116 / 116 test GEÇTİ (%100 başarı; `campus.test.tsx` [33], `walkable.test.tsx` [74], `primaryScopeMaintenance.test.tsx` [9]).
+- **Playwright E2E (`e2e/primary_school_scope_maintenance.spec.ts`)**:
+  - Chromium (Desktop): 7 / 7 test GEÇTİ (9.1s)
+  - Mobile Chrome (Pixel 5): 7 / 7 test GEÇTİ (9.3s)
+- **`npm run build`**: 822ms içinde hatasız ve optimize edilmiş üretim paketi (`dist/`).
+
+---
+
 # Proje Durum Raporu — Sürüm 6.5.4 (Aşama 6.5: Sultanhanı Meydanında Aynı Karakterle Yürüyüş ve Taç Kapıdan Geçiş / İlk Teslim)
 
 ## 3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Yürünebilir Meydan & Taç Kapı Açıklığından Geçiş (`feat/english-four-learning-tables`)

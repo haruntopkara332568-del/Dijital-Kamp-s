@@ -1527,18 +1527,21 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
     );
 
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(/SINIF SEÇİM PANOSU/i);
-    // İlkokul ve Ortaokul grupları
+    // Yalnızca İlkokul Kademesi sunulur, Ortaokul tamamen kaldırılmıştır
     expect(screen.getByText(/İlkokul Kademesi/i)).toBeInTheDocument();
-    expect(screen.getByText(/Ortaokul Kademesi/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Ortaokul Kademesi/i)).not.toBeInTheDocument();
 
-    // 2, 3, 4, 5, 6, 7 sınıfları mevcut
+    // 2, 3, 4 sınıfları mevcut; 5, 6, 7 kesinlikle yok
     expect(screen.getByRole('button', { name: /2\. Sınıf/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /5\. Sınıf/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /7\. Sınıf/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /3\. Sınıf/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /4\. Sınıf/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /5\. Sınıf/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /6\. Sınıf/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /7\. Sınıf/i })).not.toBeInTheDocument();
 
     // Sınıf seç (öğrencinin kolay seçimi için doğrudan tıklandığında kaydeder)
-    fireEvent.click(screen.getByRole('button', { name: /5\. Sınıf/i }));
-    expect(handleSelectGrade).toHaveBeenCalledWith(5);
+    fireEvent.click(screen.getByRole('button', { name: /4\. Sınıf/i }));
+    expect(handleSelectGrade).toHaveBeenCalledWith(4);
     expect(screen.getByText(/Sınıfın başarıyla kaydedildi/i)).toBeInTheDocument();
   });
 
@@ -1683,7 +1686,7 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
         state: 'idle',
         speed: 160,
         walkFrame: 0,
-        grade: 5,
+        grade: 4,
       };
 
       expect(() => {
@@ -1823,10 +1826,10 @@ function createClassroomMockCtx(): CanvasRenderingContext2D {
 
     it('64. Diğer sınıflar veya diğer masalar Tanışma Bahçesi prototipinden etkilenmez, orijinal akışlarını korur', async () => {
       await clearAllCampusData();
-      // 5. Sınıf Keşfet Masası
+      // 2. Sınıf Keşfet Masası
       saveStudentState({
         ...createInitialStudentState(),
-        selectedGrade: 5,
+        selectedGrade: 2,
       });
 
       const { rerender } = render(

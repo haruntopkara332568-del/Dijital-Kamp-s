@@ -140,11 +140,11 @@ export interface VisualLanguageSpec {
 /**
  * 2–7. sınıflar için ortak Anadolu–Selçuklu kimliği içinde yaşa uyarlanabilir görsel dil kuralları.
  */
-export function getVisualLanguageSpec(grade: GradeLevel | null | undefined): VisualLanguageSpec {
+export function getVisualLanguageSpec(grade: unknown): VisualLanguageSpec {
   const profile = getGradeProfile(grade);
   if (profile.tier === 'ilkokul') {
     return {
-      grade: profile.grade,
+      grade: profile.grade as GradeLevel,
       tier: profile.tier,
       label: profile.label,
       touchMinHeightClass: 'min-h-[48px]',
@@ -161,7 +161,7 @@ export function getVisualLanguageSpec(grade: GradeLevel | null | undefined): Vis
   }
 
   return {
-    grade: profile.grade,
+    grade: profile.grade as GradeLevel,
     tier: profile.tier,
     label: profile.label,
     touchMinHeightClass: 'min-h-[44px]',

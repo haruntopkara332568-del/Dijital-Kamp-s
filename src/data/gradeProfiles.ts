@@ -1,11 +1,16 @@
-import type { GradeLevel, GradeProfile } from '@/src/types/campus';
+import {
+  type GradeProfile,
+  type LegacyGradeLevel,
+  type SupportedGradeProfile,
+  isSupportedGrade,
+} from '@/src/types/campus';
 
 /**
  * İlk Tasarım Parametreleri — Proje Sahibi Tarafından Belirlenen Başlangıç Değerleri.
  * Not: Bu değerler ilk sürüm tasarım parametreleridir; bilimsel sınır iddiası taşımaz.
  * Tek kaynak dosyası olarak yönetilir; sınıf düzeyi farklılıkları bu şemadan beslenir.
  */
-export const GRADE_PROFILES: Record<GradeLevel, GradeProfile> = {
+export const GRADE_PROFILES: Record<LegacyGradeLevel, GradeProfile> = {
   2: {
     grade: 2,
     tier: 'ilkokul',
@@ -146,18 +151,18 @@ export const GRADE_PROFILES: Record<GradeLevel, GradeProfile> = {
   },
 };
 
-export const GRADE_LIST: GradeProfile[] = [
-  GRADE_PROFILES[2],
-  GRADE_PROFILES[3],
-  GRADE_PROFILES[4],
-  GRADE_PROFILES[5],
-  GRADE_PROFILES[6],
-  GRADE_PROFILES[7],
+/**
+ * Aktif kullanıcı arayüzünde (seçim panosu, menüler, karşılama) sunulan sınıflar (Yalnızca İlkokul 2, 3, 4).
+ */
+export const GRADE_LIST: SupportedGradeProfile[] = [
+  GRADE_PROFILES[2] as SupportedGradeProfile,
+  GRADE_PROFILES[3] as SupportedGradeProfile,
+  GRADE_PROFILES[4] as SupportedGradeProfile,
 ];
 
-export function getGradeProfile(grade: GradeLevel | null | undefined): GradeProfile {
-  if (!grade || !(grade in GRADE_PROFILES)) {
-    return GRADE_PROFILES[2];
+export function getGradeProfile(grade: unknown): GradeProfile {
+  if (isSupportedGrade(grade)) {
+    return GRADE_PROFILES[grade];
   }
-  return GRADE_PROFILES[grade];
+  return GRADE_PROFILES[2];
 }

@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { Link, Navigate, useParams } from 'react-router';
 import { useCampus } from '@/src/app/CampusProviders';
+import { isSupportedGrade } from '@/src/types/campus';
 import { CampusTopBar } from '@/src/components/CampusTopBar';
 
 const CampusGateView = lazy(() =>
@@ -29,6 +30,9 @@ const WalkableCampusView = lazy(() =>
     default: m.WalkableCampusView,
   })),
 );
+const CampusMapView = lazy(() =>
+  import('@/src/features/campus-map/CampusMapView').then((m) => ({ default: m.CampusMapView })),
+);
 
 function RouteLoadingFallback() {
   return (
@@ -41,7 +45,15 @@ function RouteLoadingFallback() {
 }
 
 export function HomeRoutePage() {
-  const { hydrated, state, markGateSeen, replayWelcomeFlow } = useCampus();
+  const {
+    hydrated,
+    state,
+    markGateSeen,
+    replayWelcomeFlow,
+    profiles,
+    activeProfile,
+    openProfileModal,
+  } = useCampus();
 
   if (!hydrated) {
     return (
@@ -57,7 +69,14 @@ export function HomeRoutePage() {
   if (!state.hasSeenGate) {
     return (
       <Suspense fallback={<RouteLoadingFallback />}>
-        <CampusGateView onEnterCourtyard={markGateSeen} />
+        <CampusGateView
+          onEnterCourtyard={() => {
+            markGateSeen();
+            if (profiles.length === 0 || !activeProfile) {
+              openProfileModal();
+            }
+          }}
+        />
       </Suspense>
     );
   }
@@ -71,12 +90,20 @@ export function HomeRoutePage() {
 }
 
 export function CampusMapRoutePage() {
-  // Eski /harita URL'si açıldığında yönlendirme döngüsü veya 404 olmadan doğrudan yürünebilir kampüse geç
-  return <Navigate to="/" replace />;
+  return (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <CampusTopBar />
+      <CampusMapView />
+    </Suspense>
+  );
 }
 
 export function LearningAreaRoutePage() {
   const { id } = useParams<{ id: string }>();
+  const { state } = useCampus();
+  if (!state.selectedGrade || !isSupportedGrade(state.selectedGrade)) {
+    return <Navigate to="/" replace />;
+  }
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
       <LearningAreaView areaId={id ?? ''} />
@@ -86,6 +113,10 @@ export function LearningAreaRoutePage() {
 
 export function MissionRoutePage() {
   const { id } = useParams<{ id: string }>();
+  const { state } = useCampus();
+  if (!state.selectedGrade || !isSupportedGrade(state.selectedGrade)) {
+    return <Navigate to="/" replace />;
+  }
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
       <MissionRunnerView missionId={id ?? ''} />

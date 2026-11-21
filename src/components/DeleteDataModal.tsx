@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { AlertTriangle, X } from 'lucide-react';
+import { CAMPUS_BRAND } from '@/src/data/brandConfig';
 import { useCampus } from '@/src/app/CampusProviders';
 
 interface DeleteDataModalProps {
@@ -65,7 +66,7 @@ export function DeleteDataModal({ open, onClose }: DeleteDataModalProps) {
         {step === 1 ? (
           <div className="space-y-3 text-sm text-[var(--campus-ink)]">
             <p>
-              Bu işlem yalnızca Dijital Eğitim Kampüsü içindeki kayıtlarını temizler. Cihazındaki diğer
+              Bu işlem yalnızca {CAMPUS_BRAND.name} içindeki kayıtlarını temizler. Cihazındaki diğer
               uygulamalara veya dosyalara dokunulmaz.
             </p>
             <ul className="list-disc pl-5 space-y-1 text-[var(--campus-ink-muted)]">

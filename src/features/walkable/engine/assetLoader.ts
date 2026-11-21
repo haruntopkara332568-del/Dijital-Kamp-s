@@ -157,5 +157,69 @@ export function preloadWalkableAssets() {
   getLoadedAsset(SULTANHANI_INNER_COURTYARD_ASSET_URL);
 }
 
+/**
+ * İngilizce Dünyası / Sınıf sinematik 2.5B görsel varlıklarının hazır olup olmadığını denetler.
+ */
+export function areClassroomAssetsLoaded(): boolean {
+  if (typeof window === 'undefined') return true;
+  const bg = getClassroomBackgroundAsset();
+  const desk = getClassroomDeskAsset();
+  const podium = getClassroomTeacherPodiumAsset();
+  const bookshelf = getClassroomBookshelfAsset();
+  return Boolean(bg && desk && podium && bookshelf);
+}
+
+/**
+ * İngilizce sınıfı sinematik görsel varlıklarının yüklenmesini ve decode edilmesini bekler.
+ * Sahneye girmeden önce tüm görsel varlıkların hazır olmasını garanti eder.
+ */
+export async function ensureClassroomAssetsLoaded(timeoutMs = 4000): Promise<boolean> {
+  if (typeof window === 'undefined') return true;
+  if (areClassroomAssetsLoaded()) return true;
+
+  const urls = [
+    CLASSROOM_BACKGROUND_ASSET_URL,
+    CLASSROOM_DESK_ASSET_URL,
+    CLASSROOM_DESK_MIRRORED_ASSET_URL,
+    CLASSROOM_TEACHER_PODIUM_ASSET_URL,
+    CLASSROOM_BOOKSHELF_ASSET_URL,
+    SMARTBOARD_SCREEN_OFF_ASSET_URL,
+  ];
+
+  const loadPromises = urls.map((url) => {
+    let img = assetCache.get(url);
+    if (!img) {
+      img = new Image();
+      img.src = url;
+      assetCache.set(url, img);
+    }
+    if (img.complete && img.naturalWidth > 0) {
+      return Promise.resolve(true);
+    }
+    return new Promise<boolean>((resolve) => {
+      const targetImg = img!;
+      const onDone = () => {
+        targetImg.removeEventListener('load', onDone);
+        targetImg.removeEventListener('error', onError);
+        resolve(targetImg.naturalWidth > 0);
+      };
+      const onError = () => {
+        targetImg.removeEventListener('load', onDone);
+        targetImg.removeEventListener('error', onError);
+        resolve(false);
+      };
+      targetImg.addEventListener('load', onDone);
+      targetImg.addEventListener('error', onError);
+    });
+  });
+
+  const timeoutPromise = new Promise<boolean>((resolve) => {
+    setTimeout(() => resolve(false), timeoutMs);
+  });
+
+  await Promise.race([Promise.all(loadPromises), timeoutPromise]);
+  return areClassroomAssetsLoaded();
+}
+
 // Modül yüklendiğinde otomatik ön yükleme başlat
 preloadWalkableAssets();

@@ -32,6 +32,7 @@ export class WalkableCanvasEngine {
 
   public player: PlayerCharacter;
   public camera: Position = { x: 0, y: 0 };
+  public zoom: number = 1;
 
   private keysDown: Set<string> = new Set();
   private virtualMovement: Position = { x: 0, y: 0 };
@@ -180,12 +181,15 @@ export class WalkableCanvasEngine {
   }
 
   /**
-   * Ekran boyutu değiştiğinde canvas boyutunu ve kamerayı günceller.
+   * Ekran boyutu değiştiğinde canvas boyutunu, ölçeği (zoom) ve kamerayı günceller.
    */
   public updateDimensions(width: number, height: number) {
     this.canvas.width = Math.max(320, width);
     this.canvas.height = Math.max(240, height);
     this.updateCamera(true);
+    if (this.isRunning) {
+      this.render();
+    }
   }
 
   /**
@@ -246,9 +250,10 @@ export class WalkableCanvasEngine {
     const clickX = (e.clientX - (rect.left || 0)) * scaleX;
     const clickY = (e.clientY - (rect.top || 0)) * scaleY;
 
-    // Ekran koordinatını dünya koordinatına çevir
-    const worldX = clickX + this.camera.x;
-    const worldY = clickY + this.camera.y;
+    // Ekran koordinatını kamera ölçeği (zoom) ve kaydırmasıyla dünya koordinatına çevir
+    const zoom = this.zoom || 1;
+    const worldX = clickX / zoom + this.camera.x;
+    const worldY = clickY / zoom + this.camera.y;
 
     this.navigateWalkToTarget(worldX, worldY);
   };
@@ -460,13 +465,50 @@ export class WalkableCanvasEngine {
     return false;
   }
 
+  private calculateZoom(): number {
+    const w = this.canvas.width || 800;
+    const h = this.canvas.height || 600;
+    const minZoom = w >= 1024 ? 0.85 : 1;
+    return Math.max(minZoom, w / this.config.width, h / this.config.height);
+  }
+
   private updateCamera(instant: boolean = false) {
-    const viewportW = this.canvas.width;
-    const viewportH = this.canvas.height;
+    this.zoom = this.calculateZoom();
+    const viewportW = this.canvas.width / this.zoom;
+    const viewportH = this.canvas.height / this.zoom;
+
+    const maxCamX = Math.max(0, this.config.width - viewportW);
+    const maxCamY = Math.max(0, this.config.height - viewportH);
 
     // Karakteri ekranda ortalama hedefi
-    const targetCamX = Math.max(0, Math.min(this.config.width - viewportW, this.player.x - viewportW / 2));
-    const targetCamY = Math.max(0, Math.min(this.config.height - viewportH, this.player.y - viewportH / 2));
+    const targetCamX = Math.max(0, Math.min(maxCamX, this.player.x - viewportW / 2));
+
+    let targetCamY: number;
+    if (maxCamY > 0 && maxCamY <= 160) {
+      // Geniş ekran (16:9 vb.) kadraj yönetimi: Sahnenin tamamına yakını dikeyde sığdığında,
+      // yalnızca üst ve alt dekoratif kenarları kırparak kritik yapıları (akıllı tahta,
+      // sınıf panosu, bina kubbeleri/kitabeleri, masalar ve karakter) aynı anda görünür tutar.
+      const northThreshold = this.config.height * 0.35;
+      const midNorthThreshold = this.config.height * 0.5;
+      const southThreshold = this.config.height * 0.82;
+      const maxWalkSouth = this.config.height * 0.92;
+      const baseCamY = maxCamY * 0.22;
+
+      if (this.player.y <= northThreshold) {
+        targetCamY = 0;
+      } else if (this.player.y <= midNorthThreshold) {
+        const t = (this.player.y - northThreshold) / (midNorthThreshold - northThreshold);
+        targetCamY = baseCamY * t;
+      } else if (this.player.y <= southThreshold) {
+        targetCamY = baseCamY;
+      } else {
+        const t = Math.min(1, (this.player.y - southThreshold) / (maxWalkSouth - southThreshold));
+        targetCamY = baseCamY + (maxCamY - baseCamY) * t;
+      }
+      targetCamY = Math.max(0, Math.min(maxCamY, targetCamY));
+    } else {
+      targetCamY = Math.max(0, Math.min(maxCamY, this.player.y - viewportH / 2));
+    }
 
     if (instant) {
       this.camera.x = targetCamX;
@@ -529,8 +571,20 @@ export class WalkableCanvasEngine {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
-    // Kamerayı uygula
-    ctx.translate(-Math.round(this.camera.x), -Math.round(this.camera.y));
+    // Kamerayı ve sahne en-boy oranını koruyan tam ekran ölçeğini (zoom) uygula
+    const zoom = this.zoom || 1;
+    const offsetX = Math.min(
+      0,
+      Math.max(canvas.width - this.config.width * zoom, -Math.round(this.camera.x * zoom)),
+    );
+    const offsetY = Math.min(
+      0,
+      Math.max(canvas.height - this.config.height * zoom, -Math.round(this.camera.y * zoom)),
+    );
+    ctx.translate(offsetX, offsetY);
+    if (zoom !== 1) {
+      ctx.scale(zoom, zoom);
+    }
 
     if (this.callbacks.onRenderEntities) {
       // 1. Zemin ve Arka Plan Katmanı

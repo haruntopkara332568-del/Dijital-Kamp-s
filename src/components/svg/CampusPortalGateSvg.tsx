@@ -21,7 +21,7 @@ export function CampusPortalGateSvg({ isOpen, compact = false }: CampusPortalGat
       role="img"
       aria-label="Hafif izometrik perspektife sahip Anadolu-Selçuklu taç kapısı, ön meydan basamakları ve ardında açılan aydınlık kampüs avlusu"
     >
-      <title>Dijital Eğitim Kampüsü Taç Kapısı</title>
+      <title>Yeni Nesil Külliye Taç Kapısı</title>
 
       <defs>
         <linearGradient id="portalSkyGrad" x1="0" y1="0" x2="0" y2="1">

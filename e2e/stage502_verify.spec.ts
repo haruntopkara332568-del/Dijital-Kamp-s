@@ -96,10 +96,10 @@ test.describe('Aşama 5.0.2 — Sınıf Seçim Panosu, Akıllı Tahta Kilidi ve 
     await expect(page.getByRole('heading', { level: 2 })).toContainText(/SINIF SEÇİM PANOSU/i);
     await page.screenshot({ path: 'docs/assets/stage502_7_grade_board_modal.png' });
 
-    // 5. Sınıfı seç
-    const grade5Btn = page.getByRole('button', { name: /5\. Sınıf/i });
-    await expect(grade5Btn).toBeVisible();
-    await grade5Btn.click();
+    // 4. Sınıfı seç (İlkokul üst kademesi)
+    const grade4Btn = page.getByRole('button', { name: /4\. Sınıf/i });
+    await expect(grade4Btn).toBeVisible();
+    await grade4Btn.click();
 
     // Başarı mesajı görünür ve modal kendiliğinden kapanır
     await expect(page.getByText(/Sınıfın başarıyla kaydedildi/i)).toBeVisible();

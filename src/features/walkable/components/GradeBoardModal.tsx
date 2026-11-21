@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { X, Check, Sparkles, GraduationCap, School } from 'lucide-react';
+import { X, Check, Sparkles, School } from 'lucide-react';
 import { GRADE_LIST } from '@/src/data/gradeProfiles';
 import type { GradeLevel } from '@/src/types/campus';
 
@@ -46,8 +46,7 @@ function GradeBoardDialog({
     }, 450);
   };
 
-  const primaryGrades = GRADE_LIST.filter((p) => p.tier === 'ilkokul');
-  const middleGrades = GRADE_LIST.filter((p) => p.tier === 'ortaokul');
+  const primaryGrades = GRADE_LIST;
 
   return (
     <div
@@ -97,6 +96,16 @@ function GradeBoardDialog({
 
         {/* Sınıf Kartları Listesi */}
         <div className="p-4 sm:p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+          {/* Bilgilendirme Bildirimi */}
+          {!selectedGrade && (
+            <div className="p-3 rounded-xl bg-[#2a1d13] border border-[#d8972b]/50 text-[#fef08a] text-xs leading-relaxed flex items-start gap-2 shadow-inner animate-in fade-in">
+              <Sparkles className="w-4 h-4 text-[#d8972b] shrink-0 mt-0.5" />
+              <span>
+                Kampüsümüz artık 2, 3 ve 4. sınıflara yönelik çalışmalar sunuyor. Devam etmek için sınıfını seçebilirsin.
+              </span>
+            </div>
+          )}
+
           {/* Başarı Mesajı */}
           {saveSuccess && (
             <div className="p-2.5 rounded-xl bg-[#065f46] text-[#ecfdf5] border border-[#10b981] flex items-center justify-center gap-2 text-xs font-bold animate-in fade-in">
@@ -105,7 +114,7 @@ function GradeBoardDialog({
             </div>
           )}
 
-          {/* 1. İlkokul Kademesi (2, 3, 4. Sınıf) */}
+          {/* İlkokul Kademesi (2, 3, 4. Sınıf) */}
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-[#fef08a] tracking-wider uppercase border-b border-[#5c4532] pb-1">
               <School className="w-4 h-4 text-[#d8972b]" />
@@ -133,46 +142,6 @@ function GradeBoardDialog({
                     </span>
                     <span className="text-[10px] text-[#e2d5c0]/80">
                       {profile.grade === 2 ? 'Temel Seviye' : profile.grade === 3 ? 'Gelişim' : 'Mezuniyet'}
-                    </span>
-                    {isSelected && (
-                      <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#10b981] border border-[#fef08a] flex items-center justify-center text-white">
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 2. Ortaokul Kademesi (5, 6, 7. Sınıf) */}
-          <div className="space-y-2 pt-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#93c5fd] tracking-wider uppercase border-b border-[#5c4532] pb-1">
-              <GraduationCap className="w-4 h-4 text-[#60a5fa]" />
-              <span>Ortaokul Kademesi</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2.5">
-              {middleGrades.map((profile) => {
-                const isSelected = activeGrade === profile.grade;
-                return (
-                  <button
-                    key={profile.grade}
-                    type="button"
-                    onClick={() => {
-                      setActiveGrade(profile.grade);
-                      handleSave(profile.grade);
-                    }}
-                    className={`relative p-3 rounded-xl border-2 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 min-h-[72px] ${
-                      isSelected
-                        ? 'bg-[#0e768a] border-[#fef08a] text-white shadow-lg ring-2 ring-[#d8972b]'
-                        : 'bg-[#2f2014] hover:bg-[#3d2b1d] border-[#5c4532] text-[#e2d5c0] hover:border-[#bca888]'
-                    }`}
-                  >
-                    <span className="text-base sm:text-lg font-black tracking-tight font-serif">
-                      {profile.grade}. Sınıf
-                    </span>
-                    <span className="text-[10px] text-[#e2d5c0]/80">
-                      {profile.grade === 5 ? 'Ortaokul Giriş' : profile.grade === 6 ? 'Keşif' : 'İleri Seviye'}
                     </span>
                     {isSelected && (
                       <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#10b981] border border-[#fef08a] flex items-center justify-center text-white">

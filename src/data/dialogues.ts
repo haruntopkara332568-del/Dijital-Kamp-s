@@ -37,7 +37,7 @@ export const GUIDED_TOUR_STOPS: GuidedTourStop[] = [
   {
     id: 'tour-gezi',
     areaId: 'gezi-ve-kesif',
-    title: '1. Durak: Gezi ve Keşif',
+    title: '1. Durak: Hayalden Gerçeğe',
     ilkokulDialogue: {
       id: 'tour-gezi-ilkokul',
       speaker: 'Kampüs Arkadaşı',
@@ -57,7 +57,7 @@ export const GUIDED_TOUR_STOPS: GuidedTourStop[] = [
       speaker: 'Kampüs Arkadaşı',
       segments: [
         {
-          text: 'Gezi ve Keşif alanında farklı yapıları malzeme, biçim, işlev ve süsleme yönünden karşılaştırıyoruz.',
+          text: 'Hayalden Gerçeğe alanında farklı yapıları malzeme, biçim, işlev ve süsleme yönünden karşılaştırıyoruz.',
           lang: 'tr-TR',
         },
       ],
@@ -70,7 +70,7 @@ export const GUIDED_TOUR_STOPS: GuidedTourStop[] = [
   {
     id: 'tour-ingilizce',
     areaId: 'ingilizce-dunyasi',
-    title: '2. Durak: İngilizce Dünyası',
+    title: '2. Durak: İngilizce Öğreniyorum',
     ilkokulDialogue: {
       id: 'tour-ingilizce-ilkokul',
       speaker: 'Kampüs Arkadaşı',
@@ -90,7 +90,7 @@ export const GUIDED_TOUR_STOPS: GuidedTourStop[] = [
       speaker: 'Kampüs Arkadaşı',
       segments: [
         {
-          text: 'İngilizce Dünyası bölümünde gözlemlerinle bağlantılı kelimeleri ve örnek cümleleri bağlam içinde inceliyoruz.',
+          text: 'İngilizce Öğreniyorum bölümünde gözlemlerinle bağlantılı kelimeleri ve örnek cümleleri bağlam içinde inceliyoruz.',
           lang: 'tr-TR',
         },
       ],
@@ -103,7 +103,7 @@ export const GUIDED_TOUR_STOPS: GuidedTourStop[] = [
   {
     id: 'tour-kitap',
     areaId: 'kitap-ve-hikaye-dunyasi',
-    title: '3. Durak: Kitap ve Hikâye Dünyası',
+    title: '3. Durak: Hikâyeden Hayata',
     ilkokulDialogue: {
       id: 'tour-kitap-ilkokul',
       speaker: 'Kampüs Arkadaşı',
@@ -123,7 +123,7 @@ export const GUIDED_TOUR_STOPS: GuidedTourStop[] = [
       speaker: 'Kampüs Arkadaşı',
       segments: [
         {
-          text: 'Kitap ve Hikâye Dünyasında tasarımını gerekçeli anlatımla birleştirip tek bir PNG çalışmasına dönüştürebilirsin.',
+          text: 'Hikâyeden Hayata alanında tasarımını gerekçeli anlatımla birleştirip tek bir PNG çalışmasına dönüştürebilirsin.',
           lang: 'tr-TR',
         },
       ],

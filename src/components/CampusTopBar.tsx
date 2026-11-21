@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
-import { Volume2, VolumeX, SlidersHorizontal, Trash2, Compass, Footprints } from 'lucide-react';
+import { Volume2, VolumeX, SlidersHorizontal, Trash2, Compass, Footprints, UserCheck } from 'lucide-react';
 import { useCampus } from '@/src/app/CampusProviders';
 import { GRADE_LIST } from '@/src/data/gradeProfiles';
-import type { GradeLevel } from '@/src/types/campus';
+import { CAMPUS_BRAND } from '@/src/data/brandConfig';
+import { STUDENT_AVATARS, type GradeLevel } from '@/src/types/campus';
+import { FullscreenButton } from './FullscreenButton';
 import { DeleteDataModal } from './DeleteDataModal';
 
 interface CampusTopBarProps {
@@ -19,6 +21,8 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
     setGrade,
     setSpeechEnabled,
     replayWelcomeFlow,
+    activeProfile,
+    openProfileModal,
   } = useCampus();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -52,6 +56,8 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
     { href: '/yolculugum', label: 'Yolculuğum' },
   ];
 
+  const currentAvatar = STUDENT_AVATARS.find((a) => a.id === activeProfile?.avatarId) ?? STUDENT_AVATARS[0];
+
   return (
     <>
       <header className="sticky top-0 z-30 bg-[var(--campus-surface)]/95 backdrop-blur-sm border-b border-[var(--campus-border)]">
@@ -68,7 +74,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
             onClick={(e) => handleNavClick(e, '/')}
             className="min-h-[44px] inline-flex items-center text-base sm:text-lg font-bold tracking-tight text-[var(--seljuk-navy)] whitespace-nowrap shrink-0 hover:text-[var(--seljuk-teal)] transition-colors"
           >
-            Dijital Eğitim Kampüsü
+            {CAMPUS_BRAND.name}
           </Link>
 
           {/* Bölge 2: Tek satırlık temiz gezinme bağlantıları */}
@@ -95,18 +101,46 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
             })}
           </nav>
 
-          {/* Bölge 3: Tek birincil eylem düğmesi (Sınıf ve Ayarlar paneli) */}
-          <div className="flex items-center shrink-0">
+          {/* Bölge 3: Aktif Öğrenci Profili ve Ayarlar Paneli */}
+          <div className="flex items-center gap-2 shrink-0">
+            {activeProfile ? (
+              <button
+                type="button"
+                onClick={openProfileModal}
+                aria-label={`Öğrenci Profili: ${activeProfile.alias}. Öğrenci değiştirmek için tıkla.`}
+                title="Öğrenci Değiştir"
+                className="min-h-[44px] px-3 py-1.5 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-xs sm:text-sm font-bold text-[var(--seljuk-navy)] inline-flex items-center gap-2 cursor-pointer transition-colors shadow-2xs"
+              >
+                <span className="text-base" aria-hidden="true">
+                  {currentAvatar.emoji}
+                </span>
+                <span className="truncate max-w-[90px] sm:max-w-[130px]">{activeProfile.alias}</span>
+                <span className="text-[11px] font-bold text-[var(--seljuk-teal)] bg-[var(--seljuk-teal)]/10 px-1.5 py-0.5 rounded-md inline-block tabular-nums">
+                  {state.selectedGrade || activeProfile.selectedGrade}. Sınıf
+                </span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={openProfileModal}
+                className="min-h-[44px] px-3 py-1.5 rounded-lg border border-[var(--seljuk-teal)]/50 bg-[var(--seljuk-teal)]/10 text-xs sm:text-sm font-bold text-[var(--seljuk-teal)] inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <UserCheck className="w-4 h-4" aria-hidden="true" />
+                <span>Öğrenci Seç</span>
+              </button>
+            )}
+
+            <FullscreenButton variant="header" />
+
             <button
               type="button"
               onClick={() => setDrawerOpen((prev) => !prev)}
               aria-expanded={drawerOpen}
-              className="min-h-[44px] px-3.5 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-sm font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-2 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+              aria-label="Kampüs ayarları ve sınıf paneli"
+              className="min-h-[44px] px-3 py-2 rounded-lg border border-[var(--campus-border)] bg-[var(--stone-cream)] hover:bg-[var(--campus-surface-muted)] text-sm font-semibold text-[var(--seljuk-navy)] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
             >
               <SlidersHorizontal className="w-4 h-4 text-[var(--seljuk-teal)]" aria-hidden="true" />
-              <span className="tabular-nums">
-                {state.selectedGrade ? `${state.selectedGrade}. Sınıf` : 'Sınıf Seç'}
-              </span>
+              <span className="hidden sm:inline">Ayarlar</span>
             </button>
           </div>
         </div>
@@ -133,7 +167,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
           })}
         </nav>
 
-        {/* Açılır Sınıf & Ses & Veri Yönetimi Paneli */}
+        {/* Açılır Sınıf & Ses & Profil & Veri Yönetimi Paneli */}
         {drawerOpen && (
           <div className="border-t border-[var(--campus-border)] bg-[var(--campus-surface)] shadow-sm">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 space-y-4">
@@ -146,6 +180,36 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
                 </div>
               )}
 
+              {/* Aktif Öğrenci Kartı ve Değiştirme */}
+              <div className="p-3.5 rounded-xl bg-[var(--stone-cream)] border border-[var(--campus-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--seljuk-teal)] to-[var(--seljuk-navy)] text-white flex items-center justify-center text-xl shrink-0 shadow-xs">
+                    <span aria-hidden="true">{currentAvatar.emoji}</span>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-[var(--campus-ink-muted)]">Aktif Öğrenci Profili</p>
+                    <p className="text-sm font-bold text-[var(--seljuk-navy)]">
+                      {activeProfile?.alias || 'Gezgin'} •{' '}
+                      <span className="tabular-nums">
+                        {state.selectedGrade || activeProfile?.selectedGrade || 3}. Sınıf
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDrawerOpen(false);
+                    openProfileModal();
+                  }}
+                  className="min-h-[44px] px-4 py-2 rounded-lg bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal)]/90 text-white text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-colors"
+                >
+                  <UserCheck className="w-4 h-4" aria-hidden="true" />
+                  <span>Öğrenci Değiştir</span>
+                </button>
+              </div>
+
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-[var(--seljuk-navy)]">
@@ -154,6 +218,11 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
                   <p className="text-xs text-[var(--campus-ink-muted)]">
                     Sınıfını değiştirdiğinde önceki çalışmaların silinmez; ilgili sınıf düzeyiyle saklanır.
                   </p>
+                  {!state.selectedGrade && (
+                    <p className="mt-2 text-xs text-[var(--seljuk-navy)] bg-[var(--seljuk-teal)]/10 border border-[var(--seljuk-teal)]/20 p-2.5 rounded-lg font-medium leading-relaxed">
+                      Kampüsümüz artık 2, 3 ve 4. sınıflara yönelik çalışmalar sunuyor. Devam etmek için sınıfını seçebilirsin.
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-2" role="group" aria-label="Sınıf seçimi">

@@ -1,4 +1,5 @@
 import type { DrawingDocument, DrawingShapeItem, GradeLevel } from '@/src/types/campus';
+import { CAMPUS_BRAND } from '@/src/data/brandConfig';
 
 const FONT_STACK = "'Avenir Next', 'Segoe UI', system-ui, -apple-system, sans-serif";
 
@@ -273,7 +274,7 @@ export function composeArtifactPngDataUrl(params: {
   let cursorY = padding + 14;
   ctx.fillStyle = '#0e7490';
   ctx.font = `600 18px ${FONT_STACK}`;
-  ctx.fillText(`Dijital Eğitim Kampüsü · ${params.grade}. Sınıf · ${params.missionTitle}`, padding, cursorY);
+  ctx.fillText(`${CAMPUS_BRAND.name} · ${params.grade}. Sınıf · ${params.missionTitle}`, padding, cursorY);
 
   cursorY += 46;
   ctx.fillStyle = '#162231';

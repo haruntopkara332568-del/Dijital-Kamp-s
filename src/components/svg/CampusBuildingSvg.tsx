@@ -19,32 +19,36 @@ interface CampusBuildingGraphicProps {
 export function CampusBuildingGraphic({ buildingId }: CampusBuildingGraphicProps) {
   return (
     <g aria-hidden="true">
-      {/* Sağ-Alta Uzanan Yumuşak 2,5B Zemin Gölgesi */}
-      <polygon
-        points="28,116 96,144 166,112 104,88"
-        fill="var(--iso-shadow)"
-        opacity="0.13"
-      />
+      {/* Ortak İzometrik Taş Kaide Platformu (Köşeli/Prizmatik Binalar İçin) */}
+      {buildingId !== 'kampus-yolculugum' && (
+        <>
+          {/* Sağ-Alta Uzanan Yumuşak 2,5B Zemin Gölgesi */}
+          <polygon
+            points="28,116 96,144 166,112 104,88"
+            fill="var(--iso-shadow)"
+            opacity="0.13"
+          />
 
-      {/* Ortak İzometrik Taş Kaide Platformu */}
-      <polygon
-        points="20,108 90,138 156,108 86,78"
-        fill="var(--stone-light)"
-        stroke="var(--stone-dark)"
-        strokeWidth="1.4"
-      />
-      <polygon
-        points="20,108 90,138 90,144 20,114"
-        fill="var(--stone-mid)"
-        stroke="var(--stone-dark)"
-        strokeWidth="1.2"
-      />
-      <polygon
-        points="90,138 156,108 156,114 90,144"
-        fill="var(--stone-shade)"
-        stroke="var(--stone-dark)"
-        strokeWidth="1.2"
-      />
+          <polygon
+            points="20,108 90,138 156,108 86,78"
+            fill="var(--stone-light)"
+            stroke="var(--stone-dark)"
+            strokeWidth="1.4"
+          />
+          <polygon
+            points="20,108 90,138 90,144 20,114"
+            fill="var(--stone-mid)"
+            stroke="var(--stone-dark)"
+            strokeWidth="1.2"
+          />
+          <polygon
+            points="90,138 156,108 156,114 90,144"
+            fill="var(--stone-shade)"
+            stroke="var(--stone-dark)"
+            strokeWidth="1.2"
+          />
+        </>
+      )}
 
       {/* 1. GEZİ VE KEŞİF: Gözlem Teraslı, Taş ve Toprak Tonlu Keşif Köşkü */}
       {buildingId === 'gezi-ve-kesif' && (
@@ -312,54 +316,247 @@ export function CampusBuildingGraphic({ buildingId }: CampusBuildingGraphicProps
         </g>
       )}
 
-      {/* 5. KAMPÜS YOLCULUĞUM: İkiz Kemerli Düzenli Arşiv Pavilyonu */}
+      {/* 5. KAMPÜS YOLCULUĞU: Anadolu-Selçuklu Gözlemevi (Rasathane) */}
       {buildingId === 'kampus-yolculugum' && (
         <g>
-          {/* Sol Aydınlık Cephe */}
-          <polygon
-            points="32,58 90,84 90,128 32,102"
-            fill="var(--stone-cream)"
-            stroke="var(--seljuk-navy)"
-            strokeWidth="1.6"
-          />
-          {/* Sağ Gölge Cephe */}
-          <polygon
-            points="90,84 144,58 144,102 90,128"
-            fill="var(--stone-shade)"
-            stroke="var(--seljuk-navy)"
-            strokeWidth="1.6"
-          />
+          {/* 1. Zemin Gölgeleri */}
+          <ellipse cx="94" cy="136" rx="58" ry="13" fill="var(--iso-shadow)" opacity="0.15" />
+          <ellipse cx="112" cy="138" rx="42" ry="9" fill="var(--iso-shadow)" opacity="0.10" />
 
-          {/* Düzenli Lacivert Taç Saçak ve Teras */}
-          <polygon
-            points="30,56 88,30 146,56 90,82"
-            fill="var(--stone-light)"
-            stroke="var(--seljuk-navy)"
-            strokeWidth="1.5"
-          />
-          <polygon
-            points="30,56 90,82 90,90 30,64"
-            fill="var(--seljuk-navy)"
-            stroke="var(--seljuk-navy-deep)"
-            strokeWidth="1.2"
-          />
-          <polygon
-            points="90,82 146,56 146,64 90,90"
-            fill="var(--seljuk-navy-shade)"
-            stroke="var(--seljuk-navy-deep)"
-            strokeWidth="1.2"
-          />
+          {/* 2. Dairesel Basamaklı Taş Kaide (3 Basamak) */}
+          {/* Basamak 1 (Alt Taş Kaide) */}
+          <path d="M 34 132 A 52 13.5 0 0 0 138 132 L 138 136 A 52 13.5 0 0 1 34 136 Z" fill="var(--stone-shade)" stroke="var(--stone-dark)" strokeWidth="0.9" />
+          <ellipse cx="86" cy="132" rx="52" ry="13.5" fill="var(--stone-light)" stroke="var(--stone-dark)" strokeWidth="1" />
 
-          {/* İkiz Kemerli Arşiv Nişleri */}
-          <path d="M 40 105 L 40 78 Q 48 70 56 78 L 56 112 Z" fill="var(--seljuk-navy-soft)" stroke="var(--seljuk-navy)" strokeWidth="1.4" />
-          <path d="M 64 116 L 64 88 Q 72 80 80 88 L 80 123 Z" fill="var(--courtyard-sage-soft)" stroke="var(--courtyard-sage)" strokeWidth="1.4" />
-          <rect x="44" y="84" width="8" height="14" rx="1.5" fill="var(--terracotta)" />
-          <rect x="68" y="94" width="8" height="14" rx="1.5" fill="var(--seljuk-teal)" />
+          {/* Basamak 2 (Orta Taş Kaide) */}
+          <path d="M 40 127 A 46 12 0 0 0 132 127 L 132 130 A 46 12 0 0 1 40 130 Z" fill="var(--stone-shade)" stroke="var(--stone-dark)" strokeWidth="0.8" />
+          <ellipse cx="86" cy="127" rx="46" ry="12" fill="var(--stone-cream)" stroke="var(--stone-dark)" strokeWidth="1" />
 
-          {/* Sağ Yüz Kemer Pencere */}
-          <path d="M 108 112 L 108 88 Q 116 80 124 88 L 124 104 Z" fill="var(--seljuk-navy-soft)" stroke="var(--seljuk-navy)" strokeWidth="1.3" />
+          {/* Basamak 3 (Üst Eşik / Stylobate) */}
+          <path d="M 45 122 A 41 10.5 0 0 0 127 122 L 127 125 A 41 10.5 0 0 1 45 125 Z" fill="var(--stone-shade)" stroke="var(--stone-dark)" strokeWidth="0.8" />
+          <ellipse cx="86" cy="122" rx="41" ry="10.5" fill="var(--stone-light)" stroke="var(--stone-deep)" strokeWidth="1.1" />
 
-          <SeljukStarMotif cx={90} cy={69} radius={6} fill="var(--sandstone-gold)" innerFill="var(--stone-cream)" />
+          {/* Taban Yosun/Doku İpuçları */}
+          <path d="M 47 123 Q 50 120 54 122 Q 55 125 49 124 Z" fill="var(--courtyard-sage)" opacity="0.4" />
+          <path d="M 121 123 Q 124 120 126 122 Q 127 125 122 124 Z" fill="var(--courtyard-sage)" opacity="0.4" />
+
+          {/* 3. Silindirik Taş Gövde */}
+          <path d="M 47 64 A 39 9.5 0 0 0 125 64 L 125 122 A 39 9.5 0 0 1 47 122 Z" fill="var(--stone-cream)" stroke="var(--stone-deep)" strokeWidth="1.4" />
+          <path d="M 86 73.5 A 39 9.5 0 0 0 125 64 L 125 122 A 39 9.5 0 0 1 86 131.5 Z" fill="var(--stone-shade)" opacity="0.6" />
+          <path d="M 110 71 A 39 9.5 0 0 0 125 64 L 125 122 A 39 9.5 0 0 1 110 129 Z" fill="var(--stone-dark)" opacity="0.35" />
+
+          {/* İnce Taş Derzleri */}
+          <path d="M 47 75 A 39 9.5 0 0 0 125 75" fill="none" stroke="var(--stone-mid)" strokeWidth="0.7" opacity="0.75" />
+          <path d="M 46.5 87 A 39 9.5 0 0 0 125.5 87" fill="none" stroke="var(--stone-mid)" strokeWidth="0.7" opacity="0.75" />
+          <path d="M 46.2 99 A 39 9.5 0 0 0 125.8 99" fill="none" stroke="var(--stone-mid)" strokeWidth="0.7" opacity="0.75" />
+          <path d="M 46 111 A 39 9.5 0 0 0 126 111" fill="none" stroke="var(--stone-mid)" strokeWidth="0.7" opacity="0.75" />
+
+          {/* 4. Sol Bay (x=53..72): Dairesel Taş Oyma Yıldız Haritası */}
+          <g>
+            <circle cx="62.5" cy="92" r="8.5" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.85" opacity="0.85" />
+            <circle cx="62.5" cy="92" r="6" fill="none" stroke="var(--stone-dark)" strokeWidth="0.5" strokeDasharray="1.5 1" opacity="0.65" />
+            <ellipse cx="62.5" cy="92" rx="8" ry="4" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.6" strokeDasharray="2 1" transform="rotate(-25 62.5 92)" opacity="0.7" />
+            <circle cx="58" cy="89" r="0.8" fill="var(--sandstone-gold)" />
+            <circle cx="62" cy="87" r="0.9" fill="var(--sandstone-gold)" />
+            <circle cx="66" cy="90" r="0.8" fill="var(--sandstone-gold)" />
+            <circle cx="61" cy="95" r="0.8" fill="var(--sandstone-gold)" />
+            <circle cx="65" cy="96" r="0.7" fill="var(--sandstone-gold)" />
+            <line x1="58" y1="89" x2="62" y2="87" stroke="var(--sandstone-gold)" strokeWidth="0.5" opacity="0.75" />
+            <line x1="62" y1="87" x2="66" y2="90" stroke="var(--sandstone-gold)" strokeWidth="0.5" opacity="0.75" />
+            <line x1="62" y1="87" x2="61" y2="95" stroke="var(--sandstone-gold)" strokeWidth="0.5" opacity="0.75" />
+            <line x1="61" y1="95" x2="65" y2="96" stroke="var(--sandstone-gold)" strokeWidth="0.5" opacity="0.75" />
+          </g>
+
+          {/* 5. Orta Bay (x=74..97): Büyük Dairesel Taş Oyma Usturlap ve Koordinat Planisferi */}
+          <g>
+            <circle cx="85.5" cy="92" r="11.5" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.9" opacity="0.9" />
+            <circle cx="85.5" cy="92" r="8.5" fill="none" stroke="var(--stone-dark)" strokeWidth="0.6" opacity="0.7" />
+            <circle cx="85.5" cy="92" r="5" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.6" strokeDasharray="1.5 1" opacity="0.8" />
+            <line x1="85.5" y1="80.5" x2="85.5" y2="103.5" stroke="var(--sandstone-gold)" strokeWidth="0.6" opacity="0.7" />
+            <line x1="74" y1="92" x2="97" y2="92" stroke="var(--sandstone-gold)" strokeWidth="0.6" opacity="0.7" />
+            <line x1="77" y1="83.5" x2="94" y2="100.5" stroke="var(--sandstone-gold)" strokeWidth="0.5" strokeDasharray="1.5 1" opacity="0.65" />
+            <line x1="77" y1="100.5" x2="94" y2="83.5" stroke="var(--sandstone-gold)" strokeWidth="0.5" strokeDasharray="1.5 1" opacity="0.65" />
+            <ellipse cx="85.5" cy="92" rx="10.5" ry="5.5" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.7" transform="rotate(-30 85.5 92)" opacity="0.85" />
+            <circle cx="81" cy="88" r="0.8" fill="var(--sandstone-gold)" />
+            <circle cx="89" cy="87" r="0.8" fill="var(--sandstone-gold)" />
+            <circle cx="91" cy="95" r="0.8" fill="var(--sandstone-gold)" />
+            <circle cx="83" cy="97" r="0.8" fill="var(--sandstone-gold)" />
+          </g>
+
+          {/* 6. Sağ Bay (x=99..119): Üstte Dairesel Madalyon ve Altta Kemerli Ahşap Kapı */}
+          <g>
+            {/* Üst Dairesel Gök Madalyonu */}
+            <circle cx="109" cy="81" r="6.5" fill="var(--stone-shade)" stroke="var(--stone-deep)" strokeWidth="0.8" />
+            <circle cx="109" cy="81" r="5" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.6" strokeDasharray="1.2 0.8" />
+            <line x1="109" y1="75" x2="109" y2="87" stroke="var(--sandstone-gold)" strokeWidth="0.5" opacity="0.7" />
+            <line x1="103" y1="81" x2="115" y2="81" stroke="var(--sandstone-gold)" strokeWidth="0.5" opacity="0.7" />
+            <ellipse cx="109" cy="81" rx="4.5" ry="2.2" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.5" transform="rotate(-20 109 81)" />
+
+            {/* Kemerli Ahşap Giriş Kapısı */}
+            <path d="M 100 123 L 100 96 Q 109 88 118 96 L 118 123 Z" fill="var(--stone-light)" stroke="var(--stone-deep)" strokeWidth="1.1" />
+            <path d="M 102 123 L 102 97 Q 109 90 116 97 L 116 123 Z" fill="var(--wood-deep)" />
+            {/* Sol Kanat */}
+            <path d="M 103 123 L 103 98 Q 109 92 109 92 L 109 123 Z" fill="var(--wood-warm)" />
+            {/* Sağ Kanat */}
+            <path d="M 109 123 L 109 92 Q 109 92 115 98 L 115 123 Z" fill="var(--wood-deep)" opacity="0.8" />
+            <line x1="109" y1="92" x2="109" y2="123" stroke="var(--stone-deep)" strokeWidth="0.8" />
+            {/* Perçinler ve Halka Kulplar */}
+            <circle cx="106" cy="103" r="0.6" fill="var(--sandstone-gold)" />
+            <circle cx="112" cy="103" r="0.6" fill="var(--sandstone-gold)" />
+            <circle cx="106" cy="112" r="0.6" fill="var(--sandstone-gold)" />
+            <circle cx="112" cy="112" r="0.6" fill="var(--sandstone-gold)" />
+            <circle cx="106" cy="118" r="0.6" fill="var(--sandstone-gold)" />
+            <circle cx="112" cy="118" r="0.6" fill="var(--sandstone-gold)" />
+            <circle cx="107" cy="113" r="1.3" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.7" />
+            <circle cx="111" cy="113" r="1.3" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.7" />
+            {/* Kapı Eşiği */}
+            <rect x="99" y="122" width="20" height="2.5" rx="0.5" fill="var(--stone-light)" stroke="var(--stone-deep)" strokeWidth="0.8" />
+          </g>
+
+          {/* 7. Cephe İnce Sütunları (4 Adet: Sütun Kaidesi, Gövde, Başlık) */}
+          {/* Sütun 1 (Sol Uç) */}
+          <rect x="50.5" y="117" width="3.5" height="4" rx="0.6" fill="var(--stone-light)" stroke="var(--stone-deep)" strokeWidth="0.7" />
+          <rect x="51" y="68" width="2.5" height="50" rx="0.4" fill="var(--stone-cream)" stroke="var(--stone-deep)" strokeWidth="0.7" />
+          <path d="M 50 68 L 54.5 68 L 53.5 65 L 51 65 Z" fill="var(--stone-light)" stroke="var(--stone-deep)" strokeWidth="0.7" />
+
+          {/* Sütun 2 (Sol Orta) */}
+          <rect x="71.5" y="121" width="3.5" height="4" rx="0.6" fill="var(--stone-light)" stroke="var(--stone-deep)" strokeWidth="0.7" />
+          <rect x="72" y="72" width="2.5" height="50" rx="0.4" fill="var(--stone-cream)" stroke="var(--stone-deep)" strokeWidth="0.7" />
+          <path d="M 71 72 L 75.5 72 L 74.5 69 L 72 69 Z" fill="var(--stone-light)" stroke="var(--stone-deep)" strokeWidth="0.7" />
+
+          {/* Sütun 3 (Sağ Orta) */}
+          <rect x="96.5" y="121" width="3.5" height="4" rx="0.6" fill="var(--stone-shade)" stroke="var(--stone-deep)" strokeWidth="0.7" />
+          <rect x="97" y="72" width="2.5" height="50" rx="0.4" fill="var(--stone-mid)" stroke="var(--stone-deep)" strokeWidth="0.7" />
+          <path d="M 96 72 L 100.5 72 L 99.5 69 L 97 69 Z" fill="var(--stone-shade)" stroke="var(--stone-deep)" strokeWidth="0.7" />
+
+          {/* Sütun 4 (Sağ Uç) */}
+          <rect x="119.5" y="117" width="3.5" height="4" rx="0.6" fill="var(--stone-dark)" stroke="var(--stone-deep)" strokeWidth="0.7" />
+          <rect x="120" y="68" width="2.5" height="50" rx="0.4" fill="var(--stone-shade)" stroke="var(--stone-deep)" strokeWidth="0.7" />
+          <path d="M 119 68 L 123.5 68 L 122.5 65 L 120 65 Z" fill="var(--stone-dark)" stroke="var(--stone-deep)" strokeWidth="0.7" />
+
+          {/* 8. Kubbe Altı Frizleri: Alt Rozetli Kuşak ve Üst Astronomik/Zodyak Simgeli Kuşak */}
+          {/* Alt Rozetli Kuşak (y=56..64) */}
+          <path d="M 46 56 A 40 10 0 0 0 126 56 L 126 64 A 40 10 0 0 1 46 64 Z" fill="var(--stone-mid)" stroke="var(--stone-deep)" strokeWidth="1.1" />
+          <rect x="52" y="58" width="5" height="4.5" rx="0.6" fill="var(--stone-light)" stroke="var(--stone-dark)" strokeWidth="0.6" />
+          <circle cx="54.5" cy="60.2" r="1.2" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.6" />
+          <rect x="63" y="59.5" width="5" height="4.5" rx="0.6" fill="var(--stone-light)" stroke="var(--stone-dark)" strokeWidth="0.6" />
+          <circle cx="65.5" cy="61.7" r="1.2" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.6" />
+          <rect x="74" y="60.8" width="5" height="4.5" rx="0.6" fill="var(--stone-light)" stroke="var(--stone-dark)" strokeWidth="0.6" />
+          <circle cx="76.5" cy="63" r="1.2" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.6" />
+          <rect x="85" y="61.2" width="5" height="4.5" rx="0.6" fill="var(--stone-light)" stroke="var(--stone-dark)" strokeWidth="0.6" />
+          <circle cx="87.5" cy="63.4" r="1.2" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.6" />
+          <rect x="96" y="60.8" width="5" height="4.5" rx="0.6" fill="var(--stone-shade)" stroke="var(--stone-dark)" strokeWidth="0.6" />
+          <circle cx="98.5" cy="63" r="1.2" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.6" />
+          <rect x="107" y="59.5" width="5" height="4.5" rx="0.6" fill="var(--stone-shade)" stroke="var(--stone-dark)" strokeWidth="0.6" />
+          <circle cx="109.5" cy="61.7" r="1.2" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.6" />
+          <rect x="117" y="57.5" width="5" height="4.5" rx="0.6" fill="var(--stone-dark)" stroke="var(--stone-deep)" strokeWidth="0.6" />
+          <circle cx="119.5" cy="59.7" r="1.2" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.6" />
+
+          {/* Üst Astronomik / Zodyak Kuşağı (y=48..56) */}
+          <path d="M 45 48 A 41 10.5 0 0 0 127 48 L 127 56 A 41 10.5 0 0 1 45 56 Z" fill="var(--stone-cream)" stroke="var(--stone-deep)" strokeWidth="1.1" />
+          <path d="M 86 58.5 A 41 10.5 0 0 0 127 48 L 127 56 A 41 10.5 0 0 1 86 66.5 Z" fill="var(--stone-shade)" opacity="0.45" />
+
+          {/* Zodyak ve Astronomi Simgeleri */}
+          {/* Koç / Aries */}
+          <path d="M 52 52.5 Q 53 50.5 54.5 51.5 Q 56 52.5 56 54.5 M 56 54.5 Q 56 52.5 57.5 51.5 Q 59 50.5 60 52.5" fill="none" stroke="var(--sandstone-gold-shade)" strokeWidth="0.75" />
+          {/* Boğa / Taurus */}
+          <circle cx="67" cy="54" r="1.2" fill="none" stroke="var(--sandstone-gold-shade)" strokeWidth="0.75" />
+          <path d="M 65 52 Q 67 53.5 69 52" fill="none" stroke="var(--sandstone-gold-shade)" strokeWidth="0.75" />
+          {/* İkizler / Gemini */}
+          <path d="M 75 52.5 L 75 57 M 78 52.5 L 78 57 M 73.5 52.5 Q 76.5 54 79.5 52.5 M 73.5 57 Q 76.5 55.5 79.5 57" stroke="var(--sandstone-gold-shade)" strokeWidth="0.75" />
+          {/* Güneş / Aslan */}
+          <circle cx="86" cy="55.5" r="1.4" fill="none" stroke="var(--sandstone-gold-shade)" strokeWidth="0.75" />
+          <path d="M 87.5 55.5 Q 89 54 89 57.5" fill="none" stroke="var(--sandstone-gold-shade)" strokeWidth="0.75" />
+          {/* Terazi / Libra */}
+          <line x1="94" y1="56" x2="100" y2="56" stroke="var(--sandstone-gold-shade)" strokeWidth="0.75" />
+          <path d="M 94 53.5 L 96 53.5 A 1.5 1.5 0 0 1 98 53.5 L 100 53.5" fill="none" stroke="var(--sandstone-gold-shade)" strokeWidth="0.75" />
+          {/* Akrep / Scorpio */}
+          <path d="M 106 53 L 106 55.5 M 108 53 L 108 55.5 M 110 53 L 110 56.5 L 111.5 55" stroke="var(--sandstone-gold-shade)" strokeWidth="0.75" />
+          {/* Kova / Aquarius */}
+          <path d="M 117 51 Q 118.5 49.5 120 51 Q 121.5 52.5 123 51 M 117 53 Q 118.5 51.5 120 53 Q 121.5 54.5 123 53" fill="none" stroke="var(--sandstone-gold-shade)" strokeWidth="0.7" />
+
+          {/* Dişli / Korniş Silmesi ve Kubbe Kaide Çemberi */}
+          <path d="M 44 44 A 42 11 0 0 0 128 44 L 128 48 A 42 11 0 0 1 44 48 Z" fill="var(--stone-light)" stroke="var(--stone-deep)" strokeWidth="1" />
+          <rect x="50" y="46" width="2" height="1.8" fill="var(--stone-dark)" />
+          <rect x="58" y="47.2" width="2" height="1.8" fill="var(--stone-dark)" />
+          <rect x="66" y="48.5" width="2" height="1.8" fill="var(--stone-dark)" />
+          <rect x="74" y="49.5" width="2" height="1.8" fill="var(--stone-dark)" />
+          <rect x="82" y="50" width="2" height="1.8" fill="var(--stone-dark)" />
+          <rect x="90" y="50" width="2" height="1.8" fill="var(--stone-dark)" />
+          <rect x="98" y="49.5" width="2" height="1.8" fill="var(--stone-dark)" />
+          <rect x="106" y="48.5" width="2" height="1.8" fill="var(--stone-dark)" />
+          <rect x="114" y="47.2" width="2" height="1.8" fill="var(--stone-dark)" />
+          <rect x="122" y="46" width="2" height="1.8" fill="var(--stone-dark)" />
+          <ellipse cx="86" cy="44" rx="42" ry="11" fill="var(--stone-mid)" stroke="var(--stone-deep)" strokeWidth="1.2" />
+
+          {/* 9. Yıldız Haritalı Kısmen Açık Bronz Kubbe */}
+          <path d="M 47 44 C 46 22, 64 12, 84 12 C 104 12, 122 22, 121 44 Z" fill="var(--terracotta)" stroke="var(--wood-deep)" strokeWidth="1.4" />
+          <path d="M 47 44 C 46 22, 64 12, 84 12 L 84 44 Z" fill="var(--sandstone-gold)" opacity="0.32" />
+          <path d="M 84 12 C 104 12, 122 22, 121 44 L 84 44 Z" fill="var(--terracotta-shade)" opacity="0.55" />
+
+          {/* Kubbe Üzeri Gök Meridyenleri ve Takımyıldız Çizgileri */}
+          <path d="M 84 12 C 70 16, 56 28, 54 44" fill="none" stroke="var(--sandstone-gold-soft)" strokeWidth="0.75" opacity="0.75" />
+          <path d="M 84 12 C 76 16, 68 28, 67 44" fill="none" stroke="var(--sandstone-gold-soft)" strokeWidth="0.75" opacity="0.75" />
+          <path d="M 84 12 C 84 18, 80 32, 79 44" fill="none" stroke="var(--sandstone-gold-soft)" strokeWidth="0.75" opacity="0.75" />
+          <path d="M 52 34 Q 84 26 116 34" fill="none" stroke="var(--sandstone-gold-soft)" strokeWidth="0.65" strokeDasharray="2 1.5" opacity="0.7" />
+          <path d="M 60 23 Q 84 17 108 23" fill="none" stroke="var(--sandstone-gold-soft)" strokeWidth="0.65" strokeDasharray="2 1.5" opacity="0.7" />
+          <circle cx="60" cy="28" r="0.8" fill="var(--sandstone-gold-soft)" />
+          <circle cx="68" cy="25" r="0.9" fill="var(--sandstone-gold-soft)" />
+          <circle cx="73" cy="31" r="0.8" fill="var(--sandstone-gold-soft)" />
+          <circle cx="64" cy="36" r="0.8" fill="var(--sandstone-gold-soft)" />
+          <line x1="60" y1="28" x2="68" y2="25" stroke="var(--sandstone-gold-soft)" strokeWidth="0.5" opacity="0.75" />
+          <line x1="68" y1="25" x2="73" y2="31" stroke="var(--sandstone-gold-soft)" strokeWidth="0.5" opacity="0.75" />
+          <line x1="73" y1="31" x2="64" y2="36" stroke="var(--sandstone-gold-soft)" strokeWidth="0.5" opacity="0.75" />
+
+          {/* 10. Sağ Gözlem Açıklığı ve İç Mekanizma */}
+          {/* Açıklık Boşluğu */}
+          <path d="M 88 13 C 98 14, 114 20, 118 44 L 97 44 C 94 30, 89 20, 88 13 Z" fill="var(--seljuk-navy-deep)" stroke="var(--wood-deep)" strokeWidth="1.2" />
+          {/* Kayar Kapak Kılavuz Rayı */}
+          <path d="M 86 13 C 96 14, 112 20, 116 44" fill="none" stroke="var(--sandstone-gold-shade)" strokeWidth="1.4" />
+          <path d="M 89 13 C 99 14, 115 20, 119 44" fill="none" stroke="var(--sandstone-gold-shade)" strokeWidth="1.4" />
+          <rect x="85" y="10" width="8" height="3" rx="0.6" fill="var(--stone-deep)" stroke="var(--sandstone-gold)" strokeWidth="0.7" />
+
+          {/* İç Mekanizma: Büyük Kollu Dişli Çark (Spoked Wheel) */}
+          <circle cx="105" cy="28" r="9" fill="none" stroke="var(--sandstone-gold)" strokeWidth="1.6" />
+          <circle cx="105" cy="28" r="7.5" fill="none" stroke="var(--sandstone-gold-soft)" strokeWidth="0.6" strokeDasharray="1.2 0.8" />
+          <line x1="105" y1="19" x2="105" y2="37" stroke="var(--sandstone-gold)" strokeWidth="0.8" />
+          <line x1="96" y1="28" x2="114" y2="28" stroke="var(--sandstone-gold)" strokeWidth="0.8" />
+          <line x1="98.5" y1="21.5" x2="111.5" y2="34.5" stroke="var(--sandstone-gold)" strokeWidth="0.8" />
+          <line x1="98.5" y1="34.5" x2="111.5" y2="21.5" stroke="var(--sandstone-gold)" strokeWidth="0.8" />
+          <circle cx="105" cy="28" r="2.8" fill="var(--sandstone-gold-shade)" stroke="var(--wood-deep)" strokeWidth="0.8" />
+          <circle cx="105" cy="28" r="1.2" fill="var(--sandstone-gold)" />
+
+          {/* 11. Büyük Bronz Teleskop (Açıklıktan Sağa Doğru Uzanan Gövde) */}
+          {/* Arka Oküler / Ağırlık */}
+          <polygon points="103,32 99,33.5 100,28.5 104,27" fill="var(--stone-dark)" stroke="var(--wood-deep)" strokeWidth="0.8" />
+          <circle cx="98.5" cy="31" r="1.5" fill="var(--sandstone-gold-shade)" stroke="var(--wood-deep)" strokeWidth="0.6" />
+
+          {/* Taban Kovanı */}
+          <polygon points="103,32 122,26 123,22 104,26" fill="var(--stone-deep)" stroke="var(--wood-deep)" strokeWidth="0.8" />
+
+          {/* Ana Bronz Teleskop Namlusu */}
+          <polygon points="112,30 144,20 145,13 113,23" fill="var(--sandstone-gold-shade)" stroke="var(--wood-deep)" strokeWidth="1" />
+          <polygon points="113,23 145,13 144.5,15.5 112.5,25.5" fill="var(--sandstone-gold)" />
+          <line x1="113" y1="23.5" x2="145" y2="13.5" stroke="var(--sandstone-gold-soft)" strokeWidth="0.8" />
+
+          {/* Tırtıklı Pirinç Ayar Halkaları */}
+          <line x1="126" y1="25.5" x2="127" y2="18.5" stroke="var(--sandstone-gold)" strokeWidth="2.2" />
+          <line x1="126" y1="25.5" x2="127" y2="18.5" stroke="var(--wood-deep)" strokeWidth="0.6" strokeDasharray="0.8 0.6" />
+          <line x1="138" y1="22" x2="139" y2="15" stroke="var(--sandstone-gold)" strokeWidth="2.2" />
+          <line x1="138" y1="22" x2="139" y2="15" stroke="var(--wood-deep)" strokeWidth="0.6" strokeDasharray="0.8 0.6" />
+
+          {/* Ön Büyük Mercek Hücresi ve Optik Başlık (Sağa Bakan Geniş Flanş) */}
+          <polygon points="143,21.5 150,19.2 151,11 144,12.5" fill="var(--sandstone-gold)" stroke="var(--wood-deep)" strokeWidth="1" />
+          <ellipse cx="149" cy="15.8" rx="3.2" ry="7.2" transform="rotate(15 149 15.8)" fill="var(--stone-deep)" stroke="var(--wood-deep)" strokeWidth="1" />
+          <ellipse cx="149" cy="15.8" rx="2.4" ry="6.2" transform="rotate(15 149 15.8)" fill="none" stroke="var(--sandstone-gold)" strokeWidth="0.9" />
+          <ellipse cx="149" cy="15.8" rx="1.8" ry="5.2" transform="rotate(15 149 15.8)" fill="var(--seljuk-navy-deep)" />
+          <ellipse cx="148.5" cy="15" rx="1" ry="3.5" transform="rotate(15 148.5 15)" fill="var(--seljuk-teal)" opacity="0.8" />
+          <ellipse cx="148.2" cy="14" rx="0.5" ry="1.8" transform="rotate(15 148.2 14)" fill="var(--seljuk-turquoise-bright)" />
+
+          {/* 12. Kubbe Tepesi Selçuklu Alemi */}
+          <line x1="84" y1="12" x2="84" y2="5" stroke="var(--sandstone-gold)" strokeWidth="1.2" />
+          <circle cx="84" cy="5" r="1.8" fill="var(--sandstone-gold)" />
+          <circle cx="84" cy="2.2" r="1" fill="var(--sandstone-gold)" />
         </g>
       )}
     </g>
@@ -376,7 +573,7 @@ export function CampusBuildingSvg({
   className = 'w-20 h-16 shrink-0',
 }: CampusBuildingSvgProps) {
   return (
-    <svg viewBox="0 0 180 148" className={className} aria-hidden="true">
+    <svg viewBox="0 0 180 148" className={className} aria-hidden="true" style={{ overflow: 'visible' }}>
       <CampusBuildingGraphic buildingId={buildingId} />
     </svg>
   );

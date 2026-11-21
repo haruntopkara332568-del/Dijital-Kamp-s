@@ -1,3 +1,100 @@
+# Test ve Kalite Güvence Raporu — Gerçek Tam Ekran Sahne Yerleşimi, Kenar Boşluklarının Giderilmesi ve Kesintisiz Tam Ekran Deneyimi
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (Strict TypeScript tip denetimi tam uyumlu).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı** (`useSyncExternalStore` ile sıfır cascading render, tam ESLint ve React Compiler uyumu).
+- **`npm run test` (`vitest run`)**: Geçti — **146 / 146 test** (%100 başarı, 6 test dosyası):
+  - `src/test/fullscreen.test.tsx`: **9 / 9 test** (`436ms`) — Özellik denetimi (desteklenmeyen iOS/tarayıcılarda butonu gizleme), kapı önünde erişim, "Tam ekrana geç" -> "Tam ekrandan çık" durum güncellemesi, ESC ve `fullscreenchange` dinleyicisi, kök öğe (`document.documentElement`) hedefiyle sahne geçişi kalıcılığı, İngilizce sınıfı (`960×640`) ve kampüs avlusu (`1400×900`) tam ekran ölçeklendirme (`zoom`), sağ/alt boşlukların giderilmesi, karakter konumunun korunması ve zoom altında fare tıklama (`pointerdown`) dünya koordinatı dönüşümü.
+  - `src/test/brandIdentityMaintenance.test.tsx`: **7 / 7 test** (`340ms`) — Marka kimliği ve kitabe render doğrulaması.
+  - `src/test/studentProfilesMaintenance.test.tsx`: **14 / 14 test** (`419ms`) — İki öğrenci (Gezgin & Bilgin) veri izolasyonu ve profil yönetimi.
+  - `src/test/primaryScopeMaintenance.test.tsx`: **9 / 9 test** (`631ms`) — İlkokul 2, 3 ve 4. sınıf kapsam doğrulaması.
+  - `src/test/campus.test.tsx`: **33 / 33 test** (`4.0s`) — Depolama güvenliği, seslendirme ve görev rotaları.
+  - `src/test/walkable.test.tsx`: **74 / 74 test** (`43.6s`) — Yürünebilir kampüs avlusu, 4 öğrenme masası ve Sultanhanı sahnesi.
+- **`npm run build` (`vite build`)**: Geçti — **1.03s** içinde hatasız ve optimize edilmiş üretim paketi (`dist/`) üretildi.
+
+---
+
+# Test ve Kalite Güvence Raporu — Bakım ve Onarım 03A: Cihaz Tabanlı Öğrenci Profil Altyapısı ve Mimari Duvar Yazılarının Düzeltilmesi
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (Strict TypeScript tip denetimi tam uyumlu).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı** (React 19 render-phase kuralları ve storage no-empty dahil tam uyumlu).
+- **`npm run test` (`vitest run`)**: Geçti — **137 / 137 test** (%100 başarı, 5 test dosyası):
+  - `src/test/studentProfilesMaintenance.test.tsx`: **14 / 14 test** (`540ms`) — İki öğrenci (Gezgin & Bilgin) veri izolasyonu, IndexedDB çizim izolasyonu, eski tekil veri göçü (legacy migration), profil silme güvenliği ve React Context entegrasyonu.
+  - `src/test/brandIdentityMaintenance.test.tsx`: **7 / 7 test** (`481ms`) — Marka kimliği ve kitabe render doğrulaması.
+  - `src/test/primaryScopeMaintenance.test.tsx`: **9 / 9 test** (`867ms`) — İlkokul 2, 3 ve 4. sınıf kapsam doğrulaması.
+  - `src/test/campus.test.tsx`: **33 / 33 test** (`5.7s`) — Depolama güvenliği, seslendirme ve görev rotaları.
+  - `src/test/walkable.test.tsx`: **74 / 74 test** (`45.1s`) — Yürünebilir kampüs avlusu, 4 öğrenme masası ve Sultanhanı macerası.
+- **`npx playwright test e2e/student_profiles_maintenance.spec.ts`**: Geçti — **6 / 6 test** (Desktop Chromium & Mobile Chrome Pixel 5):
+  - Senaryo 1-3 & 34: İlk girişte profil oluşturma, taç kapı ve üst bar entegrasyonu (Geçti).
+  - Senaryo 7-12: İki Öğrenci (Gezgin & Bilgin) profil değişimi ve veri izolasyonu (Geçti).
+  - Senaryo 29-32: Profil Silme Onayı ve İzolasyonu (Geçti).
+- **`npx playwright test e2e/primary_school_scope_maintenance.spec.ts --project=chromium`**: Geçti — **7 / 7 test** (`14.2s`) (Geriye dönük uyumluluk ve ilkokul kapsamı tam doğrulandı).
+- **`npx playwright test e2e/brand_identity_maintenance.spec.ts`**: Geçti — **12 / 12 test** (Desktop ve Mobile Chrome'da mimari kitabeler ve marka kimliği doğrulandı).
+- **`npm run build` (`vite build`)**: Geçti — **1.22s** içinde hatasız ve optimize edilmiş üretim paketi (`dist/`) üretildi.
+- **Doğrulanan Gerçek Görsel Varlıklar (`docs/assets/`)**:
+  - `profile_created_desktop.png` (485 KB)
+  - `profile_created_mobile.png` (642 KB)
+  - `profile_modal_create_desktop.png` (45 KB)
+  - `profile_modal_select_desktop.png` (235 KB)
+  - `profile_switch_bilgin_desktop.png` (1.08 MB)
+  - `profile_switch_bilgin_mobile.png` (643 KB)
+
+---
+
+# Test ve Kalite Güvence Raporu — Bakım ve Onarım 02: Marka Kimliği ve Mimari Kitabelerin Yeniden Yapılandırılması
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (Strict TypeScript tip denetimi).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı** (ESLint kuralları tam uyumlu).
+- **`npm run test` (`vitest run`)**: Geçti — **123 / 123 test** (%100 başarı):
+  - `src/test/brandIdentityMaintenance.test.tsx`: **7 / 7 test** (`98ms`).
+  - `src/test/primaryScopeMaintenance.test.tsx`: **9 / 9 test** (`278ms`).
+  - `src/test/campus.test.tsx`: **33 / 33 test** (`3.7s`).
+  - `src/test/walkable.test.tsx`: **74 / 74 test** (`42.1s`).
+- **`npx playwright test e2e/brand_identity_maintenance.spec.ts --project=chromium`**: Geçti — **6 / 6 test** (`8.2s`):
+  - Senaryo 1 & 15: Ana Giriş Ekranı ve Tarayıcı Başlığı yeni marka kimliğini doğru sunar (Geçti).
+  - Senaryo 2: Kapı geçiş animasyonu ve avluya adım atma kesintisiz çalışır (Geçti).
+  - Senaryo 3, 4, 18: Kampüs Avlusu, Bina Kitabeleri ve Kamera Hareketi (Geçti).
+  - Senaryo 5, 6: İngilizce Öğreniyorum binasına giriş ve Sınıf Seçim Panosu (Geçti).
+  - Senaryo 13, 14: Yakında açılacak binalara yaklaşıldığında yeni isimlerle bildirim verilir (Geçti).
+  - Senaryo 16, 20: Eski öğrenci kayıtları ve sayfa yenileme bütünlüğü korunur (Geçti).
+- **`npx playwright test e2e/brand_identity_maintenance.spec.ts --project=mobile-chrome`**: Geçti — **6 / 6 test** (`5.8s`):
+  - Senaryo 17, 18: Mobil Chrome (Pixel 5) üzerinde ana giriş, bina kitabeleri ve dokunmatik avlu akışı (Geçti).
+- **`npx playwright test e2e/primary_school_scope_maintenance.spec.ts --project=chromium`**: Geçti — **7 / 7 test** (`9.4s`) (Onarım 01 ilkokul kapsamı regresyonsuz korundu).
+- **`npm run build` (`vite build`)**: Geçti — **913ms** içinde optimize edilmiş üretim derlemesi üretildi.
+- **Doğrulanan Gerçek Görsel Varlıklar (`docs/assets/`)**:
+  - `brand_gate_desktop.png` (542 KB)
+  - `brand_gate_mobile.png` (881 KB)
+  - `brand_courtyard_desktop.png` (1.06 MB)
+  - `brand_courtyard_mobile.png` (1.33 MB)
+  - `brand_english_building_close.png` (1.13 MB)
+  - `brand_discovery_building_close.png` (1.16 MB)
+  - `brand_library_building_close.png` (1.16 MB)
+  - `brand_classroom_grade_board.png` (243 KB)
+
+---
+
+# Test ve Kalite Güvence Raporu — Bakım ve Onarım 01: Proje Kapsamının İlkokul Düzeyiyle Sınırlandırılması (2, 3, 4. Sınıflar)
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (Strict TypeScript).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **116 / 116 test** (`src/test/primaryScopeMaintenance.test.tsx` [9 test] + `src/test/walkable.test.tsx` [74 test] + `src/test/campus.test.tsx` [33 test], `45.24s`).
+- **`npx playwright test e2e/primary_school_scope_maintenance.spec.ts --project=chromium`**: Geçti — **7 / 7 test** (`9.1s`):
+  - Senaryo 1 & 5: Sınıf Seçim Panosu yalnızca 2, 3 ve 4. sınıfları sunar; 5, 6, 7 kesinlikle yoktur (Geçti).
+  - Senaryo 6, 7, 8, 9: Eski 5, 6 veya 7. sınıf öğrencisinin verisi korunur, selectedGrade null olur ve bilgilendirme sunulur (Geçti).
+  - Senaryo 10: Bozuk veya geçersiz sınıf verisi uygulamanın çökmesini engeller (Geçti).
+  - Senaryo 11: Desteklenmeyen veya seçilmemiş sınıfla doğrudan görev URL erişimi ana sayfaya yönlendirir (Geçti).
+  - Senaryo 12: Sınıf seçilmemişken masalara veya tahtaya yaklaşıldığında yönlendirme mesajı sunulur (Geçti).
+  - Senaryo 2 & 4: 2. ve 4. sınıflar için akıllı tahta koruma altındadır (Geçti).
+  - Senaryo 3, 13, 14, 15, 16, 17: 3. Sınıf 4 Masası ve Sultanhanı Kervansarayı taç kapı yürüyüşü (Geçti).
+- **`npx playwright test e2e/primary_school_scope_maintenance.spec.ts --project=mobile-chrome`**: Geçti — **7 / 7 test** (`9.3s`):
+  - Senaryo 18: Mobil Chrome (Pixel 5) emülatöründe tüm 18 senaryonun mobil dokunma, kadraj ve arayüz uyumluluğu (Geçti).
+- **`npm run build` (`vite build`)**: Geçti — **822ms** içinde hatasız ve optimize edilmiş üretim derlemesi üretildi.
+
+---
+
 # Test ve Kalite Güvence Raporu — Sürüm 6.5.4 (Aşama 6.5: Sultanhanı Meydanında Aynı Karakterle Yürüyüş ve Taç Kapıdan Geçiş / İlk Teslim)
 
 ## 1. Çalıştırıldı ve Geçti

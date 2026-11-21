@@ -7,6 +7,7 @@ import {
 } from './LandscapeElementsSvg';
 import { CampusBuildingGraphic } from './CampusBuildingSvg';
 import { PeerGuideInSceneGraphic } from './PeerGuideSvg';
+import { CAMPUS_BUILDING_NAMES } from '@/src/data/brandConfig';
 
 const COURTYARD_PATHS: IsometricPathSegment[] = [
   // Giriş Kapısından Merkez Yıldızlı Meydana
@@ -64,36 +65,36 @@ function CourtyardSvgArtwork({ compactViewBox = false }: { compactViewBox?: bool
       <IsometricCypressTree x={312} y={134} scale={0.9} />
       <IsometricRoundTree x={568} y={134} scale={0.9} />
 
-      {/* ÜST ORTA: İNGİLİZCE DÜNYASI (Büyük 2,5B İzometrik Yapı) */}
+      {/* ÜST ORTA: İNGİLİZCE ÖĞRENİYORUM (Büyük 2,5B İzometrik Yapı) */}
       <g transform="translate(340, 12) scale(1.1)">
         <CampusBuildingGraphic buildingId="ingilizce-dunyasi" />
       </g>
       <g transform="translate(440, 166)">
-        <rect x="-70" y="-12" width="140" height="23" rx="5" fill="var(--campus-surface)" stroke="var(--seljuk-teal)" strokeWidth="1.6" />
-        <text x="0" y="3.5" textAnchor="middle" fontSize="11.5" fontWeight="700" fill="var(--seljuk-navy)">
-          İngilizce Dünyası
+        <rect x="-75" y="-12" width="150" height="23" rx="5" fill="var(--campus-surface)" stroke="var(--seljuk-teal)" strokeWidth="1.6" />
+        <text x="0" y="3.5" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--seljuk-navy)">
+          {CAMPUS_BUILDING_NAMES.english}
         </text>
       </g>
 
-      {/* SOL ÜST: GEZİ VE KEŞİF */}
+      {/* SOL ÜST: HAYALDEN GERÇEĞE */}
       <g transform="translate(88, 62) scale(1.06)">
         <CampusBuildingGraphic buildingId="gezi-ve-kesif" />
       </g>
       <g transform="translate(184, 212)">
-        <rect x="-62" y="-12" width="124" height="23" rx="5" fill="var(--campus-surface)" stroke="var(--terracotta)" strokeWidth="1.6" />
-        <text x="0" y="3.5" textAnchor="middle" fontSize="11.5" fontWeight="700" fill="var(--seljuk-navy)">
-          Gezi ve Keşif
+        <rect x="-66" y="-12" width="132" height="23" rx="5" fill="var(--campus-surface)" stroke="var(--terracotta)" strokeWidth="1.6" />
+        <text x="0" y="3.5" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--seljuk-navy)">
+          {CAMPUS_BUILDING_NAMES.discovery}
         </text>
       </g>
 
-      {/* SAĞ ÜST: KİTAP VE HİKÂYE DÜNYASI */}
+      {/* SAĞ ÜST: HİKÂYEDEN HAYATA */}
       <g transform="translate(600, 62) scale(1.06)">
         <CampusBuildingGraphic buildingId="kitap-ve-hikaye-dunyasi" />
       </g>
       <g transform="translate(696, 212)">
-        <rect x="-64" y="-12" width="128" height="23" rx="5" fill="var(--campus-surface)" stroke="var(--courtyard-sage)" strokeWidth="1.6" />
-        <text x="0" y="3.5" textAnchor="middle" fontSize="11.5" fontWeight="700" fill="var(--seljuk-navy)">
-          Kitap ve Hikâye
+        <rect x="-66" y="-12" width="132" height="23" rx="5" fill="var(--campus-surface)" stroke="var(--courtyard-sage)" strokeWidth="1.6" />
+        <text x="0" y="3.5" textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--seljuk-navy)">
+          {CAMPUS_BUILDING_NAMES.library}
         </text>
       </g>
 
@@ -175,17 +176,17 @@ export function CourtyardSceneSvg() {
         >
           <div className="rounded-lg border border-[var(--terracotta)]/35 bg-[var(--stone-cream)] px-1.5 py-1.5">
             <span className="block text-[11px] font-bold text-[var(--seljuk-navy)] leading-tight">
-              Gezi ve Keşif
+              {CAMPUS_BUILDING_NAMES.discovery}
             </span>
           </div>
           <div className="rounded-lg border border-[var(--seljuk-teal)]/40 bg-[var(--seljuk-teal-soft)]/55 px-1.5 py-1.5">
             <span className="block text-[11px] font-bold text-[var(--seljuk-navy)] leading-tight">
-              İngilizce Dünyası
+              {CAMPUS_BUILDING_NAMES.english}
             </span>
           </div>
           <div className="rounded-lg border border-[var(--courtyard-sage)]/35 bg-[var(--courtyard-sage-soft)]/60 px-1.5 py-1.5">
             <span className="block text-[11px] font-bold text-[var(--seljuk-navy)] leading-tight">
-              Kitap ve Hikâye
+              {CAMPUS_BUILDING_NAMES.library}
             </span>
           </div>
         </div>
