@@ -6,6 +6,7 @@ import { GRADE_LIST } from '@/src/data/gradeProfiles';
 import { CAMPUS_BRAND } from '@/src/data/brandConfig';
 import { STUDENT_AVATARS, type GradeLevel } from '@/src/types/campus';
 import { DeleteDataModal } from './DeleteDataModal';
+import { FullscreenButton } from './FullscreenButton';
 
 interface CampusTopBarProps {
   onBeforeNavigate?: (targetHref: string) => boolean;
@@ -66,7 +67,7 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
           className="h-1 w-full bg-gradient-to-r from-[var(--seljuk-navy)] via-[var(--seljuk-teal)] to-[var(--terracotta)]"
         />
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 sm:gap-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 min-h-16 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 py-1 md:flex-nowrap md:gap-x-4">
           {/* Bölge 1: Tek satırlık başlık */}
           <Link
             to="/"
@@ -101,7 +102,8 @@ export function CampusTopBar({ onBeforeNavigate }: CampusTopBarProps) {
           </nav>
 
           {/* Bölge 3: Aktif Öğrenci Profili ve Ayarlar Paneli */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="ml-auto flex items-center gap-2 shrink-0">
+            <FullscreenButton showText={false} />
             {activeProfile ? (
               <button
                 type="button"

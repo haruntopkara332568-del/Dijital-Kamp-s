@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, SkipForward, Sparkles } from 'lucide-react';
 import { CAMPUS_BRAND } from '@/src/data/brandConfig';
+import { FullscreenButton } from '@/src/components/FullscreenButton';
 
 interface CampusGateViewProps {
   onEnterCourtyard: () => void;
@@ -29,7 +30,8 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
 
   return (
     <main className="min-h-dvh flex flex-col items-center justify-center px-3 sm:px-6 py-4 sm:py-6 bg-gradient-to-b from-[var(--sky-warm-top)]/40 via-[var(--campus-canvas)] to-[var(--stone-light)]/45 select-none">
-      <div className="w-full max-w-3xl space-y-3.5 text-center">
+      <div className="w-full max-w-3xl flex flex-col space-y-3.5 text-center">
+        <FullscreenButton className="self-end" showText={false} />
         {/* Taç Kapı Ana Sahne Kartı: Sinematik 3D Animasyon Taç Kapı */}
         <div className="rounded-2xl bg-[var(--campus-surface)] border border-[var(--campus-border)] shadow-md overflow-hidden">
           <div

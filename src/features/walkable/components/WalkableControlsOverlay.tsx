@@ -14,6 +14,7 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { useOptionalCampus } from '@/src/app/CampusProviders';
+import { FullscreenButton } from '@/src/components/FullscreenButton';
 import { CAMPUS_BUILDING_NAMES } from '@/src/data/brandConfig';
 import { STUDENT_AVATARS } from '@/src/types/campus';
 import type { InteractiveZone } from '../types';
@@ -71,7 +72,7 @@ export function WalkableControlsOverlay({
   return (
     <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-3 sm:p-5 select-none z-20">
       {/* Üst Çubuk: Konum Rozeti, Ses Ayarı ve Rehber Harita (Sınıf seçimi avluda yer almaz) */}
-      <header className="flex items-center justify-between gap-2">
+      <header className="flex flex-wrap items-center justify-between gap-2 md:flex-nowrap">
         <div className="pointer-events-auto flex items-center gap-2 bg-[var(--campus-surface)]/95 backdrop-blur-xs px-3.5 py-1.5 rounded-xl border border-[var(--campus-border)] shadow-xs">
           <Sparkles className="w-4 h-4 text-[var(--seljuk-teal)] shrink-0" aria-hidden="true" />
           <span className="text-xs sm:text-sm font-bold text-[var(--seljuk-navy)]">
@@ -83,7 +84,7 @@ export function WalkableControlsOverlay({
           </span>
         </div>
 
-        <div className="pointer-events-auto flex items-center gap-2">
+        <div className="pointer-events-auto ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
           {/* Aktif Öğrenci Profili ve Değiştirme Düğmesi */}
           {activeProfile ? (
             <button
@@ -171,6 +172,8 @@ export function WalkableControlsOverlay({
               <span className="hidden sm:inline">Kampüs Rehberi</span>
             </button>
           )}
+
+          <FullscreenButton showText={false} />
 
           {/* Sesli Anlatım Açma / Kapatma */}
           <button
