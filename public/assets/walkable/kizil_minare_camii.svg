@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 190 184">
+  <defs>
+    <linearGradient id="front-stone" x2=".16" y2="1">
+      <stop stop-color="#f2dfbb"/>
+      <stop offset="1" stop-color="#bfa17a"/>
+    </linearGradient>
+    <linearGradient id="side-stone" x2="1" y2=".7">
+      <stop stop-color="#bba07e"/>
+      <stop offset="1" stop-color="#8f7359"/>
+    </linearGradient>
+    <linearGradient id="inset" x2=".85" y2=".45">
+      <stop stop-color="#5e4230"/>
+      <stop offset=".47" stop-color="#876447"/>
+      <stop offset="1" stop-color="#36271f"/>
+    </linearGradient>
+    <linearGradient id="brick">
+      <stop stop-color="#a7472c"/>
+      <stop offset=".29" stop-color="#df8a59"/>
+      <stop offset=".58" stop-color="#c26a44"/>
+      <stop offset="1" stop-color="#773424"/>
+    </linearGradient>
+    <linearGradient id="balcony">
+      <stop stop-color="#ad8965"/>
+      <stop offset=".31" stop-color="#f0dab1"/>
+      <stop offset="1" stop-color="#967251"/>
+    </linearGradient>
+    <linearGradient id="wood" x2="1" y2=".5">
+      <stop stop-color="#a3693e"/>
+      <stop offset=".5" stop-color="#754629"/>
+      <stop offset=".51" stop-color="#92603a"/>
+      <stop offset="1" stop-color="#55321f"/>
+    </linearGradient>
+    <pattern id="ashlar" width="23" height="13" patternUnits="userSpaceOnUse">
+      <path d="M0 .5h10v6H0ZM11 7h12v5.5H11Z" fill="#fff4da" opacity=".2"/>
+      <path d="M12 .5h11v6H12ZM3 7h8v5.5H3Z" fill="#795b44" opacity=".13"/>
+      <path d="M0 0h23M0 6.5h23M11 0v6.5M3 6.5V13M19 6.5V13" fill="none" stroke="#765944" stroke-opacity=".55" stroke-width=".55"/>
+      <path d="M0 .7h23M0 7.2h23" fill="none" stroke="#fff1d1" stroke-opacity=".56" stroke-width=".62"/>
+    </pattern>
+    <pattern id="brick-joints" width="9" height="5" patternUnits="userSpaceOnUse">
+      <path d="M0 0h9M0 2.5h9M3 0v2.5M7 2.5V5" fill="none" stroke="#f8c59b" stroke-opacity=".68" stroke-width=".48"/>
+    </pattern>
+    <pattern id="carving" width="5" height="5" patternUnits="userSpaceOnUse">
+      <path d="m2.5 0 2.5 2.5L2.5 5 0 2.5Z" fill="none" stroke="#fcdfaa" stroke-width=".7"/>
+    </pattern>
+    <path id="front-wall" d="M10 114h125v56H10Z"/>
+    <path id="minaret-shaft" d="M146 117V54h22v63q-11 6-22 0Z"/>
+    <path id="minaret-top" d="M148 47V28q9-3 18 0v19Z"/>
+    <path id="portal-frame" fill-rule="evenodd" d="M43 94h60v76H43Zm6 6v69h48v-69Z"/>
+    <g id="window">
+      <path d="M-4 24V5L0 0l4 5v19Z" fill="#957858" stroke="#f1d7ab" stroke-width="1"/>
+      <path d="M-2.5 22V6L0 3l2.5 3v16Z" fill="#49372d" stroke="none"/>
+      <path d="M0 7v15m-2.5-10h5m-5 5h5" fill="none" stroke="#a78966" stroke-width=".55"/>
+      <path d="M-4 24h8" stroke="#e4c9a0" stroke-width="1.15"/>
+    </g>
+    <g id="muqarnas-cell">
+      <path d="M0 7V4L4 0l4 4v3L4 9Z" fill="#c5a174" stroke="#745039" stroke-width=".55"/>
+      <path d="M1 6V4l3-3v7Z" fill="#eed0a0"/>
+      <path d="M4 1l3 3v2L4 8Z" fill="#997050"/>
+    </g>
+  </defs>
+  <g stroke="#715640" stroke-width=".85" stroke-linejoin="round">
+    <!-- Düz çatı ve şaşırtmalı kesme taş sıraları -->
+    <path d="M9 113 38 96h125l-28 17Z" fill="#e5d4b3"/>
+    <path d="M17 111 40 98h115l-24 13Z" fill="#c8b394" stroke="#b99d7d" stroke-width=".65"/>
+    <use href="#front-wall" fill="url(#front-stone)"/>
+    <use href="#front-wall" fill="url(#ashlar)" stroke="none"/>
+    <g transform="translate(135 113) skewY(-31)">
+      <path d="M0 0h28v56H0Z" fill="url(#side-stone)"/>
+      <path d="M0 0h28v56H0Z" fill="url(#ashlar)" opacity=".76" stroke="none"/>
+      <use href="#window" transform="translate(9 22) scale(.72 .83)"/>
+      <use href="#window" transform="translate(21 21) scale(.67 .83)"/>
+    </g>
+    <path d="M8 112h127v4H8Z" fill="#f1dfbd"/>
+    <path d="m135 112 29-17v4l-29 17Z" fill="#b59a7c"/>
+    <path d="M10 165h125v5H10Z" fill="#b99a74"/>
+    <path d="m135 165 28-17v5l-28 17Z" fill="#8c7158"/>
+    <use href="#window" transform="translate(26 130)"/>
+    <use href="#window" transform="translate(122 130)"/>
+
+    <!-- Cepheden öne çıkan dikdörtgen taç kapı -->
+    <path d="m103 94 9-5v77l-9 5Z" fill="#aa8866"/>
+    <path d="m103 116 9-5m-9 21 9-5m-9 21 9-5m-9 21 9-5" fill="none" stroke="#795e48" stroke-width=".7"/>
+    <path d="M42 93 50 89h62l-9 5Z" fill="#f4e3c2"/>
+    <path d="M43 94h60v76H43Z" fill="url(#front-stone)"/>
+    <path d="M49 100h48v68H49Z" fill="#c3a278" stroke="#9b7956"/>
+    <use href="#portal-frame" fill="#9b7555" stroke="#f4deb4"/>
+    <use href="#portal-frame" fill="url(#carving)" stroke="none"/>
+    <path d="M41 92h64v3H41Z" fill="#f1dcb3"/>
+    <path d="m105 92 8-4v3l-8 4Z" fill="#bb9e7b"/>
+    <path d="M52 168v-35q1-14 21-30 20 16 21 30v35Z" fill="#e1c39a"/>
+    <path d="M56 168v-34q1-12 17-26 16 14 17 26v34Z" fill="url(#inset)" stroke="#8c684b"/>
+    <path d="M56 168v-34q1-12 17-26l-4 8q-9 10-9 19v33Z" fill="#a07b55" stroke="none"/>
+    <path d="M90 168v-34q-1-12-17-26l6 7q8 12 8 21v32Z" fill="#553b2b" stroke="none"/>
+    <use href="#muqarnas-cell" x="69" y="112"/>
+    <use href="#muqarnas-cell" x="65" y="118"/>
+    <use href="#muqarnas-cell" x="73" y="118"/>
+    <use href="#muqarnas-cell" x="61" y="124"/>
+    <use href="#muqarnas-cell" x="69" y="124"/>
+    <use href="#muqarnas-cell" x="77" y="124"/>
+    <use href="#muqarnas-cell" x="57" y="130"/>
+    <use href="#muqarnas-cell" x="65" y="130"/>
+    <use href="#muqarnas-cell" x="73" y="130"/>
+    <use href="#muqarnas-cell" x="81" y="130"/>
+    <path d="M60 138h26v3H60Z" fill="#d2ae80" stroke="#755239"/>
+    <path d="M62 141h22v28H62Z" fill="url(#wood)" stroke="#44291e" stroke-width="1.1"/>
+    <path d="M73 141v28m-8-24h5v9h-5zm0 11h5v9h-5zm11-11h5v9h-5zm0 11h5v9h-5z" fill="none" stroke="#4c2d1f" stroke-width=".85"/>
+    <path d="M70 155h1m4 0h1" stroke="#f0c388" stroke-width="1.2"/>
+
+    <!-- Geniş ve alçak üç giriş basamağı -->
+    <path d="M45 168h56l5 2H40Z" fill="#f0dabb"/>
+    <path d="M40 170h66v2H40Z" fill="#b29676"/>
+    <path d="M40 172h66l5 2H35Z" fill="#e0c7a4"/>
+    <path d="M35 174h76v2H35Z" fill="#a78766"/>
+    <path d="M35 176h76l5 2H30Z" fill="#dcc19f"/>
+    <path d="M30 178h86v2H30Z" fill="#a98b6c"/>
+    <path d="m116 178 10-6v2l-10 6Zm-5-4 10-6v2l-10 6Zm-5-4 10-6v2l-10 6Z" fill="#927256" stroke-width=".6"/>
+
+    <!-- Sağda taş kaide, kızıl tuğla gövde ve tek taş şerefe -->
+    <path d="M140 126h31v40h-31Z" fill="url(#front-stone)"/>
+    <path d="M140 126h31v40h-31Z" fill="url(#ashlar)" stroke="none"/>
+    <path d="m171 126 9-6v40l-9 6Z" fill="#a2876b"/>
+    <path d="m171 137 9-6m-9 16 9-6m-9 16 9-6" fill="none" stroke="#755941" stroke-width=".6"/>
+    <path d="m139 125 7-9h22l4 9 8-5-9-5 1 10Z" fill="#e3caa5"/>
+    <path d="M139 126h33v3h-33Z" fill="#ad684a" stroke="#926448" stroke-width=".55"/>
+    <path d="M139 150h32v2h-32Z" fill="#ac7155" stroke="none"/>
+    <use href="#minaret-shaft" fill="url(#brick)" stroke="#783e2b"/>
+    <use href="#minaret-shaft" fill="url(#brick-joints)" stroke="none"/>
+    <use href="#minaret-top" fill="url(#brick)" stroke="#783e2b"/>
+    <use href="#minaret-top" fill="url(#brick-joints)" stroke="none"/>
+    <path d="M154 45v-8l3-3 3 3v8Z" fill="#603626" stroke="#e0a17c" stroke-width=".75"/>
+    <g fill="none" stroke-linecap="round">
+      <path d="M147 71q10 3 20 0m-20 8q10 3 20 0m-20 16q10 3 20 0m-20 8q10 3 20 0" stroke="#873e28" stroke-width="1.25"/>
+      <path d="m147 72 4 4-4 3m5-6 4 4-4 3m5-6 4 3-4 3m5-7 4 3-4 3m-15 17 4 4-4 3m5-6 4 4-4 3m5-6 4 3-4 3m5-7 4 3-4 3" stroke="#f2b68b" stroke-width="1.05"/>
+    </g>
+    <path d="M139 53q18 8 35 0l-5 9q-12 6-24 0Z" fill="url(#balcony)"/>
+    <path d="m144 56 5 7m2-5 3 7m3-6v7m6-7-3 7m8-9-4 7" fill="none" stroke="#8f6549" stroke-width=".95"/>
+    <path d="M139 46q18 7 35 0v8q-17 8-35 0Z" fill="url(#balcony)"/>
+    <path d="m141 48 5 8 4-6 5 8 5-7 4 6 5-8 3 5m-30-1 4-3 5 7 4-6 5 7 5-8 4 5" fill="none" stroke="#856247" stroke-width=".8"/>
+    <path d="M139 46q18 7 35 0m-35 8q18 8 35 0" fill="none" stroke="#fae2b8" stroke-width="1.05"/>
+    <path d="M145 28q7-8 12-17 4 9 12 17-12 5-24 0Z" fill="#66594f" stroke="#594639"/>
+    <path d="m145 28 12-17-5 19Z" fill="#a39078" stroke="none"/>
+    <path d="M157 11V6" stroke="#896747" stroke-width="1.25"/>
+    <circle cx="157" cy="6" r="1.15" fill="#c1a274" stroke="none"/>
+  </g>
+</svg>

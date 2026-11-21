@@ -14,6 +14,7 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { useOptionalCampus } from '@/src/app/CampusProviders';
+import { CAMPUS_BUILDING_NAMES } from '@/src/data/brandConfig';
 import { STUDENT_AVATARS } from '@/src/types/campus';
 import type { InteractiveZone } from '../types';
 
@@ -234,7 +235,9 @@ export function WalkableControlsOverlay({
               <span className="w-2 h-2 rounded-full bg-slate-400 mt-1 shrink-0" />
               <div>
                 <strong className="text-[var(--seljuk-navy)]">Diğer Binalar (Yakında):</strong>
-                <span className="text-[var(--campus-ink-muted)] block text-[11px]">Hayalden Gerçeğe, Hikâyeden Hayata, Yolculuğum ve Görev Panosu.</span>
+                <span className="text-[var(--campus-ink-muted)] block text-[11px]">
+                  Hayalden Gerçeğe, Hikâyeden Hayata, {CAMPUS_BUILDING_NAMES.observatory} ve {CAMPUS_BUILDING_NAMES.missions}.
+                </span>
               </div>
             </li>
           </ul>

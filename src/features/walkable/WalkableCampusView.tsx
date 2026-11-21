@@ -402,10 +402,10 @@ export function WalkableCampusView({
         { id: 'bldg-discovery', name: CAMPUS_BUILDING_NAMES.discovery, x: 180, y: 140, width: 220, height: 180 },
         // Hikâyeden Hayata Binası
         { id: 'bldg-library', name: CAMPUS_BUILDING_NAMES.library, x: 580, y: 100, width: 240, height: 170 },
-        // Kampüs Yolculuğum Köşkü
-        { id: 'pavilion-journey', name: 'Kampüs Yolculuğum', x: 220, y: 560, width: 190, height: 140 },
+        // Yerden Göklere gözlem evi
+        { id: 'pavilion-journey', name: CAMPUS_BUILDING_NAMES.observatory, x: 220, y: 560, width: 190, height: 140 },
         // Keşif Görevleri Panosu
-        { id: 'kiosk-missions', name: 'Görev Panosu', x: 910, y: 560, width: 190, height: 140 },
+        { id: 'kiosk-missions', name: CAMPUS_BUILDING_NAMES.missions, x: 910, y: 560, width: 190, height: 140 },
         // Merkez Havuz / Fıskiye
         { id: 'fountain', name: 'Merkez Havuz', x: 670, y: 450, width: 60, height: 60 },
       ];
@@ -455,17 +455,17 @@ export function WalkableCampusView({
             setTimeout(() => setUnreachableMessage(null), 3500);
           },
         },
-        // 4. Kampüs Yolculuğum Köşkü (Görsel olarak durur - Yakında)
+        // 4. Yerden Göklere gözlem evi
         {
           id: 'enter-journey',
-          name: 'Kampüs Yolculuğum',
+          name: CAMPUS_BUILDING_NAMES.observatory,
           prompt: 'Yakında Açılacak',
           x: 315,
           y: 545,
           radius: 70,
           action: () => {
             setUnreachableMessage(
-              'Kampüs Yolculuğum köşkü yakında açılacak. Şu an İngilizce Öğreniyorum sınıfı aktiftir.',
+              `${CAMPUS_BUILDING_NAMES.observatory} gözlem evi yakında açılacak. Şu an İngilizce Öğreniyorum sınıfı aktiftir.`,
             );
             setTimeout(() => setUnreachableMessage(null), 3500);
           },
@@ -473,7 +473,7 @@ export function WalkableCampusView({
         // 5. Keşif Görevleri Panosu (Görsel olarak durur - Yakında)
         {
           id: 'enter-kiosk',
-          name: 'Keşif Görevleri Panosu',
+          name: CAMPUS_BUILDING_NAMES.missions,
           prompt: 'Yakında Açılacak',
           x: 1005,
           y: 545,

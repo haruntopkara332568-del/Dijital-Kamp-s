@@ -5,6 +5,7 @@ import {
   CAMPUS_BRAND,
   CAMPUS_BUILDING_NAMES,
   CAMPUS_INSCRIPTION_NAMES,
+  CAMPUS_ARCHITECTURAL_INSCRIPTIONS,
 } from '@/src/data/brandConfig';
 import { CAMPUS_AREAS, getCampusAreaById } from '@/src/data/campusAreas';
 import { CampusGateView } from '@/src/features/entrance/CampusGateView';
@@ -26,11 +27,12 @@ describe('ONARIM 02 — Marka Kimliği ve Mimari Kitabeler Doğrulaması', () =>
     expect(CAMPUS_BUILDING_NAMES.library).toBe('Hikâyeden Hayata');
   });
 
-  it('3. Mimari kitabe büyük harf biçimleri (CAMPUS_INSCRIPTION_NAMES) eksiksizdir', () => {
+  it('3. Mimari kitabeler onaylı yazım biçimlerini korur', () => {
     expect(CAMPUS_INSCRIPTION_NAMES.brand).toBe('YENİ NESİL KÜLLİYE');
     expect(CAMPUS_INSCRIPTION_NAMES.english).toBe('İNGİLİZCE ÖĞRENİYORUM');
     expect(CAMPUS_INSCRIPTION_NAMES.discovery).toBe('HAYALDEN GERÇEĞE');
-    expect(CAMPUS_INSCRIPTION_NAMES.library).toBe('HİKÂYEDEN HAYATA');
+    expect(CAMPUS_INSCRIPTION_NAMES.library).toBe('Hikâyeden Hayata');
+    expect(CAMPUS_ARCHITECTURAL_INSCRIPTIONS.library.join(' ')).toBe('Hikâyeden Hayata');
   });
 
   it('4. CAMPUS_AREAS veri modelinde teknik ID korunurken kullanıcı başlıkları yeni isimlerle güncellenmiştir', () => {
@@ -62,11 +64,11 @@ describe('ONARIM 02 — Marka Kimliği ve Mimari Kitabeler Doğrulaması', () =>
     expect(screen.getByRole('heading', { level: 1, name: 'Yeni Nesil Külliye' })).toBeInTheDocument();
 
     // Alt başlık ve slogan metinleri
-    expect(screen.getAllByText('Dijital Öğrenme Kampüsü').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Geçmişin bilgeliği, geleceğin öğrenme dünyası')).toBeInTheDocument();
+    expect(screen.getByText('Dijital Öğrenme Kampüsü', { selector: 'p' })).toBeInTheDocument();
+    expect(screen.getByText('Geçmişin bilgeliği, geleceğin öğrenme dünyası.')).toBeInTheDocument();
 
-    // Mimari taş kitabe katmanı içindeki büyük harfli marka
-    expect(screen.getByText('YENİ NESİL KÜLLİYE')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /Yeni Nesil Külliye kitabesi.*Taç Kapı/i }))
+      .toHaveAttribute('src', '/assets/entrance/campus_portal_gate.jpg');
   });
 
   it('6. Üst menü (CampusTopBar) yeni ana marka adını tek satırlık başlık olarak gösterir', () => {

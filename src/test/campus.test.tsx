@@ -883,8 +883,8 @@ describe('Aşama 5.0 — Tek Girişli Yürünebilir Kampüs Deneyimi ve Navigasy
     const onEnter = vi.fn();
     render(<CampusGateView onEnterCourtyard={onEnter} />);
 
-    expect(screen.getByRole('heading', { name: /Yeni Nesil Külliye/i })).toBeInTheDocument();
-    expect(screen.getAllByText(/Dijital Öğrenme Kampüsü/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('heading', { level: 1, name: 'Yeni Nesil Külliye' })).toBeInTheDocument();
+    expect(screen.getByText('Dijital Öğrenme Kampüsü', { selector: 'p' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Kapıyı Aç ve İçeri Gir/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Animasyonu Atla/i })).toBeInTheDocument();
 
@@ -903,7 +903,7 @@ describe('Aşama 5.0 — Tek Girişli Yürünebilir Kampüs Deneyimi ve Navigasy
       </MemoryRouter>,
     );
 
-    expect(await screen.findByRole('heading', { name: /Yeni Nesil Külliye/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Yeni Nesil Külliye' })).toBeInTheDocument();
     unmount();
 
     // B: Kapı görüldü -> Rehbersiz ve modalsız doğrudan Yürünebilir Kampüs yüklenir

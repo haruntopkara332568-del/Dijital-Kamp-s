@@ -38,12 +38,13 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
           />
 
           <div className="px-3.5 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6 space-y-3.5">
-            <header className="space-y-1.5 max-w-xl mx-auto">
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--seljuk-navy)]">
+            <header className="mx-auto max-w-xl space-y-1.5 px-1">
+              <h1 className="sr-only">{CAMPUS_BRAND.name}</h1>
+              <p className="text-sm sm:text-base font-semibold leading-snug text-[var(--seljuk-navy)]">
                 {CAMPUS_BRAND.subtitle}
-              </h1>
-              <p className="text-xs sm:text-sm font-medium text-[var(--campus-ink-muted)]">
-                {CAMPUS_BRAND.slogan}
+              </p>
+              <p className="text-sm font-normal leading-relaxed text-[var(--campus-ink-muted)]">
+                {CAMPUS_BRAND.slogan}.
               </p>
             </header>
 
@@ -59,25 +60,30 @@ export function CampusGateView({ onEnterCourtyard }: CampusGateViewProps) {
                 <img
                   src="/assets/entrance/campus_portal_gate.jpg"
                   alt="Anadolu-Selçuklu mimarisinden esinlenen, üzerinde Yeni Nesil Külliye kitabesi yer alan mukarnaslı Taç Kapı"
-                  className={`w-full h-auto aspect-[16/9] object-cover transition-transform duration-700 ease-out ${
-                    isOpening ? 'scale-105 filter brightness-110' : 'group-hover:scale-[1.01]'
+                  className={`w-full h-auto aspect-[16/9] object-cover saturate-[.88] contrast-[1.07] motion-safe:transition-transform duration-700 ease-out ${
+                    isOpening ? 'motion-safe:scale-105 brightness-105' : 'motion-safe:group-hover:scale-[1.01]'
                   }`}
                   loading="eager"
                   decoding="sync"
                 />
 
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_54%,transparent_31%,rgba(55,38,24,.24)_100%)]"
+                />
+
                 {/* Açılış Işıması Katmanı (Aura / Işık Patlaması) */}
                 <div
                   aria-hidden="true"
-                  className={`absolute inset-0 bg-radial from-[var(--sandstone-gold-soft)]/50 via-[var(--sky-warm-top)]/30 to-transparent transition-opacity duration-700 pointer-events-none ${
-                    isOpening ? 'opacity-100' : 'opacity-0 group-hover:opacity-30'
+                  className={`absolute inset-0 bg-radial from-[var(--stone-cream)]/35 to-transparent motion-safe:transition-opacity duration-700 pointer-events-none ${
+                    isOpening ? 'opacity-100' : 'opacity-0'
                   }`}
                 />
 
                 {/* Kapı Üstü Etkileşim İpucu Rozeti */}
                 {!isOpening && (
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-none flex items-center gap-1.5 bg-[var(--seljuk-navy)]/80 text-[var(--stone-cream)] text-[11px] sm:text-xs font-semibold px-3 py-1 rounded-full backdrop-blur-xs border border-white/20 shadow-sm opacity-90 group-hover:opacity-100 transition-opacity">
-                    <Sparkles className="w-3.5 h-3.5 text-[var(--sandstone-gold)]" aria-hidden="true" />
+                  <div className="absolute bottom-3 left-1/2 w-max max-w-[calc(100%-1rem)] -translate-x-1/2 pointer-events-none hidden sm:flex items-center gap-1.5 bg-[var(--seljuk-navy)]/90 text-[var(--stone-cream)] text-xs font-semibold px-3 py-1 rounded-full border border-white/20 shadow-sm">
+                    <Sparkles className="w-3.5 h-3.5 shrink-0 text-[var(--sandstone-gold)]" aria-hidden="true" />
                     <span>Kapıya Dokun veya Aşağıdaki Düğmeyi Kullan</span>
                   </div>
                 )}

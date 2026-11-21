@@ -22,6 +22,8 @@ export const CAMPUS_BUILDING_NAMES = {
   discovery: 'Hayalden Gerçeğe',
   /** Kitap ve hikâye binası */
   library: 'Hikâyeden Hayata',
+  observatory: 'Yerden Göklere',
+  missions: 'Kızıl Minare Camii',
 } as const;
 
 export const CAMPUS_INSCRIPTION_NAMES = {
@@ -31,8 +33,8 @@ export const CAMPUS_INSCRIPTION_NAMES = {
   english: 'İNGİLİZCE ÖĞRENİYORUM',
   /** Gezi binası mimari kitabesi (Büyük Harf) */
   discovery: 'HAYALDEN GERÇEĞE',
-  /** Hikâye binası mimari kitabesi (Büyük Harf) */
-  library: 'HİKÂYEDEN HAYATA',
+  /** Hikâye binası mimari kitabesi */
+  library: CAMPUS_BUILDING_NAMES.library,
 } as const;
 
 /**

@@ -10,7 +10,7 @@
 
 import type { PlayerCharacter } from '../types';
 import { drawCharacter } from './characterRenderer';
-import { CAMPUS_ARCHITECTURAL_INSCRIPTIONS } from '@/src/data/brandConfig';
+import { CAMPUS_BUILDING_NAMES } from '@/src/data/brandConfig';
 import {
   getEnglishBuildingAsset,
   getDiscoveryBuildingAsset,
@@ -21,6 +21,29 @@ import {
   getCypressTreeAsset,
   getShadeTreeAsset,
 } from './assetLoader';
+
+const PLAZA_RADIUS = 162;
+const STONE_PATH_WIDTH = 46;
+
+interface CourtyardPath {
+  id: string;
+  x: number;
+  y: number;
+  sign?: {
+    lines: readonly string[];
+    side: -1 | 1;
+    setback: number;
+  };
+}
+
+const COURTYARD_PATHS: readonly CourtyardPath[] = [
+  { id: 'gezi-ve-kesif', x: 300, y: 310, sign: { lines: [CAMPUS_BUILDING_NAMES.discovery], side: -1, setback: 10 } },
+  { id: 'kitap-ve-hikaye-dunyasi', x: 700, y: 270, sign: { lines: [CAMPUS_BUILDING_NAMES.library], side: 1, setback: 0 } },
+  { id: 'ingilizce-dunyasi', x: 960, y: 340, sign: { lines: CAMPUS_BUILDING_NAMES.english.split(' '), side: 1, setback: 10 } },
+  { id: 'kampus-yolculugum', x: 340, y: 640, sign: { lines: [CAMPUS_BUILDING_NAMES.observatory], side: -1, setback: 16 } },
+  { id: 'gorev-panosu', x: 980, y: 640, sign: { lines: ['Kızıl Minareli', 'Camii'], side: -1, setback: 30 } },
+  { id: 'exit-gate', x: 700, y: 860 },
+];
 
 export interface DepthEntity {
   id: string;
@@ -78,7 +101,7 @@ export function renderCourtyardLayeredBackground(
 
 /**
  * Y-Sorting Derinlik Sıralı Varlıklar ve Öğrenci Karakteri Çizimi:
- * Tüm binalar, şadırvan haznesi ve fıskiye jeti, banklar, ağaçlar, yönlendirme totemi ve karakter
+ * Tüm binalar, şadırvan haznesi ve fıskiye jeti, banklar, ağaçlar, yön levhaları ve karakter
  * zemin temas noktasına (baseY) göre sıralanır; arkada kalan önce, önde kalan sonra çizilir.
  */
 export function renderCourtyardEntities(
@@ -115,20 +138,15 @@ export function renderCourtyardEntities(
     {
       id: 'pavilion-journey',
       baseY: 560 + 140, // 700
-      draw: (c) => drawJourneyPavilion(c, 220, 560, 190, 140, now),
+      draw: (c) => drawJourneyObservatory(c, 220, 560, 190, 140),
     },
     {
       id: 'kiosk-missions',
       baseY: 560 + 140, // 700
-      draw: (c) => drawMissionsKiosk(c, 910, 560, 190, 140, now),
+      draw: (c) => drawKizilMinareCamii(c, 910, 560, 190, 140),
     },
 
-    // MERKEZ MEYDAN YÖNLENDİRİCİ TOTEM (Çevresel Yönlendirme)
-    {
-      id: 'directional-signpost',
-      baseY: 450,
-      draw: (c) => drawDirectionalSignpost(c, 785, 435, now),
-    },
+    ...getCourtyardPathSigns(centerX, centerY),
 
     // MERKEZ ŞADIRVAN & FISKİYE (Merkez havuz mermer çanağı ve su jeti)
     {
@@ -299,8 +317,11 @@ export function renderCourtyardBackground(
   drawEnglishBuilding(ctx, 860, 140, 220, 180, now);
   drawDiscoveryBuilding(ctx, 180, 140, 220, 180, now);
   drawLibraryBuilding(ctx, 580, 100, 240, 170, now);
-  drawJourneyPavilion(ctx, 220, 560, 190, 140, now);
-  drawMissionsKiosk(ctx, 910, 560, 190, 140, now);
+  drawJourneyObservatory(ctx, 220, 560, 190, 140);
+  drawKizilMinareCamii(ctx, 910, 560, 190, 140);
+  for (const sign of getCourtyardPathSigns(centerX, centerY)) {
+    sign.draw(ctx);
+  }
   drawCourtyardLandscape(ctx, now);
 
   // 3. Ön Plan
@@ -402,7 +423,7 @@ function drawCentralStarPlazaGround(
   ctx.fill();
 
   ctx.beginPath();
-  ctx.arc(0, 0, 162, 0, Math.PI * 2);
+  ctx.arc(0, 0, PLAZA_RADIUS, 0, Math.PI * 2);
   ctx.fillStyle = '#faf5e8';
   ctx.fill();
   ctx.strokeStyle = '#cbb898';
@@ -591,22 +612,13 @@ export function drawCentralStarPlaza(
  * Ana Yürüyüş Yolları: Dokulu kesme taş döşeme, kumtaşı bordürler ve güney dış kapı rotası.
  */
 function drawStonePathways(ctx: CanvasRenderingContext2D, cx: number, cy: number) {
-  const paths = [
-    { x: 300, y: 310 }, // Gezi ve Keşif
-    { x: 700, y: 270 }, // Kitap Dünyası
-    { x: 960, y: 340 }, // İngilizce Dünyası
-    { x: 340, y: 640 }, // Yolculuğum
-    { x: 980, y: 640 }, // Görev Panosu
-    { x: 700, y: 860 }, // Kampüs Dış Kapı Çıkışı
-  ];
-
   ctx.save();
   ctx.lineCap = 'round';
 
   // 1. Yol Alt Tabanı (Gölge & Kenar Bordürü)
   ctx.strokeStyle = '#c7b494';
-  ctx.lineWidth = 46;
-  for (const p of paths) {
+  ctx.lineWidth = STONE_PATH_WIDTH;
+  for (const p of COURTYARD_PATHS) {
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(p.x, p.y);
@@ -616,7 +628,7 @@ function drawStonePathways(ctx: CanvasRenderingContext2D, cx: number, cy: number
   // 2. Yol Üst Taş Kaplaması (Sıcak Kumtaşı)
   ctx.strokeStyle = '#fbf2df';
   ctx.lineWidth = 38;
-  for (const p of paths) {
+  for (const p of COURTYARD_PATHS) {
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(p.x, p.y);
@@ -626,7 +638,7 @@ function drawStonePathways(ctx: CanvasRenderingContext2D, cx: number, cy: number
   // 3. Yol Yan Bordür Çizgileri
   ctx.strokeStyle = '#bca888';
   ctx.lineWidth = 2;
-  for (const p of paths) {
+  for (const p of COURTYARD_PATHS) {
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(p.x, p.y);
@@ -834,7 +846,7 @@ function drawCourtyardGrassParterres(
     { x: 60, y: 340, w: 340, h: 90, r: 16 },
     // 2. Sağ Üst Parter (İngilizce binası altı & doğu sur boyu)
     { x: 990, y: 340, w: 350, h: 90, r: 16 },
-    // 3. Sol Alt Parter (Yolculuğum köşkü önü & batı bahçe)
+    // 3. Sol Alt Parter (Gözlem evi önü ve batı bahçesi)
     { x: 90, y: 530, w: 350, h: 180, r: 18 },
     // 4. Sağ Alt Parter (Görev panosu önü & doğu bahçe)
     { x: 960, y: 530, w: 350, h: 180, r: 18 },
@@ -945,233 +957,176 @@ function drawPathwayGuidanceArrows(ctx: CanvasRenderingContext2D) {
   ctx.restore();
 }
 
-/**
- * Mimari Taş Duvar Yazısı Çizimi (Onarım 03A):
- * Selçuklu taş mimarisiyle ve referans görselle tam uyumlu biçimde, doğrudan bina
- * cephe taşlarına ya da çini frizlerine oyulmuş iki satırlı duvar kitabesi.
- *
- * Kesinlikle dikdörtgen tabela kutusu, kenarlık çerçevesi, asılı pano veya
- * köşe çivisi/rozeti YOKTUR.
- * Cephede "AÇIK" veya "YAKINDA" gibi durum ifadeleri yer almaz.
- */
+/** Bina yüzeyine hizalanmış sade, oyma taş kitabesi. */
 function drawDirectWallInscription(
   ctx: CanvasRenderingContext2D,
   centerX: number,
   startY: number,
-  lines: readonly string[] | string[],
-  variant: 'sandstone' | 'glazed-tile' = 'sandstone',
+  lines: readonly string[],
+  fontSize: number,
+  maxWidth: number,
 ) {
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = 'bold 11px "Georgia", "Cinzel", "Times New Roman", "Avenir Next", serif';
-
-  const lineHeight = 13.5;
-  const isTile = variant === 'glazed-tile';
-
-  // Çini veya kumtaşı cepheye göre oyma taş ve rölyef tonları
-  const deepColor = isTile ? '#112536' : '#27170a';
-  const highlightColor = isTile ? 'rgba(255, 255, 255, 0.78)' : 'rgba(255, 255, 255, 0.82)';
-  const innerShadowColor = isTile ? 'rgba(6, 14, 22, 0.65)' : 'rgba(20, 10, 4, 0.65)';
+  ctx.font = `bold ${fontSize}px Georgia, "Times New Roman", serif`;
 
   lines.forEach((line, index) => {
-    const lineY = startY + index * lineHeight;
-
-    // 1. Alt aydınlık taş rölyef ışıması (Güneş açısıyla ışık alan taş pahı)
-    ctx.fillStyle = highlightColor;
-    ctx.fillText(line, centerX, lineY + 1);
-
-    // 2. Üst oyuk gölgesi (Taş oyuğunun iç gölgesi)
-    ctx.fillStyle = innerShadowColor;
-    ctx.fillText(line, centerX, lineY - 0.5);
-
-    // 3. Taşa oyulmuş ana gövde rengi
-    ctx.fillStyle = deepColor;
-    ctx.fillText(line, centerX, lineY);
+    const lineY = startY + index * (fontSize + 0.5);
+    ctx.fillStyle = 'rgba(255, 233, 193, 0.78)';
+    ctx.fillText(line, centerX, lineY + 0.65, maxWidth);
+    ctx.fillStyle = '#2c1a10';
+    ctx.fillText(line, centerX, lineY, maxWidth);
   });
 
   ctx.restore();
 }
 
+/** Eski harflerin yerindeki taş tonunu, mevcut kitabe bandının içinde sürdürür. */
+function restoreInscriptionStone(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  stoneColors: readonly [string, string, string],
+) {
+  const stone = ctx.createLinearGradient(-width / 2, 0, width / 2, 0);
+  stone.addColorStop(0, stoneColors[0]);
+  stone.addColorStop(0.5, stoneColors[1]);
+  stone.addColorStop(1, stoneColors[2]);
+  ctx.fillStyle = stone;
+  ctx.fillRect(-width / 2, -height / 2, width, height);
+}
 
-/**
- * Merkez Meydan Yönlendirici Totem / Tabela (Section 10).
- * Çevresel yönlendirme sağlar: İngilizce Dünyası'nı [AÇIK] olarak vurgular, diğerlerini [YAKINDA] belirtir.
- */
-function drawDirectionalSignpost(
+
+function getCourtyardPathSigns(centerX: number, centerY: number): DepthEntity[] {
+  const signs: DepthEntity[] = [];
+  for (const path of COURTYARD_PATHS) {
+    const sign = path.sign;
+    if (!sign) continue;
+
+    const dx = path.x - centerX;
+    const dy = path.y - centerY;
+    const length = Math.hypot(dx, dy);
+    const unitX = dx / length;
+    const unitY = dy / length;
+    const distance = PLAZA_RADIUS + sign.setback;
+    // Taban genişliğinin yarısı ve üç birim pay, kaideyi taş bordürün dışında tutar.
+    const offset = sign.side * (STONE_PATH_WIDTH / 2 + 13 + 3);
+    const x = centerX + unitX * distance - unitY * offset;
+    const y = centerY + unitY * distance + unitX * offset;
+    const angle = Math.atan2(dy, dx);
+    signs.push({
+      id: `path-sign-${path.id}`,
+      baseY: y,
+      draw: (ctx) => drawCourtyardPathSign(ctx, x, y, angle, sign.lines),
+    });
+  }
+  return signs;
+}
+
+function drawCourtyardPathSign(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
-  now: number,
+  pathAngle: number,
+  lines: readonly string[],
 ) {
-  ctx.save();
+  const fontSize = 13;
+  const halfWidth = STONE_PATH_WIDTH * 1.33;
+  const boardHeight = fontSize * 2 + 8;
+  const boardTop = -boardHeight - 15;
 
-  // 1. Zemin Temas Gölgesi
-  ctx.fillStyle = 'rgba(23, 43, 71, 0.28)';
+  ctx.save();
+  ctx.translate(x, y);
+
+  const shadow = ctx.createRadialGradient(5, 2, 1, 5, 2, 25);
+  shadow.addColorStop(0, 'rgba(56, 38, 24, 0.28)');
+  shadow.addColorStop(1, 'rgba(56, 38, 24, 0)');
+  ctx.fillStyle = shadow;
   ctx.beginPath();
-  ctx.ellipse(x, y + 14, 22, 8, 0, 0, Math.PI * 2);
+  ctx.ellipse(5, 2, 25, 8, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // 2. Selçuklu Mermer Kaide (Sekizgen Taş Taban)
-  ctx.fillStyle = '#eae0cb';
-  ctx.strokeStyle = '#bfa888';
+  // Kumtaşı taşıyıcı, taban ve sağ yan yüzün gölgesi.
+  ctx.fillStyle = '#967a59';
+  ctx.beginPath();
+  ctx.roundRect(-13, -9, 26, 10, 3);
+  ctx.fill();
+  ctx.fillStyle = '#e8d1a9';
+  ctx.beginPath();
+  ctx.roundRect(-13, -9, 26, 6, 2);
+  ctx.fill();
+  ctx.fillStyle = '#af906a';
+  ctx.fillRect(-5, boardTop + 8, 12, -boardTop - 15);
+  ctx.fillStyle = '#ecdbb9';
+  ctx.fillRect(-5, boardTop + 8, 8, -boardTop - 15);
+
+  ctx.translate(0, boardTop);
+  const boardTilt = -0.045;
+  ctx.rotate(boardTilt);
+  ctx.fillStyle = '#482f20';
+  ctx.beginPath();
+  ctx.roundRect(-halfWidth + 3, 2, halfWidth * 2, boardHeight + 1, 4);
+  ctx.fill();
+
+  const walnut = ctx.createLinearGradient(0, 0, 0, boardHeight);
+  walnut.addColorStop(0, '#8d6241');
+  walnut.addColorStop(1, '#5c3926');
+  ctx.fillStyle = walnut;
+  ctx.strokeStyle = '#5a3926';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(-halfWidth, 0, halfWidth * 2, boardHeight, 4);
+  ctx.fill();
+  ctx.stroke();
+
+  // Açık ahşap kakma ve ince geometrik kenar çizgisi.
+  ctx.fillStyle = '#efdbb6';
+  ctx.strokeStyle = '#ad7c4e';
+  ctx.beginPath();
+  ctx.roundRect(-halfWidth + 4, 4, halfWidth * 2 - 8, boardHeight - 8, 2);
+  ctx.fill();
+  ctx.stroke();
+
+  const arrowSide = Math.cos(pathAngle) < -0.1 ? -1 : 1;
+  const arrowX = arrowSide * (halfWidth - 16);
+  ctx.fillStyle = '#cfa97a';
+  ctx.beginPath();
+  ctx.moveTo(arrowX, boardHeight / 2 - 10);
+  ctx.lineTo(arrowX + 10, boardHeight / 2);
+  ctx.lineTo(arrowX, boardHeight / 2 + 10);
+  ctx.lineTo(arrowX - 10, boardHeight / 2);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#322116';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `bold ${fontSize}px Georgia, "Times New Roman", serif`;
+  const lineHeight = fontSize + 0.5;
+  lines.forEach((line, index) => {
+    ctx.fillText(
+      line,
+      arrowSide * -10,
+      boardHeight / 2 + (index - (lines.length - 1) / 2) * lineHeight,
+      halfWidth * 2 - 36,
+    );
+  });
+
+  // Pusula oku, gerçek yolun doğrultusunu korur.
+  ctx.translate(arrowX, boardHeight / 2);
+  ctx.rotate(pathAngle - boardTilt);
+  ctx.strokeStyle = '#3d281b';
   ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.roundRect(x - 14, y + 2, 28, 14, 3);
-  ctx.fill();
+  ctx.moveTo(-6, 0);
+  ctx.lineTo(6, 0);
+  ctx.moveTo(2, -4);
+  ctx.lineTo(6, 0);
+  ctx.lineTo(2, 4);
   ctx.stroke();
-
-  // 3. Oyma Ahşap Direk (Sedir Ağacı)
-  ctx.fillStyle = '#543b23';
-  ctx.fillRect(x - 4, y - 76, 8, 80);
-  ctx.fillStyle = '#7a5735';
-  ctx.fillRect(x - 2, y - 76, 4, 80);
-
-  // 4. Tepelik (Bakır / Pirinç Alem)
-  ctx.fillStyle = '#d8972b';
-  ctx.beginPath();
-  ctx.arc(x, y - 80, 5, 0, Math.PI * 2);
-  ctx.fill();
-
-  // 5. Yön Levhası 1: İNGİLİZCE ÖĞRENİYORUM [AÇIK] (Sağa / Kuzeydoğuya bakan tabela - AKTİF)
-  const pulse = Math.sin(now / 260) * 0.25 + 0.75;
-  ctx.save();
-  ctx.translate(x + 2, y - 68);
-
-  // Levha gölgesi
-  ctx.fillStyle = 'rgba(23, 43, 71, 0.3)';
-  ctx.beginPath();
-  ctx.moveTo(2, 2);
-  ctx.lineTo(152, 2);
-  ctx.lineTo(162, 12);
-  ctx.lineTo(152, 22);
-  ctx.lineTo(2, 22);
-  ctx.closePath();
-  ctx.fill();
-
-  // Levha ana gövdesi (Turkuaz & Zümrüt yeşili degrade)
-  const signGrad = ctx.createLinearGradient(0, 0, 160, 20);
-  signGrad.addColorStop(0, '#0e768a');
-  signGrad.addColorStop(1, '#059669');
-  ctx.fillStyle = signGrad;
-  ctx.strokeStyle = `rgba(253, 224, 71, ${pulse})`;
-  ctx.lineWidth = 2;
-
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(150, 0);
-  ctx.lineTo(160, 10);
-  ctx.lineTo(150, 20);
-  ctx.lineTo(0, 20);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // Yazı ve Rozet
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 8.5px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('İngilizce Öğreniyorum ➜', 8, 10);
-
-  // Açık rozeti
-  ctx.fillStyle = '#22c55e';
-  ctx.beginPath();
-  ctx.roundRect(120, 3, 26, 14, 3);
-  ctx.fill();
-  ctx.fillStyle = '#052e16';
-  ctx.font = 'bold 8px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('AÇIK', 133, 10);
-  ctx.restore();
-
-  // 6. Yön Levhası 2: Hayalden Gerçeğe [Yakında] (Sola bakan tabela)
-  ctx.save();
-  ctx.translate(x - 2, y - 46);
-
-  ctx.fillStyle = '#1e293b';
-  ctx.strokeStyle = '#94a3b8';
-  ctx.lineWidth = 1.4;
-
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(-130, 0);
-  ctx.lineTo(-140, 9);
-  ctx.lineTo(-130, 18);
-  ctx.lineTo(0, 18);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = '#cbd5e1';
-  ctx.font = 'bold 8px sans-serif';
-  ctx.textAlign = 'right';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('⇦ Hayalden Gerçeğe', -8, 9);
-
-  ctx.fillStyle = '#64748b';
-  ctx.beginPath();
-  ctx.roundRect(-126, 2, 38, 14, 3);
-  ctx.fill();
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = 'bold 7px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('YAKINDA', -107, 9);
-  ctx.restore();
-
-  // 7. Yön Levhası 3: Hikâyeden Hayata [Yakında] (Kuzeye bakan levha)
-  ctx.save();
-  ctx.translate(x + 2, y - 26);
-
-  ctx.fillStyle = '#1e293b';
-  ctx.strokeStyle = '#94a3b8';
-  ctx.lineWidth = 1.4;
-
-  ctx.beginPath();
-  ctx.roundRect(0, 0, 120, 17, 3);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = '#cbd5e1';
-  ctx.font = 'bold 8px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('⇧ Hikâyeden Hayata', 6, 8.5);
-
-  ctx.fillStyle = '#64748b';
-  ctx.beginPath();
-  ctx.roundRect(82, 2, 34, 13, 3);
-  ctx.fill();
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = 'bold 7px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('YAKINDA', 99, 8.5);
-  ctx.restore();
-
-  // 8. Yön Levhası 4: Dış Kapı [Çıkış] (Güneye bakan levha)
-  ctx.save();
-  ctx.translate(x - 2, y - 6);
-
-  ctx.fillStyle = '#1e293b';
-  ctx.strokeStyle = '#e2e8f0';
-  ctx.lineWidth = 1.4;
-
-  ctx.beginPath();
-  if (typeof ctx.roundRect === 'function') {
-    ctx.roundRect(-92, 0, 92, 16, 3);
-  } else {
-    ctx.rect(-92, 0, 92, 16);
-  }
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = 'bold 8px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('⇩ Dış Kapı (Çıkış)', -46, 8);
-  ctx.restore();
-
   ctx.restore();
 }
 
@@ -1207,6 +1162,13 @@ function drawEnglishBuilding(
     const renderY = y + h - renderH + 12; // 40
 
     ctx.drawImage(asset, renderX, renderY, renderW, renderH);
+    ctx.save();
+    ctx.translate(renderX + renderW * (555 / 858), renderY + renderH * (317 / 934));
+    ctx.rotate(-0.147);
+    restoreInscriptionStone(ctx, 59, 7.5, ['#eac687', '#e9c68f', '#e8c997']);
+    ctx.scale(1, 0.8);
+    drawDirectWallInscription(ctx, 0, -0.7, [CAMPUS_BUILDING_NAMES.english], 11.5, 96);
+    ctx.restore();
 
     // 3. Etkileşimli Taç Kapı Işıltısı (Öğrenci yaklaşınca belirginleşen davetkâr portal aurası)
     const portalCenterX = x + w / 2; // 970
@@ -1359,6 +1321,8 @@ function drawEnglishBuilding(
   drawLantern(ctx, portalX - 6, portalY + 22, now);
   drawLantern(ctx, portalX + portalW + 6, portalY + 22, now);
 
+  drawDirectWallInscription(ctx, x + w / 2, portalY - 9, [CAMPUS_BUILDING_NAMES.english], 11.5, portalW + 14);
+
   ctx.restore();
 }
 
@@ -1506,8 +1470,13 @@ function drawLibraryBuilding(
     ctx.stroke();
     ctx.restore();
 
-    // 4. Doğrudan Mimari Duvar Yazısı (Kumtaşı Yüzey)
-    drawDirectWallInscription(ctx, portalCenterX, y + 18, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.library, 'sandstone');
+    // Taç kapının üst taş bandına, ön cephenin eğimiyle hizala.
+    ctx.save();
+    ctx.translate(renderX + renderW * (270 / 962), renderY + renderH * (380 / 976));
+    ctx.rotate(0.09);
+    ctx.scale(1, 0.85);
+    drawDirectWallInscription(ctx, 0, 0, [CAMPUS_BUILDING_NAMES.library], 10.5, 63);
+    ctx.restore();
 
     ctx.restore();
     return;
@@ -1573,188 +1542,48 @@ function drawLibraryBuilding(
   ctx.fill();
 
   // Doğrudan Mimari Duvar Yazısı (Kumtaşı Yüzey)
-  drawDirectWallInscription(ctx, x + w / 2, y + 48, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.library, 'sandstone');
+  drawDirectWallInscription(ctx, x + w / 2, portalY - 6, [CAMPUS_BUILDING_NAMES.library], 10, portalW);
 
   ctx.restore();
 }
 
-/**
- * D. Kampüs Yolculuğum Köşkü (220, 560, 190, 140)
- */
-function drawJourneyPavilion(
+function drawJourneyObservatory(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   w: number,
   h: number,
-  now: number = 0,
 ) {
   const asset = getJourneyPavilionAsset();
-  if (asset) {
-    ctx.save();
-    // 1. Zemin Temas Gölgesi
-    ctx.fillStyle = 'rgba(23, 43, 71, 0.24)';
-    ctx.beginPath();
-    ctx.ellipse(x + w / 2, y + h + 6, w / 2 + 14, 18, 0, 0, Math.PI * 2);
-    ctx.fill();
+  if (!asset) return;
 
-    // 2. Yüksek Kaliteli 2,5B Görsel Varlık (drawImage)
-    const renderW = 235;
-    const renderH = 260;
-    const renderX = x + (w - renderW) / 2;
-    const renderY = y + h - renderH + 12;
-
-    ctx.drawImage(asset, renderX, renderY, renderW, renderH);
-
-    // 3. Etkileşimli Işıltı
-    const portalCenterX = x + w / 2;
-    const pulse = Math.sin(now / 320) * 0.3 + 0.7;
-    ctx.save();
-    ctx.strokeStyle = `rgba(45, 115, 80, ${pulse})`;
-    ctx.lineWidth = 2.5;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.arc(portalCenterX, y + h - 45, 34, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
-
-    // 4. Doğrudan Mimari Duvar Yazısı (Çardak Cephesi)
-    drawDirectWallInscription(ctx, portalCenterX, y + 10, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.journey, 'sandstone');
-
-    ctx.restore();
-    return;
-  }
+  const renderWidth = 224;
+  const renderHeight = 280;
+  const renderX = x + (w - renderWidth) / 2;
+  const renderY = y + h - renderHeight + 12;
+  ctx.drawImage(asset, renderX, renderY, renderWidth, renderHeight);
 
   ctx.save();
-
-  // Gölge
-  ctx.fillStyle = 'rgba(23, 43, 71, 0.18)';
-  ctx.beginPath();
-  ctx.ellipse(x + w / 2, y + h + 6, w / 2 + 12, 16, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Gövde
-  ctx.fillStyle = '#f9f6ed';
-  ctx.strokeStyle = '#ccb997';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.roundRect(x, y + 26, w, h - 26, 8);
-  ctx.fill();
-  ctx.stroke();
-
-  // Adaçayı Yeşili Çatı
-  ctx.fillStyle = '#21573c';
-  ctx.beginPath();
-  ctx.roundRect(x - 6, y + 18, w + 12, 16, 4);
-  ctx.fill();
-
-  // Kemerli Revaklar
-  ctx.fillStyle = '#172b47';
-  for (let i = 0; i < 3; i++) {
-    const rx = x + 16 + i * 56;
-    ctx.beginPath();
-    ctx.roundRect(rx, y + 54, 44, h - 56, [14, 14, 0, 0]);
-    ctx.fill();
-  }
-
-  // Doğrudan Mimari Duvar Yazısı (Çardak Cephesi)
-  drawDirectWallInscription(ctx, x + w / 2, y + 16, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.journey, 'sandstone');
-
+  ctx.translate(renderX + renderWidth * (520 / 1122), renderY + renderHeight * (710 / 1402));
+  restoreInscriptionStone(ctx, 105, 13, ['#f9c98d', '#efba81', '#d8a571']);
+  drawDirectWallInscription(ctx, 0, -0.4, [CAMPUS_BUILDING_NAMES.observatory], 13, 102);
   ctx.restore();
 }
 
-/**
- * E. Keşif Görevleri Panosu (910, 560, 190, 140)
- */
-function drawMissionsKiosk(
+function drawKizilMinareCamii(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   w: number,
   h: number,
-  now: number = 0,
 ) {
   const asset = getMissionsKioskAsset();
-  if (asset) {
-    ctx.save();
-    // 1. Zemin Temas Gölgesi
-    ctx.fillStyle = 'rgba(23, 43, 71, 0.24)';
-    ctx.beginPath();
-    ctx.ellipse(x + w / 2, y + h + 6, w / 2 + 14, 18, 0, 0, Math.PI * 2);
-    ctx.fill();
+  if (!asset) return;
 
-    // 2. Yüksek Kaliteli 2,5B Görsel Varlık (drawImage)
-    const renderW = 210;
-    const renderH = 270;
-    const renderX = x + (w - renderW) / 2;
-    const renderY = y + h - renderH + 12;
-
-    ctx.drawImage(asset, renderX, renderY, renderW, renderH);
-
-    // 3. Etkileşimli Işıltı
-    const portalCenterX = x + w / 2;
-    const pulse = Math.sin(now / 320) * 0.3 + 0.7;
-    ctx.save();
-    ctx.strokeStyle = `rgba(216, 151, 43, ${pulse})`;
-    ctx.lineWidth = 2.5;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.roundRect(portalCenterX - 45, y + h - 85, 90, 75, 6);
-    ctx.stroke();
-    ctx.restore();
-
-    // 4. Doğrudan Mimari Duvar Yazısı (Büfe Cephesi)
-    drawDirectWallInscription(ctx, portalCenterX, y + 10, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.missions, 'sandstone');
-
-    ctx.restore();
-    return;
-  }
-
-  ctx.save();
-
-  // Gölge
-  ctx.fillStyle = 'rgba(23, 43, 71, 0.18)';
-  ctx.beginPath();
-  ctx.ellipse(x + w / 2, y + h + 6, w / 2 + 12, 16, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Gövde
-  ctx.fillStyle = '#f9f6ed';
-  ctx.strokeStyle = '#ccb997';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.roundRect(x, y + 26, w, h - 26, 8);
-  ctx.fill();
-  ctx.stroke();
-
-  // Lacivert Selçuklu Saçağı
-  ctx.fillStyle = '#1b3152';
-  ctx.beginPath();
-  ctx.roundRect(x - 6, y + 18, w + 12, 16, 4);
-  ctx.fill();
-
-  // Ahşap Görev Bülten Panoları
-  ctx.fillStyle = '#8f6843';
-  ctx.beginPath();
-  ctx.roundRect(x + 14, y + 52, w - 28, h - 58, 4);
-  ctx.fill();
-
-  // Pano İçi Parşömen Notlar
-  ctx.fillStyle = '#fcf8ec';
-  ctx.fillRect(x + 22, y + 58, 44, 52);
-  ctx.fillRect(x + 74, y + 58, 44, 52);
-  ctx.fillRect(x + 126, y + 58, 44, 52);
-
-  // Minik rozetler
-  ctx.fillStyle = '#d8972b';
-  ctx.fillRect(x + 40, y + 54, 8, 4);
-  ctx.fillRect(x + 92, y + 54, 8, 4);
-  ctx.fillRect(x + 144, y + 54, 8, 4);
-
-  // Doğrudan Mimari Duvar Yazısı (Büfe Cephesi)
-  drawDirectWallInscription(ctx, x + w / 2, y + 16, CAMPUS_ARCHITECTURAL_INSCRIPTIONS.missions, 'sandstone');
-
-  ctx.restore();
+  const renderSize = 280;
+  const renderX = x + (w - renderSize) / 2;
+  const renderY = y + h - renderSize + 12;
+  ctx.drawImage(asset, renderX, renderY, renderSize, renderSize);
 }
 
 /**
