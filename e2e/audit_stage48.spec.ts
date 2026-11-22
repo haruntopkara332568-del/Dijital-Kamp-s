@@ -1,3 +1,4 @@
+import { finishWalkableEntry } from './walkableEntry';
 import { test, expect } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
@@ -45,6 +46,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
     await page.setViewportSize({ width: 1366, height: 768 });
     const startTime = Date.now();
     await page.goto('/yuruyus');
+    await finishWalkableEntry(page);
     auditResults.initialLoadMs = Date.now() - startTime;
 
     await expect(page.getByText('Yürünebilir Kampüs Avlusu')).toBeVisible();
@@ -137,6 +139,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
   test('2. Senaryo C: Sınıf İçi Gezinme, Sıra Çarpışmaları ve Y-Sorting', async ({ page }) => {
     await page.setViewportSize({ width: 1366, height: 768 });
     await page.goto('/yuruyus');
+    await finishWalkableEntry(page);
     await expect(page.getByText('Yürünebilir Kampüs Avlusu')).toBeVisible();
 
     // Sınıfa doğrudan geç
@@ -208,6 +211,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
   test('3. Senaryo D & E: Akıllı Tahta Görev Akışı ve Avluya Dönüş', async ({ page }) => {
     await page.setViewportSize({ width: 1366, height: 768 });
     await page.goto('/yuruyus');
+    await finishWalkableEntry(page);
     await page.getByRole('button', { name: /Doğrudan Sınıfa Gir/i }).click();
     await expect(page.getByText('İngilizce Sınıfı')).toBeVisible();
 
@@ -279,6 +283,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
   // -------------------------------------------------------------
   test('4. Senaryo F: İlerleme ve Durum Kalıcılığı (localStorage)', async ({ page }) => {
     await page.goto('/yuruyus');
+    await finishWalkableEntry(page);
     await expect(page.getByText('Yürünebilir Kampüs Avlusu')).toBeVisible();
 
     const savedState = await page.evaluate(() => {
@@ -307,6 +312,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
     ];
 
     await page.goto('/yuruyus');
+    await finishWalkableEntry(page);
     await expect(page.getByText('Yürünebilir Kampüs Avlusu')).toBeVisible();
 
     for (const vp of testViewports) {
@@ -358,6 +364,7 @@ test.describe('Aşama 4.8 — Bütünleşik İşlevsel Test ve Kalite Güvence',
   test('6. Performans, FPS ve Bellek Sızıntısı Denetimi', async ({ page }) => {
     await page.setViewportSize({ width: 1366, height: 768 });
     await page.goto('/yuruyus');
+    await finishWalkableEntry(page);
     await expect(page.getByText('Yürünebilir Kampüs Avlusu')).toBeVisible();
     await page.waitForTimeout(800);
 

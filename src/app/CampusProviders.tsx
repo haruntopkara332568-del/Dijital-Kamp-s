@@ -46,7 +46,7 @@ interface CampusContextValue {
   switchProfile: (profileId: string) => void;
   updateProfile: (
     profileId: string,
-    updates: Partial<Pick<StudentProfile, 'alias' | 'avatarId' | 'selectedGrade'>>,
+    updates: Partial<Pick<StudentProfile, 'alias' | 'avatarId' | 'selectedGrade' | 'characterId'>>,
   ) => void;
   deleteProfile: (profileId: string) => Promise<void>;
   isProfileModalOpen: boolean;
@@ -139,7 +139,7 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
   const updateProfile = useCallback(
     (
       profileId: string,
-      updates: Partial<Pick<StudentProfile, 'alias' | 'avatarId' | 'selectedGrade'>>,
+      updates: Partial<Pick<StudentProfile, 'alias' | 'avatarId' | 'selectedGrade' | 'characterId'>>,
     ) => {
       const updated = updateStudentProfile(profileId, updates);
       if (updated) {

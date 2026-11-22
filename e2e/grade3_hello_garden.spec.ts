@@ -1,3 +1,4 @@
+import { finishWalkableEntry } from './walkableEntry';
 import { test, expect } from '@playwright/test';
 
 test.describe('3. Sınıf Keşfet Masası — "Greetings (Selamlaşma)" Görsel Destekli Öğrenme ve Eşleştirme', () => {
@@ -8,7 +9,9 @@ test.describe('3. Sınıf Keşfet Masası — "Greetings (Selamlaşma)" Görsel 
     // 1. Temiz başlangıç
     await page.goto('/');
     await page.evaluate(() => window.localStorage.clear());
+    await page.evaluate(() => localStorage.removeItem('dek_campus_migrated_v1'));
     await page.reload();
+    await finishWalkableEntry(page);
 
     // 2. Giriş Kapısını Aç -> Avluya Gir
     const openGateBtn = page.getByRole('button', { name: /Kapıyı Aç ve İçeri Gir/i });

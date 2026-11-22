@@ -1,3 +1,4 @@
+import { finishWalkableEntry } from './walkableEntry';
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -50,7 +51,9 @@ test.describe('3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Macerası
       };
       window.localStorage.setItem('dek_campus_v1_state', JSON.stringify(state));
     });
+    await page.evaluate(() => localStorage.removeItem('dek_campus_migrated_v1'));
     await page.reload();
+    await finishWalkableEntry(page);
 
     // Giriş kapısını aç -> Avluya gir
     const openGateBtn = page.getByRole('button', { name: /Kapıyı Aç ve İçeri Gir/i });
@@ -165,7 +168,9 @@ test.describe('3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Macerası
       };
       window.localStorage.setItem('dek_campus_v1_state', JSON.stringify(state));
     });
+    await page.evaluate(() => localStorage.removeItem('dek_campus_migrated_v1'));
     await page.reload();
+    await finishWalkableEntry(page);
 
     // Giriş kapısını aç -> Avluya gir
     const openGateBtn = page.getByRole('button', { name: /Kapıyı Aç ve İçeri Gir/i });

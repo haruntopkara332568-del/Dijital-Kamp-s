@@ -1,3 +1,5 @@
+import { getStudentCharacter, STUDENT_CHARACTERS, type StudentCharacterId } from '@/src/data/studentCharacters';
+
 /**
  * Yürünebilir Kampüs Görsel Varlık Yükleyicisi (Asset Loader & Cache)
  * 2,5B yüksek kaliteli görselleri tarayıcıda önceden yükler ve Canvas 2D render motoruna sunar.
@@ -33,7 +35,7 @@ export const MISSIONS_KIOSK_ASSET_URL = '/assets/walkable/kizil_minare_camii_v2.
 export const JOURNEY_PAVILION_ASSET_URL = '/assets/walkable/kampus_yolculugum_gozlem_evi.png';
 export const CYPRESS_TREE_ASSET_URL = '/assets/walkable/tree_cypress.png';
 export const SHADE_TREE_ASSET_URL = '/assets/walkable/tree_shade.png';
-export const STUDENT_CHARACTER_ATLAS_URL = '/assets/walkable/character_student_atlas.png';
+export const STUDENT_CHARACTER_ATLAS_URL = STUDENT_CHARACTERS[0].atlasUrl;
 export const CLASSROOM_BACKGROUND_ASSET_URL = '/assets/walkable/classroom_background.png';
 export const CLASSROOM_DESK_ASSET_URL = '/assets/walkable/classroom_desk.png';
 export const CLASSROOM_DESK_MIRRORED_ASSET_URL = '/assets/walkable/classroom_desk_mirrored.png';
@@ -80,8 +82,9 @@ export function getShadeTreeAsset(): HTMLImageElement | null {
   return getLoadedAsset(SHADE_TREE_ASSET_URL);
 }
 
-export function getStudentCharacterAtlas(): HTMLImageElement | null {
-  return getLoadedAsset(STUDENT_CHARACTER_ATLAS_URL);
+export function getStudentCharacterAtlas(characterId?: StudentCharacterId): HTMLImageElement | null {
+  const character = characterId ? getStudentCharacter(characterId) : STUDENT_CHARACTERS[0];
+  return character ? getLoadedAsset(character.atlasUrl) : null;
 }
 
 export function getClassroomBackgroundAsset(): HTMLImageElement | null {
@@ -144,7 +147,6 @@ export function preloadWalkableAssets() {
   getLoadedAsset(JOURNEY_PAVILION_ASSET_URL);
   getLoadedAsset(CYPRESS_TREE_ASSET_URL);
   getLoadedAsset(SHADE_TREE_ASSET_URL);
-  getLoadedAsset(STUDENT_CHARACTER_ATLAS_URL);
   getLoadedAsset(CLASSROOM_BACKGROUND_ASSET_URL);
   getLoadedAsset(CLASSROOM_DESK_ASSET_URL);
   getLoadedAsset(CLASSROOM_DESK_MIRRORED_ASSET_URL);

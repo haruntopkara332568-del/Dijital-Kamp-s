@@ -1,8 +1,9 @@
+import { finishWalkableEntry } from './walkableEntry';
 import { test, expect, Page } from '@playwright/test';
 import path from 'path';
 
 async function enterEnglishClassroom(page: Page) {
-  await page.waitForSelector('canvas[data-testid="walkable-canvas"]');
+  await finishWalkableEntry(page);
   await page.evaluate(() => {
     const engine = (
       window as unknown as {
@@ -70,8 +71,7 @@ test.describe('ONARIM 02 — Marka Kimliği, Mimari Kitabeler ve 20 Senaryo Doğ
     await expect(openBtn).toBeVisible();
     await openBtn.click();
 
-    // Kapı animasyonu sonrası avlu canvası açılır
-    await expect(page.locator('canvas[data-testid="walkable-canvas"]')).toBeVisible({ timeout: 8000 });
+    await finishWalkableEntry(page);
   });
 
   test('Senaryo 3, 4, 18: Kampüs Avlusu, Bina Kitabeleri ve Kamera Hareketi', async ({
@@ -95,7 +95,7 @@ test.describe('ONARIM 02 — Marka Kimliği, Mimari Kitabeler ve 20 Senaryo Doğ
     });
 
     await page.goto('/');
-    await page.waitForSelector('canvas[data-testid="walkable-canvas"]');
+    await finishWalkableEntry(page);
     await page.waitForTimeout(600);
 
     const isMobile = testInfo.project.name.includes('mobile');
@@ -234,7 +234,7 @@ test.describe('ONARIM 02 — Marka Kimliği, Mimari Kitabeler ve 20 Senaryo Doğ
     });
 
     await page.goto('/');
-    await page.waitForSelector('canvas[data-testid="walkable-canvas"]');
+    await finishWalkableEntry(page);
 
     // Hayalden Gerçeğe binası etkileşimi
     await page.evaluate(() => {

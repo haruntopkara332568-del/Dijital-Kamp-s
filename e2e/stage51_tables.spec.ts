@@ -1,3 +1,4 @@
+import { finishWalkableEntry } from './walkableEntry';
 import { test, expect } from '@playwright/test';
 
 test.describe('Aşama 5.1 — İngilizce Sınıfında Dört Etkileşimli Masa ve Akıllı Tahta Koruması', () => {
@@ -7,7 +8,9 @@ test.describe('Aşama 5.1 — İngilizce Sınıfında Dört Etkileşimli Masa ve
     // 1. Temiz başlangıç ve yerel durum sıfırlama
     await page.goto('/');
     await page.evaluate(() => window.localStorage.clear());
+    await page.evaluate(() => localStorage.removeItem('dek_campus_migrated_v1'));
     await page.reload();
+    await finishWalkableEntry(page);
 
     // 2. Giriş Kapısı Sahnesi
     const gateHeading = page.getByRole('heading', { name: /Dijital Eğitim Kampüsü/i });

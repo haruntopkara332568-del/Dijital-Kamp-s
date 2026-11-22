@@ -1,3 +1,4 @@
+import { finishWalkableEntry } from './walkableEntry';
 import { test, expect } from '@playwright/test';
 
 test.describe('Dijital Eğitim Kampüsü Uçtan Uca Yolculuk', () => {
@@ -286,6 +287,7 @@ test.describe('Dijital Eğitim Kampüsü Uçtan Uca Yolculuk', () => {
     page,
   }) => {
     await page.goto('/yuruyus');
+    await finishWalkableEntry(page);
 
     // 1. Yürünebilir kampüs avlusu başlangıç görünümü
     await expect(page.getByText('Yürünebilir Kampüs Avlusu')).toBeVisible();

@@ -1,3 +1,5 @@
+import type { StudentCharacterId } from '@/src/data/studentCharacters';
+
 export const SUPPORTED_GRADES = [2, 3, 4] as const;
 export type SupportedGrade = (typeof SUPPORTED_GRADES)[number];
 
@@ -11,7 +13,8 @@ export type LegacyGradeLevel = (typeof LEGACY_GRADES)[number];
 export interface StudentProfile {
   id: string; // crypto.randomUUID() veya benzersiz teknik kimlik
   alias: string; // Takma ad (Gezgin, Bilgin, Kâşif vb.)
-  avatarId: string; // Seçilen avatar kimliği
+  avatarId: string; // Seçilen profil rozeti
+  characterId?: StudentCharacterId;
   selectedGrade: SupportedGrade; // Yalnızca 2, 3 veya 4. sınıf
   createdAt: string; // ISO
   lastUsedAt: string; // ISO

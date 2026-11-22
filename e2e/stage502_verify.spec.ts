@@ -1,3 +1,4 @@
+import { finishWalkableEntry } from './walkableEntry';
 import { test, expect } from '@playwright/test';
 
 test.describe('Aşama 5.0.2 — Sınıf Seçim Panosu, Akıllı Tahta Kilidi ve Dış Kapı Çıkış Döngüsü', () => {
@@ -7,7 +8,9 @@ test.describe('Aşama 5.0.2 — Sınıf Seçim Panosu, Akıllı Tahta Kilidi ve 
     // 1. Temiz başlangıç
     await page.goto('/');
     await page.evaluate(() => window.localStorage.clear());
+    await page.evaluate(() => localStorage.removeItem('dek_campus_migrated_v1'));
     await page.reload();
+    await finishWalkableEntry(page);
 
     // 2. Giriş Kapısı görünür
     const gateHeading = page.getByRole('heading', { name: /Dijital Eğitim Kampüsü/i });

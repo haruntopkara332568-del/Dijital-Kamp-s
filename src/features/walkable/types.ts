@@ -1,3 +1,4 @@
+import type { StudentCharacterId } from '@/src/data/studentCharacters';
 import type { GradeLevel } from '@/src/types/campus';
 
 export type CharacterDirection = 'down' | 'up' | 'left' | 'right';
@@ -45,6 +46,7 @@ export interface WalkableSceneConfig {
 }
 
 export interface PlayerCharacter {
+  characterId?: StudentCharacterId;
   x: number;
   y: number;
   width: number;
