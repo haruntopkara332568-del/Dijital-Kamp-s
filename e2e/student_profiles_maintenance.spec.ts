@@ -1,3 +1,4 @@
+import { finishWalkableEntry } from './walkableEntry';
 import { test, expect } from '@playwright/test';
 import path from 'path';
 
@@ -43,8 +44,7 @@ test.describe('ONARIM 03A — Cihaz Tabanlı Öğrenci Profil Altyapısı E2E Do
     await expect(startBtn).toBeVisible();
     await startBtn.click();
 
-    // 6. Modal kapanır ve yürünebilir avlu canvası görünür
-    await expect(page.locator('canvas[data-testid="walkable-canvas"]')).toBeVisible({ timeout: 8000 });
+    await finishWalkableEntry(page, 'Zeynep');
 
     // 7. Üst barda Gezgin ve 3. Sınıf görünür
     await expect(page.getByText('Gezgin').first()).toBeVisible();
@@ -96,7 +96,7 @@ test.describe('ONARIM 03A — Cihaz Tabanlı Öğrenci Profil Altyapısı E2E Do
     });
 
     await page.goto('/');
-    await expect(page.locator('canvas[data-testid="walkable-canvas"]')).toBeVisible({ timeout: 8000 });
+    await finishWalkableEntry(page);
 
     // 1. Üst barda Gezgin görünür
     const gezginBtn = page.getByRole('button', { name: /Gezgin/i }).first();
@@ -125,6 +125,7 @@ test.describe('ONARIM 03A — Cihaz Tabanlı Öğrenci Profil Altyapısı E2E Do
     await grade4Btn.click();
 
     await page.getByTestId('start-learning-btn').click();
+    await finishWalkableEntry(page, 'Deniz');
 
     // 5. Artık üst barda Bilgin ve 4. Sınıf görünür
     await expect(page.getByText('Bilgin').first()).toBeVisible();
@@ -183,7 +184,7 @@ test.describe('ONARIM 03A — Cihaz Tabanlı Öğrenci Profil Altyapısı E2E Do
     });
 
     await page.goto('/');
-    await expect(page.locator('canvas[data-testid="walkable-canvas"]')).toBeVisible({ timeout: 8000 });
+    await finishWalkableEntry(page);
 
     // Profil modalını aç
     await page.getByRole('button', { name: /Gezgin/i }).first().click();

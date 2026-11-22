@@ -1,3 +1,4 @@
+import { getStudentCharacter } from '@/src/data/studentCharacters';
 import {
   type CampusStudentState,
   type DiscoveryPreference,
@@ -138,6 +139,7 @@ export function loadStudentProfiles(): StudentProfile[] {
           id: p.id,
           alias: p.alias.trim(),
           avatarId: p.avatarId,
+          characterId: getStudentCharacter(p.characterId)?.id,
           selectedGrade: p.selectedGrade,
           createdAt: typeof p.createdAt === 'string' ? p.createdAt : new Date().toISOString(),
           lastUsedAt: typeof p.lastUsedAt === 'string' ? p.lastUsedAt : new Date().toISOString(),
@@ -246,7 +248,7 @@ export function createStudentProfile(
 
 export function updateStudentProfile(
   profileId: string,
-  updates: Partial<Pick<StudentProfile, 'alias' | 'avatarId' | 'selectedGrade'>>,
+  updates: Partial<Pick<StudentProfile, 'alias' | 'avatarId' | 'selectedGrade' | 'characterId'>>,
 ): StudentProfile | null {
   const profiles = loadStudentProfiles();
   const target = profiles.find((p) => p.id === profileId);
@@ -261,6 +263,7 @@ export function updateStudentProfile(
     ...target,
     alias: updates.alias ? updates.alias.trim() : target.alias,
     avatarId: updates.avatarId ?? target.avatarId,
+    characterId: getStudentCharacter(updates.characterId)?.id ?? target.characterId,
     selectedGrade: nextGrade,
     lastUsedAt: new Date().toISOString(),
   };

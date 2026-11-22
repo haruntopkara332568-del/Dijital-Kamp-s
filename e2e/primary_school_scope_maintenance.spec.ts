@@ -1,7 +1,8 @@
+import { finishWalkableEntry } from './walkableEntry';
 import { test, expect, Page } from '@playwright/test';
 
 async function enterEnglishClassroom(page: Page) {
-  await page.waitForSelector('canvas[data-testid="walkable-canvas"]');
+  await finishWalkableEntry(page);
   await page.evaluate(() => {
     const engine = (
       window as unknown as {
@@ -194,6 +195,7 @@ test.describe('ONARIM 01 — İlkokul Kapsamı (2, 3, 4. Sınıflar) ve 18 Senar
     });
 
     await page.goto('/');
+    await finishWalkableEntry(page);
     await expect(page.locator('canvas[data-testid="walkable-canvas"]')).toBeVisible({
       timeout: 6000,
     });
@@ -220,7 +222,7 @@ test.describe('ONARIM 01 — İlkokul Kapsamı (2, 3, 4. Sınıflar) ve 18 Senar
 
     await page.goto('/gorev/kapilarin-anlattigi-hikaye');
     await page.waitForURL('/', { timeout: 5000 });
-    await expect(page.locator('canvas[data-testid="walkable-canvas"]')).toBeVisible();
+    await finishWalkableEntry(page);
   });
 
   test('Senaryo 12: Sınıf seçilmemişken masalara veya tahtaya yaklaşıldığında yönlendirme mesajı sunulur', async ({

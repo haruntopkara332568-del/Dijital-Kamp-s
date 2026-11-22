@@ -24,17 +24,20 @@ import { SmartBoardModal } from './components/SmartBoardModal';
 import { GradeBoardModal } from './components/GradeBoardModal';
 import { TableStationModal } from './components/TableStationModal';
 import { CAMPUS_BUILDING_NAMES } from '@/src/data/brandConfig';
+import type { StudentCharacterId } from '@/src/data/studentCharacters';
 import { useOptionalCampus } from '../../app/CampusProviders';
 import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } from './types';
 import type { MissionStageId } from '@/src/types/campus';
 
 export interface WalkableCampusViewProps {
+  characterId?: StudentCharacterId;
   initialScene?: 'courtyard' | 'classroom' | 'sultanhani_square';
   onBackToMap?: () => void;
   onExitToGate?: () => void;
 }
 
 export function WalkableCampusView({
+  characterId,
   initialScene = 'courtyard',
   onBackToMap,
   onExitToGate,
@@ -75,6 +78,12 @@ export function WalkableCampusView({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<WalkableCanvasEngine | null>(null);
+  const characterIdRef = useRef(characterId);
+
+  useEffect(() => {
+    characterIdRef.current = characterId;
+    if (engineRef.current) engineRef.current.player.characterId = characterId;
+  }, [characterId]);
   const sceneTransitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sahne içi son konumları saklayarak geri dönüşlerde konumu koruma (Section 6)
@@ -649,6 +658,7 @@ export function WalkableCampusView({
       spawnPos,
     );
 
+    engine.player.characterId = characterIdRef.current;
     engine.start();
     if (currentScene === 'sultanhani_square') {
       engine.player.direction = 'up';

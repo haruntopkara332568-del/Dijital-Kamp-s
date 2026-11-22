@@ -1,3 +1,4 @@
+import { STUDENT_ATLAS_FRAME } from '@/src/data/studentCharacters';
 import type { PlayerCharacter } from '../types';
 import { getStudentCharacterAtlas } from './assetLoader';
 
@@ -34,7 +35,8 @@ export function drawCharacter(ctx: CanvasRenderingContext2D, player: PlayerChara
   const isWalking = state === 'walk';
 
   // 1. Yeni 2,5B Sinematik Sprite Atlas Entegrasyonu (Aşama 4.4 & 4.5)
-  const atlas = getStudentCharacterAtlas();
+  const atlas = getStudentCharacterAtlas(player.characterId);
+  if (!atlas && player.characterId) return;
   if (atlas) {
     ctx.save();
     ctx.translate(x, y);
@@ -59,8 +61,7 @@ export function drawCharacter(ctx: CanvasRenderingContext2D, player: PlayerChara
     ctx.fill();
 
     // Yön ve Animasyon Karesi Hesaplama (Sprite Atlas: 4 kolon x 4 satır, hücre: 140x180 px)
-    const CELL_W = 140;
-    const CELL_H = 180;
+    const { width: CELL_W, height: CELL_H } = STUDENT_ATLAS_FRAME;
 
     let row = 0; // 0: down, 1: up, 2: right, 3: left
     switch (direction) {

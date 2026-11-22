@@ -1,3 +1,4 @@
+import { finishWalkableEntry } from './walkableEntry';
 import { test, expect } from '@playwright/test';
 
 test.describe('3. Sınıf Paylaş Masası — "Greetings (Birlikte Konuşalım)" Karşılık Ver & Sen Başlat', () => {
@@ -49,7 +50,9 @@ test.describe('3. Sınıf Paylaş Masası — "Greetings (Birlikte Konuşalım)"
       };
       window.localStorage.setItem('dek_campus_v1_state', JSON.stringify(state));
     });
+    await page.evaluate(() => localStorage.removeItem('dek_campus_migrated_v1'));
     await page.reload();
+    await finishWalkableEntry(page);
 
     console.log('>>> [E2E] Step 2: Opening entrance gate...');
     // 2. Giriş Kapısını Aç -> Avluya Gir

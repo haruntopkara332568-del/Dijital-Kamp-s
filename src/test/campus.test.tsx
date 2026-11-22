@@ -12,6 +12,8 @@ import {
   loadStudentState,
   saveStudentState,
   createInitialStudentState,
+  createStudentProfile,
+  loadStudentProfiles,
 } from '@/src/services/storage';
 import { speakSegments } from '@/src/services/speech';
 import { CampusProviders } from '@/src/app/CampusProviders';
@@ -893,7 +895,7 @@ describe('Aşama 5.0 — Tek Girişli Yürünebilir Kampüs Deneyimi ve Navigasy
     expect(onEnter).toHaveBeenCalled();
   });
 
-  it('2. Tek Giriş Akışı: İlk girişte Taç Kapı -> Kapı açılınca doğrudan Yürünebilir Kampüs Avlusu', async () => {
+  it('2. Tek giriş akışı: Taç kapıdan sonra karakter seçilir ve takip eden girişte korunur', async () => {
     // A: Henüz kapı görülmedi -> Taç Kapı görünür
     const { unmount } = render(
       <MemoryRouter initialEntries={['/']}>
@@ -906,10 +908,8 @@ describe('Aşama 5.0 — Tek Girişli Yürünebilir Kampüs Deneyimi ve Navigasy
     expect(await screen.findByRole('heading', { level: 1, name: 'Yeni Nesil Külliye' })).toBeInTheDocument();
     unmount();
 
-    // B: Kapı görüldü -> Rehbersiz ve modalsız doğrudan Yürünebilir Kampüs yüklenir
-    const st2 = createInitialStudentState();
-    st2.hasSeenGate = true;
-    saveStudentState(st2);
+    // Kayıtlı profilde ilk yürüyüş karakteri henüz seçilmedi.
+    const profile = createStudentProfile('Gezgin', 'avatar_1', 3);
 
     const { unmount: unmount2 } = render(
       <MemoryRouter initialEntries={['/']}>
@@ -919,19 +919,23 @@ describe('Aşama 5.0 — Tek Girişli Yürünebilir Kampüs Deneyimi ve Navigasy
       </MemoryRouter>,
     );
 
-    // Modal karşılama veya rehberli tur ekranı değil, doğrudan walkable-canvas açılır
+    expect(await screen.findByRole('heading', { name: 'Karakterini Seç' })).toBeInTheDocument();
+    expect(screen.getAllByRole('radio')).toHaveLength(6);
+    expect(screen.queryByTestId('walkable-canvas')).not.toBeInTheDocument();
+    const continueButton = screen.getByRole('button', { name: 'Bu karakterle devam et' });
+    expect(continueButton).toBeDisabled();
+    fireEvent.click(screen.getByRole('radio', { name: 'Zeynep' }));
+    expect(continueButton).toBeEnabled();
+    fireEvent.click(continueButton);
+
     expect(await screen.findByTestId('walkable-canvas')).toBeInTheDocument();
+    expect(loadStudentProfiles().find((student) => student.id === profile.id)?.characterId).toBe('zeynep');
     expect(screen.queryByText(/Rehber Eşliğinde Gez/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Kuşbakışı Harita/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Doğrudan Sınıfa Gir/i)).not.toBeInTheDocument();
     unmount2();
 
-    // C: Karakteriyle avluda serbestçe dolaşabilir
-    const st3 = createInitialStudentState();
-    st3.hasSeenGate = true;
-    st3.hasCompletedOnboarding = true;
-    st3.selectedGrade = 4;
-    saveStudentState(st3);
+    // Yeniden açıldığında öğrenci aynı karakterle avluya girer.
 
     render(
       <MemoryRouter initialEntries={['/']}>

@@ -1,3 +1,4 @@
+import { finishWalkableEntry } from './walkableEntry';
 import { test, expect } from '@playwright/test';
 
 test.describe('3. Sınıf Üret Masası — "Greetings (Cümlemi Oluştur)" Cümle Kurma & Doğru Cümleyi Bul', () => {
@@ -49,7 +50,9 @@ test.describe('3. Sınıf Üret Masası — "Greetings (Cümlemi Oluştur)" Cüm
       };
       window.localStorage.setItem('dek_campus_v1_state', JSON.stringify(state));
     });
+    await page.evaluate(() => localStorage.removeItem('dek_campus_migrated_v1'));
     await page.reload();
+    await finishWalkableEntry(page);
 
     // 2. Giriş Kapısını Aç -> Avluya Gir
     const openGateBtn = page.getByRole('button', { name: /Kapıyı Aç ve İçeri Gir/i });

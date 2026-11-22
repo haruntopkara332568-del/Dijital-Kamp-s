@@ -1,8 +1,10 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { Link, Navigate, useParams } from 'react-router';
 import { useCampus } from '@/src/app/CampusProviders';
 import { isSupportedGrade } from '@/src/types/campus';
 import { CampusTopBar } from '@/src/components/CampusTopBar';
+import { getStudentCharacter } from '@/src/data/studentCharacters';
+import { CharacterSelectionView } from '@/src/features/walkable/CharacterSelectionView';
 
 const CampusGateView = lazy(() =>
   import('@/src/features/entrance/CampusGateView').then((m) => ({ default: m.CampusGateView })),
@@ -41,16 +43,34 @@ function RouteLoadingFallback() {
   );
 }
 
+function CampusWalkableEntrance({ onExitToGate }: { onExitToGate?: () => void }) {
+  const { hydrated, activeProfile, openProfileModal, updateProfile } = useCampus();
+
+  useEffect(() => {
+    if (hydrated && !activeProfile) openProfileModal();
+  }, [hydrated, activeProfile, openProfileModal]);
+
+  if (!hydrated || !activeProfile) return <RouteLoadingFallback />;
+
+  const character = getStudentCharacter(activeProfile.characterId);
+  if (!character) {
+    return (
+      <CharacterSelectionView
+        key={activeProfile.id}
+        onConfirm={(characterId) => updateProfile(activeProfile.id, { characterId })}
+      />
+    );
+  }
+
+  return (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <WalkableCampusView characterId={character.id} onExitToGate={onExitToGate} />
+    </Suspense>
+  );
+}
+
 export function HomeRoutePage() {
-  const {
-    hydrated,
-    state,
-    markGateSeen,
-    replayWelcomeFlow,
-    profiles,
-    activeProfile,
-    openProfileModal,
-  } = useCampus();
+  const { hydrated, state, markGateSeen, replayWelcomeFlow } = useCampus();
 
   if (!hydrated) {
     return (
@@ -66,24 +86,12 @@ export function HomeRoutePage() {
   if (!state.hasSeenGate) {
     return (
       <Suspense fallback={<RouteLoadingFallback />}>
-        <CampusGateView
-          onEnterCourtyard={() => {
-            markGateSeen();
-            if (profiles.length === 0 || !activeProfile) {
-              openProfileModal();
-            }
-          }}
-        />
+        <CampusGateView onEnterCourtyard={markGateSeen} />
       </Suspense>
     );
   }
 
-  // 2. Kapı görüldükten sonra doğrudan Sinematik Yürünebilir Kampüs Avlusu açılır.
-  return (
-    <Suspense fallback={<RouteLoadingFallback />}>
-      <WalkableCampusView onExitToGate={replayWelcomeFlow} />
-    </Suspense>
-  );
+  return <CampusWalkableEntrance onExitToGate={replayWelcomeFlow} />;
 }
 
 export function CampusMapRoutePage() {
@@ -134,11 +142,7 @@ export function DesignSystemRoutePage() {
 }
 
 export function WalkableCampusRoutePage() {
-  return (
-    <Suspense fallback={<RouteLoadingFallback />}>
-      <WalkableCampusView />
-    </Suspense>
-  );
+  return <CampusWalkableEntrance />;
 }
 
 export function NotFoundRoutePage() {
