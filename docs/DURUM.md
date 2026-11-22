@@ -1,3 +1,23 @@
+# Proje Durum Raporu — Aksaray Sultanhanı Dış Meydan Turist NPC Entegrasyonu (Seçenek A)
+
+## 1. Kapsam ve Uygulanan Özellikler
+- **Tekil NPC Veri Tanımı (`src/data/sultanhaniNpc.ts`)**: `id: 'turist-sultanhani'`, sahne `sultanhani_square`, başlangıç `{ x: 880, y: 645 }` (öğrenci doğuş noktasından ~`280 px >= 3×67 px` uzakta), yatay devriye `[780, 980]` (`±100 px <= 2×67 px`), hız `80 px/sn`, uç noktalarda `1750 ms` bekleme, giriş/çıkış histerezis eşikleri `101 px` (`1.5×`) ve `134 px` (`2.0×`), tekrar konuşma bekleme süresi `10.000 ms`, onaylı 4 cümlelik metin.
+- **Görsel Bütünlük (Seçenek A)**:
+  - `public/assets/walkable/sultanhani_caravanserai.jpg` (`553×466`) sağındaki statik gömülü figür temizlendi; böylece sahnede yalnızca tek bir etkileşimli turist görünür.
+  - `public/assets/walkable/npc_tourist_atlas.png` (`560×720 RGBA`, 4×4 ızgara) mevcut öğrenci karakterleriyle aynı stil, boyut (`53×67 px`) ve 3 katmanlı gölge/zemin hizasıyla (`drawTouristNpc`) entegre edildi. Görsel yüklenemezse tek bir `console.warn` yazılır ve NPC sessizce gizlenir.
+- **Hareket ve Konuşma (`WalkableCanvasEngine.ts`, `NpcSpeechBubble.tsx`, `WalkableCampusView.tsx`)**:
+  - Devriye mevcut `requestAnimationFrame` döngüsünde çalışır; öğrenci yaklaşınca NPC durur ve öğrenciye döner, konuşma bitince kaldığı yerden devam eder (`prefers-reduced-motion` destekli).
+  - Balon en az `44×44 px` dokunma alanlı `Devam` / `Tamam` düğmesiyle fare, dokunma, `Enter` ve `Boşluk` tuşlarını destekler; uzaklaşınca kapanır ve `10 sn` bekleme uygular.
+
+## 2. Doğrulama Durumu
+- `npm run typecheck`: 0 hata.
+- `npm run lint`: 0 hata, 0 uyarı.
+- `npm run test`: 153 / 153 test geçti (7 test dosyası, `src/test/sultanhaniNpc.test.tsx` [7 test] dahil).
+- `npm run build`: 1.71s içinde hatasız üretim derlemesi.
+- Canlı tarayıcı doğrulaması (Playwright Chromium `1280×720` masaüstü ve `390×844` mobil): 0 konsol hatası, taşma yok.
+
+---
+
 # Proje Durum Raporu — Bakım ve Onarım 03A: Cihaz Tabanlı Öğrenci Profil Altyapısı ve Mimari Duvar Yazılarının Düzeltilmesi
 
 ## 1. Kapsam ve Başlangıç Referansı

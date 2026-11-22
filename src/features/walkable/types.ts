@@ -1,8 +1,10 @@
 import type { StudentCharacterId } from '@/src/data/studentCharacters';
+import type { SceneNpcConfig } from '@/src/data/sultanhaniNpc';
 import type { GradeLevel } from '@/src/types/campus';
 
 export type CharacterDirection = 'down' | 'up' | 'left' | 'right';
 export type CharacterState = 'idle' | 'walk';
+export type NpcPatrolPhase = 'moving_left' | 'pausing_left' | 'moving_right' | 'pausing_right';
 
 export interface Position {
   x: number;
@@ -43,6 +45,8 @@ export interface WalkableSceneConfig {
   playerSpawn: Position;
   obstacles: SceneObstacle[];
   interactiveZones: InteractiveZone[];
+  npc?: SceneNpcConfig;
+  isNpcVisible?: () => boolean;
 }
 
 export interface PlayerCharacter {
@@ -56,4 +60,18 @@ export interface PlayerCharacter {
   speed: number;
   walkFrame: number;
   grade: GradeLevel;
+}
+
+export interface NpcCharacter {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  direction: CharacterDirection;
+  state: CharacterState;
+  speed: number;
+  walkFrame: number;
+  visible: boolean;
 }

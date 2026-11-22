@@ -19,11 +19,14 @@ import {
   renderSultanhaniEntities,
   SULTANHANI_SQUARE,
 } from './engine/sultanhaniSceneRenderer';
+import { getSultanhaniTouristAtlas } from './engine/assetLoader';
 import { WalkableControlsOverlay } from './components/WalkableControlsOverlay';
+import { NpcSpeechBubble } from './components/NpcSpeechBubble';
 import { SmartBoardModal } from './components/SmartBoardModal';
 import { GradeBoardModal } from './components/GradeBoardModal';
 import { TableStationModal } from './components/TableStationModal';
 import { CAMPUS_BUILDING_NAMES } from '@/src/data/brandConfig';
+import { SULTANHANI_TOURIST_NPC } from '@/src/data/sultanhaniNpc';
 import type { StudentCharacterId } from '@/src/data/studentCharacters';
 import { useOptionalCampus } from '../../app/CampusProviders';
 import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } from './types';
@@ -102,6 +105,13 @@ export function WalkableCampusView({
   const [isSmartBoardActive, setIsSmartBoardActive] = useState(false);
   const [isTeleporting, setIsTeleporting] = useState(false);
   const [teleportMessage, setTeleportMessage] = useState("Sultanhanı Kervansarayı Meydanı'na Işınlanıyorsun... 🏛️✨");
+  const [npcDialogueOpen, setNpcDialogueOpen] = useState(false);
+  const [npcDialogueIndex, setNpcDialogueIndex] = useState(0);
+  const [npcAnchorPos, setNpcAnchorPos] = useState<Position | null>(null);
+  const npcDialogueOpenRef = useRef(false);
+  const npcDialogueIndexRef = useRef(0);
+  const npcInRangeRef = useRef(false);
+  const npcCooldownUntilRef = useRef(0);
 
   // Akıllı tahta animasyon durumunu ref üzerinden aktararak motorun gereksiz sıfırlanmasını önle
   const smartBoardVisualStateRef = useRef({
@@ -128,9 +138,34 @@ export function WalkableCampusView({
     if (sceneTransitionTimer.current !== null) clearTimeout(sceneTransitionTimer.current);
   }, []);
 
+  const handleAdvanceNpcDialogue = useCallback(() => {
+    const currentIndex = npcDialogueIndexRef.current;
+    if (currentIndex < SULTANHANI_TOURIST_NPC.dialogueLines.length - 1) {
+      const nextIndex = currentIndex + 1;
+      npcDialogueIndexRef.current = nextIndex;
+      setNpcDialogueIndex(nextIndex);
+      return;
+    }
+
+    npcCooldownUntilRef.current = Date.now() + SULTANHANI_TOURIST_NPC.cooldownMs;
+    npcDialogueOpenRef.current = false;
+    npcDialogueIndexRef.current = 0;
+    setNpcDialogueOpen(false);
+    setNpcDialogueIndex(0);
+    engineRef.current?.setNpcTalking(false);
+  }, []);
+
   const handleExitSultanhani = useCallback(() => {
     if (sceneTransitionTimer.current !== null) return;
     engineRef.current?.setInputDisabled(true);
+    engineRef.current?.setNpcTalking(false);
+    npcDialogueOpenRef.current = false;
+    npcDialogueIndexRef.current = 0;
+    npcInRangeRef.current = false;
+    npcCooldownUntilRef.current = 0;
+    setNpcDialogueOpen(false);
+    setNpcDialogueIndex(0);
+    setNpcAnchorPos(null);
     setActiveZone(null);
     setTeleportMessage("İngilizce Sınıfına Geri Dönülüyor... 🎒");
     setIsTeleporting(true);
@@ -167,6 +202,8 @@ export function WalkableCampusView({
           playerSpawn: lastSultanhaniPosRef.current,
           obstacles: SULTANHANI_SQUARE.obstacles,
           interactiveZones,
+          npc: SULTANHANI_TOURIST_NPC,
+          isNpcVisible: () => getSultanhaniTouristAtlas() !== null,
         };
       }
 
@@ -615,9 +652,9 @@ export function WalkableCampusView({
             renderCourtyardLayeredBackground(ctx, config.width, config.height);
           }
         },
-        onRenderEntities: (ctx, player) => {
+        onRenderEntities: (ctx, player, _camera, npc) => {
           if (currentScene === 'sultanhani_square') {
-            renderSultanhaniEntities(ctx, player);
+            renderSultanhaniEntities(ctx, player, npc);
           } else if (currentScene === 'classroom') {
             renderClassroomEntities(
               ctx,
@@ -628,6 +665,33 @@ export function WalkableCampusView({
             );
           } else {
             renderCourtyardEntities(ctx, player, config.width, config.height);
+          }
+        },
+        onNpcProximityChange: ({ inRange, screenPos }) => {
+          const wasInRange = npcInRangeRef.current;
+          npcInRangeRef.current = inRange;
+
+          if (screenPos) {
+            setNpcAnchorPos(screenPos);
+          }
+
+          if (!wasInRange && inRange) {
+            if (Date.now() >= npcCooldownUntilRef.current) {
+              npcDialogueIndexRef.current = 0;
+              npcDialogueOpenRef.current = true;
+              setNpcDialogueIndex(0);
+              setNpcDialogueOpen(true);
+              engineRef.current?.setNpcTalking(true);
+            }
+          } else if (wasInRange && !inRange) {
+            if (npcDialogueOpenRef.current) {
+              npcCooldownUntilRef.current = Date.now() + SULTANHANI_TOURIST_NPC.cooldownMs;
+              npcDialogueOpenRef.current = false;
+              npcDialogueIndexRef.current = 0;
+              setNpcDialogueOpen(false);
+              setNpcDialogueIndex(0);
+              engineRef.current?.setNpcTalking(false);
+            }
           }
         },
         onRenderForeground: (ctx) => {
@@ -690,6 +754,13 @@ export function WalkableCampusView({
       window.removeEventListener('resize', updateCanvasSize);
       document.removeEventListener('fullscreenchange', updateCanvasSize);
       document.removeEventListener('webkitfullscreenchange', updateCanvasSize);
+      npcDialogueOpenRef.current = false;
+      npcDialogueIndexRef.current = 0;
+      npcInRangeRef.current = false;
+      npcCooldownUntilRef.current = 0;
+      setNpcDialogueOpen(false);
+      setNpcDialogueIndex(0);
+      setNpcAnchorPos(null);
       if (typeof window !== 'undefined') {
         delete (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine }).__WALKABLE_ENGINE__;
       }
@@ -758,6 +829,18 @@ export function WalkableCampusView({
         unreachableMessage={unreachableMessage}
         currentScene={currentScene}
       />
+
+      {/* Sultanhanı Dış Meydan Turist NPC Konuşma Balonu */}
+      {currentScene === 'sultanhani_square' && (
+        <NpcSpeechBubble
+          isOpen={npcDialogueOpen}
+          speakerName={SULTANHANI_TOURIST_NPC.name}
+          lines={SULTANHANI_TOURIST_NPC.dialogueLines}
+          currentIndex={npcDialogueIndex}
+          anchorPos={npcAnchorPos}
+          onAdvance={handleAdvanceNpcDialogue}
+        />
+      )}
 
       {/* Işınlanma Geçiş Efekti (Portal Teleport Animation) */}
       {isTeleporting && (

@@ -1,6 +1,6 @@
-import type { PlayerCharacter, SceneObstacle } from '../types';
+import type { NpcCharacter, PlayerCharacter, SceneObstacle } from '../types';
 import { getSultanhaniCaravanseraiAsset } from './assetLoader';
-import { drawCharacter } from './characterRenderer';
+import { drawCharacter, drawTouristNpc } from './characterRenderer';
 
 // 553 × 466 kaynak görselinin iki katı. Kapı koordinatları bu görsele aittir.
 const SCENE_WIDTH = 1106;
@@ -36,7 +36,7 @@ export function renderSultanhaniBackground(ctx: CanvasRenderingContext2D) {
   }
 }
 
-export function renderSultanhaniEntities(ctx: CanvasRenderingContext2D, player: PlayerCharacter) {
+function drawPlayerWithPortalClip(ctx: CanvasRenderingContext2D, player: PlayerCharacter) {
   const feetY = player.y + 18;
   if (feetY >= PORTAL.threshold) {
     drawCharacter(ctx, player);
@@ -55,4 +55,24 @@ export function renderSultanhaniEntities(ctx: CanvasRenderingContext2D, player: 
   ctx.clip();
   drawCharacter(ctx, player);
   ctx.restore();
+}
+
+export function renderSultanhaniEntities(
+  ctx: CanvasRenderingContext2D,
+  player: PlayerCharacter,
+  npc?: NpcCharacter | null,
+) {
+  if (!npc || !npc.visible) {
+    drawPlayerWithPortalClip(ctx, player);
+    return;
+  }
+
+  // Ayak temas noktasına (y + 18) göre derinlik sıralaması (Y-Sorting)
+  if (npc.y <= player.y) {
+    drawTouristNpc(ctx, npc);
+    drawPlayerWithPortalClip(ctx, player);
+  } else {
+    drawPlayerWithPortalClip(ctx, player);
+    drawTouristNpc(ctx, npc);
+  }
 }

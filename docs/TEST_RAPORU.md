@@ -1,3 +1,21 @@
+# Test ve Kalite Güvence Raporu — Aksaray Sultanhanı Dış Meydan Turist NPC Entegrasyonu
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata**.
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **153 / 153 test** (%100 başarı, 7 test dosyası):
+  - `src/test/sultanhaniNpc.test.tsx`: **7 / 7 test** — NPC veri kuralları, yatay devriye ve sınır güvenliği, `1.5×`/`2.0×` histerezis eşiği, öğrenciye dönme, `Devam`/`Tamam` ve klavye/fare/dokunma akışı, `prefers-reduced-motion` sabit duruşu, görsel yüklenemediğinde tek `console.warn` + sessiz gizleme, `10 sn` cooldown ve sahneye yeniden girişte tek NPC.
+  - `src/test/fullscreen.test.tsx`: **9 / 9 test**.
+  - `src/test/brandIdentityMaintenance.test.tsx`: **7 / 7 test**.
+  - `src/test/studentProfilesMaintenance.test.tsx`: **14 / 14 test**.
+  - `src/test/primaryScopeMaintenance.test.tsx`: **9 / 9 test**.
+  - `src/test/campus.test.tsx`: **33 / 33 test**.
+  - `src/test/walkable.test.tsx`: **74 / 74 test**.
+- **`npm run build` (`vite build`)**: Geçti — **1.71s** içinde hatasız üretim derlemesi.
+- **Canlı Playwright Doğrulaması (`http://localhost:3000/`)**: `1280×720` masaüstü ve `390×844` mobilde `0` konsol hatası, taşma olmadan balon yerleşimi doğrulandı.
+
+---
+
 # Test ve Kalite Güvence Raporu — Bakım ve Onarım 03A: Cihaz Tabanlı Öğrenci Profil Altyapısı ve Mimari Duvar Yazılarının Düzeltilmesi
 
 ## 1. Çalıştırıldı ve Geçti

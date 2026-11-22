@@ -1,6 +1,9 @@
+import type { SceneNpcConfig } from '@/src/data/sultanhaniNpc';
 import type {
   CharacterDirection,
   InteractiveZone,
+  NpcCharacter,
+  NpcPatrolPhase,
   PlayerCharacter,
   Position,
   WalkableSceneConfig,
@@ -20,8 +23,14 @@ export interface EngineCallbacks {
    * 3. onRenderForeground: Ön plan yaprak saçağı, atmosferik ışık demetleri vb.
    */
   onRenderBackground?: (ctx: CanvasRenderingContext2D, camera: Position) => void;
-  onRenderEntities?: (ctx: CanvasRenderingContext2D, player: PlayerCharacter, camera: Position) => void;
+  onRenderEntities?: (
+    ctx: CanvasRenderingContext2D,
+    player: PlayerCharacter,
+    camera: Position,
+    npc?: NpcCharacter | null,
+  ) => void;
   onRenderForeground?: (ctx: CanvasRenderingContext2D, camera: Position) => void;
+  onNpcProximityChange?: (state: { inRange: boolean; screenPos: Position | null }) => void;
 }
 
 export class WalkableCanvasEngine {
@@ -31,6 +40,7 @@ export class WalkableCanvasEngine {
   private callbacks: EngineCallbacks;
 
   public player: PlayerCharacter;
+  public npc: NpcCharacter | null = null;
   public camera: Position = { x: 0, y: 0 };
   public zoom: number = 1;
 
@@ -39,6 +49,13 @@ export class WalkableCanvasEngine {
   private pathWaypoints: Position[] = [];
   private currentWaypointIndex: number = 0;
   private activeZone: InteractiveZone | null = null;
+
+  private npcConfig: SceneNpcConfig | null = null;
+  private npcPatrolPhase: NpcPatrolPhase = 'moving_left';
+  private npcPauseTimerMs: number = 0;
+  private npcInRange: boolean = false;
+  private isNpcTalking: boolean = false;
+  private lastNpcScreenPos: Position | null = null;
 
   private isRunning: boolean = false;
   private isPaused: boolean = false;
@@ -75,6 +92,25 @@ export class WalkableCanvasEngine {
       walkFrame: 0,
       grade: 4,
     };
+
+    if (config.npc) {
+      this.npcConfig = config.npc;
+      this.npcPatrolPhase =
+        config.npc.patrol.initialDirection === 'right' ? 'moving_right' : 'moving_left';
+      this.npc = {
+        id: config.npc.id,
+        name: config.npc.name,
+        x: config.npc.startPosition.x,
+        y: config.npc.startPosition.y,
+        width: config.npc.width,
+        height: config.npc.height,
+        direction: config.npc.patrol.initialDirection,
+        state: 'idle',
+        speed: config.npc.speed,
+        walkFrame: 0,
+        visible: config.isNpcVisible ? config.isNpcVisible() : true,
+      };
+    }
 
     this.setupListeners();
     this.updateCamera(true);
@@ -187,6 +223,29 @@ export class WalkableCanvasEngine {
     this.canvas.width = Math.max(320, width);
     this.canvas.height = Math.max(240, height);
     this.updateCamera(true);
+    this.checkNpcProximity();
+    if (this.isRunning) {
+      this.render();
+    }
+  }
+
+  /**
+   * NPC konuşma durumunu ayarlar; konuşma sırasında NPC durur ve öğrenciye döner.
+   */
+  public setNpcTalking(talking: boolean) {
+    this.isNpcTalking = talking;
+    if (!this.npc) return;
+
+    if (talking) {
+      this.npc.state = 'idle';
+      this.npc.walkFrame = 0;
+      this.faceNpcTowardPlayer();
+    } else if (this.npcPatrolPhase === 'moving_left') {
+      this.npc.direction = 'left';
+    } else if (this.npcPatrolPhase === 'moving_right') {
+      this.npc.direction = 'right';
+    }
+
     if (this.isRunning) {
       this.render();
     }
@@ -213,8 +272,8 @@ export class WalkableCanvasEngine {
 
     const key = e.key.toLowerCase();
 
-    // Etkileşim tuşu
-    if (key === 'e' || key === ' ') {
+    // Etkileşim tuşu (Konuşma balonu açıkken Boşluk tuşunu konuşma balonuna bırak)
+    if (key === 'e' || (key === ' ' && !this.isNpcTalking)) {
       if (this.activeZone) {
         e.preventDefault();
         this.activeZone.action();
@@ -407,8 +466,9 @@ export class WalkableCanvasEngine {
     // 4. Çarpışma algılama ve hareket uygulama
     this.movePlayerWithCollision(vx * delta, vy * delta);
 
-    // 5. Kamera ve etkileşim bölgelerini güncelle
+    // 5. Kamera, NPC devriyesi ve etkileşim bölgelerini güncelle
     this.updateCamera();
+    this.updateNpc(delta);
     this.checkInteractiveZones();
 
     if (this.callbacks.onPositionChange) {
@@ -521,6 +581,164 @@ export class WalkableCanvasEngine {
     }
   }
 
+  private faceNpcTowardPlayer() {
+    if (!this.npc) return;
+    const dx = this.player.x - this.npc.x;
+    const dy = this.player.y - this.npc.y;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      this.npc.direction = dx >= 0 ? 'right' : 'left';
+    } else {
+      this.npc.direction = dy >= 0 ? 'down' : 'up';
+    }
+  }
+
+  private getRenderTransform() {
+    const zoom = this.zoom || 1;
+    const offsetX = Math.min(
+      0,
+      Math.max(this.canvas.width - this.config.width * zoom, -Math.round(this.camera.x * zoom)),
+    );
+    const offsetY = Math.min(
+      0,
+      Math.max(this.canvas.height - this.config.height * zoom, -Math.round(this.camera.y * zoom)),
+    );
+    return { zoom, offsetX, offsetY };
+  }
+
+  private computeNpcScreenPos(): Position | null {
+    if (!this.npc || !this.npc.visible) return null;
+    const { zoom, offsetX, offsetY } = this.getRenderTransform();
+    const canvasX = this.npc.x * zoom + offsetX;
+    const canvasY = (this.npc.y + 18 - this.npc.height) * zoom + offsetY;
+    const rect = this.canvas.getBoundingClientRect?.();
+    const scaleX = rect && rect.width > 0 && this.canvas.width > 0 ? rect.width / this.canvas.width : 1;
+    const scaleY = rect && rect.height > 0 && this.canvas.height > 0 ? rect.height / this.canvas.height : 1;
+    return {
+      x: Math.round(canvasX * scaleX),
+      y: Math.round(canvasY * scaleY),
+    };
+  }
+
+  private checkNpcProximity() {
+    if (!this.npc || !this.npcConfig) return;
+
+    if (!this.npc.visible) {
+      if (this.npcInRange || this.lastNpcScreenPos !== null) {
+        this.npcInRange = false;
+        this.lastNpcScreenPos = null;
+        this.callbacks.onNpcProximityChange?.({ inRange: false, screenPos: null });
+      }
+      return;
+    }
+
+    const dist = Math.hypot(this.player.x - this.npc.x, this.player.y - this.npc.y);
+    const wasInRange = this.npcInRange;
+
+    if (!this.npcInRange && dist <= this.npcConfig.interactionEnterRadius) {
+      this.npcInRange = true;
+    } else if (this.npcInRange && dist > this.npcConfig.interactionExitRadius) {
+      this.npcInRange = false;
+    }
+
+    const screenPos = this.computeNpcScreenPos();
+    const posChanged =
+      this.npcInRange &&
+      screenPos !== null &&
+      (this.lastNpcScreenPos === null ||
+        Math.abs(screenPos.x - this.lastNpcScreenPos.x) >= 1 ||
+        Math.abs(screenPos.y - this.lastNpcScreenPos.y) >= 1);
+
+    if (wasInRange !== this.npcInRange || posChanged) {
+      this.lastNpcScreenPos = screenPos;
+      this.callbacks.onNpcProximityChange?.({
+        inRange: this.npcInRange,
+        screenPos,
+      });
+    }
+  }
+
+  private updateNpc(delta: number) {
+    if (!this.npc || !this.npcConfig) return;
+
+    if (this.config.isNpcVisible) {
+      this.npc.visible = this.config.isNpcVisible();
+    }
+
+    if (!this.npc.visible) {
+      this.npc.state = 'idle';
+      this.npc.walkFrame = 0;
+      this.checkNpcProximity();
+      return;
+    }
+
+    if (this.isNpcTalking) {
+      this.npc.state = 'idle';
+      this.npc.walkFrame = 0;
+      this.faceNpcTowardPlayer();
+      this.checkNpcProximity();
+      return;
+    }
+
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+      this.npc.state = 'idle';
+      this.npc.walkFrame = 0;
+      this.checkNpcProximity();
+      return;
+    }
+
+    const { minX, maxX, endpointPauseMs } = this.npcConfig.patrol;
+
+    if (this.npcPatrolPhase === 'moving_left') {
+      this.npc.direction = 'left';
+      this.npc.state = 'walk';
+      this.npc.walkFrame += delta * 4.5;
+      this.npc.x -= this.npc.speed * delta;
+      if (this.npc.x <= minX) {
+        this.npc.x = minX;
+        this.npc.state = 'idle';
+        this.npc.walkFrame = 0;
+        this.npcPatrolPhase = 'pausing_left';
+        this.npcPauseTimerMs = endpointPauseMs;
+      }
+    } else if (this.npcPatrolPhase === 'pausing_left') {
+      this.npc.direction = 'left';
+      this.npc.state = 'idle';
+      this.npc.walkFrame = 0;
+      this.npcPauseTimerMs -= delta * 1000;
+      if (this.npcPauseTimerMs <= 0) {
+        this.npcPauseTimerMs = 0;
+        this.npcPatrolPhase = 'moving_right';
+      }
+    } else if (this.npcPatrolPhase === 'moving_right') {
+      this.npc.direction = 'right';
+      this.npc.state = 'walk';
+      this.npc.walkFrame += delta * 4.5;
+      this.npc.x += this.npc.speed * delta;
+      if (this.npc.x >= maxX) {
+        this.npc.x = maxX;
+        this.npc.state = 'idle';
+        this.npc.walkFrame = 0;
+        this.npcPatrolPhase = 'pausing_right';
+        this.npcPauseTimerMs = endpointPauseMs;
+      }
+    } else {
+      this.npc.direction = 'right';
+      this.npc.state = 'idle';
+      this.npc.walkFrame = 0;
+      this.npcPauseTimerMs -= delta * 1000;
+      if (this.npcPauseTimerMs <= 0) {
+        this.npcPauseTimerMs = 0;
+        this.npcPatrolPhase = 'moving_left';
+      }
+    }
+
+    this.checkNpcProximity();
+  }
+
   private checkInteractiveZones() {
     let nearest: InteractiveZone | null = null;
     let minDist = Infinity;
@@ -570,17 +788,13 @@ export class WalkableCanvasEngine {
     const { ctx, canvas } = this;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    if (this.npc && this.config.isNpcVisible) {
+      this.npc.visible = this.config.isNpcVisible();
+    }
+
     ctx.save();
     // Kamerayı ve sahne en-boy oranını koruyan tam ekran ölçeğini (zoom) uygula
-    const zoom = this.zoom || 1;
-    const offsetX = Math.min(
-      0,
-      Math.max(canvas.width - this.config.width * zoom, -Math.round(this.camera.x * zoom)),
-    );
-    const offsetY = Math.min(
-      0,
-      Math.max(canvas.height - this.config.height * zoom, -Math.round(this.camera.y * zoom)),
-    );
+    const { zoom, offsetX, offsetY } = this.getRenderTransform();
     ctx.translate(offsetX, offsetY);
     if (zoom !== 1) {
       ctx.scale(zoom, zoom);
@@ -596,7 +810,7 @@ export class WalkableCanvasEngine {
       this.drawPathOverlay(ctx);
 
       // 3. Y-Sorting Varlıklar ve Karakter Katmanı
-      this.callbacks.onRenderEntities(ctx, this.player, this.camera);
+      this.callbacks.onRenderEntities(ctx, this.player, this.camera, this.npc);
 
       // 4. Ön Plan / Sinematik Çerçeve Katmanı
       if (this.callbacks.onRenderForeground) {
