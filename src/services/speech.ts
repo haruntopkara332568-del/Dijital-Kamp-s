@@ -32,6 +32,42 @@ function findBestVoice(voices: SpeechSynthesisVoice[], lang: SpeechLang): Speech
   return voices.find((v) => v.lang.toLowerCase().startsWith(primaryPrefix)) ?? null;
 }
 
+type SpeechVoices = Record<SpeechLang, SpeechSynthesisVoice | null>;
+const cachedVoices = new WeakMap<SpeechSynthesis, SpeechVoices>();
+
+export async function getSpeechVoices(signal: AbortSignal): Promise<SpeechVoices | null> {
+  const synth = getSynthesis();
+  if (!synth || typeof SpeechSynthesisUtterance === 'undefined' || signal.aborted) return null;
+
+  const cached = cachedVoices.get(synth);
+  if (cached) return cached;
+
+  let voices = synth.getVoices();
+  if (!voices.length) {
+    await new Promise<void>((resolve) => {
+      const finish = () => {
+        window.clearTimeout(timer);
+        synth.removeEventListener?.('voiceschanged', finish);
+        signal.removeEventListener('abort', finish);
+        resolve();
+      };
+      const timer = window.setTimeout(finish, 1000);
+      synth.addEventListener?.('voiceschanged', finish, { once: true });
+      signal.addEventListener('abort', finish, { once: true });
+    });
+    if (signal.aborted) return null;
+    voices = synth.getVoices();
+  }
+
+  if (!voices.length) return null;
+  const selected = {
+    'en-US': findBestVoice(voices, 'en-US'),
+    'tr-TR': findBestVoice(voices, 'tr-TR'),
+  };
+  cachedVoices.set(synth, selected);
+  return selected;
+}
+
 export function inspectSpeechCapability(): SpeechCapability {
   const synth = getSynthesis();
   if (!synth) {
@@ -105,57 +141,55 @@ function playAudioFile(src: string): Promise<boolean> {
   });
 }
 
-function speakUtterance(segment: DialogueSegment): Promise<boolean> {
+interface QueuedSpeech {
+  signal: AbortSignal;
+  voices: SpeechVoices;
+  rates: Record<SpeechLang, number>;
+}
+
+function speakUtterance(segment: DialogueSegment, queued?: QueuedSpeech): Promise<boolean> {
   return new Promise((resolve) => {
     const synth = getSynthesis();
-    if (!synth || typeof SpeechSynthesisUtterance === 'undefined') {
+    if (!synth || typeof SpeechSynthesisUtterance === 'undefined' || queued?.signal.aborted) {
       resolve(false);
       return;
     }
 
-    const voices = synth.getVoices();
-    const matchedVoice = findBestVoice(voices, segment.lang);
-
-    // Eğer ses listesi yüklü ve bu dil için hiç ses yoksa, yanlış dille telaffuz etme!
-    if (voices.length > 0 && !matchedVoice) {
+    const voices = queued ? [] : synth.getVoices();
+    const matchedVoice = queued ? queued.voices[segment.lang] : findBestVoice(voices, segment.lang);
+    if (!matchedVoice && (queued || voices.length > 0)) {
       resolve(false);
       return;
     }
 
     try {
       const utterance = new SpeechSynthesisUtterance(segment.text);
-      utterance.lang = matchedVoice?.lang ?? segment.lang;
-      if (matchedVoice) {
-        utterance.voice = matchedVoice;
-      }
-      utterance.rate = segment.lang === 'en-US' ? 0.92 : 0.98;
+      utterance.lang = queued ? segment.lang : matchedVoice?.lang ?? segment.lang;
+      if (matchedVoice) utterance.voice = matchedVoice;
+      utterance.rate = queued?.rates[segment.lang] ?? (segment.lang === 'en-US' ? 0.92 : 0.98);
       utterance.pitch = 1.02;
 
       let settled = false;
-      const finish = (ok: boolean) => {
-        if (!settled) {
-          settled = true;
-          resolve(ok);
-        }
+      const abort = () => finish(false);
+      const finish = (played: boolean) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        queued?.signal.removeEventListener('abort', abort);
+        utterance.onend = null;
+        utterance.onerror = null;
+        resolve(played);
       };
+      const timer = window.setTimeout(() => finish(!queued), Math.max(3500, segment.text.length * 110));
 
       utterance.onend = () => finish(true);
       utterance.onerror = () => finish(false);
-
-      // Güvenlik zaman aşımı (uzun cümlede tarayıcı eventi gelmezse kilitlemesin)
-      const fallbackTimer = window.setTimeout(() => finish(true), Math.max(3500, segment.text.length * 110));
-
-      const originalOnEnd = utterance.onend;
-      utterance.onend = (ev) => {
-        window.clearTimeout(fallbackTimer);
-        originalOnEnd?.call(utterance, ev);
-      };
-      utterance.onerror = () => {
-        window.clearTimeout(fallbackTimer);
+      queued?.signal.addEventListener('abort', abort, { once: true });
+      try {
+        synth.speak(utterance);
+      } catch {
         finish(false);
-      };
-
-      synth.speak(utterance);
+      }
     } catch {
       resolve(false);
     }
@@ -167,10 +201,17 @@ export async function speakSegments(
   options?: {
     onStart?: () => void;
     onEnd?: () => void;
+    onSegmentStart?: (index: number) => void;
+    queued?: QueuedSpeech;
   },
 ): Promise<SpeechResult> {
-  stopSpeaking();
-  activeCancelFlag = false;
+  const queued = options?.queued;
+  if (queued?.signal.aborted) return { spoken: false };
+  if (!queued) {
+    stopSpeaking();
+    activeCancelFlag = false;
+  }
+  const isCanceled = () => queued ? queued.signal.aborted : activeCancelFlag;
 
   const synth = getSynthesis();
   const hasAnyAudioSrc = segments.some((s) => Boolean(s.audioSrc));
@@ -186,8 +227,9 @@ export async function speakSegments(
   options?.onStart?.();
   let spokeAtLeastOne = false;
 
-  for (const segment of segments) {
-    if (activeCancelFlag) break;
+  for (const [index, segment] of segments.entries()) {
+    if (isCanceled()) break;
+    options?.onSegmentStart?.(index);
 
     if (segment.audioSrc) {
       const played = await playAudioFile(segment.audioSrc);
@@ -197,7 +239,7 @@ export async function speakSegments(
       }
     }
 
-    const spoken = await speakUtterance(segment);
+    const spoken = await speakUtterance(segment, queued);
     if (spoken) {
       spokeAtLeastOne = true;
     }
@@ -205,7 +247,7 @@ export async function speakSegments(
 
   options?.onEnd?.();
 
-  if (!spokeAtLeastOne && !activeCancelFlag) {
+  if (!spokeAtLeastOne && !isCanceled()) {
     return {
       spoken: false,
       fallbackReason: 'Bu cihazda uygun dil sesi bulunamadı. Ekrandaki metinle güvenle devam edebilirsin.',
