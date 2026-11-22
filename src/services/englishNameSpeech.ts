@@ -7,6 +7,7 @@ const namePronunciations = [
   { display: 'Mert', spokenTr: 'Mert', spokenEnFallback: 'Mehrt' },
   { display: 'Zeynep', spokenTr: 'Zeynep', spokenEnFallback: 'Zay-nep' },
   { display: 'Ali', spokenTr: 'Ali', spokenEnFallback: 'Ah-lee' },
+  { display: 'Sultanhanı', spokenTr: 'Sultanhanı', spokenEnFallback: 'Sool-tahn-hah-nuh' },
 ] as const;
 
 const sampleNames = namePronunciations.map(({ display }) => display);

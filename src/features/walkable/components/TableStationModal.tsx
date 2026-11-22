@@ -6,8 +6,12 @@ import { Grade3OgrenStationView } from '@/src/features/missions/Grade3OgrenStati
 import { Grade3UretStationView } from '@/src/features/missions/Grade3UretStationView';
 import { Grade3PaylasStationView } from '@/src/features/missions/Grade3PaylasStationView';
 import { useOptionalCampus } from '@/src/app/CampusProviders';
+import { GRADE_3_STAGE_2 } from '@/src/data/grade3Stage2Content';
 import { GRADE_3_STAGE_3 } from '@/src/data/grade3Stage3Content';
+import { GRADE_3_STAGE_4 } from '@/src/data/grade3Stage4Content';
+import { Grade3StageTwoView } from '@/src/features/missions/Grade3StageTwoView';
 import { Grade3StageThreeView } from '@/src/features/missions/Grade3StageThreeView';
+import { Grade3StageFourView } from '@/src/features/missions/Grade3StageFourView';
 import type { MissionStageId } from '@/src/types/campus';
 
 export interface TableStationModalProps {
@@ -15,7 +19,9 @@ export interface TableStationModalProps {
   onClose: () => void;
   stage: MissionStageId;
   missionId?: string;
+  enableGrade3StageTwo?: boolean;
   enableGrade3StageThree?: boolean;
+  enableGrade3StageFour?: boolean;
   onAdvanceToStage?: (nextStage: MissionStageId) => void;
 }
 
@@ -92,16 +98,24 @@ export function TableStationModal({
   stage,
   missionId = 'kapilarin-anlattigi-hikaye',
   onAdvanceToStage,
+  enableGrade3StageTwo = false,
   enableGrade3StageThree = false,
+  enableGrade3StageFour = false,
 }: TableStationModalProps) {
   const campus = useOptionalCampus();
   const selectedGrade = campus?.state.selectedGrade ?? null;
-  const [selectedStage, setSelectedStage] = useState<1 | 3>(1);
+  const [selectedStage, setSelectedStage] = useState<1 | 2 | 3 | 4>(1);
+  const canSelectStageTwo = enableGrade3StageTwo && selectedGrade === 3;
   const canSelectStageThree = enableGrade3StageThree && selectedGrade === 3;
+  const showStageTwo = canSelectStageTwo && selectedStage === 2;
   const showStageThree = canSelectStageThree && selectedStage === 3;
+  const canSelectStageFour = enableGrade3StageFour && selectedGrade === 3;
+  const showStageFour = canSelectStageFour && selectedStage === 4;
   const stageChoices = [
-    { id: 1, label: '1. Aşama · Hello Garden' },
-    { id: 3, label: GRADE_3_STAGE_3.stageLabel },
+    { id: 1, label: GRADE_3_STAGE_2.firstStageLabel, enabled: true },
+    { id: 2, label: GRADE_3_STAGE_2.secondStageLabel, enabled: canSelectStageTwo },
+    { id: 3, label: GRADE_3_STAGE_3.stageLabel, enabled: canSelectStageThree },
+    { id: 4, label: GRADE_3_STAGE_4.stageLabel, enabled: canSelectStageFour },
   ] as const;
   const isGrade3HelloGarden = selectedGrade === 3 && stage === 'kesfet';
   const isGrade3OgrenStation = selectedGrade === 3 && stage === 'ogren';
@@ -230,17 +244,17 @@ export function TableStationModal({
                   id="table-station-title"
                   className="text-xs sm:text-sm font-bold tracking-wide text-[#fef08a] font-serif"
                 >
-                  {showStageThree ? GRADE_3_STAGE_3.stageLabel : headerTitle}
+                  {showStageFour ? GRADE_3_STAGE_4.stageLabel : showStageThree ? GRADE_3_STAGE_3.stageLabel : showStageTwo ? GRADE_3_STAGE_2.secondStageLabel : headerTitle}
                 </h2>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/90 border border-white/20 hidden sm:inline-block">
-                  {isGrade3HelloGarden && !showStageThree ? 'Özel Prototip' : 'Öğrenme İstasyonu'}
+                  {isGrade3HelloGarden && !showStageTwo && !showStageThree && !showStageFour ? 'Özel Prototip' : 'Öğrenme İstasyonu'}
                 </span>
               </div>
               <p
                 id="table-station-desc"
                 className="text-[10px] text-[var(--stone-cream)] opacity-90 hidden sm:block"
               >
-                {showStageThree ? GRADE_3_STAGE_3.stageHint : headerSubtitle}
+                {showStageFour ? GRADE_3_STAGE_4.stageHint : showStageThree ? GRADE_3_STAGE_3.stageHint : showStageTwo ? GRADE_3_STAGE_2.stageHint : headerSubtitle}
               </p>
             </div>
           </div>
@@ -258,10 +272,10 @@ export function TableStationModal({
 
         {/* Görev İstasyonu İçeriği */}
         <div className="flex-1 overflow-y-auto">
-          {canSelectStageThree && (
+          {(canSelectStageTwo || canSelectStageThree || canSelectStageFour) && (
             <div role="group" aria-label="3. sınıf aşamaları" className="flex flex-wrap gap-2 border-b border-[var(--campus-border)] px-3 py-2 sm:px-5">
-              {stageChoices.map(({ id, label }) => (
-                <button type="button" key={id} aria-pressed={id === (showStageThree ? 3 : 1)}
+              {stageChoices.filter(({ enabled }) => enabled).map(({ id, label }) => (
+                <button type="button" key={id} aria-pressed={id === (showStageFour ? 4 : showStageThree ? 3 : showStageTwo ? 2 : 1)}
                   className="min-h-[44px] rounded-lg border border-[var(--campus-border)] bg-[var(--campus-surface)] px-3 py-2 text-sm font-semibold text-[var(--seljuk-navy)] aria-pressed:border-[var(--seljuk-teal)] aria-pressed:bg-[var(--seljuk-teal-soft)] focus-visible:outline-2 focus-visible:outline-[var(--seljuk-teal)]"
                   onClick={() => setSelectedStage(id)}>
                   {label}
@@ -269,8 +283,12 @@ export function TableStationModal({
               ))}
             </div>
           )}
-          {showStageThree ? (
+          {showStageFour ? (
+            <Grade3StageFourView key={`${campus?.activeProfile?.id ?? ''}:${stage}`} entryTable={stage} onClose={onClose} />
+          ) : showStageThree ? (
             <Grade3StageThreeView key={`${campus?.activeProfile?.id ?? ''}:${stage}`} entryTable={stage} />
+          ) : showStageTwo ? (
+            <Grade3StageTwoView key={`${campus?.activeProfile?.id ?? ''}:${stage}`} entryTable={stage} />
           ) : isGrade3HelloGarden ? (
             <HelloGardenView
               missionId={missionId}

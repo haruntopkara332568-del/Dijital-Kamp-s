@@ -881,7 +881,9 @@ export function WalkableCampusView({
         <TableStationModal
           isOpen={isTableModalOpen}
           stage={activeTableStage}
+          enableGrade3StageTwo
           enableGrade3StageThree
+          enableGrade3StageFour
           missionId="kapilarin-anlattigi-hikaye"
           onClose={() => setIsTableModalOpen(false)}
           onAdvanceToStage={(nextStage) => {
