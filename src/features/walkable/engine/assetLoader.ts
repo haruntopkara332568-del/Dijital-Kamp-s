@@ -57,6 +57,7 @@ export const SMARTBOARD_SCREEN_POWERING_ASSET_URL = '/assets/walkable/smartboard
 export const SMARTBOARD_SCREEN_ACTIVE_ASSET_URL = '/assets/walkable/smartboard_screen_active.png';
 export const SULTANHANI_CARAVANSERAI_ASSET_URL = '/assets/walkable/sultanhani_caravanserai.jpg';
 export const SULTANHANI_INNER_COURTYARD_ASSET_URL = '/assets/walkable/sultanhani_inner_courtyard.jpg';
+export const SULTANHANI_INNER_WALKABLE_ASSET_URL = '/assets/walkable/sultanhani_inner_courtyard_scene.jpg';
 export const SULTANHANI_TOURIST_ATLAS_URL = SULTANHANI_TOURIST_NPC.atlasUrl;
 
 /**
@@ -139,6 +140,10 @@ export function getSultanhaniInnerCourtyardAsset(): HTMLImageElement | null {
   return getLoadedAsset(SULTANHANI_INNER_COURTYARD_ASSET_URL);
 }
 
+export function getSultanhaniInnerWalkableAsset(): HTMLImageElement | null {
+  return getLoadedAsset(SULTANHANI_INNER_WALKABLE_ASSET_URL);
+}
+
 export function getSultanhaniTouristAtlas(): HTMLImageElement | null {
   return getLoadedAsset(SULTANHANI_TOURIST_ATLAS_URL);
 }
@@ -194,6 +199,7 @@ export function preloadWalkableAssets() {
   getLoadedAsset(SMARTBOARD_SCREEN_ACTIVE_ASSET_URL);
   getLoadedAsset(SULTANHANI_CARAVANSERAI_ASSET_URL);
   getLoadedAsset(SULTANHANI_INNER_COURTYARD_ASSET_URL);
+  getLoadedAsset(SULTANHANI_INNER_WALKABLE_ASSET_URL);
   getLoadedAsset(SULTANHANI_TOURIST_ATLAS_URL);
 }
 

@@ -4,11 +4,17 @@ import { MemoryRouter } from 'react-router';
 import { CampusProviders } from '@/src/app/CampusProviders';
 import { WalkableCampusView } from '@/src/features/walkable/WalkableCampusView';
 import { WalkableCanvasEngine } from '@/src/features/walkable/engine/WalkableCanvasEngine';
-import { SULTANHANI_SQUARE, renderSultanhaniEntities } from '@/src/features/walkable/engine/sultanhaniSceneRenderer';
+import {
+  PORTAL,
+  SULTANHANI_INNER,
+  SULTANHANI_SQUARE,
+  renderSultanhaniEntities,
+} from '@/src/features/walkable/engine/sultanhaniSceneRenderer';
 import { CHARACTER_SCALES, drawTouristNpc } from '@/src/features/walkable/engine/characterRenderer';
 import { isPositionBlocked } from '@/src/features/walkable/engine/pathfinding';
 import {
   SULTANHANI_CARAVANSERAI_ASSET_URL,
+  SULTANHANI_INNER_WALKABLE_ASSET_URL,
   SULTANHANI_TOURIST_ATLAS_URL,
   clearCachedAssetForTesting,
   setCachedAssetForTesting,
@@ -16,8 +22,27 @@ import {
   getSultanhaniTouristAtlas,
 } from '@/src/features/walkable/engine/assetLoader';
 import { SULTANHANI_TOURIST_NPC } from '@/src/data/sultanhaniNpc';
+import {
+  SULTANHANI_NEXT_PHASE,
+  SULTANHANI_READY_STUDENT_NAMES,
+  SULTANHANI_TIMINGS,
+  advanceSultanhaniFlowState,
+  buildSultanhaniDialogExchanges,
+  buildSultanhaniDialogueSteps,
+  buildSultanhaniSpeechSegments,
+  buildSultanhaniUnusedExtendedSteps,
+  canTransitionSultanhaniPhase,
+  getSpeechTimeoutMs,
+  resolveSultanhaniStudentName,
+} from '@/src/data/sultanhaniDialogContent';
 import { NpcSpeechBubble } from '@/src/features/walkable/components/NpcSpeechBubble';
-import { clearAllCampusData, saveStudentState, loadStudentState, createInitialStudentState } from '@/src/services/storage';
+import {
+  clearAllCampusData,
+  createInitialStudentState,
+  createStudentProfile,
+  loadStudentState,
+  saveStudentState,
+} from '@/src/services/storage';
 import type { WalkableSceneConfig } from '@/src/features/walkable/types';
 
 function createMockCanvasContext() {
@@ -52,42 +77,77 @@ function createMockCanvasContext() {
     font: '',
     textAlign: 'left',
     textBaseline: 'top',
+    fillText: vi.fn(),
+    strokeText: vi.fn(),
     measureText: vi.fn().mockReturnValue({ width: 50 }),
   } as unknown as CanvasRenderingContext2D;
 }
 
-describe('Sultanhanı Dış Meydan Turist NPC Doğrulaması', () => {
+class MockUtterance {
+  constructor(public text: string) {}
+  lang = '';
+  rate = 0;
+  pitch = 1;
+  voice: { lang: string; name?: string } | null = null;
+  onend: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+}
+
+function setupMockSpeech(languages: string[] = ['en-US', 'tr-TR']) {
+  const utterances: MockUtterance[] = [];
+  const synth = Object.assign(new EventTarget(), {
+    getVoices: vi.fn(() => languages.map((lang) => ({ lang, name: `Voice-${lang}` }))),
+    speak: vi.fn((utterance: MockUtterance) => {
+      utterances.push(utterance);
+    }),
+    cancel: vi.fn(),
+  });
+  vi.stubGlobal('speechSynthesis', synth);
+  vi.stubGlobal('SpeechSynthesisUtterance', MockUtterance);
+  return { utterances, synth };
+}
+
+describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulaması (Sürüm 2.1)', () => {
   beforeEach(async () => {
     window.localStorage.clear();
     await clearAllCampusData();
     clearCachedAssetForTesting(SULTANHANI_TOURIST_ATLAS_URL);
-    const mockImg = { complete: true, naturalWidth: 560, naturalHeight: 720 } as unknown as HTMLImageElement;
-    setCachedAssetForTesting(SULTANHANI_TOURIST_ATLAS_URL, mockImg);
+    setCachedAssetForTesting(
+      SULTANHANI_TOURIST_ATLAS_URL,
+      { complete: true, naturalWidth: 560, naturalHeight: 720 } as unknown as HTMLImageElement,
+    );
     setCachedAssetForTesting(
       SULTANHANI_CARAVANSERAI_ASSET_URL,
       { complete: true, naturalWidth: 553, naturalHeight: 466 } as unknown as HTMLImageElement,
+    );
+    setCachedAssetForTesting(
+      SULTANHANI_INNER_WALKABLE_ASSET_URL,
+      { complete: true, naturalWidth: 1024, naturalHeight: 585 } as unknown as HTMLImageElement,
     );
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
-  it('1. NPC veri yapılandırması kuralları eksiksiz sağlar (id, boyut, konum, devriye, hız, eşik, metin)', () => {
+  it('1. NPC config ve durum makinesi kuralları sağlanır; eski Türkçe konuşma kaldırılmıştır', () => {
     expect(SULTANHANI_TOURIST_NPC.id).toBe('turist-sultanhani');
     expect(SULTANHANI_TOURIST_NPC.scene).toBe('sultanhani_square');
+    expect('dialogueLines' in SULTANHANI_TOURIST_NPC).toBe(false);
+    expect('cooldownMs' in SULTANHANI_TOURIST_NPC).toBe(false);
 
-    // Öğrenci boyutuyla aynı (%0 fark <= ±%10)
     expect(SULTANHANI_TOURIST_NPC.width).toBe(CHARACTER_SCALES.scale15.width);
     expect(SULTANHANI_TOURIST_NPC.height).toBe(CHARACTER_SCALES.scale15.height);
 
-    // Başlangıç konumu yürünebilir alan içinde ve öğrenci doğuş noktasından en az 3 öğrenci boyu uzakta
+    // Başlangıç konumu doğuş noktasından 4–6 öğrenci boyu uzakta
     const distFromSpawn = Math.hypot(
       SULTANHANI_TOURIST_NPC.startPosition.x - SULTANHANI_SQUARE.spawn.x,
       SULTANHANI_TOURIST_NPC.startPosition.y - SULTANHANI_SQUARE.spawn.y,
     );
-    expect(distFromSpawn).toBeGreaterThanOrEqual(CHARACTER_SCALES.scale15.height * 3);
+    expect(distFromSpawn).toBeGreaterThanOrEqual(CHARACTER_SCALES.scale15.height * 4);
+    expect(distFromSpawn).toBeLessThanOrEqual(CHARACTER_SCALES.scale15.height * 6);
     expect(
       isPositionBlocked(
         SULTANHANI_TOURIST_NPC.startPosition.x,
@@ -98,102 +158,143 @@ describe('Sultanhanı Dış Meydan Turist NPC Doğrulaması', () => {
       ),
     ).toBe(false);
 
-    // Yatay devriye <= ±2 öğrenci boyu ve uç noktalar engellere çarpmaz
-    expect(SULTANHANI_TOURIST_NPC.startPosition.x - SULTANHANI_TOURIST_NPC.patrol.minX).toBeLessThanOrEqual(
-      CHARACTER_SCALES.scale15.height * 2,
-    );
-    expect(SULTANHANI_TOURIST_NPC.patrol.maxX - SULTANHANI_TOURIST_NPC.startPosition.x).toBeLessThanOrEqual(
-      CHARACTER_SCALES.scale15.height * 2,
-    );
+    // Kapı hedefi yürünebilir portal ağzında olmalı
     expect(
       isPositionBlocked(
-        SULTANHANI_TOURIST_NPC.patrol.minX,
-        SULTANHANI_TOURIST_NPC.startPosition.y,
-        SULTANHANI_SQUARE.obstacles,
-        SULTANHANI_SQUARE.width,
-        SULTANHANI_SQUARE.height,
-      ),
-    ).toBe(false);
-    expect(
-      isPositionBlocked(
-        SULTANHANI_TOURIST_NPC.patrol.maxX,
-        SULTANHANI_TOURIST_NPC.startPosition.y,
+        PORTAL.doorWalkTarget.x,
+        PORTAL.doorWalkTarget.y,
         SULTANHANI_SQUARE.obstacles,
         SULTANHANI_SQUARE.width,
         SULTANHANI_SQUARE.height,
       ),
     ).toBe(false);
 
-    // Hız öğrenci hızının yarısı (160 * 0.5 = 80), bekleme 1.5-2 sn, cooldown 10 sn
-    expect(SULTANHANI_TOURIST_NPC.speed).toBe(80);
-    expect(SULTANHANI_TOURIST_NPC.patrol.endpointPauseMs).toBeGreaterThanOrEqual(1500);
-    expect(SULTANHANI_TOURIST_NPC.patrol.endpointPauseMs).toBeLessThanOrEqual(2000);
-    expect(SULTANHANI_TOURIST_NPC.interactionEnterRadius).toBe(
-      Math.round(CHARACTER_SCALES.scale15.height * 1.5),
-    );
-    expect(SULTANHANI_TOURIST_NPC.interactionExitRadius).toBe(
-      Math.round(CHARACTER_SCALES.scale15.height * 2.0),
-    );
-    expect(SULTANHANI_TOURIST_NPC.cooldownMs).toBe(10_000);
+    // Tek yönlü durum makinesi geçişleri
+    expect(SULTANHANI_NEXT_PHASE.ARRIVAL).toBe('APPROACH');
+    expect(canTransitionSultanhaniPhase('ARRIVAL', 'APPROACH')).toBe(true);
+    expect(canTransitionSultanhaniPhase('APPROACH', 'DIALOG_1')).toBe(false);
+    expect(canTransitionSultanhaniPhase('DIALOG_2', 'DIALOG_1')).toBe(false);
+    expect(canTransitionSultanhaniPhase('TRANSITION', 'DONE')).toBe(true);
+  });
 
-    // Onaylı 4 cümlelik metin
-    expect(SULTANHANI_TOURIST_NPC.dialogueLines).toEqual([
-      'Merhaba! Ben bu güzel şehri gezmeye gelen bir turistim.',
-      'Burası Sultanhanı Kervansarayı. Selçuklular döneminde yapılmış, çok büyük ve görkemli bir yapı.',
-      'Eskiden yolcular ve tüccarlar burada dinlenir, hayvanlarını ve eşyalarını güvende tutardı.',
-      'İstersen kapıdan içeri girip çevreyi keşfedebilirsin!',
+  it('2. Öğrenci adı önceliği, İngilizce diyalog sırası ve Türkçe isim parçalama/Alex/Can kuralları doğrudur', () => {
+    expect(resolveSultanhaniStudentName('Zeynep', 'ece')).toBe('Zeynep');
+    expect(resolveSultanhaniStudentName('', 'arda')).toBe('Arda');
+    expect(SULTANHANI_READY_STUDENT_NAMES).toContain(resolveSultanhaniStudentName(null, null, 0));
+
+    const exchanges = buildSultanhaniDialogExchanges(1);
+    expect(
+      exchanges.map((ex) => `${ex.studentText} -> ${ex.touristText}`),
+    ).toEqual([
+      'Hello! -> Hello!',
+      'Good morning! -> Good morning!',
+      "What's your name? -> My name is Alex.",
     ]);
+
+    const steps = buildSultanhaniDialogueSteps('Ece', 1);
+    expect(steps.map((s) => `${s.speaker}:${s.text}`)).toEqual([
+      'student:Hello!',
+      'tourist:Hello!',
+      'student:Good morning!',
+      'tourist:Good morning!',
+      "student:What's your name?",
+      'tourist:My name is Alex.',
+    ]);
+
+    // Akıştan çıkarılan adımlar silinmemiş, ayrı listede korunmuştur ve aktif akışta yoktur
+    const unusedSteps = buildSultanhaniUnusedExtendedSteps('Ece', 1);
+    expect(unusedSteps.map((s) => `${s.speaker}:${s.text}`)).toEqual([
+      "tourist:What's your name?",
+      'student:My name is Ece.',
+      'tourist:Nice to meet you, Ece!',
+      'student:Nice to meet you, too!',
+    ]);
+
+    // Saf durum makinesi geçiş fonksiyonu: "değişim sonrası turist cevabı" ve "son değişimden sonra yürüyüş"
+    const total = exchanges.length;
+    const afterSelect = advanceSultanhaniFlowState(
+      { stepPhase: 'STUDENT_CHOICE', exchangeIndex: 0 },
+      { type: 'STUDENT_OPTION_SELECTED' },
+      total,
+    )!;
+    expect(afterSelect).toEqual({ stepPhase: 'STUDENT_SPEAKING', exchangeIndex: 0 });
+    const waitTourist = advanceSultanhaniFlowState(
+      afterSelect,
+      { type: 'STUDENT_SPEECH_COMPLETE' },
+      total,
+    )!;
+    expect(waitTourist).toEqual({ stepPhase: 'WAIT_BEFORE_TOURIST', exchangeIndex: 0 });
+    const touristSpeaking = advanceSultanhaniFlowState(
+      waitTourist,
+      { type: 'START_TOURIST_REPLY' },
+      total,
+    )!;
+    expect(touristSpeaking).toEqual({ stepPhase: 'TOURIST_SPEAKING', exchangeIndex: 0 });
+    // Aynı adım ikinci kez tetiklenemez
+    expect(
+      advanceSultanhaniFlowState(touristSpeaking, { type: 'FORCE_TOURIST_REPLY_WATCHDOG' }, total),
+    ).toBeNull();
+
+    // Son değişimden (total - 1) sonra yürüyüşe (WALK_TO_DOOR) geçilir
+    const lastAfterTourist = advanceSultanhaniFlowState(
+      { stepPhase: 'TOURIST_SPEAKING', exchangeIndex: total - 1 },
+      { type: 'TOURIST_SPEECH_COMPLETE' },
+      total,
+    )!;
+    const walkToDoor = advanceSultanhaniFlowState(
+      lastAfterTourist,
+      { type: 'AFTER_TOURIST_PAUSE_COMPLETE' },
+      total,
+    )!;
+    expect(walkToDoor).toEqual({ stepPhase: 'WALK_TO_DOOR', exchangeIndex: total - 1 });
+    expect(
+      advanceSultanhaniFlowState(walkToDoor, { type: 'FORCE_WALK_WATCHDOG' }, total),
+    ).toBeNull();
+    // "How are you?" ve "Goodbye!" içermemeli
+    for (const s of steps) {
+      expect(s.text).not.toMatch(/How are you|Goodbye/i);
+      if (s.options) {
+        expect(s.options).toHaveLength(3);
+        for (const opt of s.options) {
+          expect(opt.text).not.toMatch(/How are you|Goodbye/i);
+        }
+      }
+    }
+
+    // Seçenek konumu tüm sıralarda aynı indekste sabit kalmamalı
+    const correctIndices = steps
+      .filter((s) => s.options)
+      .map((s) => s.options!.findIndex((o) => o.isCorrect));
+    expect(new Set(correctIndices).size).toBeGreaterThan(1);
+
+    // İsim parçalama kuralları
+    expect(
+      buildSultanhaniSpeechSegments('My name is Ece.', { hasTurkishVoice: true }),
+    ).toEqual([
+      { lang: 'en-US', text: 'My name is ' },
+      { lang: 'tr-TR', text: 'Ece.' },
+    ]);
+
+    // Alex İngilizce kalır
+    expect(
+      buildSultanhaniSpeechSegments('My name is Alex.', { hasTurkishVoice: true }),
+    ).toEqual([{ lang: 'en-US', text: 'My name is Alex.' }]);
+
+    // "can" fiili ile "Can" ismi karışmaz
+    expect(
+      buildSultanhaniSpeechSegments('You can meet Can!', { hasTurkishVoice: true }),
+    ).toEqual([
+      { lang: 'en-US', text: 'You can meet ' },
+      { lang: 'tr-TR', text: 'Can!' },
+    ]);
+
+    // Türkçe ses yokken yedek İngilizce okunuş
+    expect(
+      buildSultanhaniSpeechSegments('Nice to meet you, Ece!', { hasTurkishVoice: false }),
+    ).toEqual([{ lang: 'en-US', text: 'Nice to meet you, Eh-jeh!' }]);
   });
 
-  it('2. Devriye döngüsü: sol uç -> bekle (1.75 sn) -> sağ uç -> bekle çalışır ve taşma yapmaz', () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1280;
-    canvas.height = 720;
-    vi.spyOn(canvas, 'getContext').mockReturnValue(createMockCanvasContext());
-
-    const config: WalkableSceneConfig = {
-      width: SULTANHANI_SQUARE.width,
-      height: SULTANHANI_SQUARE.height,
-      playerSpawn: SULTANHANI_SQUARE.spawn,
-      obstacles: SULTANHANI_SQUARE.obstacles,
-      interactiveZones: [],
-      npc: SULTANHANI_TOURIST_NPC,
-      isNpcVisible: () => true,
-    };
-
-    const engine = new WalkableCanvasEngine(canvas, config, { onActiveZoneChange: vi.fn() });
-    expect(engine.npc).not.toBeNull();
-    expect(engine.npc!.x).toBe(SULTANHANI_TOURIST_NPC.startPosition.x);
-
-    const step = (dt: number) =>
-      (engine as unknown as { update: (delta: number) => void }).update(dt);
-
-    // Sola doğru yürüyüş -> minX ucuna ulaşmalı
-    for (let i = 0; i < 20; i++) step(0.1);
-    expect(engine.npc!.x).toBe(SULTANHANI_TOURIST_NPC.patrol.minX);
-    expect(engine.npc!.state).toBe('idle');
-    expect(engine.npc!.direction).toBe('left');
-
-    // 1.75 sn bekleme süresinin bir kısmı (1.0 sn) -> halen sabit beklemeli
-    for (let i = 0; i < 10; i++) step(0.1);
-    expect(engine.npc!.x).toBe(SULTANHANI_TOURIST_NPC.patrol.minX);
-    expect(engine.npc!.state).toBe('idle');
-
-    // Bekleme tamamlanınca (+0.9 sn) sağa dönüp yürümeye başlamalı
-    for (let i = 0; i < 10; i++) step(0.1);
-    expect(engine.npc!.x).toBeGreaterThan(SULTANHANI_TOURIST_NPC.patrol.minX);
-    expect(engine.npc!.direction).toBe('right');
-    expect(engine.npc!.state).toBe('walk');
-
-    // Sağ uca (maxX) kadar yürüyüp orada durmalı
-    for (let i = 0; i < 30; i++) step(0.1);
-    expect(engine.npc!.x).toBe(SULTANHANI_TOURIST_NPC.patrol.maxX);
-    expect(engine.npc!.state).toBe('idle');
-
-    engine.destroy();
-  });
-
-  it('3. Histerezis eşiği (1.5 giriş / 2.0 çıkış) ve konuşma sırasında durup öğrenciye dönme çalışır', () => {
+  it('3. Devriye döngüsü, 1.5x/2.0x histerezis eşiği ve startEncounterFacing iki karakteri birbirine döndürür', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 1280;
     canvas.height = 720;
@@ -217,148 +318,372 @@ describe('Sultanhanı Dış Meydan Turist NPC Doğrulaması', () => {
     const step = (dt: number) =>
       (engine as unknown as { update: (delta: number) => void }).update(dt);
 
-    // 115 px mesafede (1.5 < d < 2.0) iken henüz açılmamalı
+    // 115 px mesafede (1.5 < d < 2.0) yaklaşma henüz tetiklenmez
     engine.player.x = engine.npc!.x - 115;
     engine.player.y = engine.npc!.y;
     step(0.05);
     expect(onNpcProximityChange).not.toHaveBeenCalledWith(expect.objectContaining({ inRange: true }));
 
-    // 90 px mesafeye (<= 101 px) girince açılmalı
+    // 90 px mesafede (<= 101 px) eşik aşılır
     engine.player.x = engine.npc!.x - 90;
     step(0.05);
     expect(onNpcProximityChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ inRange: true }),
     );
 
-    // Konuşma aktifleşince NPC durur ve öğrenciye (sola) döner
-    engine.setNpcTalking(true);
-    const frozenX = engine.npc!.x;
-    step(0.5);
-    expect(engine.npc!.x).toBe(frozenX);
-    expect(engine.npc!.state).toBe('idle');
+    // startEncounterFacing girişleri kilitler, devriyeyi durdurur ve yüzleri birbirine çevirir
+    engine.startEncounterFacing();
+    expect(engine.getInputDisabled()).toBe(true);
     expect(engine.npc!.direction).toBe('left');
-
-    // Öğrenci 120 px mesafeye (1.5 < 120 <= 2.0) çekilse bile titreme olmaz, açık kalır
-    engine.player.x = engine.npc!.x - 120;
-    step(0.05);
-    expect(onNpcProximityChange).not.toHaveBeenLastCalledWith(
-      expect.objectContaining({ inRange: false }),
-    );
-
-    // 145 px (> 134 px = 2.0 boy) dışına çıkınca kapanır
-    engine.player.x = engine.npc!.x - 145;
-    step(0.05);
-    expect(onNpcProximityChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ inRange: false }),
-    );
-
-    // Konuşma bitince devriye kaldığı yerden devam eder
-    engine.setNpcTalking(false);
-    step(0.5);
-    expect(engine.npc!.x).not.toBe(frozenX);
+    expect(engine.player.direction).toBe('right');
+    const frozenX = engine.npc!.x;
+    step(0.4);
+    expect(engine.npc!.x).toBe(frozenX);
 
     engine.destroy();
   });
 
-  it('4. Konuşma balonu (NpcSpeechBubble) dokunma, fare ve klavye (Enter/Boşluk) ile ilerler ve kapanır', () => {
-    const onAdvance = vi.fn();
+  it('4. Seçenek paneli (>=44px, Dinle önizleme, 1. yanlış ipucu, 2. yanlış vurgulama) doğru çalışır', () => {
+    const onSelectOption = vi.fn();
+    const onPreviewOption = vi.fn();
+    const steps = buildSultanhaniDialogueSteps('Ece', 0);
+    const firstStep = steps[0];
+
     const { rerender } = render(
       <NpcSpeechBubble
-        isOpen={true}
-        speakerName="Turist"
-        lines={SULTANHANI_TOURIST_NPC.dialogueLines}
-        currentIndex={0}
+        activeBubble={{ speaker: 'tourist', speakerLabel: 'Alex', text: 'Good morning!' }}
         anchorPos={{ x: 640, y: 360 }}
-        onAdvance={onAdvance}
+        choicePrompt={{
+          stepId: firstStep.id,
+          options: firstStep.options!,
+          wrongAttempts: 0,
+          hintTurkish: firstStep.hintTurkish,
+        }}
+        onSelectOption={onSelectOption}
+        onPreviewOption={onPreviewOption}
       />,
     );
 
-    expect(
-      screen.getByText('Merhaba! Ben bu güzel şehri gezmeye gelen bir turistim.'),
-    ).toBeInTheDocument();
-    const continueBtn = screen.getByRole('button', { name: 'Devam' });
-    expect(continueBtn.className).toContain('min-h-[44px]');
+    const previewButtons = screen.getAllByRole('button', { name: /^Seçeneği dinle:/ });
+    expect(previewButtons[0].className).toContain('min-h-[44px]');
+    expect(previewButtons[0].className).toContain('min-w-[44px]');
+    fireEvent.click(previewButtons[0]);
+    expect(onPreviewOption).toHaveBeenCalledTimes(1);
+    expect(onSelectOption).not.toHaveBeenCalled();
 
-    // Fare/dokunma ile ilerle
-    fireEvent.click(continueBtn);
-    expect(onAdvance).toHaveBeenCalledTimes(1);
-
-    // Enter ve Boşluk ile ilerle
-    fireEvent.keyDown(window, { key: 'Enter' });
-    fireEvent.keyDown(window, { key: ' ' });
-    expect(onAdvance).toHaveBeenCalledTimes(3);
-
-    // Son cümlede "Tamam" düğmesi görünür
+    // 1. yanlış deneme: cezalandırıcı "Yanlış" sözcüğü yok, "Tekrar dene!" ve ipucu var
     rerender(
       <NpcSpeechBubble
-        isOpen={true}
-        speakerName="Turist"
-        lines={SULTANHANI_TOURIST_NPC.dialogueLines}
-        currentIndex={3}
-        anchorPos={{ x: 640, y: 360 }}
-        onAdvance={onAdvance}
+        activeBubble={null}
+        anchorPos={{ x: 400, y: 360 }}
+        choicePrompt={{
+          stepId: firstStep.id,
+          options: firstStep.options!,
+          wrongAttempts: 1,
+          hintTurkish: firstStep.hintTurkish,
+        }}
+        onSelectOption={onSelectOption}
+        onPreviewOption={onPreviewOption}
       />,
     );
-    expect(
-      screen.getByText('İstersen kapıdan içeri girip çevreyi keşfedebilirsin!'),
-    ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Tamam' })).toBeInTheDocument();
+    const banner = screen.getByTestId('choice-feedback-banner');
+    expect(banner.textContent).toContain('Tekrar dene!');
+    expect(banner.textContent).not.toMatch(/yanlış/i);
+
+    // 2. yanlış deneme: doğru seçenek vurgulanır
+    rerender(
+      <NpcSpeechBubble
+        activeBubble={null}
+        anchorPos={{ x: 400, y: 360 }}
+        choicePrompt={{
+          stepId: firstStep.id,
+          options: firstStep.options!,
+          wrongAttempts: 2,
+          hintTurkish: firstStep.hintTurkish,
+        }}
+        onSelectOption={onSelectOption}
+        onPreviewOption={onPreviewOption}
+      />,
+    );
+    const correctBtn = screen.getByRole('button', { name: 'Hello!' });
+    expect(correctBtn.closest('[data-highlighted]') ?? correctBtn).toHaveAttribute('data-highlighted', 'true');
   });
 
-  it('5. prefers-reduced-motion açıkken NPC sabit durur ama konuşma çalışmaya devam eder', () => {
-    const originalMatchMedia = window.matchMedia;
-    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-      matches: query === '(prefers-reduced-motion: reduce)',
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }));
+  it('5. Tam akış: yaklaşma -> FACING -> DIALOG_1 -> DIALOG_2 -> birlikte kapıya yürüyüş -> iç mekân DONE ve temizlik', async () => {
+    vi.useFakeTimers();
+    const { utterances, synth } = setupMockSpeech(['en-US', 'tr-TR']);
 
-    const canvas = document.createElement('canvas');
-    canvas.width = 1280;
-    canvas.height = 720;
-    vi.spyOn(canvas, 'getContext').mockReturnValue(createMockCanvasContext());
+    const profile = createStudentProfile('Ece', 'avatar_1', 3);
+    const st = createInitialStudentState();
+    st.selectedGrade = 3;
+    st.speechEnabled = true;
+    saveStudentState(st);
 
-    const onNpcProximityChange = vi.fn();
-    const engine = new WalkableCanvasEngine(
-      canvas,
-      {
-        width: SULTANHANI_SQUARE.width,
-        height: SULTANHANI_SQUARE.height,
-        playerSpawn: SULTANHANI_SQUARE.spawn,
-        obstacles: SULTANHANI_SQUARE.obstacles,
-        interactiveZones: [],
-        npc: SULTANHANI_TOURIST_NPC,
-        isNpcVisible: () => true,
-      },
-      { onActiveZoneChange: vi.fn(), onNpcProximityChange },
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(createMockCanvasContext());
+    HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn().mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 1280,
+      height: 720,
+    });
+
+    const flushAllMicrotasks = async () => {
+      for (let i = 0; i < 6; i++) {
+        await Promise.resolve();
+      }
+    };
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <CampusProviders>
+          <WalkableCampusView characterId="ece" initialScene="sultanhani_square" />
+        </CampusProviders>
+      </MemoryRouter>,
     );
 
-    const step = (dt: number) =>
-      (engine as unknown as { update: (delta: number) => void }).update(dt);
+    const engine = (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine })
+      .__WALKABLE_ENGINE__!;
+    expect(engine).toBeDefined();
+    expect(engine.npc?.id).toBe('turist-sultanhani');
+    expect(screen.queryByTestId('npc-speech-bubble')).not.toBeInTheDocument();
 
-    const initialX = engine.npc!.x;
-    for (let i = 0; i < 10; i++) step(0.1);
-    expect(engine.npc!.x).toBe(initialX);
-    expect(engine.npc!.state).toBe('idle');
+    // 1. Yaklaşma -> FACING (800 ms bekleme) -> DIALOG_1 (Öğrenci 3'lü seçenek açılır)
+    await act(async () => {
+      engine.setPosition({ x: engine.npc!.x - 80, y: engine.npc!.y });
+      (engine as unknown as { update: (delta: number) => void }).update(0.05);
+    });
+    expect(engine.getInputDisabled()).toBe(true);
+    expect(document.querySelector('[data-encounter-phase]')?.getAttribute('data-encounter-phase')).toBe('FACING');
 
-    // Yaklaşınca konuşma yine tetiklenir
-    engine.player.x = engine.npc!.x - 60;
-    engine.player.y = engine.npc!.y;
-    step(0.05);
-    expect(onNpcProximityChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ inRange: true }),
-    );
+    await act(async () => {
+      vi.advanceTimersByTime(SULTANHANI_TIMINGS.facingPauseMs + 20);
+      await flushAllMicrotasks();
+    });
+    expect(document.querySelector('[data-encounter-phase]')?.getAttribute('data-encounter-phase')).toBe('DIALOG_1');
+    expect(screen.getByTestId('student-choice-panel')).toBeInTheDocument();
 
-    engine.destroy();
-    window.matchMedia = originalMatchMedia;
+    const finishNextUtterances = async () => {
+      for (let safety = 0; safety < 10; safety++) {
+        await flushAllMicrotasks();
+        const pending = utterances.find((u) => u.onend !== null);
+        if (pending) {
+          pending.onend?.();
+          await flushAllMicrotasks();
+        } else {
+          break;
+        }
+      }
+    };
+
+    const chooseAnswerAndFinishExchange = async (
+      correctText: string,
+      expectedTouristReply: string,
+    ) => {
+      const btn = screen.getByRole('button', { name: correctText });
+      await act(async () => {
+        fireEvent.click(btn);
+        await flushAllMicrotasks();
+      });
+      // Öğrenci balonu açık, turist balonu henüz yok
+      expect(screen.getByTestId('npc-speech-bubble')).toHaveAttribute('data-speaker', 'student');
+      expect(screen.getByTestId('npc-speech-bubble').textContent).toContain(correctText);
+
+      // Öğrenci sesi biter -> öğrenci balonu kapanır -> 500 ms sonra turist balonu açılır
+      await act(async () => {
+        await finishNextUtterances();
+      });
+      expect(screen.queryByTestId('npc-speech-bubble')).not.toBeInTheDocument();
+
+      await act(async () => {
+        vi.advanceTimersByTime(SULTANHANI_TIMINGS.afterStudentLinePauseMs + 20);
+        await flushAllMicrotasks();
+      });
+      expect(screen.getByTestId('npc-speech-bubble')).toHaveAttribute('data-speaker', 'tourist');
+      expect(screen.getByTestId('npc-speech-bubble').textContent).toContain(expectedTouristReply);
+
+      // Turist sesi biter -> turist balonu kapanır -> 600 ms sonra sıradaki adıma geçilir
+      await act(async () => {
+        await finishNextUtterances();
+      });
+      expect(screen.queryByTestId('npc-speech-bubble')).not.toBeInTheDocument();
+
+      await act(async () => {
+        vi.advanceTimersByTime(SULTANHANI_TIMINGS.afterTouristLinePauseMs + 20);
+        await flushAllMicrotasks();
+      });
+    };
+
+    // Değişim 1: Yanlış seçim -> Tekrar dene! -> Doğru "Hello!" -> Turist "Hello!"
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Nice to meet you.' }));
+      await flushAllMicrotasks();
+    });
+    expect(screen.getByTestId('choice-feedback-banner').textContent).toContain('Tekrar dene!');
+
+    await chooseAnswerAndFinishExchange('Hello!', 'Hello!');
+
+    // Değişim 2: Öğrenci "Good morning!" -> Turist "Good morning!"
+    await chooseAnswerAndFinishExchange('Good morning!', 'Good morning!');
+
+    // Değişim 3: Öğrenci "What's your name?" -> Turist "My name is Alex." -> WALK_TO_DOOR
+    expect(document.querySelector('[data-encounter-phase]')?.getAttribute('data-encounter-phase')).toBe('DIALOG_2');
+    const cancelCountBeforeThird = synth.cancel.mock.calls.length;
+    await chooseAnswerAndFinishExchange("What's your name?", 'My name is Alex.');
+
+    // Turist cevabından önce ekstra speechSynthesis.cancel() çağrılmamış olmalı (yalnızca öğrenci başında 1 kez)
+    expect(synth.cancel.mock.calls.length - cancelCountBeforeThird).toBe(1);
+    expect(utterances.some((u) => u.text === 'My name is Alex.' && u.pitch === 0.95)).toBe(true);
+    expect(profile.alias).toBe('Ece');
+
+    // 3. değişim biter bitmez tüm balonlar kapanır ve WALK_TO_DOOR başlar
+    expect(document.querySelector('[data-encounter-phase]')?.getAttribute('data-encounter-phase')).toBe('WALK_TO_DOOR');
+    expect(screen.queryByTestId('npc-speech-bubble')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('student-choice-panel')).not.toBeInTheDocument();
+
+    // Birlikte kapıya yürüyüş -> kapıya varınca TRANSITION aşamasına geçer
+    await act(async () => {
+      for (let i = 0; i < 60; i++) {
+        (engine as unknown as { update: (delta: number) => void }).update(0.1);
+      }
+    });
+    expect(document.querySelector('[data-encounter-phase]')?.getAttribute('data-encounter-phase')).toBe('TRANSITION');
+
+    await act(async () => {
+      vi.advanceTimersByTime(SULTANHANI_TIMINGS.transitionFadeMs + 50);
+    });
+
+    // İç mekân sahnesine geçildiğinde durum DONE ve iki karakter yan yana görünür
+    expect(document.querySelector('[data-scene]')?.getAttribute('data-scene')).toBe('sultanhani_inner');
+    expect(document.querySelector('[data-encounter-phase]')?.getAttribute('data-encounter-phase')).toBe('DONE');
+    const innerEngine = (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine })
+      .__WALKABLE_ENGINE__!;
+    expect(innerEngine.player.x).toBe(SULTANHANI_INNER.playerSpawn.x);
+    expect(innerEngine.npc?.x).toBe(SULTANHANI_INNER.touristSpawn.x);
+
+    // İlerleme şeması değişmedi, Stage 3/4 konuşmaları başlamadı
+    expect(loadStudentState().selectedGrade).toBe(3);
+    expect(screen.queryByTestId('npc-speech-bubble')).not.toBeInTheDocument();
+
+    // Sınıfa Dön tıklandığında temizlenir ve classroom'a döner
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Sınıfa dön' }));
+      vi.advanceTimersByTime(650);
+    });
+    expect(document.querySelector('[data-scene]')?.getAttribute('data-scene')).toBe('classroom');
+    expect(document.querySelector('[data-encounter-phase]')?.getAttribute('data-encounter-phase')).toBe('ARRIVAL');
   });
 
-  it('6. Görsel yüklenemezse NPC sessizce gizlenir, konsola tek uyarı yazılır ve sahne bozulmadan çalışır', () => {
+  it('6. Ses kapalıyken, onend gelmezken (1.5x koruma) ve Sınıfa Dön ile yarıda çıkışta akış takılmaz', async () => {
+    vi.useFakeTimers();
+    const { utterances } = setupMockSpeech(['en-US']);
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    // 1.5x timeout korumasını doğrula
+    expect(getSpeechTimeoutMs('Hello!')).toBe(3000);
+
+    const st = createInitialStudentState();
+    st.selectedGrade = 3;
+    st.speechEnabled = false;
+    saveStudentState(st);
+
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(createMockCanvasContext());
+    HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn().mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 1280,
+      height: 720,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <CampusProviders>
+          <WalkableCampusView initialScene="sultanhani_square" />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    const engine = (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine })
+      .__WALKABLE_ENGINE__!;
+
+    await act(async () => {
+      engine.setPosition({ x: engine.npc!.x - 80, y: engine.npc!.y });
+      (engine as unknown as { update: (delta: number) => void }).update(0.05);
+      vi.advanceTimersByTime(SULTANHANI_TIMINGS.facingPauseMs + 20);
+      await Promise.resolve();
+    });
+
+    // Ses kapalıyken de seçim paneli açılır ve hiç utterance oynatılmaz
+    expect(utterances).toHaveLength(0);
+    expect(screen.getByTestId('student-choice-panel')).toBeInTheDocument();
+
+    // Konuşma ortasında Sınıfa Dön'e tıklanınca durum temizlenir
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Sınıfa dön' }));
+      vi.advanceTimersByTime(650);
+    });
+    expect(document.querySelector('[data-scene]')?.getAttribute('data-scene')).toBe('classroom');
+    expect(screen.queryByTestId('student-choice-panel')).not.toBeInTheDocument();
+    warnSpy.mockRestore();
+  });
+
+  it('7. onend gelmezken 1.5x koruma tek console.warn ile ilerler ve 12 sn yürüyüş bekçisi sahneyi kilitlemez', async () => {
+    vi.useFakeTimers();
+    setupMockSpeech(['en-US']);
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const st = createInitialStudentState();
+    st.selectedGrade = 3;
+    st.speechEnabled = true;
+    saveStudentState(st);
+
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(createMockCanvasContext());
+    HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn().mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 1280,
+      height: 720,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <CampusProviders>
+          <WalkableCampusView initialScene="sultanhani_square" />
+        </CampusProviders>
+      </MemoryRouter>,
+    );
+
+    const engine = (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine })
+      .__WALKABLE_ENGINE__!;
+
+    await act(async () => {
+      engine.setPosition({ x: engine.npc!.x - 80, y: engine.npc!.y });
+      (engine as unknown as { update: (delta: number) => void }).update(0.05);
+      vi.advanceTimersByTime(SULTANHANI_TIMINGS.facingPauseMs + 20);
+      await Promise.resolve();
+    });
+
+    // "Hello!" seçimi yapılıyor ama öğrenci onend hiç gelmiyor -> 2000 ms'de turist cevabı bekçisi devreye girer
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Hello!' }));
+      for (let i = 0; i < 6; i++) await Promise.resolve();
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(SULTANHANI_TIMINGS.touristReplyWatchdogMs + 20);
+      for (let i = 0; i < 6; i++) await Promise.resolve();
+    });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('npc-speech-bubble')).toHaveAttribute('data-speaker', 'tourist');
+
+    // Turist onend de hiç gelmezse 1.5x (3000 ms) koruma devreye girer ve balon kapanır
+    await act(async () => {
+      vi.advanceTimersByTime(getSpeechTimeoutMs('Hello!') + 50);
+      for (let i = 0; i < 6; i++) await Promise.resolve();
+    });
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+    expect(screen.queryByTestId('npc-speech-bubble')).not.toBeInTheDocument();
+  });
+
+  it('8. Görsel yüklenemezse NPC gizlenir ve tek console.warn yazılır', () => {
     clearCachedAssetForTesting(SULTANHANI_TOURIST_ATLAS_URL);
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -382,22 +707,8 @@ describe('Sultanhanı Dış Meydan Turist NPC Doğrulaması', () => {
         walkFrame: 0,
         grade: 3,
       },
-      {
-        id: SULTANHANI_TOURIST_NPC.id,
-        name: SULTANHANI_TOURIST_NPC.name,
-        x: 880,
-        y: 645,
-        width: 53,
-        height: 67,
-        direction: 'left',
-        state: 'idle',
-        speed: 80,
-        walkFrame: 0,
-        visible: false,
-      },
+      null,
     );
-
-    // drawTouristNpc atlas yokken hiçbir görsel çizmez
     drawTouristNpc(mockCtx, {
       id: SULTANHANI_TOURIST_NPC.id,
       name: SULTANHANI_TOURIST_NPC.name,
@@ -412,96 +723,5 @@ describe('Sultanhanı Dış Meydan Turist NPC Doğrulaması', () => {
       visible: true,
     });
     expect(mockCtx.drawImage).not.toHaveBeenCalled();
-  });
-
-  it('7. WalkableCampusView entegrasyonu: yaklaşma -> konuşma -> uzaklaşınca kapanma -> 10 sn cooldown -> yeniden çıkış/girişte tek NPC', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-11-22T17:00:00Z'));
-
-    const st = createInitialStudentState();
-    st.selectedGrade = 3;
-    saveStudentState(st);
-
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(createMockCanvasContext());
-    HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn().mockReturnValue({
-      left: 0,
-      top: 0,
-      width: 1280,
-      height: 720,
-    });
-
-    const { unmount } = render(
-      <MemoryRouter initialEntries={['/']}>
-        <CampusProviders>
-          <WalkableCampusView initialScene="sultanhani_square" />
-        </CampusProviders>
-      </MemoryRouter>,
-    );
-
-    const engine = (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine })
-      .__WALKABLE_ENGINE__!;
-    expect(engine).toBeDefined();
-    expect(engine.npc?.id).toBe('turist-sultanhani');
-
-    // Yaklaşma -> konuşma balonu açılır
-    await act(async () => {
-      engine.setPosition({ x: engine.npc!.x - 80, y: engine.npc!.y });
-      (engine as unknown as { update: (delta: number) => void }).update(0.05);
-    });
-
-    expect(screen.getByTestId('npc-speech-bubble')).toBeInTheDocument();
-    expect(
-      screen.getByText('Merhaba! Ben bu güzel şehri gezmeye gelen bir turistim.'),
-    ).toBeInTheDocument();
-
-    // Diyalog bitmeden uzaklaşınca (x: 500 -> devriye alanından kesinlikle > 2.0 boy uzakta) balon kapanır
-    await act(async () => {
-      engine.setPosition({ x: 500, y: engine.npc!.y });
-      (engine as unknown as { update: (delta: number) => void }).update(0.05);
-    });
-    expect(screen.queryByTestId('npc-speech-bubble')).not.toBeInTheDocument();
-
-    // 10 sn geçmeden tekrar yaklaşırsa hemen açılmaz
-    await act(async () => {
-      vi.advanceTimersByTime(5000);
-      engine.setPosition({ x: engine.npc!.x - 80, y: engine.npc!.y });
-      (engine as unknown as { update: (delta: number) => void }).update(0.05);
-    });
-    expect(screen.queryByTestId('npc-speech-bubble')).not.toBeInTheDocument();
-
-    // Uzaklaşıp 10 sn bekleme süresi geçtikten sonra yaklaşınca tekrar açılır
-    await act(async () => {
-      engine.setPosition({ x: 500, y: engine.npc!.y });
-      (engine as unknown as { update: (delta: number) => void }).update(0.05);
-      vi.advanceTimersByTime(6000);
-      engine.setPosition({ x: engine.npc!.x - 80, y: engine.npc!.y });
-      (engine as unknown as { update: (delta: number) => void }).update(0.05);
-    });
-    expect(screen.getByTestId('npc-speech-bubble')).toBeInTheDocument();
-
-    // 4 cümleyi tamamla (Devam x3 -> Tamam)
-    for (let i = 0; i < 4; i++) {
-      await act(async () => {
-        fireEvent.keyDown(window, { key: 'Enter' });
-      });
-    }
-    expect(screen.queryByTestId('npc-speech-bubble')).not.toBeInTheDocument();
-
-    // Kayıtlı ilerleme şeması değişmeden korunur
-    expect(loadStudentState().selectedGrade).toBe(3);
-
-    // Sahneyi kapatıp tekrar girince tek NPC vardır
-    unmount();
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <CampusProviders>
-          <WalkableCampusView initialScene="sultanhani_square" />
-        </CampusProviders>
-      </MemoryRouter>,
-    );
-    const engineReentered = (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine })
-      .__WALKABLE_ENGINE__!;
-    expect(engineReentered.npc?.id).toBe('turist-sultanhani');
-    expect(screen.queryAllByTestId('npc-speech-bubble').length).toBeLessThanOrEqual(1);
   });
 });

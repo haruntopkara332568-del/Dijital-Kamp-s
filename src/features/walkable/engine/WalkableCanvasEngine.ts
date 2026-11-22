@@ -30,7 +30,11 @@ export interface EngineCallbacks {
     npc?: NpcCharacter | null,
   ) => void;
   onRenderForeground?: (ctx: CanvasRenderingContext2D, camera: Position) => void;
-  onNpcProximityChange?: (state: { inRange: boolean; screenPos: Position | null }) => void;
+  onNpcProximityChange?: (state: {
+    inRange: boolean;
+    screenPos: Position | null;
+    studentScreenPos?: Position | null;
+  }) => void;
 }
 
 export class WalkableCanvasEngine {
@@ -55,7 +59,15 @@ export class WalkableCanvasEngine {
   private npcPauseTimerMs: number = 0;
   private npcInRange: boolean = false;
   private isNpcTalking: boolean = false;
+  private npcEncounterLocked: boolean = false;
   private lastNpcScreenPos: Position | null = null;
+  private lastStudentScreenPos: Position | null = null;
+  private walkToDoorState: {
+    target: Position;
+    portalThresholdY: number;
+    onArrived: () => void;
+    arrived: boolean;
+  } | null = null;
 
   private isRunning: boolean = false;
   private isPaused: boolean = false;
@@ -95,8 +107,10 @@ export class WalkableCanvasEngine {
 
     if (config.npc) {
       this.npcConfig = config.npc;
+      const initialDirection =
+        config.npcInitialDirection ?? config.npc.patrol?.initialDirection ?? 'up';
       this.npcPatrolPhase =
-        config.npc.patrol.initialDirection === 'right' ? 'moving_right' : 'moving_left';
+        config.npc.patrol?.initialDirection === 'right' ? 'moving_right' : 'moving_left';
       this.npc = {
         id: config.npc.id,
         name: config.npc.name,
@@ -104,7 +118,7 @@ export class WalkableCanvasEngine {
         y: config.npc.startPosition.y,
         width: config.npc.width,
         height: config.npc.height,
-        direction: config.npc.patrol.initialDirection,
+        direction: initialDirection,
         state: 'idle',
         speed: config.npc.speed,
         walkFrame: 0,
@@ -240,15 +254,96 @@ export class WalkableCanvasEngine {
       this.npc.state = 'idle';
       this.npc.walkFrame = 0;
       this.faceNpcTowardPlayer();
-    } else if (this.npcPatrolPhase === 'moving_left') {
-      this.npc.direction = 'left';
-    } else if (this.npcPatrolPhase === 'moving_right') {
-      this.npc.direction = 'right';
+    } else if (!this.npcEncounterLocked) {
+      if (this.npcPatrolPhase === 'moving_left') {
+        this.npc.direction = 'left';
+      } else if (this.npcPatrolPhase === 'moving_right') {
+        this.npc.direction = 'right';
+      }
     }
 
     if (this.isRunning) {
       this.render();
     }
+  }
+
+  /**
+   * Karşılaşma başladığında iki karakteri durdurur, yüzlerini birbirine döndürür
+   * ve öğrenci kontrollerini kilitler.
+   */
+  public startEncounterFacing() {
+    this.npcEncounterLocked = true;
+    this.walkToDoorState = null;
+    this.isNpcTalking = true;
+    this.setInputDisabled(true);
+
+    if (this.npc) {
+      this.npc.state = 'idle';
+      this.npc.walkFrame = 0;
+      this.faceNpcTowardPlayer();
+    }
+    this.facePlayerTowardNpc();
+    this.checkNpcProximity();
+
+    if (this.isRunning) {
+      this.render();
+    }
+  }
+
+  /**
+   * Diyaloglar bitince öğrenciyi hedef kapıya yürütür, turisti de sabit ofsetle takip ettirir.
+   */
+  public startWalkToDoor(target: Position, portalThresholdY: number, onArrived: () => void) {
+    this.npcEncounterLocked = true;
+    this.isNpcTalking = false;
+    this.setInputDisabled(true);
+
+    // Sağ/sol cephe duvar köşelerine (y <= portalThresholdY) takılmamak için önce kapı önü merkez
+    // eksenine (x = target.x, y >= portalThresholdY + 28), ardından kapı içine (target) yürü.
+    const approachY = Math.max(portalThresholdY + 28, Math.min(this.player.y, portalThresholdY + 68));
+    if (Math.abs(this.player.x - target.x) > 12 || this.player.y > portalThresholdY + 24) {
+      this.pathWaypoints = [{ x: target.x, y: approachY }, target];
+    } else {
+      this.pathWaypoints = [target];
+    }
+    this.currentWaypointIndex = 0;
+    this.player.state = 'walk';
+    if (this.npc && this.npc.visible) {
+      this.npc.state = 'walk';
+      this.npc.speed = this.player.speed;
+    }
+    this.walkToDoorState = {
+      target,
+      portalThresholdY,
+      onArrived,
+      arrived: false,
+    };
+  }
+
+  /**
+   * Karşılaşma durumunu sıfırlar ve kontrolleri/devriyeyi normale döndürür.
+   */
+  public stopEncounterControl() {
+    this.npcEncounterLocked = false;
+    this.walkToDoorState = null;
+    this.npcInRange = false;
+    this.lastNpcScreenPos = null;
+    this.lastStudentScreenPos = null;
+    this.setNpcTalking(false);
+    this.setInputDisabled(false);
+  }
+
+  /**
+   * Öğrenci ve NPC'nin tuval üzerindeki ekran koordinatlarını (balon yerleşimi için) döndürür.
+   */
+  public getEntityScreenPositions(): { student: Position | null; npc: Position | null } {
+    return {
+      student: this.computeWorldEntityScreenPos(this.player.x, this.player.y, 67),
+      npc:
+        this.npc && this.npc.visible
+          ? this.computeWorldEntityScreenPos(this.npc.x, this.npc.y, this.npc.height)
+          : null,
+    };
   }
 
   /**
@@ -401,9 +496,16 @@ export class WalkableCanvasEngine {
   };
 
   private update(delta: number) {
+    if (this.walkToDoorState && !this.walkToDoorState.arrived) {
+      this.updateWalkToDoor(delta);
+      return;
+    }
+
     if (this.isInputDisabled) {
       this.player.state = 'idle';
       this.player.walkFrame = 0;
+      this.updateCamera();
+      this.checkNpcProximity();
       return;
     }
 
@@ -473,6 +575,145 @@ export class WalkableCanvasEngine {
 
     if (this.callbacks.onPositionChange) {
       this.callbacks.onPositionChange({ x: this.player.x, y: this.player.y });
+    }
+  }
+
+  private updateWalkToDoor(delta: number) {
+    const walkState = this.walkToDoorState;
+    if (!walkState || walkState.arrived) return;
+
+    let vx = 0;
+    let vy = 0;
+    while (this.currentWaypointIndex < this.pathWaypoints.length) {
+      const waypoint = this.pathWaypoints[this.currentWaypointIndex];
+      const dx = waypoint.x - this.player.x;
+      const dy = waypoint.y - this.player.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist <= 6) {
+        this.player.x = waypoint.x;
+        this.player.y = waypoint.y;
+        this.currentWaypointIndex++;
+      } else {
+        vx = dx / dist;
+        vy = dy / dist;
+        break;
+      }
+    }
+
+    const len = Math.hypot(vx, vy);
+    if (len > 0) {
+      const stepDist = this.player.speed * delta;
+      const nextX = this.player.x + (vx / len) * stepDist;
+      const nextY = this.player.y + (vy / len) * stepDist;
+
+      this.player.state = 'walk';
+      this.player.walkFrame += delta * 6.5;
+
+      const absX = Math.abs(vx);
+      const absY = Math.abs(vy);
+      if (absX > absY * 1.15) {
+        this.player.direction = (vx > 0 ? 'right' : 'left') as CharacterDirection;
+      } else if (absY > absX * 1.15) {
+        this.player.direction = (vy > 0 ? 'down' : 'up') as CharacterDirection;
+      }
+
+      // Rotayı silmeden güvenli eksen kaydırmalı ilerleme
+      if (!this.checkObstacleCollision(nextX, this.player.y)) {
+        this.player.x = Math.max(16, Math.min(this.config.width - 16, nextX));
+      }
+      if (!this.checkObstacleCollision(this.player.x, nextY)) {
+        this.player.y = Math.max(20, Math.min(this.config.height - 20, nextY));
+      } else if (this.player.y <= walkState.portalThresholdY + 12) {
+        this.player.y = Math.max(walkState.portalThresholdY + 14, this.player.y);
+      }
+    } else {
+      this.player.state = 'idle';
+      this.player.walkFrame = 0;
+      this.player.direction = 'up';
+    }
+
+    // Turisti öğrenciyle aynı hızda, ~1 öğrenci boyu ofsetle kapı merkez eksenine ve eşiğine yürüt
+    const npcGoalY = walkState.target.y + 36;
+    if (this.npc && this.npc.visible) {
+      this.npc.speed = this.player.speed;
+      const doorX = walkState.target.x;
+      const thresholdY = walkState.portalThresholdY;
+
+      let followTarget: Position;
+      if (Math.abs(this.npc.x - doorX) > 14 && this.npc.y > thresholdY + 10) {
+        followTarget = {
+          x: doorX,
+          y: Math.max(thresholdY + 34, Math.min(this.npc.y, thresholdY + 72)),
+        };
+      } else {
+        followTarget = {
+          x: doorX,
+          y: Math.max(npcGoalY, this.player.y + 36),
+        };
+      }
+
+      const ndx = followTarget.x - this.npc.x;
+      const ndy = followTarget.y - this.npc.y;
+      const ndist = Math.hypot(ndx, ndy);
+      const step = this.player.speed * delta;
+
+      if (ndist > 4 && step > 0) {
+        const moveRatio = Math.min(1, step / ndist);
+        const nextNpcX = this.npc.x + ndx * moveRatio;
+        const nextNpcY = this.npc.y + ndy * moveRatio;
+
+        const currentDistToPlayer = Math.hypot(this.npc.x - this.player.x, this.npc.y - this.player.y);
+        const nextDistToPlayer = Math.hypot(nextNpcX - this.player.x, nextNpcY - this.player.y);
+        if (nextDistToPlayer >= 36 || nextDistToPlayer >= currentDistToPlayer) {
+          this.npc.x = nextNpcX;
+          this.npc.y = nextNpcY;
+          this.npc.state = 'walk';
+          this.npc.walkFrame += delta * 6.5;
+
+          const absNX = Math.abs(ndx);
+          const absNY = Math.abs(ndy);
+          if (absNX > absNY * 1.15) {
+            this.npc.direction = ndx >= 0 ? 'right' : 'left';
+          } else if (absNY > absNX * 1.15) {
+            this.npc.direction = ndy >= 0 ? 'down' : 'up';
+          }
+        } else {
+          this.npc.state = 'walk';
+          this.npc.walkFrame += delta * 4.5;
+        }
+      } else {
+        this.npc.state = 'idle';
+        this.npc.walkFrame = 0;
+        this.npc.direction = 'up';
+      }
+    }
+
+    this.updateCamera();
+    this.checkNpcProximity();
+    if (this.callbacks.onPositionChange) {
+      this.callbacks.onPositionChange({ x: this.player.x, y: this.player.y });
+    }
+
+    const playerReached =
+      Math.hypot(walkState.target.x - this.player.x, walkState.target.y - this.player.y) <= 12;
+    const npcReached =
+      !this.npc ||
+      !this.npc.visible ||
+      Math.hypot(walkState.target.x - this.npc.x, npcGoalY - this.npc.y) <= 24;
+
+    if (playerReached && npcReached) {
+      this.player.state = 'idle';
+      this.player.walkFrame = 0;
+      this.player.direction = 'up';
+      if (this.npc) {
+        this.npc.state = 'idle';
+        this.npc.walkFrame = 0;
+        this.npc.direction = 'up';
+      }
+      walkState.arrived = true;
+      this.walkToDoorState = null;
+      walkState.onArrived();
     }
   }
 
@@ -592,6 +833,17 @@ export class WalkableCanvasEngine {
     }
   }
 
+  private facePlayerTowardNpc() {
+    if (!this.npc) return;
+    const dx = this.npc.x - this.player.x;
+    const dy = this.npc.y - this.player.y;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      this.player.direction = dx >= 0 ? 'right' : 'left';
+    } else {
+      this.player.direction = dy >= 0 ? 'down' : 'up';
+    }
+  }
+
   private getRenderTransform() {
     const zoom = this.zoom || 1;
     const offsetX = Math.min(
@@ -605,11 +857,10 @@ export class WalkableCanvasEngine {
     return { zoom, offsetX, offsetY };
   }
 
-  private computeNpcScreenPos(): Position | null {
-    if (!this.npc || !this.npc.visible) return null;
+  private computeWorldEntityScreenPos(worldX: number, worldY: number, spriteHeight: number): Position {
     const { zoom, offsetX, offsetY } = this.getRenderTransform();
-    const canvasX = this.npc.x * zoom + offsetX;
-    const canvasY = (this.npc.y + 18 - this.npc.height) * zoom + offsetY;
+    const canvasX = worldX * zoom + offsetX;
+    const canvasY = (worldY + 18 - spriteHeight) * zoom + offsetY;
     const rect = this.canvas.getBoundingClientRect?.();
     const scaleX = rect && rect.width > 0 && this.canvas.width > 0 ? rect.width / this.canvas.width : 1;
     const scaleY = rect && rect.height > 0 && this.canvas.height > 0 ? rect.height / this.canvas.height : 1;
@@ -619,6 +870,11 @@ export class WalkableCanvasEngine {
     };
   }
 
+  private computeNpcScreenPos(): Position | null {
+    if (!this.npc || !this.npc.visible) return null;
+    return this.computeWorldEntityScreenPos(this.npc.x, this.npc.y, this.npc.height);
+  }
+
   private checkNpcProximity() {
     if (!this.npc || !this.npcConfig) return;
 
@@ -626,33 +882,42 @@ export class WalkableCanvasEngine {
       if (this.npcInRange || this.lastNpcScreenPos !== null) {
         this.npcInRange = false;
         this.lastNpcScreenPos = null;
-        this.callbacks.onNpcProximityChange?.({ inRange: false, screenPos: null });
+        this.lastStudentScreenPos = null;
+        this.callbacks.onNpcProximityChange?.({ inRange: false, screenPos: null, studentScreenPos: null });
       }
       return;
     }
 
-    const dist = Math.hypot(this.player.x - this.npc.x, this.player.y - this.npc.y);
     const wasInRange = this.npcInRange;
-
-    if (!this.npcInRange && dist <= this.npcConfig.interactionEnterRadius) {
-      this.npcInRange = true;
-    } else if (this.npcInRange && dist > this.npcConfig.interactionExitRadius) {
-      this.npcInRange = false;
+    if (!this.npcEncounterLocked) {
+      const dist = Math.hypot(this.player.x - this.npc.x, this.player.y - this.npc.y);
+      if (!this.npcInRange && dist <= this.npcConfig.interactionEnterRadius) {
+        this.npcInRange = true;
+      } else if (this.npcInRange && dist > this.npcConfig.interactionExitRadius) {
+        this.npcInRange = false;
+      }
     }
 
     const screenPos = this.computeNpcScreenPos();
+    const studentScreenPos = this.computeWorldEntityScreenPos(this.player.x, this.player.y, 67);
+    const activeTracking = this.npcInRange || this.npcEncounterLocked;
     const posChanged =
-      this.npcInRange &&
-      screenPos !== null &&
-      (this.lastNpcScreenPos === null ||
-        Math.abs(screenPos.x - this.lastNpcScreenPos.x) >= 1 ||
-        Math.abs(screenPos.y - this.lastNpcScreenPos.y) >= 1);
+      activeTracking &&
+      ((screenPos !== null &&
+        (this.lastNpcScreenPos === null ||
+          Math.abs(screenPos.x - this.lastNpcScreenPos.x) >= 1 ||
+          Math.abs(screenPos.y - this.lastNpcScreenPos.y) >= 1)) ||
+        this.lastStudentScreenPos === null ||
+        Math.abs(studentScreenPos.x - this.lastStudentScreenPos.x) >= 1 ||
+        Math.abs(studentScreenPos.y - this.lastStudentScreenPos.y) >= 1);
 
     if (wasInRange !== this.npcInRange || posChanged) {
       this.lastNpcScreenPos = screenPos;
+      this.lastStudentScreenPos = studentScreenPos;
       this.callbacks.onNpcProximityChange?.({
         inRange: this.npcInRange,
         screenPos,
+        studentScreenPos,
       });
     }
   }
@@ -671,10 +936,18 @@ export class WalkableCanvasEngine {
       return;
     }
 
-    if (this.isNpcTalking) {
+    if (this.isNpcTalking || this.npcEncounterLocked) {
       this.npc.state = 'idle';
       this.npc.walkFrame = 0;
       this.faceNpcTowardPlayer();
+      this.checkNpcProximity();
+      return;
+    }
+
+    const patrol = this.npcConfig.patrol;
+    if (!patrol) {
+      this.npc.state = 'idle';
+      this.npc.walkFrame = 0;
       this.checkNpcProximity();
       return;
     }
@@ -690,7 +963,7 @@ export class WalkableCanvasEngine {
       return;
     }
 
-    const { minX, maxX, endpointPauseMs } = this.npcConfig.patrol;
+    const { minX, maxX, endpointPauseMs } = patrol;
 
     if (this.npcPatrolPhase === 'moving_left') {
       this.npc.direction = 'left';

@@ -10,7 +10,7 @@ export interface SceneNpcPatrolConfig {
 export interface SceneNpcConfig {
   id: string;
   name: string;
-  scene: 'sultanhani_square';
+  scene: 'sultanhani_square' | 'sultanhani_inner';
   atlasUrl: string;
   width: number;
   height: number;
@@ -18,29 +18,27 @@ export interface SceneNpcConfig {
     x: number;
     y: number;
   };
-  patrol: SceneNpcPatrolConfig;
+  patrol?: SceneNpcPatrolConfig;
   speed: number;
   interactionEnterRadius: number;
   interactionExitRadius: number;
-  cooldownMs: number;
-  dialogueLines: readonly string[];
 }
 
 // Öğrenci karakterinin tuvaldeki referans boyutu (CHARACTER_SCALES.scale15: 53x67 px) ve hızı (160 px/sn)
-const STUDENT_WIDTH_PX = 53;
-const STUDENT_HEIGHT_PX = 67;
-const STUDENT_SPEED_PX = 160;
-const PATROL_HALF_SPAN_PX = 100; // <= 2 * STUDENT_HEIGHT_PX (134 px)
+export const STUDENT_REFERENCE_WIDTH_PX = 53;
+export const STUDENT_REFERENCE_HEIGHT_PX = 67;
+export const STUDENT_REFERENCE_SPEED_PX = 160;
+const PATROL_HALF_SPAN_PX = 100; // <= 2 * STUDENT_REFERENCE_HEIGHT_PX (134 px)
 const START_X = 880;
-const START_Y = 645;
+const START_Y = 645; // Doğuş noktasına (625, 760) uzaklık ~280 px (~4.18 öğrenci boyu)
 
 export const SULTANHANI_TOURIST_NPC: SceneNpcConfig = {
   id: 'turist-sultanhani',
-  name: 'Turist',
+  name: 'Alex',
   scene: 'sultanhani_square',
   atlasUrl: '/assets/walkable/npc_tourist_atlas.png',
-  width: STUDENT_WIDTH_PX,
-  height: STUDENT_HEIGHT_PX,
+  width: STUDENT_REFERENCE_WIDTH_PX,
+  height: STUDENT_REFERENCE_HEIGHT_PX,
   startPosition: {
     x: START_X,
     y: START_Y,
@@ -51,14 +49,7 @@ export const SULTANHANI_TOURIST_NPC: SceneNpcConfig = {
     endpointPauseMs: 1750,
     initialDirection: 'left',
   },
-  speed: STUDENT_SPEED_PX * 0.5,
-  interactionEnterRadius: Math.round(STUDENT_HEIGHT_PX * 1.5), // ~101 px
-  interactionExitRadius: Math.round(STUDENT_HEIGHT_PX * 2.0), // 134 px
-  cooldownMs: 10_000,
-  dialogueLines: [
-    'Merhaba! Ben bu güzel şehri gezmeye gelen bir turistim.',
-    'Burası Sultanhanı Kervansarayı. Selçuklular döneminde yapılmış, çok büyük ve görkemli bir yapı.',
-    'Eskiden yolcular ve tüccarlar burada dinlenir, hayvanlarını ve eşyalarını güvende tutardı.',
-    'İstersen kapıdan içeri girip çevreyi keşfedebilirsin!',
-  ],
+  speed: STUDENT_REFERENCE_SPEED_PX * 0.5,
+  interactionEnterRadius: Math.round(STUDENT_REFERENCE_HEIGHT_PX * 1.5), // ~101 px
+  interactionExitRadius: Math.round(STUDENT_REFERENCE_HEIGHT_PX * 2.0), // 134 px
 };
