@@ -27,7 +27,8 @@ interface WalkableControlsOverlayProps {
   onDirectEnterClassroom?: () => void;
   onExitClassroom?: () => void;
   unreachableMessage: string | null;
-  currentScene: 'courtyard' | 'classroom' | 'sultanhani_square';
+  currentScene: 'courtyard' | 'classroom' | 'sultanhani_square' | 'sultanhani_inner';
+  isEncounterLocked?: boolean;
 }
 
 export function WalkableControlsOverlay({
@@ -37,6 +38,7 @@ export function WalkableControlsOverlay({
   onExitClassroom,
   unreachableMessage,
   currentScene,
+  isEncounterLocked = false,
 }: WalkableControlsOverlayProps) {
   const campus = useOptionalCampus();
   const selectedGrade = campus?.state.selectedGrade ?? null;
@@ -80,7 +82,9 @@ export function WalkableControlsOverlay({
               ? 'Yürünebilir Kampüs Avlusu'
               : currentScene === 'classroom'
                 ? 'İngilizce Sınıfı'
-                : 'Aksaray Sultanhanı Kervansarayı — Dış Meydan'}
+                : currentScene === 'sultanhani_square'
+                  ? 'Aksaray Sultanhanı Kervansarayı — Dış Meydan'
+                  : 'Aksaray Sultanhanı Kervansarayı — İç Avlu'}
           </span>
         </div>
 
@@ -110,8 +114,9 @@ export function WalkableControlsOverlay({
             </button>
           )}
 
-          {/* Sultanhanı Meydanındayken Hızlı Sınıfa Dönüş Düğmesi */}
-          {currentScene === 'sultanhani_square' && onExitClassroom && (
+          {/* Sultanhanı Dış Meydan veya İç Avludayken Hızlı Sınıfa Dönüş Düğmesi */}
+          {(currentScene === 'sultanhani_square' || currentScene === 'sultanhani_inner') &&
+            onExitClassroom && (
             <button
               type="button"
               onClick={onExitClassroom}
@@ -259,7 +264,7 @@ export function WalkableControlsOverlay({
         )}
 
         {/* Aktif Etkileşim Balonu (Örn: [E] İngilizce Sınıfına Gir / Akıllı Tahtayı Aç) */}
-        {activeZone && (
+        {activeZone && !isEncounterLocked && (
           <div className="pointer-events-auto animate-pulse flex flex-col items-center gap-2 bg-[var(--campus-surface)]/95 backdrop-blur-md px-5 py-3 rounded-2xl border-2 border-[var(--seljuk-teal)] shadow-xl text-center">
             <p className="text-xs sm:text-sm font-bold text-[var(--seljuk-navy)]">
               {activeZone.prompt}
@@ -277,6 +282,7 @@ export function WalkableControlsOverlay({
       </div>
 
       {/* Alt Çubuk: Klavye Yardım İpucu ve Mobil Dokunmatik D-Pad */}
+      {!isEncounterLocked && (
       <footer className="flex items-end justify-between gap-4">
         {/* Sol Alt: Mobil Dokunmatik D-Pad (Touch-friendly 44x44+ hedefler) */}
         <div
@@ -354,6 +360,7 @@ export function WalkableControlsOverlay({
           </span>
         </div>
       </footer>
+      )}
     </div>
   );
 }

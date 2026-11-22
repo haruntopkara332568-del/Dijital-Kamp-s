@@ -99,10 +99,12 @@ export function inspectSpeechCapability(): SpeechCapability {
 }
 
 let activeAudioElement: HTMLAudioElement | null = null;
+let activeUtterance: SpeechSynthesisUtterance | null = null;
 let activeCancelFlag = false;
 
 export function stopSpeaking(): void {
   activeCancelFlag = true;
+  activeUtterance = null;
   if (activeAudioElement) {
     activeAudioElement.pause();
     activeAudioElement.currentTime = 0;
@@ -145,6 +147,7 @@ export interface QueuedSpeech {
   signal: AbortSignal;
   voices: SpeechVoices;
   rates: Record<SpeechLang, number>;
+  pitch?: number;
   timeoutMs?: (text: string) => number;
   onTimeoutFallback?: (text: string) => void;
 }
@@ -169,13 +172,16 @@ function speakUtterance(segment: DialogueSegment, queued?: QueuedSpeech): Promis
       utterance.lang = queued ? segment.lang : matchedVoice?.lang ?? segment.lang;
       if (matchedVoice) utterance.voice = matchedVoice;
       utterance.rate = queued?.rates[segment.lang] ?? (segment.lang === 'en-US' ? 0.92 : 0.98);
-      utterance.pitch = 1.02;
+      utterance.pitch = queued?.pitch ?? 1.02;
 
       let settled = false;
       const abort = () => finish(false);
       const finish = (played: boolean) => {
         if (settled) return;
         settled = true;
+        if (activeUtterance === utterance) {
+          activeUtterance = null;
+        }
         window.clearTimeout(timer);
         queued?.signal.removeEventListener('abort', abort);
         utterance.onend = null;
@@ -198,6 +204,7 @@ function speakUtterance(segment: DialogueSegment, queued?: QueuedSpeech): Promis
       utterance.onerror = () => finish(false);
       queued?.signal.addEventListener('abort', abort, { once: true });
       try {
+        activeUtterance = utterance;
         synth.speak(utterance);
       } catch {
         finish(false);
