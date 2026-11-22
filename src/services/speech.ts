@@ -141,10 +141,12 @@ function playAudioFile(src: string): Promise<boolean> {
   });
 }
 
-interface QueuedSpeech {
+export interface QueuedSpeech {
   signal: AbortSignal;
   voices: SpeechVoices;
   rates: Record<SpeechLang, number>;
+  timeoutMs?: (text: string) => number;
+  onTimeoutFallback?: (text: string) => void;
 }
 
 function speakUtterance(segment: DialogueSegment, queued?: QueuedSpeech): Promise<boolean> {
@@ -180,7 +182,17 @@ function speakUtterance(segment: DialogueSegment, queued?: QueuedSpeech): Promis
         utterance.onerror = null;
         resolve(played);
       };
-      const timer = window.setTimeout(() => finish(!queued), Math.max(3500, segment.text.length * 110));
+      const waitMs = queued?.timeoutMs
+        ? queued.timeoutMs(segment.text)
+        : Math.max(3500, segment.text.length * 110);
+      const timer = window.setTimeout(() => {
+        if (!settled && queued?.onTimeoutFallback) {
+          queued.onTimeoutFallback(segment.text);
+          finish(true);
+          return;
+        }
+        finish(!queued);
+      }, waitMs);
 
       utterance.onend = () => finish(true);
       utterance.onerror = () => finish(false);
