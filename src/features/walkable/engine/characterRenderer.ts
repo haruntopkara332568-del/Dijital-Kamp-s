@@ -1,6 +1,6 @@
 import { STUDENT_ATLAS_FRAME } from '@/src/data/studentCharacters';
-import type { PlayerCharacter } from '../types';
-import { getStudentCharacterAtlas } from './assetLoader';
+import type { NpcCharacter, PlayerCharacter } from '../types';
+import { getStudentCharacterAtlas, getSultanhaniTouristAtlas } from './assetLoader';
 
 /**
  * Karakter ölçek seçenekleri ve referans ölçüleri (Aşama 4.5).
@@ -17,6 +17,124 @@ export const CHARACTER_SCALES = {
 } as const;
 
 export type CharacterScalePreset = keyof typeof CHARACTER_SCALES;
+
+type AtlasSpriteState = Pick<PlayerCharacter, 'x' | 'y' | 'direction' | 'state' | 'walkFrame'>;
+
+function drawAtlasSprite(
+  ctx: CanvasRenderingContext2D,
+  atlas: HTMLImageElement,
+  character: AtlasSpriteState,
+  targetWidth?: number,
+  targetHeight?: number,
+) {
+  const { x, y, direction, state, walkFrame } = character;
+
+  const isReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+  const now = isReducedMotion ? 0 : performance.now();
+  const isWalking = state === 'walk';
+
+  ctx.save();
+  ctx.translate(x, y);
+
+  // Zemin Gölgeleri (Katmanlı temas, avlu sabah güneşi yönlü ve ortam gölgesi - Aşama 4.5)
+  ctx.beginPath();
+  ctx.ellipse(1.8, 19, 18.5, 7.8, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(23, 43, 71, 0.15)';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.ellipse(1.0, 18.5, 12.5, 5.0, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(23, 43, 71, 0.28)';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.ellipse(0, 18, 8.0, 2.8, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(15, 24, 40, 0.48)';
+  ctx.fill();
+
+  // Yön ve Animasyon Karesi Hesaplama (Sprite Atlas: 4 kolon x 4 satır, hücre: 140x180 px)
+  const { width: CELL_W, height: CELL_H } = STUDENT_ATLAS_FRAME;
+
+  let row = 0; // 0: down, 1: up, 2: right, 3: left
+  switch (direction) {
+    case 'down':
+      row = 0;
+      break;
+    case 'up':
+      row = 1;
+      break;
+    case 'right':
+      row = 2;
+      break;
+    case 'left':
+      row = 3;
+      break;
+  }
+
+  let col = 0; // 0: idle
+  if (isWalking) {
+    const walkCycle = [1, 2, 3, 2];
+    const cycleIndex = Math.floor(walkFrame) % walkCycle.length;
+    col = walkCycle[cycleIndex];
+  }
+
+  const bobY = isWalking ? 0 : isReducedMotion ? 0 : Math.sin(now / 520) * 0.7;
+  const swayX = 0;
+
+  const overrideScale =
+    typeof window !== 'undefined'
+      ? (window as unknown as { __CHARACTER_SCALE_OVERRIDE__?: { width: number; height: number } })
+          .__CHARACTER_SCALE_OVERRIDE__
+      : undefined;
+
+  const renderW = overrideScale?.width ?? targetWidth ?? CHARACTER_SCALES.scale15.width;
+  const renderH = overrideScale?.height ?? targetHeight ?? CHARACTER_SCALES.scale15.height;
+  const renderX = -renderW / 2 + swayX;
+  const renderY = 18 - renderH + 3 + bobY;
+
+  const srcX = col * CELL_W;
+  const srcY = row * CELL_H;
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
+  ctx.drawImage(atlas, srcX, srcY, CELL_W, CELL_H, renderX, renderY, renderW, renderH);
+
+  // Sabah Işığı ve Sıcak Ambiyans Uyum Tonlaması (Aşama 4.5)
+  if (typeof ctx.createLinearGradient === 'function') {
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-atop';
+    const warmLightGrad = ctx.createLinearGradient(
+      renderX,
+      renderY,
+      renderX + renderW,
+      renderY + renderH,
+    );
+    warmLightGrad.addColorStop(0, 'rgba(255, 246, 214, 0.08)');
+    warmLightGrad.addColorStop(0.6, 'rgba(255, 235, 180, 0.02)');
+    warmLightGrad.addColorStop(1, 'rgba(24, 34, 52, 0.05)');
+    ctx.fillStyle = warmLightGrad;
+    ctx.fillRect(renderX, renderY, renderW, renderH);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+/**
+ * Sultanhanı Dış Meydan turist NPC çizicisi.
+ * Öğrenci karakteriyle aynı sprite atlas yapısını, gölgeyi ve zemin hizasını kullanır.
+ * Görsel dosyası yüklenemediyse sessizce gizlenir (vektörel yedek çizilmez).
+ */
+export function drawTouristNpc(ctx: CanvasRenderingContext2D, npc: NpcCharacter) {
+  if (!npc.visible) return;
+  const atlas = getSultanhaniTouristAtlas();
+  if (!atlas) return;
+  drawAtlasSprite(ctx, atlas, npc, npc.width, npc.height);
+}
 
 /**
  * Çocuk dostu, 3D animasyon filmi estetiğine sahip öğrenci karakteri çizici (Aşama 4.4 & 4.5).
@@ -38,109 +156,7 @@ export function drawCharacter(ctx: CanvasRenderingContext2D, player: PlayerChara
   const atlas = getStudentCharacterAtlas(player.characterId);
   if (!atlas && player.characterId) return;
   if (atlas) {
-    ctx.save();
-    ctx.translate(x, y);
-
-    // Zemin Gölgeleri (Katmanlı temas, avlu sabah güneşi yönlü ve ortam gölgesi - Aşama 4.5)
-    // 1. Katman: Dış yumuşak ortam gölgesi (Güneş sol-üstten geldiği için sağ-alta hafif yatık)
-    ctx.beginPath();
-    ctx.ellipse(1.8, 19, 18.5, 7.8, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(23, 43, 71, 0.15)';
-    ctx.fill();
-
-    // 2. Katman: Gövde izdüşüm gölgesi
-    ctx.beginPath();
-    ctx.ellipse(1.0, 18.5, 12.5, 5.0, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(23, 43, 71, 0.28)';
-    ctx.fill();
-
-    // 3. Katman: Ayak tabanı temas gölgesi (Ayakların zemine basma hissini güçlendirir)
-    ctx.beginPath();
-    ctx.ellipse(0, 18, 8.0, 2.8, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(15, 24, 40, 0.48)';
-    ctx.fill();
-
-    // Yön ve Animasyon Karesi Hesaplama (Sprite Atlas: 4 kolon x 4 satır, hücre: 140x180 px)
-    const { width: CELL_W, height: CELL_H } = STUDENT_ATLAS_FRAME;
-
-    let row = 0; // 0: down, 1: up, 2: right, 3: left
-    switch (direction) {
-      case 'down':
-        row = 0;
-        break;
-      case 'up':
-        row = 1;
-        break;
-      case 'right':
-        row = 2;
-        break;
-      case 'left':
-        row = 3;
-        break;
-    }
-
-    let col = 0; // 0: idle
-    if (isWalking) {
-      // Yürüyüş döngüsü: frame 1 -> frame 2 -> frame 3 -> frame 2 (Aşama 4.5: Doğrudan adımla senkron)
-      const walkCycle = [1, 2, 3, 2];
-      const cycleIndex = Math.floor(walkFrame) % walkCycle.length;
-      col = walkCycle[cycleIndex];
-    }
-
-    // Salınım ve Ritim (Gereksiz zıplama ve sallantıyı engelleyen yumuşak, doğal zemin teması)
-    // 3D Sprite kareleri bacak adımını zaten içerdiğinden, aşırı gövde zıplaması kaldırıldı.
-    const bobY = isWalking ? 0 : (isReducedMotion ? 0 : Math.sin(now / 520) * 0.7);
-    const swayX = 0;
-
-    // Tuvalde Render Boyutu ve Hizalama (Aşama 4.5: %15 büyütülmüş doğal mimari ölçek 53x67 px)
-    const overrideScale = typeof window !== 'undefined'
-      ? (window as unknown as { __CHARACTER_SCALE_OVERRIDE__?: { width: number; height: number } }).__CHARACTER_SCALE_OVERRIDE__
-      : undefined;
-
-    const renderW = overrideScale?.width ?? CHARACTER_SCALES.scale15.width;
-    const renderH = overrideScale?.height ?? CHARACTER_SCALES.scale15.height;
-    const renderX = -renderW / 2 + swayX;
-    const renderY = 18 - renderH + 3 + bobY;
-
-    // Sprite Atlas'tan ilgili kareyi çiz
-    const srcX = col * CELL_W;
-    const srcY = row * CELL_H;
-
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-
-    ctx.drawImage(
-      atlas,
-      srcX,
-      srcY,
-      CELL_W,
-      CELL_H,
-      renderX,
-      renderY,
-      renderW,
-      renderH,
-    );
-
-    // Sabah Işığı ve Sıcak Ambiyans Uyum Tonlaması (Aşama 4.5)
-    // Karakterin kampüs avlusundaki sıcak gün ışığı ve Selçuklu taş mimarisiyle bütünleşmesini sağlar
-    if (typeof ctx.createLinearGradient === 'function') {
-      ctx.save();
-      ctx.globalCompositeOperation = 'source-atop';
-      const warmLightGrad = ctx.createLinearGradient(
-        renderX,
-        renderY,
-        renderX + renderW,
-        renderY + renderH,
-      );
-      warmLightGrad.addColorStop(0, 'rgba(255, 246, 214, 0.08)'); // sol-üst sabah güneşi sıcak vurgu
-      warmLightGrad.addColorStop(0.6, 'rgba(255, 235, 180, 0.02)');
-      warmLightGrad.addColorStop(1, 'rgba(24, 34, 52, 0.05)'); // sağ-alt yumuşak gölge
-      ctx.fillStyle = warmLightGrad;
-      ctx.fillRect(renderX, renderY, renderW, renderH);
-      ctx.restore();
-    }
-
-    ctx.restore();
+    drawAtlasSprite(ctx, atlas, player);
     return;
   }
 

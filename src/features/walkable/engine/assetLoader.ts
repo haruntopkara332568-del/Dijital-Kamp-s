@@ -1,4 +1,5 @@
 import { getStudentCharacter, STUDENT_CHARACTERS, type StudentCharacterId } from '@/src/data/studentCharacters';
+import { SULTANHANI_TOURIST_NPC } from '@/src/data/sultanhaniNpc';
 
 /**
  * Yürünebilir Kampüs Görsel Varlık Yükleyicisi (Asset Loader & Cache)
@@ -6,16 +7,26 @@ import { getStudentCharacter, STUDENT_CHARACTERS, type StudentCharacterId } from
  */
 
 const assetCache: Map<string, HTMLImageElement> = new Map();
+const failedAssets: Set<string> = new Set();
+const warnedAssets: Set<string> = new Set();
 
 /**
  * Belirtilen URL'deki görseli önbellekten alır veya yeni yükleme başlatır.
  */
 export function getLoadedAsset(url: string): HTMLImageElement | null {
   if (typeof window === 'undefined') return null;
+  if (failedAssets.has(url)) return null;
 
   let img = assetCache.get(url);
   if (!img) {
     img = new Image();
+    img.onerror = () => {
+      failedAssets.add(url);
+      if (!warnedAssets.has(url)) {
+        warnedAssets.add(url);
+        console.warn(`[assetLoader] Görsel dosyası yüklenemedi: ${url}`);
+      }
+    };
     img.src = url;
     assetCache.set(url, img);
   }
@@ -46,6 +57,7 @@ export const SMARTBOARD_SCREEN_POWERING_ASSET_URL = '/assets/walkable/smartboard
 export const SMARTBOARD_SCREEN_ACTIVE_ASSET_URL = '/assets/walkable/smartboard_screen_active.png';
 export const SULTANHANI_CARAVANSERAI_ASSET_URL = '/assets/walkable/sultanhani_caravanserai.jpg';
 export const SULTANHANI_INNER_COURTYARD_ASSET_URL = '/assets/walkable/sultanhani_inner_courtyard.jpg';
+export const SULTANHANI_TOURIST_ATLAS_URL = SULTANHANI_TOURIST_NPC.atlasUrl;
 
 /**
  * Varlık getter fonksiyonları
@@ -127,11 +139,36 @@ export function getSultanhaniInnerCourtyardAsset(): HTMLImageElement | null {
   return getLoadedAsset(SULTANHANI_INNER_COURTYARD_ASSET_URL);
 }
 
+export function getSultanhaniTouristAtlas(): HTMLImageElement | null {
+  return getLoadedAsset(SULTANHANI_TOURIST_ATLAS_URL);
+}
+
 /**
  * Test veya özel durumlar için önbelleğe doğrudan görsel nesnesi ekleme.
  */
 export function setCachedAssetForTesting(url: string, img: HTMLImageElement) {
+  failedAssets.delete(url);
+  warnedAssets.delete(url);
   assetCache.set(url, img);
+}
+
+export function clearCachedAssetForTesting(url: string) {
+  assetCache.delete(url);
+  failedAssets.delete(url);
+  warnedAssets.delete(url);
+}
+
+export function triggerAssetLoadErrorForTesting(url: string) {
+  const img = assetCache.get(url);
+  if (img && typeof img.onerror === 'function') {
+    img.onerror(new Event('error'));
+    return;
+  }
+  failedAssets.add(url);
+  if (!warnedAssets.has(url)) {
+    warnedAssets.add(url);
+    console.warn(`[assetLoader] Görsel dosyası yüklenemedi: ${url}`);
+  }
 }
 
 /**
@@ -157,6 +194,7 @@ export function preloadWalkableAssets() {
   getLoadedAsset(SMARTBOARD_SCREEN_ACTIVE_ASSET_URL);
   getLoadedAsset(SULTANHANI_CARAVANSERAI_ASSET_URL);
   getLoadedAsset(SULTANHANI_INNER_COURTYARD_ASSET_URL);
+  getLoadedAsset(SULTANHANI_TOURIST_ATLAS_URL);
 }
 
 // Modül yüklendiğinde otomatik ön yükleme başlat
