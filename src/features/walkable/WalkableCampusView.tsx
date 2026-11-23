@@ -15,6 +15,14 @@ import {
   renderClassroomForeground,
 } from './engine/classroomSceneRenderer';
 import {
+  DISCOVERY_CLASSROOM,
+  DISCOVERY_CLASSROOM_OBSTACLES,
+  renderDiscoveryClassroomBackground,
+  renderDiscoveryClassroomLayeredBackground,
+  renderDiscoveryClassroomEntities,
+  renderDiscoveryClassroomForeground,
+} from './engine/discoveryClassroomSceneRenderer';
+import {
   PORTAL,
   renderSultanhaniBackground,
   renderSultanhaniEntities,
@@ -34,13 +42,14 @@ import { SmartBoardModal } from './components/SmartBoardModal';
 import { GradeBoardModal } from './components/GradeBoardModal';
 import { TableStationModal } from './components/TableStationModal';
 import { CAMPUS_BUILDING_NAMES } from '@/src/data/brandConfig';
-import { SULTANHANI_TOURIST_NPC } from '@/src/data/sultanhaniNpc';
+import { STUDENT_REFERENCE_SPEED_PX, SULTANHANI_TOURIST_NPC } from '@/src/data/sultanhaniNpc';
 import {
   advanceSultanhaniFlowState,
   buildSultanhaniDialogExchanges,
   logSultanhaniFlow,
   mapFlowStateToEncounterPhase,
-  resolveSultanhaniStudentName,
+  SULTANHANI_FEEDBACK_COPY,
+  SULTANHANI_SELF_INTRODUCTION,
   SULTANHANI_TIMINGS,
   type SultanhaniDialogChoiceOption,
   type SultanhaniDialogExchange,
@@ -59,7 +68,12 @@ const REQUIRE_TABLE_COMPLETION_FOR_SMARTBOARD = false;
 
 export interface WalkableCampusViewProps {
   characterId?: StudentCharacterId;
-  initialScene?: 'courtyard' | 'classroom' | 'sultanhani_square' | 'sultanhani_inner';
+  initialScene?:
+    | 'courtyard'
+    | 'classroom'
+    | 'discovery_classroom'
+    | 'sultanhani_square'
+    | 'sultanhani_inner';
   onBackToMap?: () => void;
   onExitToGate?: () => void;
 }
@@ -117,10 +131,20 @@ export function WalkableCampusView({
   // Sahne içi son konumları saklayarak geri dönüşlerde konumu koruma (Section 6)
   const lastCourtyardPosRef = useRef<Position>({ x: 700, y: 560 });
   const lastClassroomPosRef = useRef<Position>({ x: 480, y: 520 });
+  const lastDiscoveryClassroomPosRef = useRef<Position>(DISCOVERY_CLASSROOM.playerSpawn);
   const lastSultanhaniPosRef = useRef<Position>(SULTANHANI_SQUARE.spawn);
+  const sultanhaniSquareEntryRef = useRef<'initial' | 'smart-board' | 'courtyard-exit'>('initial');
+  const discoveryDoorOpeningLockRef = useRef(false);
+  const discoveryDoorProgressRef = useRef(0);
+  const discoveryDoorAnimFrameRef = useRef<number | null>(null);
+  const discoveryDoorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [currentScene, setCurrentScene] = useState<
-    'courtyard' | 'classroom' | 'sultanhani_square' | 'sultanhani_inner'
+    | 'courtyard'
+    | 'classroom'
+    | 'discovery_classroom'
+    | 'sultanhani_square'
+    | 'sultanhani_inner'
   >(initialScene);
   const [activeZone, setActiveZone] = useState<InteractiveZone | null>(null);
   const [unreachableMessage, setUnreachableMessage] = useState<string | null>(null);
@@ -134,12 +158,13 @@ export function WalkableCampusView({
   const [teleportMessage, setTeleportMessage] = useState("Sultanhanı Kervansarayı Meydanı'na Işınlanıyorsun... 🏛️✨");
 
   // Sultanhanı Dış Meydan karşılaşma durum makinesi (tek kaynak)
-  const [encounterPhase, setEncounterPhase] = useState<SultanhaniEncounterPhase>(
-    initialScene === 'sultanhani_inner' ? 'DONE' : 'ARRIVAL',
-  );
-  const encounterPhaseRef = useRef<SultanhaniEncounterPhase>(
-    initialScene === 'sultanhani_inner' ? 'DONE' : 'ARRIVAL',
-  );
+  const [flowState, setFlowState] = useState<SultanhaniFlowState>({
+    stepPhase: initialScene === 'sultanhani_inner' ? 'DONE' : 'ARRIVAL',
+    exchangeIndex: 0,
+  });
+  const flowStateRef = useRef(flowState);
+  const encounterPhase = mapFlowStateToEncounterPhase(flowState);
+  const encounterPhaseRef = useRef(encounterPhase);
   const [activeBubble, setActiveBubble] = useState<ActiveSpeechBubbleState | null>(null);
   const [choicePrompt, setChoicePrompt] = useState<StudentChoicePromptState | null>(null);
   const [isSpeakingLine, setIsSpeakingLine] = useState(false);
@@ -156,17 +181,10 @@ export function WalkableCampusView({
 
   const encounterAbortRef = useRef<AbortController | null>(null);
   const speechAbortRef = useRef<AbortController | null>(null);
-  const touristReplyWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const walkStartWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const walkWatchdogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dialogExchangesRef = useRef<readonly SultanhaniDialogExchange[]>(
     buildSultanhaniDialogExchanges(0),
   );
-  const flowStateRef = useRef<SultanhaniFlowState>({
-    stepPhase: initialScene === 'sultanhani_inner' ? 'DONE' : 'ARRIVAL',
-    exchangeIndex: 0,
-  });
-  const studentDisplayNameRef = useRef<string>('Ali');
   const lastTouristLineRef = useRef<string | null>(null);
   const encounterSeedRef = useRef(0);
 
@@ -196,22 +214,13 @@ export function WalkableCampusView({
     const next = advanceSultanhaniFlowState(flowStateRef.current, event, totalExchanges);
     if (!next) return null;
     flowStateRef.current = next;
-    const mappedPhase = mapFlowStateToEncounterPhase(next);
-    encounterPhaseRef.current = mappedPhase;
-    setEncounterPhase(mappedPhase);
+    encounterPhaseRef.current = mapFlowStateToEncounterPhase(next);
+    setFlowState(next);
     logSultanhaniFlow(`${next.stepPhase} (${next.exchangeIndex + 1}/${totalExchanges})`);
     return next;
   }, []);
 
   const cancelAllEncounterAsync = useCallback(() => {
-    if (touristReplyWatchdogRef.current !== null) {
-      clearTimeout(touristReplyWatchdogRef.current);
-      touristReplyWatchdogRef.current = null;
-    }
-    if (walkStartWatchdogRef.current !== null) {
-      clearTimeout(walkStartWatchdogRef.current);
-      walkStartWatchdogRef.current = null;
-    }
     if (walkWatchdogTimerRef.current !== null) {
       clearTimeout(walkWatchdogTimerRef.current);
       walkWatchdogTimerRef.current = null;
@@ -230,10 +239,13 @@ export function WalkableCampusView({
   const resetEncounterState = useCallback(
     (targetPhase: SultanhaniEncounterPhase = 'ARRIVAL') => {
       cancelAllEncounterAsync();
-      const targetStepPhase = targetPhase === 'DONE' ? 'DONE' : 'ARRIVAL';
-      flowStateRef.current = { stepPhase: targetStepPhase, exchangeIndex: 0 };
+      const initialFlow: SultanhaniFlowState = {
+        stepPhase: targetPhase === 'DONE' ? 'DONE' : 'ARRIVAL',
+        exchangeIndex: 0,
+      };
+      flowStateRef.current = initialFlow;
       encounterPhaseRef.current = targetPhase;
-      setEncounterPhase(targetPhase);
+      setFlowState(initialFlow);
       lastTouristLineRef.current = null;
       setIsSpeakingLine(false);
       setActiveBubble(null);
@@ -245,12 +257,26 @@ export function WalkableCampusView({
     [cancelAllEncounterAsync],
   );
 
+  const clearDiscoveryDoorTimers = useCallback(() => {
+    if (discoveryDoorAnimFrameRef.current !== null && typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(discoveryDoorAnimFrameRef.current);
+      discoveryDoorAnimFrameRef.current = null;
+    }
+    if (discoveryDoorTimerRef.current !== null) {
+      clearTimeout(discoveryDoorTimerRef.current);
+      discoveryDoorTimerRef.current = null;
+    }
+    discoveryDoorOpeningLockRef.current = false;
+    discoveryDoorProgressRef.current = 0;
+  }, []);
+
   useEffect(
     () => () => {
       if (sceneTransitionTimer.current !== null) clearTimeout(sceneTransitionTimer.current);
+      clearDiscoveryDoorTimers();
       cancelAllEncounterAsync();
     },
-    [cancelAllEncounterAsync],
+    [cancelAllEncounterAsync, clearDiscoveryDoorTimers],
   );
 
   const speakEncounterLine = useCallback(
@@ -272,7 +298,6 @@ export function WalkableCampusView({
         return await playSultanhaniSpeechLine({
           text,
           speaker,
-          studentName: studentDisplayNameRef.current,
           speechEnabled: speechEnabledRef.current,
           signal: lineAbort.signal,
           cancelPrevious,
@@ -328,10 +353,6 @@ export function WalkableCampusView({
   );
 
   const beginWalkToDoorEngine = useCallback(() => {
-    if (walkStartWatchdogRef.current !== null) {
-      clearTimeout(walkStartWatchdogRef.current);
-      walkStartWatchdogRef.current = null;
-    }
     setActiveBubble(null);
     setChoicePrompt(null);
 
@@ -372,76 +393,52 @@ export function WalkableCampusView({
     });
   }, []);
 
+  const speakTouristLine = useCallback((text: string, signal: AbortSignal) => {
+    const anchors = engineRef.current?.getEntityScreenPositions();
+    if (anchors?.npc) setNpcAnchorPos(anchors.npc);
+    if (anchors?.student) setStudentAnchorPos(anchors.student);
+
+    setActiveBubble({ speaker: 'tourist', speakerLabel: SULTANHANI_TOURIST_NPC.name, text });
+    lastTouristLineRef.current = text;
+    return speakEncounterLine(text, 'tourist', signal);
+  }, [speakEncounterLine]);
+
   const executeTouristReply = useCallback(
     async (exchangeIndex: number) => {
-      if (touristReplyWatchdogRef.current !== null) {
-        clearTimeout(touristReplyWatchdogRef.current);
-        touristReplyWatchdogRef.current = null;
-      }
-
       const controller = encounterAbortRef.current;
       if (!controller || controller.signal.aborted) return;
-
-      const exchanges = dialogExchangesRef.current;
-      const exchange = exchanges[exchangeIndex];
+      const { signal } = controller;
+      const exchange = dialogExchangesRef.current[exchangeIndex];
       if (!exchange) return;
 
       setChoicePrompt(null);
-      const anchors = engineRef.current?.getEntityScreenPositions();
-      if (anchors?.npc) setNpcAnchorPos(anchors.npc);
-      if (anchors?.student) setStudentAnchorPos(anchors.student);
-
-      setActiveBubble({
-        speaker: 'tourist',
-        speakerLabel: SULTANHANI_TOURIST_NPC.name,
-        text: exchange.touristText,
-      });
-      lastTouristLineRef.current = exchange.touristText;
-
-      // Turistin cevabı başlamadan önce önceki sesi iptal etme (cancelPrevious = false)
-      await speakEncounterLine(exchange.touristText, 'tourist', controller.signal, false);
-      if (controller.signal.aborted) return;
-
-      const afterSpeech = dispatchFlowEvent({ type: 'TOURIST_SPEECH_COMPLETE' });
-      if (!afterSpeech) return;
-
-      // Turist repliği bitince turist balonu kapanır
+      await speakTouristLine(exchange.touristText, signal);
+      if (signal.aborted || !dispatchFlowEvent({ type: 'TOURIST_SPEECH_COMPLETE' })) return;
       setActiveBubble(null);
 
-      const isLastExchange = exchangeIndex >= exchanges.length - 1;
-      if (isLastExchange) {
-        if (walkStartWatchdogRef.current !== null) {
-          clearTimeout(walkStartWatchdogRef.current);
-        }
-        walkStartWatchdogRef.current = setTimeout(() => {
-          walkStartWatchdogRef.current = null;
-          const forcedWalk = dispatchFlowEvent({ type: 'FORCE_WALK_WATCHDOG' });
-          if (forcedWalk) {
-            console.warn(
-              '[akış-bekçi] ADIM: WALK_TO_DOOR — Son turist cevabından sonra 2 sn içinde yürüyüş başlamadı; yürüyüş zorla başlatılıyor.',
-            );
-            beginWalkToDoorEngine();
-          }
-        }, SULTANHANI_TIMINGS.walkStartWatchdogMs);
-      }
-
-      const ok = await waitAbortable(
-        SULTANHANI_TIMINGS.afterTouristLinePauseMs,
-        controller.signal,
-      );
-      if (!ok || controller.signal.aborted) return;
-
+      const ok = await waitAbortable(SULTANHANI_TIMINGS.afterTouristLinePauseMs, signal);
+      if (!ok || signal.aborted) return;
       const afterPause = dispatchFlowEvent({ type: 'AFTER_TOURIST_PAUSE_COMPLETE' });
-      if (!afterPause) return;
 
-      if (afterPause.stepPhase === 'STUDENT_CHOICE') {
+      if (afterPause?.stepPhase === 'STUDENT_CHOICE') {
         openExchangeChoice(afterPause.exchangeIndex);
-      } else if (afterPause.stepPhase === 'WALK_TO_DOOR') {
-        beginWalkToDoorEngine();
+      } else if (afterPause?.stepPhase === 'TOURIST_ASKING_NAME') {
+        await speakTouristLine(SULTANHANI_SELF_INTRODUCTION.question, signal);
+        if (signal.aborted) return;
+        setActiveBubble(null);
+        dispatchFlowEvent({ type: 'TOURIST_NAME_QUESTION_COMPLETE' });
       }
     },
-    [beginWalkToDoorEngine, dispatchFlowEvent, openExchangeChoice, speakEncounterLine],
+    [dispatchFlowEvent, openExchangeChoice, speakTouristLine],
   );
+
+  const handleConfirmIntroduction = useCallback(() => {
+    const signal = encounterAbortRef.current?.signal;
+    if (!signal || signal.aborted) return;
+    if (dispatchFlowEvent({ type: 'STUDENT_INTRODUCTION_CONFIRMED' })) {
+      beginWalkToDoorEngine();
+    }
+  }, [beginWalkToDoorEngine, dispatchFlowEvent]);
 
   const handleSelectOption = useCallback(
     (option: SultanhaniDialogChoiceOption) => {
@@ -476,28 +473,9 @@ export function WalkableCampusView({
 
       setActiveBubble({
         speaker: 'student',
-        speakerLabel: studentDisplayNameRef.current,
+        speakerLabel: SULTANHANI_FEEDBACK_COPY.studentSpeakerLabel,
         text: option.text,
       });
-
-      // Bekçi: Öğrenci doğru seçimi yaptıktan sonra turist cevabı 2 sn içinde başlamazsa zorla başlat
-      if (touristReplyWatchdogRef.current !== null) {
-        clearTimeout(touristReplyWatchdogRef.current);
-      }
-      touristReplyWatchdogRef.current = setTimeout(() => {
-        touristReplyWatchdogRef.current = null;
-        const forced = dispatchFlowEvent({ type: 'FORCE_TOURIST_REPLY_WATCHDOG' });
-        if (forced) {
-          console.warn(
-            `[akış-bekçi] ADIM: TOURIST_SPEAKING (değişim ${forced.exchangeIndex + 1}) — Öğrenci seçiminden sonra 2 sn içinde turist cevabı başlamadı; zorla başlatılıyor.`,
-          );
-          if (speechAbortRef.current) {
-            speechAbortRef.current.abort();
-            speechAbortRef.current = null;
-          }
-          void executeTouristReply(forced.exchangeIndex);
-        }
-      }, SULTANHANI_TIMINGS.touristReplyWatchdogMs);
 
       void (async () => {
         await speakEncounterLine(option.text, 'student', controller.signal, true);
@@ -537,7 +515,6 @@ export function WalkableCampusView({
     void playSultanhaniSpeechLine({
       text: optionText,
       speaker: 'student',
-      studentName: studentDisplayNameRef.current,
       speechEnabled: speechEnabledRef.current,
       signal: previewController.signal,
       cancelPrevious: true,
@@ -556,6 +533,7 @@ export function WalkableCampusView({
       clearTimeout(sceneTransitionTimer.current);
       sceneTransitionTimer.current = null;
     }
+    sultanhaniSquareEntryRef.current = 'initial';
     resetEncounterState('ARRIVAL');
     engineRef.current?.setInputDisabled(true);
     setActiveZone(null);
@@ -570,28 +548,139 @@ export function WalkableCampusView({
     }, 600);
   }, [resetEncounterState]);
 
+  const handleExitInnerCourtyard = useCallback(() => {
+    if (sceneTransitionTimer.current !== null) return;
+    resetEncounterState('DONE');
+    engineRef.current?.setInputDisabled(true);
+    setActiveZone(null);
+    setUnreachableMessage(null);
+    setTeleportMessage('Sultanhanı Meydanı’na çıkılıyor…');
+    setIsTeleporting(true);
+    sceneTransitionTimer.current = setTimeout(() => {
+      sceneTransitionTimer.current = null;
+      sultanhaniSquareEntryRef.current = 'courtyard-exit';
+      lastSultanhaniPosRef.current = SULTANHANI_SQUARE.portalExit.player;
+      setIsTeleporting(false);
+      setCurrentScene('sultanhani_square');
+    }, SULTANHANI_TIMINGS.transitionFadeMs);
+  }, [resetEncounterState]);
+
+  const handleEnterDiscoveryClassroom = useCallback(() => {
+    if (discoveryDoorOpeningLockRef.current) return;
+    discoveryDoorOpeningLockRef.current = true;
+    discoveryDoorProgressRef.current = 0;
+
+    if (engineRef.current) {
+      engineRef.current.setInputDisabled(true);
+      engineRef.current.player.direction = 'up';
+    }
+    setActiveZone(null);
+
+    const isReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const durationMs = isReducedMotion ? 160 : 620;
+    const holdOpenMs = isReducedMotion ? 60 : 160;
+    const startedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
+
+    const stepDoorAnimation = () => {
+      const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      const elapsed = Math.max(0, now - startedAt);
+      const progress = Math.min(1, elapsed / durationMs);
+      discoveryDoorProgressRef.current = progress;
+      if (progress < 1 && typeof requestAnimationFrame === 'function') {
+        discoveryDoorAnimFrameRef.current = requestAnimationFrame(stepDoorAnimation);
+      } else {
+        discoveryDoorAnimFrameRef.current = null;
+      }
+    };
+
+    if (typeof requestAnimationFrame === 'function') {
+      discoveryDoorAnimFrameRef.current = requestAnimationFrame(stepDoorAnimation);
+    } else {
+      discoveryDoorProgressRef.current = 1;
+    }
+
+    discoveryDoorTimerRef.current = setTimeout(() => {
+      discoveryDoorTimerRef.current = null;
+      if (discoveryDoorAnimFrameRef.current !== null && typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(discoveryDoorAnimFrameRef.current);
+        discoveryDoorAnimFrameRef.current = null;
+      }
+      discoveryDoorProgressRef.current = 0;
+      discoveryDoorOpeningLockRef.current = false;
+      lastDiscoveryClassroomPosRef.current = DISCOVERY_CLASSROOM.playerSpawn;
+      setCurrentScene('discovery_classroom');
+    }, durationMs + holdOpenMs);
+  }, []);
+
+  const handleExitDiscoveryClassroom = useCallback(() => {
+    clearDiscoveryDoorTimers();
+    lastCourtyardPosRef.current = { x: 290, y: 350 };
+    setActiveZone(null);
+    setCurrentScene('courtyard');
+  }, [clearDiscoveryDoorTimers]);
+
   // Sahneye göre konfigürasyon belirleme
   const getSceneConfig = useCallback(
-    (scene: 'courtyard' | 'classroom' | 'sultanhani_square' | 'sultanhani_inner'): WalkableSceneConfig => {
+    (
+      scene:
+        | 'courtyard'
+        | 'classroom'
+        | 'discovery_classroom'
+        | 'sultanhani_square'
+        | 'sultanhani_inner',
+    ): WalkableSceneConfig => {
+      if (scene === 'discovery_classroom') {
+        const interactiveZones: InteractiveZone[] = [
+          {
+            id: 'discovery-exit-door',
+            name: 'Avluya Dönüş Kapısı',
+            prompt: 'Avluya Dön',
+            x: DISCOVERY_CLASSROOM.exitDoor.x,
+            y: DISCOVERY_CLASSROOM.exitDoor.y,
+            radius: DISCOVERY_CLASSROOM.exitDoor.radius,
+            action: handleExitDiscoveryClassroom,
+          },
+        ];
+
+        return {
+          width: DISCOVERY_CLASSROOM.width,
+          height: DISCOVERY_CLASSROOM.height,
+          playerSpawn: lastDiscoveryClassroomPosRef.current,
+          obstacles: DISCOVERY_CLASSROOM_OBSTACLES,
+          interactiveZones,
+        };
+      }
       if (scene === 'sultanhani_inner') {
         return {
           width: SULTANHANI_INNER.width,
           height: SULTANHANI_INNER.height,
           playerSpawn: SULTANHANI_INNER.playerSpawn,
           obstacles: SULTANHANI_INNER.obstacles,
-          interactiveZones: [],
+          interactiveZones: [{
+            id: 'sultanhani-portal-exit',
+            name: 'Sultanhanı Meydanı’na Çık',
+            prompt: 'Sultanhanı Meydanı’na Çık',
+            ...SULTANHANI_INNER.exit,
+            targetScene: 'sultanhani_square',
+            action: handleExitInnerCourtyard,
+          }],
           npc: {
             ...SULTANHANI_TOURIST_NPC,
             scene: 'sultanhani_inner',
             patrol: undefined,
             startPosition: SULTANHANI_INNER.touristSpawn,
+            speed: STUDENT_REFERENCE_SPEED_PX * 1.1,
           },
           npcInitialDirection: 'up',
+          npcFollowsPlayer: true,
           isNpcVisible: () => getSultanhaniTouristAtlas() !== null,
         };
       }
 
       if (scene === 'sultanhani_square') {
+        const returningFromInner = sultanhaniSquareEntryRef.current === 'courtyard-exit';
         const interactiveZones: InteractiveZone[] = [
           // Sultanhanı Taç Kapı geçiş bölgesi (Diyalog sonrası birlikte girilir)
           {
@@ -603,6 +692,10 @@ export function WalkableCampusView({
             radius: PORTAL.triggerRadius,
             targetScene: 'sultanhani_inner',
             action: () => {
+              if (returningFromInner) {
+                if (dispatchFlowEvent({ type: 'REENTER_PORTAL' })) beginWalkToDoorEngine();
+                return;
+              }
               const phase = encounterPhaseRef.current;
               if (phase !== 'ARRIVAL' && phase !== 'APPROACH') {
                 return;
@@ -635,7 +728,12 @@ export function WalkableCampusView({
           playerSpawn: lastSultanhaniPosRef.current,
           obstacles: SULTANHANI_SQUARE.obstacles,
           interactiveZones,
-          npc: SULTANHANI_TOURIST_NPC,
+          npc: returningFromInner ? {
+            ...SULTANHANI_TOURIST_NPC,
+            patrol: undefined,
+            startPosition: SULTANHANI_SQUARE.portalExit.alex,
+          } : SULTANHANI_TOURIST_NPC,
+          npcInitialDirection: returningFromInner ? 'down' : undefined,
           isNpcVisible: () => getSultanhaniTouristAtlas() !== null,
         };
       }
@@ -718,6 +816,7 @@ export function WalkableCampusView({
                     lastClassroomPosRef.current = { x: 480, y: 180 };
                     lastSultanhaniPosRef.current = SULTANHANI_SQUARE.spawn;
                     resetEncounterState('ARRIVAL');
+                    sultanhaniSquareEntryRef.current = 'smart-board';
                     setCurrentScene('sultanhani_square');
                   }, 650);
                 }, 350);
@@ -900,20 +999,15 @@ export function WalkableCampusView({
             setCurrentScene('classroom');
           },
         },
-        // 2. Hayalden Gerçeğe Binası (Görsel olarak durur - Yakında)
+        // 2. Hayalden Gerçeğe Binası (Açılır Taç Kapı ve Selçuklu VR Sınıfı)
         {
           id: 'enter-discovery',
           name: CAMPUS_BUILDING_NAMES.discovery,
-          prompt: 'Yakında Açılacak',
+          prompt: 'Hayalden Gerçeğe Sınıfına Gir',
           x: 290,
           y: 335,
-          radius: 70,
-          action: () => {
-            setUnreachableMessage(
-              'Hayalden Gerçeğe binası yakında açılacak. Şu an İngilizce Öğreniyorum sınıfı aktiftir.',
-            );
-            setTimeout(() => setUnreachableMessage(null), 3500);
-          },
+          radius: 75,
+          action: handleEnterDiscoveryClassroom,
         },
         // 3. Hikâyeden Hayata Binası (Görsel olarak durur - Yakında)
         {
@@ -1001,7 +1095,15 @@ export function WalkableCampusView({
         interactiveZones,
       };
     },
-    [handleExitSultanhani, resetEncounterState],
+    [
+      beginWalkToDoorEngine,
+      dispatchFlowEvent,
+      handleEnterDiscoveryClassroom,
+      handleExitDiscoveryClassroom,
+      handleExitInnerCourtyard,
+      handleExitSultanhani,
+      resetEncounterState,
+    ],
   );
 
   // Sınıf seçimi veya aşama tamamlanma durumunda etkileşim bölgelerini (prompt ve kilitleri) dinamik güncelle
@@ -1044,11 +1146,17 @@ export function WalkableCampusView({
         ? SULTANHANI_INNER.playerSpawn
         : currentScene === 'sultanhani_square'
           ? lastSultanhaniPosRef.current
-          : currentScene === 'classroom'
-            ? lastClassroomPosRef.current
-            : lastCourtyardPosRef.current;
+          : currentScene === 'discovery_classroom'
+            ? lastDiscoveryClassroomPosRef.current
+            : currentScene === 'classroom'
+              ? lastClassroomPosRef.current
+              : lastCourtyardPosRef.current;
 
-    if (currentScene === 'sultanhani_square') {
+    if (currentScene !== 'courtyard') {
+      clearDiscoveryDoorTimers();
+    }
+
+    if (currentScene === 'sultanhani_square' && sultanhaniSquareEntryRef.current !== 'courtyard-exit') {
       cancelAllEncounterAsync();
       flowStateRef.current = { stepPhase: 'ARRIVAL', exchangeIndex: 0 };
       encounterPhaseRef.current = 'ARRIVAL';
@@ -1056,14 +1164,6 @@ export function WalkableCampusView({
       encounterSeedRef.current += 1;
       const controller = new AbortController();
       encounterAbortRef.current = controller;
-      const profileAlias = campusRef.current?.activeProfile?.alias;
-      const resolvedCharId =
-        characterIdRef.current ?? campusRef.current?.activeProfile?.characterId;
-      studentDisplayNameRef.current = resolveSultanhaniStudentName(
-        profileAlias,
-        resolvedCharId,
-        encounterSeedRef.current,
-      );
       dialogExchangesRef.current = buildSultanhaniDialogExchanges(encounterSeedRef.current);
     }
 
@@ -1075,6 +1175,8 @@ export function WalkableCampusView({
         onPositionChange: (pos) => {
           if (currentScene === 'sultanhani_square') {
             lastSultanhaniPosRef.current = pos;
+          } else if (currentScene === 'discovery_classroom') {
+            lastDiscoveryClassroomPosRef.current = pos;
           } else if (currentScene === 'classroom') {
             lastClassroomPosRef.current = pos;
           } else if (currentScene === 'courtyard') {
@@ -1090,6 +1192,8 @@ export function WalkableCampusView({
             renderSultanhaniInnerBackground(ctx);
           } else if (currentScene === 'sultanhani_square') {
             renderSultanhaniBackground(ctx);
+          } else if (currentScene === 'discovery_classroom') {
+            renderDiscoveryClassroomLayeredBackground(ctx, config.width, config.height);
           } else if (currentScene === 'classroom') {
             renderClassroomLayeredBackground(
               ctx,
@@ -1109,6 +1213,8 @@ export function WalkableCampusView({
             renderSultanhaniInnerEntities(ctx, player, npc);
           } else if (currentScene === 'sultanhani_square') {
             renderSultanhaniEntities(ctx, player, npc);
+          } else if (currentScene === 'discovery_classroom') {
+            renderDiscoveryClassroomEntities(ctx, player, config.width, config.height);
           } else if (currentScene === 'classroom') {
             renderClassroomEntities(
               ctx,
@@ -1118,7 +1224,13 @@ export function WalkableCampusView({
               completedStagesRef.current,
             );
           } else {
-            renderCourtyardEntities(ctx, player, config.width, config.height);
+            renderCourtyardEntities(
+              ctx,
+              player,
+              config.width,
+              config.height,
+              discoveryDoorProgressRef.current,
+            );
           }
         },
         onNpcProximityChange: ({ inRange, screenPos, studentScreenPos }) => {
@@ -1150,7 +1262,9 @@ export function WalkableCampusView({
           })();
         },
         onRenderForeground: (ctx) => {
-          if (currentScene === 'classroom') {
+          if (currentScene === 'discovery_classroom') {
+            renderDiscoveryClassroomForeground(ctx, config.width, config.height);
+          } else if (currentScene === 'classroom') {
             renderClassroomForeground(ctx, config.width, config.height);
           } else if (currentScene === 'courtyard') {
             renderCourtyardForeground(ctx, config.width, config.height);
@@ -1161,6 +1275,8 @@ export function WalkableCampusView({
             renderSultanhaniInnerBackground(ctx);
           } else if (currentScene === 'sultanhani_square') {
             renderSultanhaniBackground(ctx);
+          } else if (currentScene === 'discovery_classroom') {
+            renderDiscoveryClassroomBackground(ctx, config.width, config.height);
           } else if (currentScene === 'classroom') {
             renderClassroomBackground(
               ctx,
@@ -1172,7 +1288,12 @@ export function WalkableCampusView({
               completedStagesRef.current,
             );
           } else {
-            renderCourtyardBackground(ctx, config.width, config.height);
+            renderCourtyardBackground(
+              ctx,
+              config.width,
+              config.height,
+              discoveryDoorProgressRef.current,
+            );
           }
         },
       },
@@ -1181,7 +1302,11 @@ export function WalkableCampusView({
 
     engine.player.characterId = characterIdRef.current;
     engine.start();
-    if (currentScene === 'sultanhani_square' || currentScene === 'sultanhani_inner') {
+    if (
+      currentScene === 'discovery_classroom' ||
+      (currentScene === 'sultanhani_square' && sultanhaniSquareEntryRef.current !== 'courtyard-exit') ||
+      currentScene === 'sultanhani_inner'
+    ) {
       engine.player.direction = 'up';
     }
     engineRef.current = engine;
@@ -1193,7 +1318,8 @@ export function WalkableCampusView({
       const controllerForScene = encounterAbortRef.current;
       queueMicrotask(() => {
         if (controllerForScene && !controllerForScene.signal.aborted) {
-          dispatchFlowEvent({ type: 'SCENE_READY' });
+          const ready = dispatchFlowEvent({ type: 'SCENE_READY' });
+          if (ready && sultanhaniSquareEntryRef.current === 'smart-board') engine.startEncounterApproach();
         }
       });
     }
@@ -1233,6 +1359,7 @@ export function WalkableCampusView({
     };
   }, [
     cancelAllEncounterAsync,
+    clearDiscoveryDoorTimers,
     currentScene,
     dispatchFlowEvent,
     getSceneConfig,
@@ -1304,9 +1431,11 @@ export function WalkableCampusView({
                 lastCourtyardPosRef.current = { x: 970, y: 350 };
                 setCurrentScene('courtyard');
               }
-            : currentScene === 'sultanhani_square' || currentScene === 'sultanhani_inner'
-              ? handleExitSultanhani
-              : undefined
+            : currentScene === 'discovery_classroom'
+              ? handleExitDiscoveryClassroom
+              : currentScene === 'sultanhani_square' || currentScene === 'sultanhani_inner'
+                ? handleExitSultanhani
+                : undefined
         }
         unreachableMessage={unreachableMessage}
         currentScene={currentScene}
@@ -1322,6 +1451,7 @@ export function WalkableCampusView({
           isSpeaking={isSpeakingLine}
           onSelectOption={handleSelectOption}
           onPreviewOption={handlePreviewOption}
+          onConfirmIntroduction={flowState.stepPhase === 'STUDENT_INTRODUCTION' ? handleConfirmIntroduction : undefined}
         />
       )}
 

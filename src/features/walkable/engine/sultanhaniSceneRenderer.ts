@@ -21,6 +21,10 @@ export const SULTANHANI_SQUARE = {
   width: SCENE_WIDTH,
   height: SCENE_HEIGHT,
   spawn: { x: PORTAL.centerX, y: 760 },
+  portalExit: {
+    player: { x: PORTAL.centerX, y: 638 },
+    alex: { x: PORTAL.centerX + 54, y: 622 },
+  },
   obstacles: [
     { id: 'caravanserai-wall-left', name: 'Sol cephe', x: 0, y: 0, width: PORTAL.left, height: PORTAL.threshold },
     { id: 'caravanserai-wall-right', name: 'Sağ cephe', x: PORTAL.right, y: 0, width: SCENE_WIDTH - PORTAL.right, height: PORTAL.threshold },
@@ -39,10 +43,31 @@ export const SULTANHANI_INNER = {
   height: INNER_SCENE_HEIGHT,
   playerSpawn: { x: 472, y: 492 },
   touristSpawn: { x: 544, y: 492 },
+  exit: { x: 512, y: 545, radius: 38 },
   obstacles: [
-    { id: 'inner-courtyard-horizon', name: 'Köşk Mescit ve Revaklar', x: 0, y: 0, width: INNER_SCENE_WIDTH, height: 412 },
-    { id: 'inner-left-wall', name: 'Sol Taş Duvar', x: 0, y: 412, width: 28, height: 173 },
-    { id: 'inner-right-arcade', name: 'Sağ Revak Kenarı', x: 996, y: 412, width: 28, height: 173 },
+    // 1024 × 585 görselinde zeminin başladığı çizgi. Kamera merkez aksından içeri bakıyor.
+    { id: 'inner-horizon', name: 'Avlu gerisindeki cepheler', x: 0, y: 0, width: INNER_SCENE_WIDTH, height: 334 },
+    { id: 'inner-left-wall-1', name: 'Sol taş duvar', x: 0, y: 334, width: 110, height: 42 },
+    { id: 'inner-left-wall-2', name: 'Sol taş duvar', x: 110, y: 334, width: 90, height: 35 },
+    { id: 'inner-left-wall-3', name: 'Sol taş duvar', x: 200, y: 334, width: 95, height: 24 },
+    { id: 'inner-left-wall-4', name: 'Sol taş duvar', x: 295, y: 334, width: 103, height: 15 },
+    { id: 'inner-mosque', name: 'Köşk mescit', x: 398, y: 334, width: 191, height: 20 },
+    { id: 'inner-arcade-1', name: 'Revak ayakları', x: 589, y: 334, width: 76, height: 11 },
+    { id: 'inner-arcade-2', name: 'Revak ayakları', x: 665, y: 334, width: 90, height: 18 },
+    { id: 'inner-arcade-3', name: 'Revak ayakları', x: 755, y: 334, width: 85, height: 26 },
+    { id: 'inner-arcade-4', name: 'Revak ayakları', x: 840, y: 334, width: 90, height: 31 },
+    { id: 'inner-arcade-5', name: 'Sağ revak duvarı', x: 930, y: 334, width: 94, height: 44 },
+    // Avlunun üstünde duran taş sıraları ve merkezdeki tek blok.
+    { id: 'inner-west-stones-1', name: 'Sol taş sırası', x: 154, y: 379, width: 64, height: 32 },
+    { id: 'inner-west-stones-2', name: 'Sol taş sırası', x: 218, y: 366, width: 70, height: 28 },
+    { id: 'inner-west-stones-3', name: 'Sol taş sırası', x: 288, y: 351, width: 73, height: 32 },
+    { id: 'inner-west-stones-4', name: 'Sol taş sırası', x: 361, y: 340, width: 62, height: 29 },
+    { id: 'inner-central-stone', name: 'Avludaki taş blok', x: 430, y: 362, width: 50, height: 42 },
+    { id: 'inner-mosque-stones', name: 'Mescit önündeki taşlar', x: 478, y: 334, width: 114, height: 33 },
+    { id: 'inner-east-stones-1', name: 'Sağ taş sırası', x: 613, y: 339, width: 42, height: 35 },
+    { id: 'inner-east-stones-2', name: 'Sağ taş sırası', x: 655, y: 350, width: 55, height: 38 },
+    { id: 'inner-east-stones-3', name: 'Sağ taş sırası', x: 710, y: 364, width: 58, height: 32 },
+    { id: 'inner-east-stones-4', name: 'Sağ taş sırası', x: 768, y: 365, width: 49, height: 42 },
   ] satisfies SceneObstacle[],
 };
 

@@ -26,7 +26,6 @@ export function waitAbortable(ms: number, signal: AbortSignal): Promise<boolean>
 export interface SpeakSultanhaniLineParams {
   text: string;
   speaker: SultanhaniSpeaker;
-  studentName: string;
   speechEnabled: boolean;
   signal: AbortSignal;
   cancelPrevious?: boolean;
@@ -43,7 +42,6 @@ export interface SpeakSultanhaniLineParams {
 export async function playSultanhaniSpeechLine({
   text,
   speaker,
-  studentName,
   speechEnabled,
   signal,
   cancelPrevious = false,
@@ -85,7 +83,6 @@ export async function playSultanhaniSpeechLine({
 
   const segments = buildSultanhaniSpeechSegments(text, {
     hasTurkishVoice: Boolean(voices['tr-TR']),
-    extraTurkishName: studentName,
   });
 
   if (!segments.some((segment) => segment.lang === 'en-US')) {
@@ -100,6 +97,7 @@ export async function playSultanhaniSpeechLine({
     pitch: speaker === 'student' ? SULTANHANI_VOICE_PITCH.student : SULTANHANI_VOICE_PITCH.tourist,
     timeoutMs: getSpeechTimeoutMs,
     onTimeoutFallback: () => {
+      stopSpeaking();
       if (!timeoutWarned) {
         timeoutWarned = true;
         console.warn(

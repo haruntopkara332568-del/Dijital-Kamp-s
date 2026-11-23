@@ -45,6 +45,8 @@ export type SultanhaniFlowStepPhase =
   | 'WAIT_BEFORE_TOURIST'
   | 'TOURIST_SPEAKING'
   | 'WAIT_AFTER_TOURIST'
+  | 'TOURIST_ASKING_NAME'
+  | 'STUDENT_INTRODUCTION'
   | 'WALK_TO_DOOR'
   | 'TRANSITION'
   | 'DONE';
@@ -61,10 +63,11 @@ export type SultanhaniFlowEvent =
   | { type: 'STUDENT_OPTION_SELECTED' }
   | { type: 'STUDENT_SPEECH_COMPLETE' }
   | { type: 'START_TOURIST_REPLY' }
-  | { type: 'FORCE_TOURIST_REPLY_WATCHDOG' }
   | { type: 'TOURIST_SPEECH_COMPLETE' }
   | { type: 'AFTER_TOURIST_PAUSE_COMPLETE' }
-  | { type: 'FORCE_WALK_WATCHDOG' }
+  | { type: 'TOURIST_NAME_QUESTION_COMPLETE' }
+  | { type: 'STUDENT_INTRODUCTION_CONFIRMED' }
+  | { type: 'REENTER_PORTAL' }
   | { type: 'ARRIVED_AT_DOOR' }
   | { type: 'FORCE_DOOR_WATCHDOG' }
   | { type: 'TRANSITION_COMPLETE' };
@@ -104,15 +107,6 @@ export function advanceSultanhaniFlowState(
       if (current.stepPhase !== 'WAIT_BEFORE_TOURIST') return null;
       return { stepPhase: 'TOURIST_SPEAKING', exchangeIndex: current.exchangeIndex };
 
-    case 'FORCE_TOURIST_REPLY_WATCHDOG':
-      if (
-        current.stepPhase !== 'STUDENT_SPEAKING' &&
-        current.stepPhase !== 'WAIT_BEFORE_TOURIST'
-      ) {
-        return null;
-      }
-      return { stepPhase: 'TOURIST_SPEAKING', exchangeIndex: current.exchangeIndex };
-
     case 'TOURIST_SPEECH_COMPLETE':
       if (current.stepPhase !== 'TOURIST_SPEAKING') return null;
       return { stepPhase: 'WAIT_AFTER_TOURIST', exchangeIndex: current.exchangeIndex };
@@ -123,19 +117,20 @@ export function advanceSultanhaniFlowState(
       if (nextIndex < totalExchanges) {
         return { stepPhase: 'STUDENT_CHOICE', exchangeIndex: nextIndex };
       }
-      return { stepPhase: 'WALK_TO_DOOR', exchangeIndex: current.exchangeIndex };
+      return { stepPhase: 'TOURIST_ASKING_NAME', exchangeIndex: current.exchangeIndex };
     }
 
-    case 'FORCE_WALK_WATCHDOG': {
-      const isLastExchange = current.exchangeIndex >= totalExchanges - 1;
-      if (
-        !isLastExchange ||
-        (current.stepPhase !== 'TOURIST_SPEAKING' && current.stepPhase !== 'WAIT_AFTER_TOURIST')
-      ) {
-        return null;
-      }
+    case 'TOURIST_NAME_QUESTION_COMPLETE':
+      if (current.stepPhase !== 'TOURIST_ASKING_NAME') return null;
+      return { stepPhase: 'STUDENT_INTRODUCTION', exchangeIndex: current.exchangeIndex };
+
+    case 'STUDENT_INTRODUCTION_CONFIRMED':
+      if (current.stepPhase !== 'STUDENT_INTRODUCTION') return null;
       return { stepPhase: 'WALK_TO_DOOR', exchangeIndex: current.exchangeIndex };
-    }
+
+    case 'REENTER_PORTAL':
+      if (current.stepPhase !== 'DONE') return null;
+      return { stepPhase: 'WALK_TO_DOOR', exchangeIndex: current.exchangeIndex };
 
     case 'ARRIVED_AT_DOOR':
     case 'FORCE_DOOR_WATCHDOG':
@@ -167,6 +162,9 @@ export function mapFlowStateToEncounterPhase(
     case 'TOURIST_SPEAKING':
     case 'WAIT_AFTER_TOURIST':
       return state.exchangeIndex >= 2 ? 'DIALOG_2' : 'DIALOG_1';
+    case 'TOURIST_ASKING_NAME':
+    case 'STUDENT_INTRODUCTION':
+      return 'DIALOG_2';
     case 'WALK_TO_DOOR':
       return 'WALK_TO_DOOR';
     case 'TRANSITION':
@@ -193,8 +191,6 @@ export const SULTANHANI_TIMINGS = {
   afterStudentLinePauseMs: 500,
   afterTouristLinePauseMs: 600,
   interLinePauseMs: 600,
-  touristReplyWatchdogMs: 2000,
-  walkStartWatchdogMs: 2000,
   walkToDoorWatchdogMs: 12_000,
   transitionFadeMs: 550,
   reducedMotionTransitionMs: 250,
@@ -340,8 +336,16 @@ export const SULTANHANI_FEEDBACK_COPY = {
   tryAgain: 'Tekrar dene!',
   highlightPrompt: 'Parlayan seçeneğe dokunarak devam edebilirsin.',
   studentPromptLabel: 'Sen ne söylersin?',
+  studentSpeakerLabel: 'Sen',
   listenOptionAriaPrefix: 'Seçeneği dinle',
   wrongWordForbiddenCheck: true,
+} as const;
+
+export const SULTANHANI_SELF_INTRODUCTION = {
+  question: 'What is your name?',
+  sentenceStem: 'My name is …',
+  instruction: 'Şimdi kendi adını söyle.',
+  confirmLabel: 'Söyledim',
 } as const;
 
 function shuffleOptionsWithSeed(

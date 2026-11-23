@@ -27,7 +27,12 @@ interface WalkableControlsOverlayProps {
   onDirectEnterClassroom?: () => void;
   onExitClassroom?: () => void;
   unreachableMessage: string | null;
-  currentScene: 'courtyard' | 'classroom' | 'sultanhani_square' | 'sultanhani_inner';
+  currentScene:
+    | 'courtyard'
+    | 'classroom'
+    | 'discovery_classroom'
+    | 'sultanhani_square'
+    | 'sultanhani_inner';
   isEncounterLocked?: boolean;
 }
 
@@ -82,9 +87,11 @@ export function WalkableControlsOverlay({
               ? 'Yürünebilir Kampüs Avlusu'
               : currentScene === 'classroom'
                 ? 'İngilizce Sınıfı'
-                : currentScene === 'sultanhani_square'
-                  ? 'Aksaray Sultanhanı Kervansarayı — Dış Meydan'
-                  : 'Aksaray Sultanhanı Kervansarayı — İç Avlu'}
+                : currentScene === 'discovery_classroom'
+                  ? 'Hayalden Gerçeğe — VR Sınıfı'
+                  : currentScene === 'sultanhani_square'
+                    ? 'Aksaray Sultanhanı Kervansarayı — Dış Meydan'
+                    : 'Aksaray Sultanhanı Kervansarayı — İç Avlu'}
           </span>
         </div>
 
@@ -146,7 +153,8 @@ export function WalkableControlsOverlay({
           )}
 
           {/* Sınıf İçindeyken Hızlı Avluya Dönüş Düğmesi */}
-          {currentScene === 'classroom' && onExitClassroom && (
+          {(currentScene === 'classroom' || currentScene === 'discovery_classroom') &&
+            onExitClassroom && (
             <button
               type="button"
               onClick={onExitClassroom}
@@ -240,11 +248,18 @@ export function WalkableControlsOverlay({
               </div>
             </li>
             <li className="flex items-start gap-2 p-1.5 rounded-lg bg-[var(--stone-cream)]">
+              <span className="w-2 h-2 rounded-full bg-[var(--seljuk-teal)] mt-1 shrink-0" />
+              <div>
+                <strong className="text-[var(--seljuk-navy)]">Hayalden Gerçeğe (Kuzeybatı — AÇIK):</strong>
+                <span className="text-[var(--campus-ink-muted)] block text-[11px]">Selçuklu VR sınıfı ve sanal gerçeklik gözlüğü sergi alanı.</span>
+              </div>
+            </li>
+            <li className="flex items-start gap-2 p-1.5 rounded-lg bg-[var(--stone-cream)]">
               <span className="w-2 h-2 rounded-full bg-slate-400 mt-1 shrink-0" />
               <div>
                 <strong className="text-[var(--seljuk-navy)]">Diğer Binalar (Yakında):</strong>
                 <span className="text-[var(--campus-ink-muted)] block text-[11px]">
-                  Hayalden Gerçeğe, Hikâyeden Hayata, {CAMPUS_BUILDING_NAMES.observatory} ve {CAMPUS_BUILDING_NAMES.missions}.
+                  Hikâyeden Hayata, {CAMPUS_BUILDING_NAMES.observatory} ve {CAMPUS_BUILDING_NAMES.missions}.
                 </span>
               </div>
             </li>

@@ -232,24 +232,26 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
     expect(touristSpeaking).toEqual({ stepPhase: 'TOURIST_SPEAKING', exchangeIndex: 0 });
     // Aynı adım ikinci kez tetiklenemez
     expect(
-      advanceSultanhaniFlowState(touristSpeaking, { type: 'FORCE_TOURIST_REPLY_WATCHDOG' }, total),
+      advanceSultanhaniFlowState(touristSpeaking, { type: 'START_TOURIST_REPLY' }, total),
     ).toBeNull();
 
-    // Son değişimden (total - 1) sonra yürüyüşe (WALK_TO_DOOR) geçilir
+    // Kapıya yürüyüş için soru bitmeli ve öğrenci kendi söz sırasını tamamlamalı.
     const lastAfterTourist = advanceSultanhaniFlowState(
       { stepPhase: 'TOURIST_SPEAKING', exchangeIndex: total - 1 },
       { type: 'TOURIST_SPEECH_COMPLETE' },
       total,
     )!;
-    const walkToDoor = advanceSultanhaniFlowState(
-      lastAfterTourist,
-      { type: 'AFTER_TOURIST_PAUSE_COMPLETE' },
-      total,
-    )!;
+    const question = advanceSultanhaniFlowState(lastAfterTourist, { type: 'AFTER_TOURIST_PAUSE_COMPLETE' }, total)!;
+    expect(question).toEqual({ stepPhase: 'TOURIST_ASKING_NAME', exchangeIndex: total - 1 });
+    expect(advanceSultanhaniFlowState(question, { type: 'STUDENT_INTRODUCTION_CONFIRMED' }, total)).toBeNull();
+
+    const introduction = advanceSultanhaniFlowState(question, { type: 'TOURIST_NAME_QUESTION_COMPLETE' }, total)!;
+    expect(introduction).toEqual({ stepPhase: 'STUDENT_INTRODUCTION', exchangeIndex: total - 1 });
+    expect(advanceSultanhaniFlowState(introduction, { type: 'FORCE_DOOR_WATCHDOG' }, total)).toBeNull();
+
+    const walkToDoor = advanceSultanhaniFlowState(introduction, { type: 'STUDENT_INTRODUCTION_CONFIRMED' }, total)!;
     expect(walkToDoor).toEqual({ stepPhase: 'WALK_TO_DOOR', exchangeIndex: total - 1 });
-    expect(
-      advanceSultanhaniFlowState(walkToDoor, { type: 'FORCE_WALK_WATCHDOG' }, total),
-    ).toBeNull();
+    expect(advanceSultanhaniFlowState(walkToDoor, { type: 'STUDENT_INTRODUCTION_CONFIRMED' }, total)).toBeNull();
     // "How are you?" ve "Goodbye!" içermemeli
     for (const s of steps) {
       expect(s.text).not.toMatch(/How are you|Goodbye/i);
@@ -488,6 +490,12 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
       expect(screen.getByTestId('npc-speech-bubble')).toHaveAttribute('data-speaker', 'student');
       expect(screen.getByTestId('npc-speech-bubble').textContent).toContain(correctText);
 
+      if (correctText === 'Hello!') {
+        await act(async () => { await vi.advanceTimersByTimeAsync(2200); });
+        expect(utterances).toHaveLength(1);
+        expect(screen.getByTestId('npc-speech-bubble')).toHaveAttribute('data-speaker', 'student');
+      }
+
       // Öğrenci sesi biter -> öğrenci balonu kapanır -> 500 ms sonra turist balonu açılır
       await act(async () => {
         await finishNextUtterances();
@@ -525,7 +533,7 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
     // Değişim 2: Öğrenci "Good morning!" -> Turist "Good morning!"
     await chooseAnswerAndFinishExchange('Good morning!', 'Good morning!');
 
-    // Değişim 3: Öğrenci "What's your name?" -> Turist "My name is Alex." -> WALK_TO_DOOR
+    // Alex kendini tanıtır, ardından öğrenciye kendi adını sorar.
     expect(document.querySelector('[data-encounter-phase]')?.getAttribute('data-encounter-phase')).toBe('DIALOG_2');
     const cancelCountBeforeThird = synth.cancel.mock.calls.length;
     await chooseAnswerAndFinishExchange("What's your name?", 'My name is Alex.');
@@ -535,7 +543,24 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
     expect(utterances.some((u) => u.text === 'My name is Alex.' && u.pitch === 0.95)).toBe(true);
     expect(profile.alias).toBe('Ece');
 
-    // 3. değişim biter bitmez tüm balonlar kapanır ve WALK_TO_DOOR başlar
+    expect(screen.getByTestId('npc-speech-bubble')).toHaveTextContent('What is your name?');
+    expect(utterances.at(-1)).toMatchObject({ text: 'What is your name?', lang: 'en-US' });
+    expect(screen.queryByTestId('student-introduction-panel')).not.toBeInTheDocument();
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(1500); });
+    expect(screen.queryByTestId('student-introduction-panel')).not.toBeInTheDocument();
+    await act(async () => { await finishNextUtterances(); });
+
+    const introduction = screen.getByTestId('student-introduction-panel');
+    expect(introduction).toHaveTextContent('My name is …');
+    expect(introduction).toHaveTextContent('Şimdi kendi adını söyle.');
+    expect(introduction.querySelector('input, textarea')).toBeNull();
+    await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
+    expect(screen.getByTestId('student-introduction-panel')).toBeInTheDocument();
+    expect(document.querySelector('[data-encounter-phase]')).toHaveAttribute('data-encounter-phase', 'DIALOG_2');
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Söyledim' })); });
+    expect(screen.queryByTestId('student-introduction-panel')).not.toBeInTheDocument();
     expect(document.querySelector('[data-encounter-phase]')?.getAttribute('data-encounter-phase')).toBe('WALK_TO_DOOR');
     expect(screen.queryByTestId('npc-speech-bubble')).not.toBeInTheDocument();
     expect(screen.queryByTestId('student-choice-panel')).not.toBeInTheDocument();
@@ -573,17 +598,16 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
     expect(document.querySelector('[data-encounter-phase]')?.getAttribute('data-encounter-phase')).toBe('ARRIVAL');
   });
 
-  it('6. Ses kapalıyken, onend gelmezken (1.5x koruma) ve Sınıfa Dön ile yarıda çıkışta akış takılmaz', async () => {
+  it.each([
+    { mode: 'Ses kapalı', speechEnabled: false, languages: ['en-US'] },
+    { mode: 'İngilizce ses yok', speechEnabled: true, languages: ['tr-TR'] },
+  ])('6. $mode olduğunda iki replik balonla gösterilir ve Sınıfa Dön akışı temizler', async ({ speechEnabled, languages }) => {
     vi.useFakeTimers();
-    const { utterances } = setupMockSpeech(['en-US']);
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    // 1.5x timeout korumasını doğrula
-    expect(getSpeechTimeoutMs('Hello!')).toBe(3000);
+    const { utterances } = setupMockSpeech(languages);
 
     const st = createInitialStudentState();
     st.selectedGrade = 3;
-    st.speechEnabled = false;
+    st.speechEnabled = speechEnabled;
     saveStudentState(st);
 
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(createMockCanvasContext());
@@ -612,9 +636,15 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
       await Promise.resolve();
     });
 
-    // Ses kapalıyken de seçim paneli açılır ve hiç utterance oynatılmaz
-    expect(utterances).toHaveLength(0);
     expect(screen.getByTestId('student-choice-panel')).toBeInTheDocument();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Hello!' })); });
+    expect(screen.getByTestId('npc-speech-bubble')).toHaveAttribute('data-speaker', 'student');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1100 + SULTANHANI_TIMINGS.afterStudentLinePauseMs + 20);
+    });
+    expect(screen.getByTestId('npc-speech-bubble')).toHaveAttribute('data-speaker', 'tourist');
+    expect(utterances).toHaveLength(0);
 
     // Konuşma ortasında Sınıfa Dön'e tıklanınca durum temizlenir
     await act(async () => {
@@ -623,12 +653,12 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
     });
     expect(document.querySelector('[data-scene]')?.getAttribute('data-scene')).toBe('classroom');
     expect(screen.queryByTestId('student-choice-panel')).not.toBeInTheDocument();
-    warnSpy.mockRestore();
+    expect(screen.queryByTestId('npc-speech-bubble')).not.toBeInTheDocument();
   });
 
   it('7. onend gelmezken 1.5x koruma tek console.warn ile ilerler ve 12 sn yürüyüş bekçisi sahneyi kilitlemez', async () => {
     vi.useFakeTimers();
-    setupMockSpeech(['en-US']);
+    const { synth } = setupMockSpeech(['en-US']);
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const st = createInitialStudentState();
@@ -662,16 +692,17 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
       await Promise.resolve();
     });
 
-    // "Hello!" seçimi yapılıyor ama öğrenci onend hiç gelmiyor -> 2000 ms'de turist cevabı bekçisi devreye girer
+    // Öğrenci sesi sonlanmazsa repliğin kendi zaman aşımı çalışır.
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Hello!' }));
       for (let i = 0; i < 6; i++) await Promise.resolve();
     });
+    const cancelCount = synth.cancel.mock.calls.length;
     await act(async () => {
-      vi.advanceTimersByTime(SULTANHANI_TIMINGS.touristReplyWatchdogMs + 20);
-      for (let i = 0; i < 6; i++) await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(getSpeechTimeoutMs('Hello!') + SULTANHANI_TIMINGS.afterStudentLinePauseMs + 20);
     });
     expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(synth.cancel.mock.calls.length - cancelCount).toBe(1);
     expect(screen.getByTestId('npc-speech-bubble')).toHaveAttribute('data-speaker', 'tourist');
 
     // Turist onend de hiç gelmezse 1.5x (3000 ms) koruma devreye girer ve balon kapanır
@@ -681,6 +712,110 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
     });
     expect(warnSpy).toHaveBeenCalledTimes(2);
     expect(screen.queryByTestId('npc-speech-bubble')).not.toBeInTheDocument();
+  });
+
+  it('Alex walks around the inner courtyard stones, keeps space and stops when the student stops', () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(createMockCanvasContext());
+    const start = { x: 402, y: 444 };
+    const goal = { x: 520, y: 370 };
+    const config: WalkableSceneConfig = {
+      width: SULTANHANI_INNER.width,
+      height: SULTANHANI_INNER.height,
+      obstacles: SULTANHANI_INNER.obstacles,
+      playerSpawn: start,
+      interactiveZones: [],
+      npc: {
+        ...SULTANHANI_TOURIST_NPC,
+        scene: 'sultanhani_inner',
+        startPosition: { x: 450, y: 491 },
+        patrol: undefined,
+        speed: 176,
+      },
+      npcFollowsPlayer: true,
+    };
+    const engine = new WalkableCanvasEngine(document.createElement('canvas'), config, { onActiveZoneChange: vi.fn() });
+    const alex = engine.npc!;
+    const tick = (frames: number) => {
+      for (let frame = 0; frame < frames; frame++) {
+        (engine as unknown as { update: (delta: number) => void }).update(1 / 60);
+        for (const character of [engine.player, alex]) {
+          expect(isPositionBlocked(character.x, character.y, config.obstacles, config.width, config.height)).toBe(false);
+        }
+        expect(Math.hypot(engine.player.x - alex.x, engine.player.y - alex.y)).toBeGreaterThanOrEqual(32);
+      }
+    };
+
+    try {
+      tick(20);
+      expect(alex).toMatchObject({ x: 450, y: 491, state: 'idle' });
+      engine.setTarget(goal.x, goal.y);
+      expect(engine.getPathWaypoints().length).toBeGreaterThan(1);
+
+      tick(25);
+      expect(alex.state).toBe('walk');
+      tick(140);
+      expect(Math.hypot(engine.player.x - goal.x, engine.player.y - goal.y)).toBeLessThan(8);
+      expect(Math.hypot(engine.player.x - alex.x, engine.player.y - alex.y)).toBeLessThan(80);
+      expect(alex.state).toBe('idle');
+      const stopped = { x: alex.x, y: alex.y };
+      tick(90);
+      expect(alex).toMatchObject(stopped);
+
+      engine.setVirtualDirection(0, 1);
+      tick(44);
+      expect(engine.player.y).toBeGreaterThan(goal.y + 60);
+      engine.setVirtualDirection(0, 0);
+      tick(120);
+      expect(alex.state).toBe('idle');
+      expect(alex.y).toBeLessThan(engine.player.y - 24);
+      expect(Math.hypot(engine.player.x - alex.x, engine.player.y - alex.y)).toBeLessThan(80);
+    } finally {
+      engine.destroy();
+    }
+  });
+
+  it('Alex uses a single-file path when the sides of a narrow passage are blocked', () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(createMockCanvasContext());
+    const config: WalkableSceneConfig = {
+      width: 180,
+      height: 340,
+      playerSpawn: { x: 90, y: 263 },
+      obstacles: [
+        { id: 'passage-left', name: 'Sol duvar', x: 0, y: 0, width: 60, height: 340 },
+        { id: 'passage-right', name: 'Sağ duvar', x: 120, y: 0, width: 60, height: 340 },
+      ],
+      interactiveZones: [],
+      npc: {
+        ...SULTANHANI_TOURIST_NPC,
+        scene: 'sultanhani_inner',
+        startPosition: { x: 90, y: 315 },
+        patrol: undefined,
+        speed: 176,
+      },
+      npcFollowsPlayer: true,
+    };
+    const engine = new WalkableCanvasEngine(document.createElement('canvas'), config, { onActiveZoneChange: vi.fn() });
+    const alex = engine.npc!;
+    const tick = (frames: number) => {
+      for (let i = 0; i < frames; i++) {
+        (engine as unknown as { update: (delta: number) => void }).update(1 / 60);
+      }
+    };
+
+    try {
+      engine.setVirtualDirection(0, -1);
+      tick(54);
+      expect(engine.player.y).toBeLessThan(130);
+      expect(alex.state).toBe('walk');
+      engine.setVirtualDirection(0, 0);
+      tick(60);
+      expect(alex.state).toBe('idle');
+      expect(alex.x).toBeCloseTo(engine.player.x);
+      expect(alex.y - engine.player.y).toBeGreaterThanOrEqual(32);
+      expect(alex.y - engine.player.y).toBeLessThan(50);
+    } finally {
+      engine.destroy();
+    }
   });
 
   it('8. Görsel yüklenemezse NPC gizlenir ve tek console.warn yazılır', () => {

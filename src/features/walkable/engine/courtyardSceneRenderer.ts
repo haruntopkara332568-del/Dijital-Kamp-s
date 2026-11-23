@@ -24,6 +24,10 @@ import {
 
 const PLAZA_RADIUS = 162;
 const STONE_PATH_WIDTH = 46;
+const USE_STONE_FLOOR = true;
+
+let stoneFloorTile: HTMLCanvasElement | null | undefined;
+const stoneFloorPatterns = new WeakMap<CanvasRenderingContext2D, CanvasPattern | null>();
 
 interface CourtyardPath {
   id: string;
@@ -109,6 +113,7 @@ export function renderCourtyardEntities(
   player: PlayerCharacter,
   width: number,
   height: number,
+  discoveryDoorOpenProgress: number = 0,
 ) {
   const isReducedMotion =
     typeof window !== 'undefined' &&
@@ -128,7 +133,7 @@ export function renderCourtyardEntities(
     {
       id: 'bldg-discovery',
       baseY: 140 + 180, // 320
-      draw: (c) => drawDiscoveryBuilding(c, 180, 140, 220, 180, now),
+      draw: (c) => drawDiscoveryBuilding(c, 180, 140, 220, 180, now, discoveryDoorOpenProgress),
     },
     {
       id: 'bldg-english',
@@ -299,6 +304,7 @@ export function renderCourtyardBackground(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
+  discoveryDoorOpenProgress: number = 0,
 ) {
   const isReducedMotion =
     typeof window !== 'undefined' &&
@@ -315,7 +321,7 @@ export function renderCourtyardBackground(
 
   drawCentralFountainEntity(ctx, centerX, centerY, now);
   drawEnglishBuilding(ctx, 860, 140, 220, 180, now);
-  drawDiscoveryBuilding(ctx, 180, 140, 220, 180, now);
+  drawDiscoveryBuilding(ctx, 180, 140, 220, 180, now, discoveryDoorOpenProgress);
   drawLibraryBuilding(ctx, 580, 100, 240, 170, now);
   drawJourneyObservatory(ctx, 220, 560, 190, 140);
   drawKizilMinareCamii(ctx, 910, 560, 190, 140);
@@ -328,10 +334,90 @@ export function renderCourtyardBackground(
   renderCourtyardForeground(ctx, width, height);
 }
 
+function createStoneFloorTile(): HTMLCanvasElement | null {
+  const tile = document.createElement('canvas');
+  const stoneWidth = 64;
+  const rowHeight = 32;
+  const columns = 14;
+  const rows = 20;
+  tile.width = columns * stoneWidth;
+  tile.height = rows * rowHeight;
+
+  const paint = tile.getContext('2d');
+  if (!paint) return null;
+
+  const colors = ['#e4cba8', '#e8d3b3', '#e2c9a6', '#e6d0ae', '#e1c7a3', '#e7d2b2'];
+  let seed = 162;
+  const sample = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 0x100000000;
+  };
+
+  paint.fillStyle = '#c7ae8c';
+  paint.fillRect(0, 0, tile.width, tile.height);
+
+  for (let row = 0; row < rows; row++) {
+    const stagger = row % 2 === 0 ? 0 : stoneWidth / 2;
+    const y = row * rowHeight;
+    let left = stagger;
+
+    for (let column = 0; column < columns; column++) {
+      const jitter = column === columns - 1 ? 0 : Math.round(sample() * 18 - 9);
+      const right = stagger + (column + 1) * stoneWidth + jitter;
+      const width = right - left;
+      const color = colors[Math.floor(sample() * colors.length)];
+      const grain = Array.from({ length: 4 }, () => ({
+        x: 5 + sample() * (width - 12),
+        y: 5 + sample() * (rowHeight - 12),
+        size: 1 + sample() * 2,
+      }));
+
+      // Aynı taş iki kenara bölündüğünde derz ve doku kesintisiz devam eder.
+      for (const x of [left, left - tile.width]) {
+        if (x + width <= 0 || x >= tile.width) continue;
+        paint.fillStyle = color;
+        paint.beginPath();
+        paint.roundRect(x + 1, y + 1, width - 2, rowHeight - 2, 2);
+        paint.fill();
+        paint.fillStyle = 'rgba(255, 242, 219, 0.48)';
+        paint.fillRect(x + 3, y + 1, width - 6, 1);
+        paint.fillStyle = 'rgba(142, 111, 81, 0.13)';
+        paint.fillRect(x + 3, y + rowHeight - 3, width - 6, 1);
+        for (const fleck of grain) {
+          paint.fillRect(x + fleck.x, y + fleck.y, fleck.size, 1);
+        }
+      }
+
+      left = right;
+    }
+  }
+
+  return tile;
+}
+
+function getStoneFloorPattern(ctx: CanvasRenderingContext2D): CanvasPattern | null {
+  if (typeof document === 'undefined' || typeof ctx.createPattern !== 'function') return null;
+
+  const cached = stoneFloorPatterns.get(ctx);
+  if (cached !== undefined) return cached;
+
+  if (stoneFloorTile === undefined) stoneFloorTile = createStoneFloorTile();
+  const pattern = stoneFloorTile && ctx.createPattern(stoneFloorTile, 'repeat');
+  stoneFloorPatterns.set(ctx, pattern);
+  return pattern;
+}
+
 /**
  * Zemin: Sıcak taş plaka dokusu ve yumuşak vinyet / ışık süzülmesi.
  */
 function drawCourtyardGround(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  const stone = USE_STONE_FLOOR ? getStoneFloorPattern(ctx) : null;
+  if (stone) {
+    ctx.fillStyle = stone;
+    ctx.fillRect(0, 0, width, height);
+    return;
+  }
+
   // Ana zemin degrade geçişi
   const groundGrad = ctx.createRadialGradient(
     width / 2,
@@ -1326,6 +1412,168 @@ function drawEnglishBuilding(
   ctx.restore();
 }
 
+export const DISCOVERY_DOOR_PORTAL = {
+  /** building_discovery.png (930x761) içindeki gerçek ahşap kapı açıklığı piksel sınırları */
+  sourceWidth: 930,
+  sourceHeight: 761,
+  doorLeftPx: 545,
+  doorRightPx: 621,
+  doorCenterX: 583,
+  doorArchApexYPx: 528,
+  doorShoulderYPx: 562,
+  doorBottomYPx: 686,
+  /** Avludaki render konumu (bina kutusu x=180, y=140, w=220, h=180 -> renderX=148, renderY=100, renderW=284, renderH=232) */
+  worldCenterX: 148 + 284 * (583 / 930),
+  worldThresholdY: 100 + 232 * (686 / 761),
+} as const;
+
+function drawDiscoveryDoorOpeningOverlay(
+  ctx: CanvasRenderingContext2D,
+  renderX: number,
+  renderY: number,
+  renderW: number,
+  renderH: number,
+  openProgress: number,
+) {
+  const clamped = Math.max(0, Math.min(1, openProgress));
+  if (clamped <= 0.001) return;
+
+  // Ease-out cubic eğrisiyle doğal menteşe dönüşü
+  const eased = 1 - Math.pow(1 - clamped, 3);
+
+  const leftX = renderX + renderW * (DISCOVERY_DOOR_PORTAL.doorLeftPx / DISCOVERY_DOOR_PORTAL.sourceWidth);
+  const rightX = renderX + renderW * (DISCOVERY_DOOR_PORTAL.doorRightPx / DISCOVERY_DOOR_PORTAL.sourceWidth);
+  const centerX = renderX + renderW * (DISCOVERY_DOOR_PORTAL.doorCenterX / DISCOVERY_DOOR_PORTAL.sourceWidth);
+  const apexY = renderY + renderH * (DISCOVERY_DOOR_PORTAL.doorArchApexYPx / DISCOVERY_DOOR_PORTAL.sourceHeight);
+  const shoulderY = renderY + renderH * (DISCOVERY_DOOR_PORTAL.doorShoulderYPx / DISCOVERY_DOOR_PORTAL.sourceHeight);
+  const bottomY = renderY + renderH * (DISCOVERY_DOOR_PORTAL.doorBottomYPx / DISCOVERY_DOOR_PORTAL.sourceHeight);
+  const totalW = rightX - leftX;
+  const halfW = totalW / 2;
+  const doorH = bottomY - apexY;
+
+  const buildArchClipPath = () => {
+    ctx.beginPath();
+    ctx.moveTo(leftX, bottomY);
+    ctx.lineTo(leftX, shoulderY);
+    ctx.quadraticCurveTo(leftX + halfW * 0.25, apexY + 4, centerX, apexY);
+    ctx.quadraticCurveTo(rightX - halfW * 0.25, apexY + 4, rightX, shoulderY);
+    ctx.lineTo(rightX, bottomY);
+    ctx.closePath();
+  };
+
+  ctx.save();
+  buildArchClipPath();
+  ctx.clip();
+
+  // 1. Açılan kapının ardındaki aydınlık Selçuklu sınıfı iç mekân derinliği ve sıcak ışık
+  const interiorGrad = ctx.createLinearGradient(centerX, apexY, centerX, bottomY);
+  interiorGrad.addColorStop(0, '#2a1c11');
+  interiorGrad.addColorStop(0.38, '#5a3d24');
+  interiorGrad.addColorStop(0.82, '#c89b5e');
+  interiorGrad.addColorStop(1, '#ebd3a7');
+  ctx.fillStyle = interiorGrad;
+  ctx.fillRect(leftX - 2, apexY - 2, totalW + 4, doorH + 4);
+
+  // İçeriden süzülen davetkâr sıcak sınıf ışığı halesi
+  const glowGrad = ctx.createRadialGradient(
+    centerX,
+    bottomY - doorH * 0.36,
+    2,
+    centerX,
+    bottomY - doorH * 0.36,
+    totalW * 0.95,
+  );
+  glowGrad.addColorStop(0, `rgba(255, 241, 196, ${0.88 * eased})`);
+  glowGrad.addColorStop(0.55, `rgba(216, 151, 43, ${0.45 * eased})`);
+  glowGrad.addColorStop(1, 'rgba(42, 28, 17, 0)');
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(leftX - 2, apexY - 2, totalW + 4, doorH + 4);
+
+  // İç mekân taş eşik ve parke perspektif çizgisi
+  ctx.fillStyle = '#d8c39e';
+  ctx.fillRect(leftX, bottomY - 3.5, totalW, 3.5);
+
+  // 2. Menteşelerinden içeriye/yana doğru perspektifle açılan çift kanatlı kündekâri ahşap kapı
+  // Kanat genişliği açıldıkça daralır (minimum %18 kalınlıkta yan perspektif görünümü kalır)
+  const leafWidthFactor = Math.max(0.16, 1 - eased * 0.84);
+  const currentLeafW = halfW * leafWidthFactor;
+  const depthSkewY = eased * 4.2;
+
+  const drawSwingingLeaf = (side: 'left' | 'right') => {
+    const isLeft = side === 'left';
+    const hingeX = isLeft ? leftX : rightX;
+    const freeX = isLeft ? leftX + currentLeafW : rightX - currentLeafW;
+    const minX = Math.min(hingeX, freeX);
+    const wLeaf = Math.abs(freeX - hingeX);
+
+    ctx.save();
+    // Kanat gövdesi (perspektif yamuk)
+    ctx.beginPath();
+    ctx.moveTo(hingeX, apexY);
+    ctx.lineTo(freeX, apexY + depthSkewY);
+    ctx.lineTo(freeX, bottomY - depthSkewY * 0.85);
+    ctx.lineTo(hingeX, bottomY);
+    ctx.closePath();
+
+    const woodGrad = ctx.createLinearGradient(minX, apexY, minX + wLeaf, apexY);
+    if (isLeft) {
+      woodGrad.addColorStop(0, '#3e2311');
+      woodGrad.addColorStop(0.65, '#683c1e');
+      woodGrad.addColorStop(1, '#2c170a');
+    } else {
+      woodGrad.addColorStop(0, '#2c170a');
+      woodGrad.addColorStop(0.35, '#5b3318');
+      woodGrad.addColorStop(1, '#381f0e');
+    }
+    ctx.fillStyle = woodGrad;
+    ctx.fill();
+
+    ctx.strokeStyle = '#261409';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Kündekâri üst ve alt tabla panelleri
+    if (wLeaf > 3.2) {
+      const padX = Math.min(2.2, wLeaf * 0.22);
+      const panelW = Math.max(1, wLeaf - padX * 2);
+      const panelX = isLeft ? hingeX + padX : freeX + padX;
+      ctx.strokeStyle = 'rgba(216, 151, 43, 0.55)';
+      ctx.lineWidth = 0.8;
+      ctx.strokeRect(panelX, shoulderY + 3 + depthSkewY * 0.5, panelW, doorH * 0.28);
+      ctx.strokeRect(panelX, shoulderY + 6 + doorH * 0.33 + depthSkewY * 0.5, panelW, doorH * 0.26);
+
+      // Pirinç kapı halkası / tokmağı
+      const ringX = isLeft ? freeX - Math.min(2.6, wLeaf * 0.35) : freeX + Math.min(2.6, wLeaf * 0.35);
+      const ringY = shoulderY + doorH * 0.34 + depthSkewY * 0.6;
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.arc(ringX, ringY, Math.max(0.9, 1.6 * leafWidthFactor), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Kanat iç kalınlık kenarı (açılırken belirginleşen ahşap et kalınlığı)
+    ctx.fillStyle = '#241207';
+    const edgeThickness = Math.min(2.4, eased * 2.5);
+    if (edgeThickness > 0.4) {
+      const edgeX = isLeft ? freeX : freeX - edgeThickness;
+      ctx.fillRect(edgeX, apexY + depthSkewY, edgeThickness, doorH - depthSkewY * 1.85);
+    }
+
+    ctx.restore();
+  };
+
+  drawSwingingLeaf('left');
+  drawSwingingLeaf('right');
+
+  // 3. Kemer iç kasası gölge konturu (taş söve ve eşik aynı konumda korunur)
+  buildArchClipPath();
+  ctx.strokeStyle = 'rgba(44, 26, 14, 0.75)';
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
 /**
  * B. Gezi ve Keşif Binası (180, 140, 220, 180)
  * Pişmiş toprak rengi tuğla kubbeler, kervansaray taş kapısı ve Selçuklu kemerleri.
@@ -1337,6 +1585,7 @@ function drawDiscoveryBuilding(
   w: number,
   h: number,
   now: number = 0,
+  doorOpenProgress: number = 0,
 ) {
   const asset = getDiscoveryBuildingAsset();
   if (asset) {
@@ -1355,16 +1604,21 @@ function drawDiscoveryBuilding(
 
     ctx.drawImage(asset, renderX, renderY, renderW, renderH);
 
-    // 3. Etkileşimli Kapı Işıltısı (Öğrenci yaklaşınca parıldayan aura)
-    const portalCenterX = x + w / 2;
-    const doorBottomY = y + h - 18;
+    // 2b. Yalnızca gerçek kapı açıklığı sınırlarına (545..621, 528..686) uygulanan kapı açılma hareketi
+    if (doorOpenProgress > 0) {
+      drawDiscoveryDoorOpeningOverlay(ctx, renderX, renderY, renderW, renderH, doorOpenProgress);
+    }
+
+    // 3. Etkileşimli Kapı Işıltısı (Gerçek kapı açıklığı merkezinde: renderX + renderW * (583/930) ≈ 326)
+    const doorCenterX = renderX + renderW * (DISCOVERY_DOOR_PORTAL.doorCenterX / DISCOVERY_DOOR_PORTAL.sourceWidth);
+    const doorBottomY = renderY + renderH * (DISCOVERY_DOOR_PORTAL.doorBottomYPx / DISCOVERY_DOOR_PORTAL.sourceHeight);
     const pulse = Math.sin(now / 320) * 0.35 + 0.65;
     ctx.save();
     ctx.strokeStyle = `rgba(186, 87, 52, ${pulse})`;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2.5;
     ctx.setLineDash([5, 4]);
     ctx.beginPath();
-    ctx.roundRect(portalCenterX - 28, doorBottomY - 65, 56, 65, [16, 16, 0, 0]);
+    ctx.roundRect(doorCenterX - 16, doorBottomY - 52, 32, 52, [14, 14, 0, 0]);
     ctx.stroke();
     ctx.restore();
 
@@ -1419,11 +1673,17 @@ function drawDiscoveryBuilding(
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Kapı Boşluğu
+  // Kapı Boşluğu ve Ahşap Kanatlar (Vektör Yedek)
   ctx.fillStyle = '#172b47';
   ctx.beginPath();
   ctx.roundRect(portalX, portalY, portalW, portalH, [16, 16, 0, 0]);
   ctx.fill();
+
+  const fallbackLeafFactor = Math.max(0.18, 1 - Math.max(0, Math.min(1, doorOpenProgress)) * 0.82);
+  const fallbackLeafW = (portalW / 2 - 5) * fallbackLeafFactor;
+  ctx.fillStyle = '#5c381f';
+  ctx.fillRect(portalX + 4, portalY + 20, fallbackLeafW, portalH - 20);
+  ctx.fillRect(portalX + portalW - 4 - fallbackLeafW, portalY + 20, fallbackLeafW, portalH - 20);
 
   ctx.restore();
 }

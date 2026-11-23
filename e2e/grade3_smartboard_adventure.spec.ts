@@ -1,7 +1,8 @@
 import { finishWalkableEntry } from './walkableEntry';
-import { test, expect } from '@playwright/test';
-import fs from 'node:fs';
-import path from 'node:path';
+import { test, expect, type Page } from '@playwright/test';
+import { SULTANHANI_TOURIST_NPC } from '../src/data/sultanhaniNpc';
+import { SULTANHANI_ACTIVE_EXCHANGE_DEFINITIONS } from '../src/data/sultanhaniDialogContent';
+import { PORTAL, SULTANHANI_INNER, SULTANHANI_SQUARE } from '../src/features/walkable/engine/sultanhaniSceneRenderer';
 import type { WalkableCanvasEngine } from '../src/features/walkable/engine/WalkableCanvasEngine';
 import {
   createInitialStudentState,
@@ -9,10 +10,202 @@ import {
   getProfileStateKey,
   LOCAL_STORAGE_ACTIVE_PROFILE_KEY,
   LOCAL_STORAGE_PROFILES_KEY,
+  PROFILE_STATE_KEY_PREFIX,
 } from '../src/services/storage';
 import type { MissionStageId, StudentProfile } from '../src/types/campus';
 
-test.use({ video: 'on' });
+async function readEncounter(page: Page) {
+  return page.evaluate(() => {
+    const engine = (window as unknown as { __WALKABLE_ENGINE__: WalkableCanvasEngine }).__WALKABLE_ENGINE__;
+    const { player, npc } = engine;
+    return {
+      player: { x: player.x, y: player.y, direction: player.direction },
+      playerState: player.state,
+      alex: npc && { x: npc.x, y: npc.y, direction: npc.direction, state: npc.state },
+      distance: npc ? Math.hypot(player.x - npc.x, player.y - npc.y) : Infinity,
+    };
+  });
+}
+
+async function walkOnCanvas(page: Page, target: { x: number; y: number }, isMobile: boolean) {
+  const canvas = page.getByTestId('walkable-canvas');
+  const position = await canvas.evaluate((element, target) => {
+    const engine = (window as unknown as { __WALKABLE_ENGINE__: WalkableCanvasEngine }).__WALKABLE_ENGINE__;
+    const canvas = element as HTMLCanvasElement;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (target.x - engine.camera.x) * engine.zoom * rect.width / canvas.width,
+      y: (target.y - engine.camera.y) * engine.zoom * rect.height / canvas.height,
+    };
+  }, target);
+  if (isMobile) {
+    await canvas.tap({ position });
+  } else {
+    await canvas.click({ position });
+  }
+}
+
+async function enterClassroomWithNewStudent(page: Page, isMobile: boolean) {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Animasyonu Atla' }).click();
+  await finishWalkableEntry(page);
+
+  const pathPoint = { x: 830, y: 410 };
+  await walkOnCanvas(page, pathPoint, isMobile);
+  await expect.poll(async () => {
+    const { player } = await readEncounter(page);
+    return Math.hypot(player.x - pathPoint.x, player.y - pathPoint.y);
+  }).toBeLessThan(12);
+  await walkOnCanvas(page, { x: 970, y: 350 }, isMobile);
+  await expect(page.getByText('İngilizce Sınıfına Gir')).toBeVisible();
+  await page.getByRole('button', { name: /Etkileşimi Başlat/i }).click();
+  await expect(page.locator('[data-scene="classroom"]')).toBeVisible();
+
+  await walkOnCanvas(page, { x: 480, y: 202 }, isMobile);
+  await expect(page.getByText(/Büyük Görev: Kervansaray Macerası/i)).toBeVisible();
+}
+
+async function enterSquareFromBoard(page: Page) {
+  await page.getByRole('button', { name: /Etkileşimi Başlat/i }).click();
+  await expect(page.locator('[data-scene="sultanhani_square"]')).toBeVisible();
+}
+
+async function returnToClassroom(page: Page) {
+  await page.getByRole('button', { name: 'Sınıfa dön', exact: true }).click();
+  await expect(page.locator('[data-scene="classroom"]')).toBeVisible();
+}
+
+async function moveLeftFromInnerEntrance(page: Page, isMobile: boolean) {
+  const waitForMovement = () => expect.poll(async () => (await readEncounter(page)).player.x).toBeLessThan(422);
+  if (!isMobile) {
+    await page.keyboard.down('ArrowLeft');
+    try {
+      await waitForMovement();
+    } finally {
+      await page.keyboard.up('ArrowLeft');
+    }
+    return;
+  }
+
+  const rect = await page.getByRole('button', { name: 'Sol', exact: true }).boundingBox();
+  if (!rect) throw new Error('Mobile direction pad is not visible.');
+  const touch = await page.context().newCDPSession(page);
+  await touch.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }],
+  });
+  try {
+    await waitForMovement();
+  } finally {
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await touch.detach();
+  }
+}
+
+async function interactAtPortal(page: Page, isMobile: boolean, prompt: string) {
+  await expect(page.getByText(prompt, { exact: true })).toBeVisible();
+  if (isMobile) {
+    await page.getByRole('button', { name: /Etkileşimi Başlat/i }).tap();
+  } else {
+    await page.keyboard.press('e');
+  }
+}
+
+async function waitUntilNear(page: Page, target: { x: number; y: number }) {
+  await expect.poll(async () => {
+    const { player, playerState } = await readEncounter(page);
+    return playerState === 'idle' && Math.hypot(player.x - target.x, player.y - target.y) < 12;
+  }).toBe(true);
+}
+
+async function waitForAlexToStop(page: Page) {
+  await expect.poll(async () => {
+    const { alex, distance, playerState } = await readEncounter(page);
+    return playerState === 'idle' && alex?.state === 'idle' && distance >= 32 && distance < 85;
+  }).toBe(true);
+}
+
+async function exploreInnerCourtyard(page: Page, isMobile: boolean) {
+  await expect(page.getByText('Sultanhanı Meydanı’na Çık', { exact: true })).toHaveCount(0);
+  const onArrival = await readEncounter(page);
+  expect(onArrival.player).toMatchObject(SULTANHANI_INNER.playerSpawn);
+  expect(onArrival.alex).toMatchObject({ ...SULTANHANI_INNER.touristSpawn, state: 'idle' });
+  await moveLeftFromInnerEntrance(page, isMobile);
+  await expect.poll(async () => (await readEncounter(page)).alex?.state).toBe('walk');
+  await waitForAlexToStop(page);
+
+  const besideStone = { x: 402, y: 444 };
+  await walkOnCanvas(page, besideStone, isMobile);
+  await waitUntilNear(page, besideStone);
+  const beyondStone = { x: 520, y: 370 };
+  await walkOnCanvas(page, beyondStone, isMobile);
+  await expect.poll(() => page.evaluate(
+    () => (window as unknown as { __WALKABLE_ENGINE__: WalkableCanvasEngine }).__WALKABLE_ENGINE__.getPathWaypoints().length,
+  )).toBeGreaterThan(1);
+  await waitUntilNear(page, beyondStone);
+  await waitForAlexToStop(page);
+  const atRest = (await readEncounter(page)).alex;
+  await page.waitForTimeout(400);
+  expect((await readEncounter(page)).alex).toEqual(atRest);
+
+  const towardsEntrance = { x: 520, y: 468 };
+  await walkOnCanvas(page, towardsEntrance, isMobile);
+  await waitUntilNear(page, towardsEntrance);
+  await waitForAlexToStop(page);
+  const reversed = await readEncounter(page);
+  expect(reversed.alex!.y).toBeLessThan(reversed.player.y - 24);
+}
+
+async function exitToSquare(page: Page, isMobile: boolean) {
+  await walkOnCanvas(page, SULTANHANI_INNER.exit, isMobile);
+  await interactAtPortal(page, isMobile, 'Sultanhanı Meydanı’na Çık');
+  const square = page.locator('[data-scene="sultanhani_square"]');
+  await expect(square).toBeVisible();
+  await expect(square).toHaveAttribute('data-encounter-phase', 'DONE');
+  const arrived = await readEncounter(page);
+  expect(arrived.player).toMatchObject(SULTANHANI_SQUARE.portalExit.player);
+  expect(arrived.alex).toMatchObject({ ...SULTANHANI_SQUARE.portalExit.alex, state: 'idle' });
+}
+
+async function mockEncounterSpeech(page: Page) {
+  await page.addInitScript(() => {
+    class TestUtterance {
+      constructor(public text: string) {}
+      onend: (() => void) | null = null;
+      pitch = 1;
+    }
+    const events: string[] = [];
+    let current: TestUtterance | null = null;
+    let timer = 0;
+    const synth = Object.assign(new EventTarget(), {
+      getVoices: () => [{ lang: 'en-US', name: 'English test voice' }],
+      speak: (utterance: TestUtterance) => {
+        if (current) events.push('overlap');
+        current = utterance;
+        const speaker = utterance.pitch > 1 ? 'student' : 'tourist';
+        events.push(speaker + ':start:' + utterance.text);
+        timer = window.setTimeout(() => {
+          current = null;
+          events.push(speaker + ':end:' + utterance.text);
+          utterance.onend?.();
+        }, utterance.text === 'What is your name?' ? 2100 : speaker === 'student' ? 2300 : 650);
+      },
+      cancel: () => {
+        if (current) events.push('cancel:' + current.text);
+        window.clearTimeout(timer);
+        current = null;
+      },
+    });
+    Object.defineProperties(window, {
+      speechSynthesis: { value: synth },
+      SpeechSynthesisUtterance: { value: TestUtterance },
+      sultanhaniTestSpeechEvents: { value: events },
+    });
+  });
+  return () => page.evaluate(
+    () => (window as unknown as { sultanhaniTestSpeechEvents: string[] }).sultanhaniTestSpeechEvents,
+  );
+}
 
 test.describe('3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Macerası (Aşama 6.5)', () => {
 
@@ -119,229 +312,127 @@ test.describe('3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Macerası
     });
   }
 
-  test('Senaryo 2: 4 masa tamamlandığında Akıllı Tahta açılır, Sultanhanı Kervansarayı macerası tamamlanır ve sınıfa dönülür', async ({ page }, testInfo) => {
-    test.setTimeout(90000);
-    // 1. Durum: Dört masanın tümü tamamlanmış
-    await page.goto('/');
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      const state = {
-        schemaVersion: 1,
-        hasSeenGate: false,
-        hasCompletedOnboarding: true,
-        discoveryPreference: 'independent',
-        selectedGrade: 3,
-        hasCompletedGuidedTour: true,
-        speechEnabled: true,
-        missionProgressByKey: {
-          'kapilarin-anlattigi-hikaye::grade-3': {
-            missionId: 'kapilarin-anlattigi-hikaye',
-            missionVersion: '1.0.0',
-            grade: 3,
-            currentStage: 'paylas',
-            completedStages: ['kesfet', 'ogren', 'uret', 'paylas'],
-            selections: {
-              selectedDoorIds: ['greetings-table'],
-              inspectedCampusGate: true,
-              observationNotes: {},
-              matchedVocabularyIds: ['vocab-hello', 'vocab-morning', 'vocab-goodbye', 'vocab-night'],
-              matchedExampleSentence: true,
-              doorName: 'Selamlaşma Masası',
-              writtenText: 'Hello! Good morning! Goodbye! Good night!',
-              usedEnglishWords: ['Hello', 'Good morning', 'Goodbye', 'Good night'],
-            },
-            draftArtifactId: null,
-            savedArtifactId: null,
-            artifactSavedAt: null,
-            selfEvaluation: null,
-            completed: false,
-            completedAt: null,
-            updatedAt: new Date().toISOString(),
-          },
-        },
-        lastActiveMissionKey: 'kapilarin-anlattigi-hikaye::grade-3',
-        updatedAt: new Date().toISOString(),
-      };
-      window.localStorage.setItem('dek_campus_v1_state', JSON.stringify(state));
-    });
-    await page.evaluate(() => localStorage.removeItem('dek_campus_migrated_v1'));
-    await page.reload();
-    await finishWalkableEntry(page);
+  test('Akıllı tahtadan gelen öğrenci Alex ile tanışır, iç avluyu gezer ve meydana döner', async ({ page, isMobile }) => {
+    test.setTimeout(85_000);
+    const speechEvents = await mockEncounterSpeech(page);
+    await enterClassroomWithNewStudent(page, isMobile);
+    await enterSquareFromBoard(page);
 
-    // Giriş kapısını aç -> Avluya gir
-    const openGateBtn = page.getByRole('button', { name: /Kapıyı Aç ve İçeri Gir/i });
-    await expect(openGateBtn).toBeVisible();
-    await openGateBtn.click();
+    const panel = page.getByTestId('student-choice-panel');
+    const bubble = page.getByTestId('npc-speech-bubble');
+    const npc = SULTANHANI_TOURIST_NPC;
+    const spawn = SULTANHANI_SQUARE.spawn;
+    const startingDistance = Math.hypot(spawn.x - npc.startPosition.x, spawn.y - npc.startPosition.y);
+    await expect.poll(async () => {
+      const { alex, distance } = await readEncounter(page);
+      return alex?.state === 'walk' && distance < startingDistance - 20 && distance > npc.interactionEnterRadius + 25;
+    }).toBe(true);
+    await expect(panel).toHaveCount(0);
 
-    const walkableCanvas = page.locator('canvas[data-testid="walkable-canvas"]');
-    await expect(walkableCanvas).toBeVisible({ timeout: 10000 });
+    await expect(panel).toBeVisible();
+    const meeting = await readEncounter(page);
+    expect(meeting.player).toEqual({ ...spawn, direction: 'right' });
+    expect(meeting.alex).toMatchObject({ direction: 'left', state: 'idle' });
+    expect(meeting.distance).toBeLessThanOrEqual(npc.interactionEnterRadius);
+    await expect(panel).toHaveCount(1);
 
-    // İngilizce Dünyası binasına gir
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: {
-            setPosition: (p: { x: number; y: number }) => void;
-          };
-        }
-      ).__WALKABLE_ENGINE__;
-      if (engine) {
-        engine.setPosition({ x: 970, y: 335 });
-      }
-    });
-    await page.waitForTimeout(300);
-
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: { triggerActiveInteraction: () => void };
-        }
-      ).__WALKABLE_ENGINE__;
-      engine?.triggerActiveInteraction();
-    });
-
-    await expect(page.getByRole('button', { name: /Avluya dön/i })).toBeVisible({ timeout: 5000 });
-
-    // Akıllı tahtanın önüne yürü (x: 480, y: 180) ve açılışı tetikle
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: {
-            setPosition: (p: { x: number; y: number }) => void;
-          };
-        }
-      ).__WALKABLE_ENGINE__;
-      if (engine) {
-        engine.setPosition({ x: 480, y: 180 });
-      }
-    });
-    await page.waitForTimeout(300);
-
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: { triggerActiveInteraction: () => void };
-        }
-      ).__WALKABLE_ENGINE__;
-      engine?.triggerActiveInteraction();
-    });
-
-    // Akıllı Tahta modalı açılır: Sultanhanı Kervansarayı Sahnesi
-    const adventureStartTime = Date.now();
-    await expect(page.getByText(/Aksaray Sultanhanı Kervansarayı/i).first()).toBeVisible({ timeout: 6000 });
-    await expect(page.getByText(/1\. Sahne — Taç Kapının Önünde Karşılaşma/i).first()).toBeVisible();
-
-    // 1. Görsel Kayıt: Meydana Giriş ve Belirgin Yürüyüş Adımları
-    await page.screenshot({ path: 'docs/assets/grade3_smartboard_square_arrival.png' });
-
-    // Deniz taç kapının önünde durur ve konuşma seçenekleri belirir
-    const wrongGoodbyeBtn = page.getByRole('button', { name: /"Goodbye!"/i });
-    await expect(wrongGoodbyeBtn).toBeVisible({ timeout: 5000 });
-
-    // 2. Görsel Kayıt: Taç Kapının Önünde Duruş ve Leo ile "Hello!" Karşılaşması
-    await page.screenshot({ path: 'docs/assets/grade3_smartboard_sultanhani_arrival.png' });
-
-    // Yanlış cevap testi: "Goodbye!" -> Cezasız pedagojik ipucu
-    await wrongGoodbyeBtn.click();
-    await expect(
-      page.getByText(/Yeni karşılaştığımız bir arkadaşa selam vermek için "Hello!"/i),
-    ).toBeVisible({ timeout: 4000 });
-
-    // Doğru cevap: "Hello!"
-    await page.waitForTimeout(2500); // ipucu temizlenme süresi
-    const correctHelloBtn = page.getByRole('button', { name: /"Hello!"/i });
-    await correctHelloBtn.click();
-    await expect(
-      page.getByText(/Harika! "Hello!" diyerek tanışma selamı verdin/i),
-    ).toBeVisible({ timeout: 4000 });
-
-    // 3. Görsel Kayıt: Kamera Takibi & Ayaklarıyla Aynı Taş Eşiği Geçiş
-    await expect(page.getByText(/Selçuklu Taç Kapı Taş Eşiği/i)).toBeVisible({ timeout: 5000 });
-    await page.screenshot({ path: 'docs/assets/grade3_smartboard_threshold_crossing.png' });
-
-    // Eşik geçildikten sonra: 2. Sahne (Avluda Vedalaşma • Gece Işığı) açılır
-    await expect(page.getByText(/2\. Sahne — Avluda Vedalaşma/i).first()).toBeVisible({ timeout: 8000 });
-
-    // 4. Görsel Kayıt: Avluda Gece Vedalaşması ve "Good night!"
-    const wrongMorningBtn = page.getByRole('button', { name: /"Good morning!"/i });
-    await expect(wrongMorningBtn).toBeVisible({ timeout: 5000 });
-    await page.screenshot({ path: 'docs/assets/grade3_smartboard_courtyard_farewell.png' });
-
-    // Yanlış cevap testi: "Good morning!" -> İpucu
-    await wrongMorningBtn.click();
-    await expect(
-      page.getByText(/Gece ayrılırken ve uyku vakti geldiğinde "Good night!"/i),
-    ).toBeVisible({ timeout: 4000 });
-
-    // Doğru cevap: "Good night!"
-    await page.waitForTimeout(2500);
-    const correctNightBtn = page.getByRole('button', { name: /"Good night!"/i });
-    await correctNightBtn.click();
-    await expect(
-      page.getByText(/Tebrikler! "Good night!" diyerek arkadaşınla gece vedasını yaptın/i),
-    ).toBeVisible({ timeout: 4000 });
-
-    // 5. Görsel Kayıt: Görünür El Sallama ve Kadrajın Kenarına Doğru Ayrılış
-    // Karakterler ellerini görünür biçimde sallayıp ayrılış adımlarına geçerken yakala
-    await page.waitForTimeout(2000);
-    await page.screenshot({ path: 'docs/assets/grade3_smartboard_waving_departure.png' });
-
-    // --- TAMAMLANMA EKRANI (İki karakter de kadrajdan tamamen çıktıktan sonra açılır) ---
-    await expect(
-      page.getByText(/Tebrikler! Öğrendiğin İngilizce ifadeleri günlük yaşamda başarıyla kullandın\./i),
-    ).toBeVisible({ timeout: 8000 });
-
-    // Rozet ve 4 kart özeti
-    await expect(page.getByText(/Büyük Görev Başarıyla Tamamlandı 🏆/i)).toBeVisible();
-    await expect(page.getByText(/Hello!/i).first()).toBeVisible();
-    await expect(page.getByText(/Good morning!/i).first()).toBeVisible();
-    await expect(page.getByText(/Goodbye!/i).first()).toBeVisible();
-    await expect(page.getByText(/Good night!/i).first()).toBeVisible();
-
-    // 6. Görsel Kayıt: Tamamlanma Ekranı
-    await page.screenshot({ path: 'docs/assets/grade3_smartboard_adventure_completed.png' });
-
-    // Sınıfa Dön butonuna tıkla
-    const returnBtn = page.getByRole('button', { name: /Sınıfa Dön/i }).first();
-    await returnBtn.click();
-
-    // Sınıfta olduğumuzu ve masaların yerinde durduğunu doğrula
-    await expect(page.getByRole('button', { name: /Avluya dön/i })).toBeVisible({ timeout: 5000 });
-
-    // Video kaydının sınıfa dönüşü ve 4 masayı net gösterebilmesi için 2 saniye bekle
-    await page.waitForTimeout(2000);
-
-    // Oynanış süresini ölç ve konsola raporla
-    const totalElapsedSeconds = ((Date.now() - adventureStartTime) / 1000).toFixed(1);
-    console.log(`[Akıllı Tahta Sultanhanı Macerası (${testInfo.project.name})] Ölçülen Toplam Oynanış Süresi: ${totalElapsedSeconds} saniye`);
-
-    // 7. Görsel Kayıt: Sınıfta Akıllı Tahtanın Önünde Kalış
-    await page.screenshot({ path: 'docs/assets/grade3_smartboard_return_classroom.png' });
-
-    // LocalStorage verisinde 4 masanın korunduğunu ve büyük görevin tamamlandığını doğrula
-    const savedState = await page.evaluate(() => {
-      const raw = window.localStorage.getItem('dek_campus_v1_state');
-      return raw ? JSON.parse(raw) : null;
-    });
-
-    const progress = savedState?.missionProgressByKey?.['kapilarin-anlattigi-hikaye::grade-3'];
-    expect(progress?.completedStages).toEqual(['kesfet', 'ogren', 'uret', 'paylas']);
-    expect(progress?.completed).toBe(true);
-
-    // Kesintisiz Ekran Kaydı Videosunu docs/assets/videos Klasörüne Kaydet
-    await page.close();
-    const video = page.video();
-    if (video) {
-      const videosDir = path.resolve('docs/assets/videos');
-      if (!fs.existsSync(videosDir)) {
-        fs.mkdirSync(videosDir, { recursive: true });
-      }
-      const videoPath = await video.path();
-      const targetName =
-        testInfo.project.name === 'mobile-chrome'
-          ? 'grade3_smartboard_mobile_continuous.webm'
-          : 'grade3_smartboard_desktop_continuous.webm';
-      fs.copyFileSync(videoPath, path.join(videosDir, targetName));
+    for (const { studentText, touristText } of SULTANHANI_ACTIVE_EXCHANGE_DEFINITIONS) {
+      await panel.getByRole('button', { name: studentText, exact: true }).click();
+      await expect(bubble).toHaveAttribute('data-speaker', 'student');
+      await expect(bubble).toContainText(studentText);
+      await expect(panel).toHaveCount(0);
+      await expect(bubble).toHaveAttribute('data-speaker', 'tourist');
+      await expect(bubble).toContainText(touristText);
     }
+
+    const square = page.locator('[data-scene="sultanhani_square"]');
+    const introduction = page.getByTestId('student-introduction-panel');
+    await expect(bubble.getByText('What is your name?', { exact: true })).toBeVisible();
+    await expect(bubble).toHaveAttribute('data-speaker', 'tourist');
+    await expect.poll(speechEvents).toContain('tourist:start:What is your name?');
+    await expect(introduction).toHaveCount(0);
+    await expect.poll(speechEvents).toContain('tourist:end:What is your name?');
+    await expect(introduction.getByText('My name is …', { exact: true })).toBeVisible();
+    await expect(introduction.getByText('Şimdi kendi adını söyle.', { exact: true })).toBeVisible();
+    await expect(introduction.locator('input, textarea')).toHaveCount(0);
+    await expect(bubble).toHaveCount(0);
+
+    await introduction.getByRole('button', { name: 'Söyledim', exact: true }).click();
+    await expect(square).toHaveAttribute('data-encounter-phase', 'WALK_TO_DOOR', { timeout: 6_000 });
+    await expect.poll(async () => {
+      const { player, alex } = await readEncounter(page);
+      return player.y < meeting.player.y - 16 && Boolean(alex && meeting.alex && alex.x < meeting.alex.x - 16);
+    }).toBe(true);
+    await expect(page.locator('[data-scene="sultanhani_inner"]')).toBeVisible({ timeout: 8_000 });
+    await exploreInnerCourtyard(page, isMobile);
+    await exitToSquare(page, isMobile);
+    await page.waitForTimeout(2600);
+    await expect(square).toHaveAttribute('data-encounter-phase', 'DONE');
+    await expect(panel).toHaveCount(0);
+    await expect(introduction).toHaveCount(0);
+    expect((await readEncounter(page)).alex).toMatchObject({ ...SULTANHANI_SQUARE.portalExit.alex, state: 'idle' });
+
+    await walkOnCanvas(page, { x: PORTAL.centerX, y: PORTAL.triggerY + 24 }, isMobile);
+    await interactAtPortal(page, isMobile, 'Taç Kapıdan İçeri Gir');
+    const inner = page.locator('[data-scene="sultanhani_inner"]');
+    await expect(inner).toBeVisible({ timeout: 8000 });
+    await expect(inner).toHaveAttribute('data-encounter-phase', 'DONE');
+    expect((await readEncounter(page)).player).toMatchObject(SULTANHANI_INNER.playerSpawn);
+
+    await exitToSquare(page, isMobile);
+    await expect(panel).toHaveCount(0);
+    await returnToClassroom(page);
+
+    const savedProgress = await page.evaluate(({ activeKey, profilePrefix }) => {
+      const profileId = localStorage.getItem(activeKey);
+      const raw = localStorage.getItem(profilePrefix + profileId + ':state');
+      return raw ? JSON.parse(raw).missionProgressByKey : null;
+    }, { activeKey: LOCAL_STORAGE_ACTIVE_PROFILE_KEY, profilePrefix: PROFILE_STATE_KEY_PREFIX });
+    expect(savedProgress).toEqual({});
+  });
+
+  test('Yaklaşma veya replik sırasında sınıfa dönüldüğünde sonraki açılış temiz başlar', async ({ page, isMobile }) => {
+    test.setTimeout(60_000);
+    const speechEvents = await mockEncounterSpeech(page);
+    const panel = page.getByTestId('student-choice-panel');
+    const bubble = page.getByTestId('npc-speech-bubble');
+
+    await enterClassroomWithNewStudent(page, isMobile);
+    await enterSquareFromBoard(page);
+    await expect(page.locator('[data-scene="sultanhani_square"]')).toHaveAttribute('data-encounter-phase', 'APPROACH');
+    await returnToClassroom(page);
+    await expect(panel).toHaveCount(0);
+
+    await expect(page.getByText(/Büyük Görev: Kervansaray Macerası/i)).toBeVisible();
+    await enterSquareFromBoard(page);
+    await walkOnCanvas(page, { x: 733, y: 721 }, isMobile);
+    await panel.getByRole('button', { name: 'Hello!', exact: true }).click();
+    await expect(bubble).toHaveAttribute('data-speaker', 'student');
+    await expect(bubble).toHaveAttribute('data-speaker', 'tourist');
+    await expect.poll(speechEvents).toEqual([
+      'student:start:Hello!',
+      'student:end:Hello!',
+      'tourist:start:Hello!',
+      'tourist:end:Hello!',
+    ]);
+
+    await panel.getByRole('button', { name: 'Good morning!', exact: true }).click();
+    await expect.poll(speechEvents).toContain('student:start:Good morning!');
+    await returnToClassroom(page);
+    await expect(bubble).toHaveCount(0);
+
+    await expect(page.getByText(/Büyük Görev: Kervansaray Macerası/i)).toBeVisible();
+    await enterSquareFromBoard(page);
+    await expect(panel.getByRole('button', { name: 'Hello!', exact: true })).toBeVisible();
+    await expect(panel).toHaveCount(1);
+    expect(await speechEvents()).toEqual([
+      'student:start:Hello!',
+      'student:end:Hello!',
+      'tourist:start:Hello!',
+      'tourist:end:Hello!',
+      'student:start:Good morning!',
+      'cancel:Good morning!',
+    ]);
+    await returnToClassroom(page);
   });
 });

@@ -11,6 +11,24 @@ import type {
 import { drawCharacter } from './characterRenderer';
 import { findPath, DEFAULT_HITBOX } from './pathfinding';
 
+const NPC_APPROACH_REPATH_DISTANCE = 24;
+const COMPANION_REPLAN_DISTANCE = 18;
+const COMPANION_CLEARANCE = 32;
+const COMPANION_BEHIND = 42;
+const COMPANION_SIDE = 42;
+const DIRECTION_VECTORS: Record<CharacterDirection, Position> = {
+  up: { x: 0, y: -1 }, down: { x: 0, y: 1 },
+  left: { x: -1, y: 0 }, right: { x: 1, y: 0 },
+};
+
+type NpcApproach = { destination: Position | null; waypoints: Position[] };
+type NpcFollow = {
+  plannedAt: Position | null;
+  direction: CharacterDirection;
+  playerWasMoving: boolean;
+  waypoints: Position[];
+};
+
 export interface EngineCallbacks {
   onActiveZoneChange: (zone: InteractiveZone | null) => void;
   onPositionChange?: (pos: Position) => void;
@@ -58,6 +76,8 @@ export class WalkableCanvasEngine {
   private npcPatrolPhase: NpcPatrolPhase = 'moving_left';
   private npcPauseTimerMs: number = 0;
   private npcInRange: boolean = false;
+  private npcApproach: NpcApproach | null = null;
+  private npcFollow: NpcFollow | null = null;
   private isNpcTalking: boolean = false;
   private npcEncounterLocked: boolean = false;
   private lastNpcScreenPos: Position | null = null;
@@ -124,6 +144,10 @@ export class WalkableCanvasEngine {
         walkFrame: 0,
         visible: config.isNpcVisible ? config.isNpcVisible() : true,
       };
+    }
+
+    if (this.npc && config.npcFollowsPlayer) {
+      this.npcFollow = { plannedAt: null, direction: this.player.direction, playerWasMoving: false, waypoints: [] };
     }
 
     this.setupListeners();
@@ -267,11 +291,18 @@ export class WalkableCanvasEngine {
     }
   }
 
+  public startEncounterApproach() {
+    if (this.npc && !this.npcEncounterLocked && !this.npcApproach) {
+      this.npcApproach = { destination: null, waypoints: [] };
+    }
+  }
+
   /**
    * Karşılaşma başladığında iki karakteri durdurur, yüzlerini birbirine döndürür
    * ve öğrenci kontrollerini kilitler.
    */
   public startEncounterFacing() {
+    this.npcApproach = null;
     this.npcEncounterLocked = true;
     this.walkToDoorState = null;
     this.isNpcTalking = true;
@@ -324,6 +355,11 @@ export class WalkableCanvasEngine {
    * Karşılaşma durumunu sıfırlar ve kontrolleri/devriyeyi normale döndürür.
    */
   public stopEncounterControl() {
+    this.npcApproach = null;
+    if (this.npc) {
+      this.npc.state = 'idle';
+      this.npc.walkFrame = 0;
+    }
     this.npcEncounterLocked = false;
     this.walkToDoorState = null;
     this.npcInRange = false;
@@ -566,11 +602,13 @@ export class WalkableCanvasEngine {
     }
 
     // 4. Çarpışma algılama ve hareket uygulama
+    const { x: previousX, y: previousY } = this.player;
     this.movePlayerWithCollision(vx * delta, vy * delta);
+    const playerMoved = this.player.x !== previousX || this.player.y !== previousY;
 
-    // 5. Kamera, NPC devriyesi ve etkileşim bölgelerini güncelle
+    // 5. Kamera, NPC hareketi ve etkileşim bölgelerini güncelle
     this.updateCamera();
-    this.updateNpc(delta);
+    this.updateNpc(delta, playerMoved);
     this.checkInteractiveZones();
 
     if (this.callbacks.onPositionChange) {
@@ -722,20 +760,26 @@ export class WalkableCanvasEngine {
 
     // X ekseninde hareket denemesi
     const targetX = this.player.x + dx;
-    if (!this.checkObstacleCollision(targetX, this.player.y)) {
-      this.player.x = Math.max(16, Math.min(this.config.width - 16, targetX));
-    } else {
-      // Beklenmedik bir çarpışma olursa rotayı temizle
+    if (this.checkObstacleCollision(targetX, this.player.y)) {
       if (this.pathWaypoints.length > 0) this.clearPath();
+    } else if (!this.isCompanionBlockingPlayer(targetX, this.player.y)) {
+      this.player.x = Math.max(16, Math.min(this.config.width - 16, targetX));
     }
 
     // Y ekseninde hareket denemesi (duvar boyunca kayma / sliding)
     const targetY = this.player.y + dy;
-    if (!this.checkObstacleCollision(this.player.x, targetY)) {
-      this.player.y = Math.max(20, Math.min(this.config.height - 20, targetY));
-    } else {
+    if (this.checkObstacleCollision(this.player.x, targetY)) {
       if (this.pathWaypoints.length > 0) this.clearPath();
+    } else if (!this.isCompanionBlockingPlayer(this.player.x, targetY)) {
+      this.player.y = Math.max(20, Math.min(this.config.height - 20, targetY));
     }
+  }
+
+  private isCompanionBlockingPlayer(x: number, y: number): boolean {
+    if (!this.npcFollow || !this.npc?.visible) return false;
+    const separation = Math.hypot(x - this.npc.x, y - this.npc.y);
+    return separation < COMPANION_CLEARANCE &&
+      separation < Math.hypot(this.player.x - this.npc.x, this.player.y - this.npc.y);
   }
 
   private checkObstacleCollision(x: number, y: number): boolean {
@@ -922,7 +966,111 @@ export class WalkableCanvasEngine {
     }
   }
 
-  private updateNpc(delta: number) {
+  private updateNpcApproach(npc: NpcCharacter, approach: NpcApproach, radius: number, delta: number) {
+    const player = this.getPosition();
+    if (Math.hypot(player.x - npc.x, player.y - npc.y) <= radius) {
+      npc.state = 'idle';
+      npc.walkFrame = 0;
+      return;
+    }
+
+    const destination = approach.destination;
+    if (!destination || Math.hypot(player.x - destination.x, player.y - destination.y) >= NPC_APPROACH_REPATH_DISTANCE) {
+      approach.destination = player;
+      approach.waypoints = findPath(npc, player, this.config) ?? [];
+    }
+
+    this.walkNpcPath(npc, approach.waypoints, delta);
+  }
+
+  private planCompanionPath(npc: NpcCharacter, player: Position, direction: CharacterDirection): Position[] {
+    const forward = DIRECTION_VECTORS[direction];
+    const right = { x: -forward.y, y: forward.x };
+    const dx = npc.x - player.x;
+    const dy = npc.y - player.y;
+    const side = dx * right.x + dy * right.y >= 0 ? 1 : -1;
+    const behind = { x: player.x - forward.x * COMPANION_BEHIND, y: player.y - forward.y * COMPANION_BEHIND };
+    const distance = Math.max(1, Math.hypot(dx, dy));
+    const stepAside = {
+      x: player.x + dx / distance * COMPANION_BEHIND,
+      y: player.y + dy / distance * COMPANION_BEHIND,
+    };
+    const candidates = [side, -side, 0].map((offset) => ({
+      x: behind.x + right.x * offset * COMPANION_SIDE,
+      y: behind.y + right.y * offset * COMPANION_SIDE,
+    }));
+    candidates.push(stepAside);
+
+    // Alex öğrencinin ayak hizasından geçmeden yanına veya arkasına dolaşır.
+    const studentObstacle = {
+      id: 'companion-student', name: 'Öğrenci',
+      x: player.x - 22, y: player.y - 22 + DEFAULT_HITBOX.offsetY, width: 44, height: 44,
+    };
+    const config = { ...this.config, obstacles: [...this.config.obstacles, studentObstacle] };
+    for (const target of candidates) {
+      const path = findPath(npc, target, config);
+      if (path) return path;
+    }
+    return [];
+  }
+
+  private updateNpcFollow(npc: NpcCharacter, follow: NpcFollow, delta: number, playerMoved: boolean) {
+    const { x, y, direction } = this.player;
+    const turnOrStop = follow.direction !== direction || (follow.playerWasMoving && !playerMoved);
+    const needsPath = !follow.plannedAt || Math.hypot(x - follow.plannedAt.x, y - follow.plannedAt.y) >= COMPANION_REPLAN_DISTANCE;
+    if ((this.player.state === 'walk' || follow.playerWasMoving) && (turnOrStop || needsPath)) {
+      follow.plannedAt = { x, y };
+      follow.direction = direction;
+      follow.waypoints = this.planCompanionPath(npc, follow.plannedAt, direction);
+    }
+    follow.playerWasMoving = playerMoved;
+    this.walkNpcPath(npc, follow.waypoints, delta, true);
+  }
+
+  private walkNpcPath(npc: NpcCharacter, waypoints: Position[], delta: number, keepSpace = false) {
+    const target = waypoints[0];
+    if (!target) {
+      npc.state = 'idle';
+      npc.walkFrame = 0;
+      return;
+    }
+
+    const dx = target.x - npc.x;
+    const dy = target.y - npc.y;
+    const distance = Math.hypot(dx, dy);
+    if (keepSpace && waypoints.length === 1 && distance <= 4) {
+      waypoints.shift();
+      npc.state = 'idle';
+      npc.walkFrame = 0;
+      return;
+    }
+
+    const step = npc.speed * delta;
+    const amount = distance <= step ? 1 : step / distance;
+    const nextX = npc.x + dx * amount;
+    const nextY = npc.y + dy * amount;
+    if (keepSpace) {
+      const separation = Math.hypot(nextX - this.player.x, nextY - this.player.y);
+      const currentSeparation = Math.hypot(npc.x - this.player.x, npc.y - this.player.y);
+      if (this.checkObstacleCollision(nextX, nextY) ||
+          (separation < COMPANION_CLEARANCE && separation < currentSeparation)) {
+        npc.state = 'idle';
+        npc.walkFrame = 0;
+        return;
+      }
+    }
+
+    npc.x = nextX;
+    npc.y = nextY;
+    if (distance <= step) waypoints.shift();
+    npc.direction = Math.abs(dx) >= Math.abs(dy)
+      ? (dx >= 0 ? 'right' : 'left')
+      : (dy >= 0 ? 'down' : 'up');
+    npc.state = 'walk';
+    npc.walkFrame += delta * 4.5;
+  }
+
+  private updateNpc(delta: number, playerMoved: boolean) {
     if (!this.npc || !this.npcConfig) return;
 
     if (this.config.isNpcVisible) {
@@ -941,6 +1089,17 @@ export class WalkableCanvasEngine {
       this.npc.walkFrame = 0;
       this.faceNpcTowardPlayer();
       this.checkNpcProximity();
+      return;
+    }
+
+    if (this.npcApproach) {
+      this.updateNpcApproach(this.npc, this.npcApproach, this.npcConfig.interactionEnterRadius, delta);
+      this.checkNpcProximity();
+      return;
+    }
+
+    if (this.npcFollow) {
+      this.updateNpcFollow(this.npc, this.npcFollow, delta, playerMoved);
       return;
     }
 

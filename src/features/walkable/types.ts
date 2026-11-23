@@ -31,7 +31,7 @@ export interface InteractiveZone {
   y: number;
   radius: number;
   action: () => void;
-  targetScene?: 'courtyard' | 'classroom' | 'smart-board' | 'sultanhani_inner';
+  targetScene?: 'courtyard' | 'classroom' | 'smart-board' | 'sultanhani_inner' | 'sultanhani_square';
 }
 
 export interface SceneObstacle extends BoundingBox {
@@ -47,6 +47,7 @@ export interface WalkableSceneConfig {
   interactiveZones: InteractiveZone[];
   npc?: SceneNpcConfig;
   npcInitialDirection?: CharacterDirection;
+  npcFollowsPlayer?: boolean;
   isNpcVisible?: () => boolean;
 }
 

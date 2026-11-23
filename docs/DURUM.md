@@ -1,3 +1,33 @@
+# Proje Durum Raporu — “Hayalden Gerçeğe” Binası Açılır Kapısı ve Selçuklu VR Sınıfı
+
+## 1. Kapsam ve Tamamlanan İşler
+- **Açılır Kapı Mekaniği (`courtyardSceneRenderer.ts`, `WalkableCampusView.tsx`)**:
+  - “Hayalden Gerçeğe” binası (`building_discovery.png`, `930×761`, avluda `w: 284, h: 232`) orijinal kapı sınırları (`X: 545..621, Y: 528..686`) tespit edildi.
+  - Avluda kapı önüne yaklaşıldığında (`x: 290, y: 335, r: 75`) "Hayalden Gerçeğe Sınıfına Gir" etkileşim istemi (E tuşu veya ekrandaki buton) açılır.
+  - Etkileşim tetiklendiğinde iki kanatlı Selçuklu ahşap kapısının dışa doğru açılma animasyonu (`t: 0..1`, derinlik perspektifi, altın/kehribar iç ışık ve kündekâri paneller) yürütülür; kapı kasası ve eşik sabit kalır.
+  - Çift basma koruması (`discoveryDoorOpeningLockRef`): Açılma hareketi sırasında ardışık basışlar ikinci bir geçiş tetiklemez.
+- **Selçuklu VR Sınıfı Mimarisi (`discoveryClassroomSceneRenderer.ts`)**:
+  - Sıcak bej kesme taş duvarlar, sivri kemerli nişler, ahşap kündekâri tavan kirişleri, zemin Selçuklu sekiz köşeli yıldız madalyonu.
+  - Sınıf boyutları `960×640`, öğrenci karakteri girişte (`x: 480, y: 470`) doğrudan sehpaya ve arkasındaki askılara bakacak şekilde konumlandırılmıştır.
+- **Tek VR Gözlüğü ve Kaide**:
+  - Çocuk boyuna uygun sade ahşap sergileme sehpası (`x: 424, y: 262, w: 112, h: 54`).
+  - Kaide üzerinde 3/4 açılı tek VR gözlüğü: ön gövde, koyu yüz yastığı, ergonomik kafa bandı, turkuaz tonlu sekiz köşeli Selçuklu yıldızı ve yan geçme motifi.
+  - Çarpışma kutusu devrede; öğrenci kaidenin içinden geçemez, çevresinde dolaşabilir.
+- **Üç Boş Duvar Askısı**:
+  - Kaidenin arkasındaki duvarda eşit aralıklı (`x: 384, 480, 576, y: 110`) 3 adet boş ahşap askı/aparat.
+  - Kilit, numara, silüet veya "Yakında" yazısı kesinlikle içermez; sade ve doğal mimari öğelerdir.
+- **Döngü ve Avluya Dönüş**:
+  - Sınıftan çıkıldığında öğrenci avluda aynı binanın önünde (`x: 290, y: 350`) doğar. 2 döngü uçtan uca doğrulanmıştır.
+
+## 2. Kalite ve Test Doğrulaması
+- `npm run typecheck`: **0 hata**.
+- `npm run lint`: **0 hata, 0 uyarı**.
+- `npx vitest run`: **202 / 202 test** (%100 başarı, 12 test dosyası; `src/test/discoveryVrClassroom.test.tsx` [4 test] dahil).
+- `npm run build`: Hatasız üretim derlemesi (`dist/`).
+- Masaüstü (`1280×720`) ve mobil (`390×844`) canlı tarayıcı görüntüleri başarıyla üretilmiş ve doğrulanmıştır.
+
+---
+
 # Proje Durum Raporu — Aksaray Sultanhanı Dış Meydan Turist NPC Entegrasyonu (Seçenek A)
 
 ## 1. Kapsam ve Uygulanan Özellikler

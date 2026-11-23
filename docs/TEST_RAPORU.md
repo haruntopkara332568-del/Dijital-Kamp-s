@@ -1,3 +1,33 @@
+# Test ve Kalite Güvence Raporu — “Hayalden Gerçeğe” Binası Açılır Kapısı ve Selçuklu VR Sınıfı
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata**.
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **202 / 202 test** (%100 başarı, 12 test dosyası):
+  - `src/test/discoveryVrClassroom.test.tsx`: **4 / 4 test** —
+    1. Hayalden Gerçeğe binası kapı sınırları (`X: 545..621, Y: 528..686`) ve avludaki kapı yaklaşım koordinatları (`x: 290, y: 335, r: 75`).
+    2. VR sınıfı Selçuklu mimarisi, tek VR gözlüğü (`x: 424, y: 262`) ve 3 boş duvar askısı (`x: 384, 480, 576`, kilit/numara/metin içermeme garantisi).
+    3. Kaide çarpışma engeli (`x: 424, y: 262, w: 112, h: 54`), oyuncunun kaide içine girmesini engeller.
+    4. Tam döngü: Avluda yaklaşma -> E ile kapı açılması -> VR sınıfına giriş -> kaideye yaklaşma -> Avluya Dönüş -> aynı binanın önünde doğuş (`x: 290, y: 350`) — 2 kez ardışık doğrulandı.
+  - `src/test/sultanhaniNpc.test.tsx`: **9 / 9 test**.
+  - `src/test/walkable.test.tsx`: **74 / 74 test**.
+  - `src/test/campus.test.tsx`: **33 / 33 test**.
+  - `src/test/studentProfilesMaintenance.test.tsx`: **14 / 14 test**.
+  - `src/test/primaryScopeMaintenance.test.tsx`: **9 / 9 test**.
+  - `src/test/grade3StageTwoSpeech.test.tsx`: **17 / 17 test**.
+  - `src/test/grade3StageThree.test.tsx`: **13 / 13 test**.
+  - `src/test/grade3StageFour.test.tsx`: **5 / 5 test**.
+  - `src/test/fullscreen.test.tsx`: **9 / 9 test**.
+  - `src/test/brandIdentityMaintenance.test.tsx`: **7 / 7 test**.
+- **`npm run build` (`vite build`)**: Geçti — **990 ms** içinde hatasız üretim derlemesi.
+- **Canlı Görsel Doğrulama (Chromium Playwright Engine)**:
+  - `hayalden_gercege_prompt_desktop.png`: Kapıya yaklaşınca "Hayalden Gerçeğe Sınıfına Gir" buton ve rehber metni.
+  - `hayalden_gercege_door_opening_desktop.png` & `_mobile.png`: İki kanatlı Selçuklu kapısının dışa doğru açılma animasyonu ve içten yansıyan altın/amber kündekâri ışıma.
+  - `hayalden_gercege_vr_classroom_desktop.png` & `_mobile.png`: Selçuklu kesme taş duvarları, sivri kemerli nişler, tek kaide üstü VR gözlüğü ve arkasındaki 3 boş askı.
+  - `hayalden_gercege_vr_closeup_desktop.png`: VR gözlüğündeki turkuaz sekiz köşeli Selçuklu yıldızı ve geometrik yan şerit detayları.
+
+---
+
 # Test ve Kalite Güvence Raporu — Aksaray Sultanhanı Dış Meydan Turist NPC Entegrasyonu
 
 ## 1. Çalıştırıldı ve Geçti

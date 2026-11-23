@@ -1,6 +1,7 @@
 import { Volume2 } from 'lucide-react';
 import {
   SULTANHANI_FEEDBACK_COPY,
+  SULTANHANI_SELF_INTRODUCTION,
   type SultanhaniDialogChoiceOption,
   type SultanhaniSpeaker,
 } from '@/src/data/sultanhaniDialogContent';
@@ -26,7 +27,10 @@ export interface NpcSpeechBubbleProps {
   isSpeaking?: boolean;
   onSelectOption: (option: SultanhaniDialogChoiceOption) => void;
   onPreviewOption: (optionText: string) => void;
+  onConfirmIntroduction?: () => void;
 }
+
+const studentPanelClassName = 'pointer-events-auto absolute bottom-3 sm:bottom-5 left-1/2 z-30 w-[min(560px,calc(100%-24px))] -translate-x-1/2 rounded-2xl border-2 border-[var(--seljuk-teal)] bg-[var(--campus-surface)]/95 p-3 sm:p-4 shadow-2xl backdrop-blur-xs';
 
 /**
  * Sultanhanı Dış Meydan konuşma balonu ve öğrenci 3'lü seçenek paneli.
@@ -40,8 +44,9 @@ export function NpcSpeechBubble({
   isSpeaking = false,
   onSelectOption,
   onPreviewOption,
+  onConfirmIntroduction,
 }: NpcSpeechBubbleProps) {
-  if (!activeBubble && !choicePrompt) return null;
+  if (!activeBubble && !choicePrompt && !onConfirmIntroduction) return null;
 
   const anchorX = anchorPos?.x ?? 480;
   const anchorY = anchorPos?.y ?? 320;
@@ -93,7 +98,7 @@ export function NpcSpeechBubble({
         <section
           aria-label="İngilizce cevap seçenekleri"
           data-testid="student-choice-panel"
-          className="pointer-events-auto absolute bottom-3 sm:bottom-5 left-1/2 z-30 w-[min(560px,calc(100%-24px))] -translate-x-1/2 rounded-2xl border-2 border-[var(--seljuk-teal)] bg-[var(--campus-surface)]/95 p-3 sm:p-4 shadow-2xl backdrop-blur-xs"
+          className={studentPanelClassName}
         >
           <p className="mb-2 text-xs font-bold text-[var(--seljuk-navy)]">
             {SULTANHANI_FEEDBACK_COPY.studentPromptLabel}
@@ -150,6 +155,27 @@ export function NpcSpeechBubble({
               );
             })}
           </div>
+        </section>
+      )}
+      {onConfirmIntroduction && (
+        <section
+          aria-label={SULTANHANI_SELF_INTRODUCTION.instruction}
+          data-testid="student-introduction-panel"
+          className={studentPanelClassName}
+        >
+          <p lang="en" className="text-lg font-bold text-[var(--seljuk-navy)]">
+            {SULTANHANI_SELF_INTRODUCTION.sentenceStem}
+          </p>
+          <p className="mt-1 text-sm text-[var(--campus-ink-muted)]">
+            {SULTANHANI_SELF_INTRODUCTION.instruction}
+          </p>
+          <button
+            type="button"
+            onClick={onConfirmIntroduction}
+            className="mt-3 min-h-[44px] w-full rounded-xl bg-[var(--seljuk-teal)] px-4 py-2 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--seljuk-teal)] sm:w-auto"
+          >
+            {SULTANHANI_SELF_INTRODUCTION.confirmLabel}
+          </button>
         </section>
       )}
     </>
