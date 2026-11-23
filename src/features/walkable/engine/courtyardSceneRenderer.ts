@@ -10,6 +10,7 @@
 
 import type { PlayerCharacter } from '../types';
 import { drawCharacter } from './characterRenderer';
+import { COURTYARD_GRASS_PLOTS, type CourtyardLavenderLayer } from './courtyardLavender';
 import { CAMPUS_BUILDING_NAMES } from '@/src/data/brandConfig';
 import {
   getEnglishBuildingAsset,
@@ -64,6 +65,7 @@ export function renderCourtyardLayeredBackground(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
+  lavender?: CourtyardLavenderLayer,
 ) {
   const isReducedMotion =
     typeof window !== 'undefined' &&
@@ -81,6 +83,7 @@ export function renderCourtyardLayeredBackground(
 
   // 2b. YEŞİL ÇİM ALANLAR VE PARTERLER (Yürüme yollarının kenarlarında zengin peyzaj)
   drawCourtyardGrassParterres(ctx, width, height);
+  lavender?.draw(ctx);
 
   // 3. MERKEZ SEKİZ KÖŞELİ YILDIZ MEYDANI ZEMİN MOZAİĞİ
   const centerX = width / 2; // 700
@@ -926,26 +929,7 @@ function drawCourtyardGrassParterres(
   void height;
   ctx.save();
 
-  // Parter bölgeleri tanımları
-  const parterres = [
-    // 1. Sol Üst Parter (Gezi ve Keşif binası çevresi & kütüphane arası)
-    { x: 60, y: 340, w: 340, h: 90, r: 16 },
-    // 2. Sağ Üst Parter (İngilizce binası altı & doğu sur boyu)
-    { x: 990, y: 340, w: 350, h: 90, r: 16 },
-    // 3. Sol Alt Parter (Gözlem evi önü ve batı bahçesi)
-    { x: 90, y: 530, w: 350, h: 180, r: 18 },
-    // 4. Sağ Alt Parter (Görev panosu önü & doğu bahçe)
-    { x: 960, y: 530, w: 350, h: 180, r: 18 },
-    // 5. Orta-Sol Ada Parteri (Gezi rotası ile merkez meydan arası)
-    { x: 440, y: 360, w: 140, h: 80, r: 14 },
-    // 6. Orta-Sağ Ada Parteri (İngilizce rotası ile merkez meydan arası)
-    { x: 820, y: 360, w: 140, h: 80, r: 14 },
-    // 7. Güney Giriş Parter Adaları (Giriş aksının sağı ve solu)
-    { x: 490, y: 670, w: 160, h: 130, r: 16 },
-    { x: 750, y: 670, w: 160, h: 130, r: 16 },
-  ];
-
-  for (const p of parterres) {
+  for (const p of Object.values(COURTYARD_GRASS_PLOTS)) {
     // A. Zemin Çöküntü Gölgesi
     ctx.fillStyle = 'rgba(23, 43, 71, 0.12)';
     ctx.beginPath();

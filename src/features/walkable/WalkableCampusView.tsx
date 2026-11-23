@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Sparkles } from 'lucide-react';
 import { WalkableCanvasEngine } from './engine/WalkableCanvasEngine';
+import { createCourtyardLavenderLayer } from './engine/courtyardLavender';
 import {
   renderCourtyardBackground,
   renderCourtyardLayeredBackground,
@@ -1123,6 +1124,7 @@ export function WalkableCampusView({
     if (!canvas || !container) return;
 
     const config = getSceneConfig(currentScene);
+    const lavender = currentScene === 'courtyard' ? createCourtyardLavenderLayer() : undefined;
 
     // Canvas boyutunu container ve ekran alanına göre tam uyarla
     const updateCanvasSize = () => {
@@ -1205,7 +1207,7 @@ export function WalkableCampusView({
               completedStagesRef.current,
             );
           } else {
-            renderCourtyardLayeredBackground(ctx, config.width, config.height);
+            renderCourtyardLayeredBackground(ctx, config.width, config.height, lavender);
           }
         },
         onRenderEntities: (ctx, player, _camera, npc) => {
@@ -1355,6 +1357,7 @@ export function WalkableCampusView({
         delete (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine }).__WALKABLE_ENGINE__;
       }
       engine.destroy();
+      lavender?.dispose();
       engineRef.current = null;
     };
   }, [
