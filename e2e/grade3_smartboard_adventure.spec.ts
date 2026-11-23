@@ -2,126 +2,122 @@ import { finishWalkableEntry } from './walkableEntry';
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
+import type { WalkableCanvasEngine } from '../src/features/walkable/engine/WalkableCanvasEngine';
+import {
+  createInitialStudentState,
+  getMissionProgressKey,
+  getProfileStateKey,
+  LOCAL_STORAGE_ACTIVE_PROFILE_KEY,
+  LOCAL_STORAGE_PROFILES_KEY,
+} from '../src/services/storage';
+import type { MissionStageId, StudentProfile } from '../src/types/campus';
 
 test.use({ video: 'on' });
 
 test.describe('3. Sınıf Akıllı Tahta — Sultanhanı Kervansarayı Macerası (Aşama 6.5)', () => {
 
-  test('Senaryo 1: 4 masa tamamlanmadan Akıllı Tahta kilitlidir ve bilgilendirme uyarısı verir', async ({ page }) => {
-    // 1. Durum: 3 masa tamamlanmış (Keşfet, Öğren, Üret), Paylaş masası henüz tamamlanmamış
-    await page.goto('/');
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      const state = {
-        schemaVersion: 1,
-        hasSeenGate: false,
-        hasCompletedOnboarding: true,
-        discoveryPreference: 'independent',
-        selectedGrade: 3,
-        hasCompletedGuidedTour: true,
-        speechEnabled: true,
-        missionProgressByKey: {
-          'kapilarin-anlattigi-hikaye::grade-3': {
-            missionId: 'kapilarin-anlattigi-hikaye',
-            missionVersion: '1.0.0',
-            grade: 3,
-            currentStage: 'paylas',
-            completedStages: ['kesfet', 'ogren', 'uret'],
-            selections: {
-              selectedDoorIds: ['greetings-table'],
-              inspectedCampusGate: true,
-              observationNotes: {},
-              matchedVocabularyIds: ['vocab-hello'],
-              matchedExampleSentence: true,
-              doorName: 'Selamlaşma Masası',
-              writtenText: 'Hello!',
-              usedEnglishWords: ['Hello'],
-            },
-            draftArtifactId: null,
-            savedArtifactId: null,
-            artifactSavedAt: null,
-            selfEvaluation: null,
-            completed: false,
-            completedAt: null,
-            updatedAt: new Date().toISOString(),
+  for (const completedStages of [[], ['kesfet', 'ogren', 'uret']] satisfies MissionStageId[][]) {
+    test('Senaryo 1: Akıllı tahta ' + completedStages.length + ' tamamlanmış masayla açılır', async ({ page }) => {
+      const profileId = 'smartboard-test';
+      const missionId = 'kapilarin-anlattigi-hikaye';
+      const stateKey = getProfileStateKey(profileId);
+      const missionKey = getMissionProgressKey(missionId, 3);
+      const state = createInitialStudentState();
+      state.hasSeenGate = true;
+      state.hasCompletedOnboarding = true;
+      state.selectedGrade = 3;
+      state.speechEnabled = false;
+
+      if (completedStages.length > 0) {
+        state.missionProgressByKey[missionKey] = {
+          missionId,
+          missionVersion: '1.0.0',
+          grade: 3,
+          currentStage: 'paylas',
+          completedStages,
+          selections: {
+            selectedDoorIds: ['greetings-table'],
+            inspectedCampusGate: true,
+            observationNotes: {},
+            matchedVocabularyIds: ['vocab-hello'],
+            matchedExampleSentence: true,
+            doorName: 'Selamlaşma Masası',
+            writtenText: 'Hello!',
+            usedEnglishWords: ['Hello'],
           },
-        },
-        lastActiveMissionKey: 'kapilarin-anlattigi-hikaye::grade-3',
-        updatedAt: new Date().toISOString(),
+          draftArtifactId: null,
+          selfEvaluation: null,
+          completed: false,
+          updatedAt: state.updatedAt,
+        };
+      }
+
+      const profile: StudentProfile = {
+        id: profileId,
+        alias: 'Gezgin',
+        avatarId: 'avatar_1',
+        characterId: 'ece',
+        selectedGrade: 3,
+        createdAt: state.updatedAt,
+        lastUsedAt: state.updatedAt,
       };
-      window.localStorage.setItem('dek_campus_v1_state', JSON.stringify(state));
-    });
-    await page.evaluate(() => localStorage.removeItem('dek_campus_migrated_v1'));
-    await page.reload();
-    await finishWalkableEntry(page);
+      await page.addInitScript((entries) => {
+        for (const [key, value] of entries) window.localStorage.setItem(key, value);
+      }, [
+        [LOCAL_STORAGE_PROFILES_KEY, JSON.stringify([profile])],
+        [LOCAL_STORAGE_ACTIVE_PROFILE_KEY, profileId],
+        [stateKey, JSON.stringify(state)],
+      ]);
+      await page.goto('/');
+      await finishWalkableEntry(page);
 
-    // Giriş kapısını aç -> Avluya gir
-    const openGateBtn = page.getByRole('button', { name: /Kapıyı Aç ve İçeri Gir/i });
-    await expect(openGateBtn).toBeVisible();
-    await openGateBtn.click();
+      const interact = async (x: number, y: number, prompt: RegExp) => {
+        await page.evaluate((position) => {
+          (window as unknown as { __WALKABLE_ENGINE__: WalkableCanvasEngine })
+            .__WALKABLE_ENGINE__.setPosition(position);
+        }, { x, y });
+        await expect(page.getByText(prompt)).toBeVisible();
+        await page.getByRole('button', { name: /Etkileşimi Başlat/i }).click();
+      };
 
-    const walkableCanvas = page.locator('canvas[data-testid="walkable-canvas"]');
-    await expect(walkableCanvas).toBeVisible({ timeout: 10000 });
+      const classroom = page.locator('[data-scene="classroom"]');
+      const visitSmartBoard = async () => {
+        await interact(480, 180, /Büyük Görev: Kervansaray Macerası/i);
+        await expect(page.locator('[data-scene="sultanhani_square"]')).toBeVisible();
+        await page.getByRole('button', { name: 'Sınıfa dön', exact: true }).click();
+        await expect(classroom).toBeVisible();
+      };
 
-    // İngilizce Dünyası binasına yürü ve sınıfa gir
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: {
-            setPosition: (p: { x: number; y: number }) => void;
-          };
-        }
-      ).__WALKABLE_ENGINE__;
-      if (engine) {
-        engine.setPosition({ x: 970, y: 335 });
+      await interact(970, 335, /İngilizce Sınıfına Gir/i);
+      await expect(classroom).toBeVisible();
+      await visitSmartBoard();
+
+      const desk = page.getByRole('dialog');
+      const stageGroup = desk.getByRole('group', { name: '3. sınıf aşamaları' });
+      for (const stage of [1, 2, 3, 4]) {
+        await interact(265, 240, /Keşfet Masası'na Otur/i);
+        const button = stageGroup.getByRole('button', { name: new RegExp('^' + stage + '\\. Aşama') });
+        await button.click();
+        await expect(button).toHaveAttribute('aria-pressed', 'true');
+        await desk.getByRole('button', { name: 'Masadan kalk ve sınıfa dön' }).click();
+        await visitSmartBoard();
       }
-    });
-    await page.waitForTimeout(300);
 
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: { triggerActiveInteraction: () => void };
-        }
-      ).__WALKABLE_ENGINE__;
-      engine?.triggerActiveInteraction();
-    });
-
-    // Sınıftayız
-    await expect(page.getByRole('button', { name: /Avluya dön/i })).toBeVisible({ timeout: 5000 });
-
-    // Akıllı tahtanın önüne yürü (x: 480, y: 180) ve etkileşim tetikle
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: {
-            setPosition: (p: { x: number; y: number }) => void;
-          };
-        }
-      ).__WALKABLE_ENGINE__;
-      if (engine) {
-        engine.setPosition({ x: 480, y: 180 });
+      if (completedStages.length > 0) {
+        await interact(665, 240, /Öğren Masası'na Otur/i);
+        await expect(desk).toBeVisible();
+      } else {
+        await interact(665, 240, /Önce Keşfet Masası/i);
+        await expect(page.getByText("Önce Keşfet Masası'ndaki etkinliği tamamlamalısın.")).toBeVisible();
       }
+
+      const savedProgress = await page.evaluate(({ stateKey, missionKey }) => {
+        const raw = window.localStorage.getItem(stateKey);
+        return raw ? JSON.parse(raw).missionProgressByKey[missionKey] : undefined;
+      }, { stateKey, missionKey });
+      expect(savedProgress).toEqual(state.missionProgressByKey[missionKey]);
     });
-    await page.waitForTimeout(300);
-
-    await page.evaluate(() => {
-      const engine = (
-        window as unknown as {
-          __WALKABLE_ENGINE__?: { triggerActiveInteraction: () => void };
-        }
-      ).__WALKABLE_ENGINE__;
-      engine?.triggerActiveInteraction();
-    });
-
-    // Kilit uyarısının gösterildiğini doğrula
-    await expect(
-      page.getByText(/Büyük Görev için önce sınıftaki dört masadaki \(Keşfet, Öğren, Üret, Paylaş\) görevleri tamamlamalısın\./i),
-    ).toBeVisible({ timeout: 4000 });
-
-    // Sultanhanı modalının açılmadığını doğrula
-    await expect(page.getByText(/Aksaray Sultanhanı Kervansarayı/i)).not.toBeVisible();
-  });
+  }
 
   test('Senaryo 2: 4 masa tamamlandığında Akıllı Tahta açılır, Sultanhanı Kervansarayı macerası tamamlanır ve sınıfa dönülür', async ({ page }, testInfo) => {
     test.setTimeout(90000);

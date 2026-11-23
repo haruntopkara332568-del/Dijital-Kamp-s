@@ -55,6 +55,8 @@ import { useOptionalCampus } from '../../app/CampusProviders';
 import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } from './types';
 import type { MissionStageId } from '@/src/types/campus';
 
+const REQUIRE_TABLE_COMPLETION_FOR_SMARTBOARD = false;
+
 export interface WalkableCampusViewProps {
   characterId?: StudentCharacterId;
   initialScene?: 'courtyard' | 'classroom' | 'sultanhani_square' | 'sultanhani_inner';
@@ -639,6 +641,10 @@ export function WalkableCampusView({
       }
 
       if (scene === 'classroom') {
+        const canStartSmartBoardAdventure = () =>
+          !REQUIRE_TABLE_COMPLETION_FOR_SMARTBOARD ||
+          ['kesfet', 'ogren', 'uret', 'paylas'].every((stage) => completedStagesRef.current.includes(stage));
+
         const obstacles: SceneObstacle[] = [
           // Kuzey ön duvar ve akıllı tahta altı
           { id: 'north-wall', name: 'Ön Duvar', x: 0, y: 0, width: 960, height: 130 },
@@ -671,10 +677,7 @@ export function WalkableCampusView({
             prompt: !selectedGradeRef.current
               ? 'Önce Sınıfını Seç'
               : selectedGradeRef.current === 3
-                ? (completedStagesRef.current.includes('kesfet') &&
-                   completedStagesRef.current.includes('ogren') &&
-                   completedStagesRef.current.includes('uret') &&
-                   completedStagesRef.current.includes('paylas')
+                ? (canStartSmartBoardAdventure()
                     ? 'Büyük Görev: Kervansaray Macerası [E]'
                     : 'Büyük Görev (Önce 4 Masayı Bitir)')
                 : 'Akıllı Tahta (Yakında)',
@@ -691,13 +694,7 @@ export function WalkableCampusView({
               }
 
               if (selectedGradeRef.current === 3) {
-                const areAllTablesDone =
-                  completedStagesRef.current.includes('kesfet') &&
-                  completedStagesRef.current.includes('ogren') &&
-                  completedStagesRef.current.includes('uret') &&
-                  completedStagesRef.current.includes('paylas');
-
-                if (!areAllTablesDone) {
+                if (!canStartSmartBoardAdventure()) {
                   setUnreachableMessage(
                     'Büyük Görev için önce sınıftaki dört masadaki (Keşfet, Öğren, Üret, Paylaş) görevleri tamamlamalısın.',
                   );
@@ -705,7 +702,7 @@ export function WalkableCampusView({
                   return;
                 }
 
-                // Dört masa tamamlandığında: Açılış animasyonu ve ardından Sultanhanı Kervansarayı Meydanı'na ışınlanma
+                // Açılış animasyonu ve ardından Sultanhanı Kervansarayı Meydanı'na ışınlanma
                 if (sceneTransitionTimer.current !== null) return;
                 engineRef.current?.setInputDisabled(true);
                 setIsSmartBoardPoweringOn(true);
