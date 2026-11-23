@@ -31,6 +31,7 @@ interface WalkableControlsOverlayProps {
     | 'courtyard'
     | 'classroom'
     | 'discovery_classroom'
+    | 'discovery_moon'
     | 'sultanhani_square'
     | 'sultanhani_inner';
   isEncounterLocked?: boolean;
@@ -89,9 +90,11 @@ export function WalkableControlsOverlay({
                 ? 'İngilizce Sınıfı'
                 : currentScene === 'discovery_classroom'
                   ? 'Hayalden Gerçeğe — VR Sınıfı'
-                  : currentScene === 'sultanhani_square'
-                    ? 'Aksaray Sultanhanı Kervansarayı — Dış Meydan'
-                    : 'Aksaray Sultanhanı Kervansarayı — İç Avlu'}
+                  : currentScene === 'discovery_moon'
+                    ? 'Hayalden Gerçeğe — Ay Görevi'
+                    : currentScene === 'sultanhani_square'
+                      ? 'Aksaray Sultanhanı Kervansarayı — Dış Meydan'
+                      : 'Aksaray Sultanhanı Kervansarayı — İç Avlu'}
           </span>
         </div>
 
@@ -150,6 +153,19 @@ export function WalkableControlsOverlay({
                 {selectedGrade ? `${selectedGrade}. Sınıf` : 'Sınıf Seçilmedi'}
               </span>
             </div>
+          )}
+
+          {/* Ay Görevi Sahnesindeyken Gözlüğü Çıkar Düğmesi */}
+          {currentScene === 'discovery_moon' && onExitClassroom && (
+            <button
+              type="button"
+              onClick={onExitClassroom}
+              className="min-h-[44px] px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 border border-amber-300 text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-md"
+              aria-label="Gözlüğü çıkar ve sınıfa dön"
+            >
+              <DoorOpen className="w-4 h-4 text-stone-950" aria-hidden="true" />
+              <span>Gözlüğü Çıkar</span>
+            </button>
           )}
 
           {/* Sınıf İçindeyken Hızlı Avluya Dönüş Düğmesi */}

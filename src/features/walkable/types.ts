@@ -30,8 +30,10 @@ export interface InteractiveZone {
   x: number;
   y: number;
   radius: number;
+  /** Titremeyi önlemek için isteğe bağlı çıkış eşiği (histerezis) */
+  exitRadius?: number;
   action: () => void;
-  targetScene?: 'courtyard' | 'classroom' | 'smart-board' | 'sultanhani_inner' | 'sultanhani_square';
+  targetScene?: 'courtyard' | 'classroom' | 'smart-board' | 'sultanhani_inner' | 'sultanhani_square' | 'discovery_classroom' | 'discovery_moon';
 }
 
 export interface SceneObstacle extends BoundingBox {

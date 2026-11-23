@@ -1,3 +1,99 @@
+# Test ve Kalite Güvence Raporu — Hayalden Gerçeğe: VR Meslek Keşfi ve Ay Yüzeyinde Yürüme (Sürüm 2 — Parça 3: Kaya Örneği ve Görevin Tamamlanması)
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata** (Tam TypeScript tip güvenliği).
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı** (ESLint kuralları %100 temiz).
+- **`npm run test` (`vitest run`)**: Geçti — **236 / 236 test** (%100 başarı, 15 test dosyası):
+  - `src/test/discoveryCareerPart3.test.tsx`: **17 / 17 test** —
+    1. `MOON_SCENE` ölçüleri yapılandırmayla tam uyumludur (1340×680 px, ufuk çizgisi 260 px).
+    2. Lander çıkışı ile hedef kaya arasındaki mesafe 8-10 AB aralığındadır (571 px = 8.52 AB).
+    3. Hedef kaya etkileşim giriş eşiği 1.5 AB (101 px) ve çıkış eşiği 2.0 AB (134 px) histerezisli olarak tanımlıdır.
+    4. Araç dönüş etkileşim giriş eşiği 1.5 AB (101 px) ve çıkış eşiği 2.0 AB (134 px) olarak tanımlıdır.
+    5. Araç ile kaya arasında en az 2 AB genişliğinde (212 px = 3.16 AB) engelsiz bir yürüyüş koridoru bulunur.
+    6. Görev yönergeleri ve ipucu metinleri eksiksiz tanımlıdır ("İşaretli Ay kayasına yürü ve bir örnek al.", "Örneği aldın. Şimdi aracına dön.", "Önce işaretli kayadan örnek al.").
+    7. `DISCOVERY_MOON_OBSTACLES`: Lander gövdesi, hedef kaya, 5 dekoratif kaya ve 4 sınır duvarı engelleri içerir.
+    8. Astronotun iniş noktası ({ x: 330, y: 405 }) hiçbir engelin içinde kalmaz.
+    9. `drawTargetMoonRock` örnek alınmadan (parlayan halka + elmas imleç) ve alındıktan sonra (delgi oyuklu) hatasız çizilir.
+    10. `drawDecorativeBoulders` 5 adet krater kayasını hatasız render eder.
+    11. `drawAstronautPlayer` normal yürüme, sola dönüş (yatay çevirme) ve örnek alma eğilme/çömelme modlarında hatasız çizilir.
+    12. `drawMoonDebugOverlay` `?debug=ay` modunda şeffaf engelleri ve bölgeleri çizer.
+    13. `renderDiscoveryMoonWalkableScene` tüm sahneyi tek seferde eksiksiz render eder.
+    14. Ay sahnesi açıldığında üstte yönerge çubuğu ve Gözlüğü Çıkar butonu görünür.
+    15. Örnek almadan araca yaklaşılınca "Görevi Tamamla" ÇIKMAZ, ipucu ("Önce işaretli kayadan örnek al.") gösterilir.
+    16. Kayaya yaklaşıldığında "Kaya Örneği Al" çıkar, tıklanınca 1 sn eğilme animasyonuyla `SAMPLE_TAKEN` durumuna geçer.
+    17. Örnek alındıktan sonra araca dönülünce "Görevi Tamamla" çıkar ve kutlama modalı açılır; "Gözlüğü Çıkar" ile sınıfa temiz dönüş sağlanır.
+  - `src/test/discoveryCareerPart2.test.tsx`: **11 / 11 test**.
+  - `src/test/discoveryCareerPart1.test.tsx`: **4 / 4 test**.
+  - `src/test/discoveryVrClassroom.test.tsx`: **4 / 4 test**.
+  - `src/test/sultanhaniNpc.test.tsx`: **9 / 9 test**.
+  - `src/test/walkable.test.tsx`: **74 / 74 test**.
+  - `src/test/campus.test.tsx`: **33 / 33 test**.
+  - `src/test/studentProfilesMaintenance.test.tsx`: **14 / 14 test**.
+  - `src/test/primaryScopeMaintenance.test.tsx`: **9 / 9 test**.
+  - `src/test/grade3StageTwoSpeech.test.tsx`: **17 / 17 test**.
+  - `src/test/grade3StageThree.test.tsx`: **13 / 13 test**.
+  - `src/test/grade3StageFour.test.tsx`: **5 / 5 test**.
+  - `src/test/fullscreen.test.tsx`: **9 / 9 test**.
+  - `src/test/brandIdentityMaintenance.test.tsx`: **7 / 7 test**.
+- **`npm run build` (`vite build`)**: Geçti — **920ms** içinde hatasız üretim derlemesi (`dist/`).
+- **Canlı Görsel Doğrulama (Chromium Playwright ile 3 Ekran Boyutu)**:
+  - Masaüstü (`1366×768`):
+    - `vr_moon_walking_to_rock_desktop.png`: Astronot yüzeyde yürüyor, hedef kaya üzerinde parlayan halka ve elmas işaretçi, üst yönerge çubuğu, "Gözlüğü Çıkar" butonu.
+    - `vr_moon_mission_complete_desktop.png`: Kaya örneği alınıp araca dönüldükten sonra açılan tebrik modalı ("Tebrikler! Ay Görevi Tamamlandı", "Ay yüzeyinden bir kaya örneği alıp aracına getirdin." ve "Gözlüğü Çıkar" butonu).
+  - Dar Mobil Dikey (`390×844`):
+    - `vr_moon_walking_to_rock_narrow_mobile.png`: Mobil D-pad kontrolleri, hedef kaya ekran dışında kaldığında sağ kenarda beliren `↘ Kaya` pusula yön oku hapı ve yönerge.
+    - `vr_moon_mission_complete_narrow_mobile.png`: Mobilde kutlama modalı ve kolay dokunulabilir buton.
+  - Yatay Mobil (`844×390`):
+    - `vr_moon_walking_to_rock_landscape_mobile.png`: Geniş açılı kadrajda araç, astronot, kaya ve engellerin kusursuz yerleşimi.
+    - `vr_moon_mission_complete_landscape_mobile.png`: Yatay mobilde ortalanmış tebrik modalı.
+
+---
+
+# Test ve Kalite Güvence Raporu — Hayalden Gerçeğe: VR Meslek Keşfi ve Ay İnişi (Sürüm 2 — Parça 2 ve Gerçek Fotoğrafik Varlıklar)
+
+## 1. Çalıştırıldı ve Geçti
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata**.
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **219 / 219 test** (%100 başarı, 14 test dosyası):
+  - `src/test/discoveryCareerPart2.test.tsx`: **11 / 11 test** —
+    1. Toplam animasyon süresi 7-9 sn (~8.0 sn) ve evre süreleri (alçalma 4.2 sn, temas 1.4 sn, kapak 0.8 sn, merdiven 1.6 sn).
+    2. Alçalma evresinde araç yukarıdan iner, motor alevi aktiftir, kapak kapalıdır.
+    3. Temas ve yaylanma evresinde motor anında söner, yaylanma ve toz oluşur.
+    4. Kapak açılma evresinde kapak açılır ve astronot görünür.
+    5. Merdiven iniş evresinde astronot basamaklardan yüzeye iner ve iki ayağıyla basar.
+    6. "Geç" seçeneği veya prefers-reduced-motion doğrudan son duruma sıçratır.
+    7. `drawMoonLanderShadow` yüksekliğe göre gölgeyi küçültüp koyulaştırır.
+    8. `drawMoonLander`, `drawTouchdownDust` ve `drawAstronautCharacter` hatasız render alır.
+    9. `renderDiscoveryMoonEntities` kesintisiz Canvas komutlarını yürütür.
+    10. Ay sahnesinde iniş sürerken "Geç" düğmesi ve "Gözlüğü Çıkar" butonu aktiftir; "Geç" basılınca düğme kaybolur.
+    11. "Gözlüğü Çıkar" butonuna tıklandığında sahne sınıfa döner ve öğrenci sehpa önünde belirir.
+  - `src/test/discoveryCareerPart1.test.tsx`: **4 / 4 test**.
+  - `src/test/discoveryVrClassroom.test.tsx`: **4 / 4 test**.
+  - `src/test/sultanhaniNpc.test.tsx`: **9 / 9 test**.
+  - `src/test/walkable.test.tsx`: **74 / 74 test**.
+  - `src/test/campus.test.tsx`: **33 / 33 test**.
+  - `src/test/studentProfilesMaintenance.test.tsx`: **14 / 14 test**.
+  - `src/test/primaryScopeMaintenance.test.tsx`: **9 / 9 test**.
+  - `src/test/grade3StageTwoSpeech.test.tsx`: **17 / 17 test**.
+  - `src/test/grade3StageThree.test.tsx`: **13 / 13 test**.
+  - `src/test/grade3StageFour.test.tsx`: **5 / 5 test**.
+  - `src/test/fullscreen.test.tsx`: **9 / 9 test**.
+  - `src/test/brandIdentityMaintenance.test.tsx`: **7 / 7 test**.
+- **`npm run build` (`vite build`)**: Geçti — **1.83s** içinde hatasız üretim derlemesi (`dist/`).
+- **Canlı Görsel Doğrulama (Gerçek Fotoğraf Varlıklarıyla Chromium Playwright)**:
+  - Masaüstü (`1366×768`):
+    - `vr_career_modal_real_photo_desktop.png`: Kullanıcı fotoğrafından üretilen Astronot kartı ve modal görünümü.
+    - `vr_landing_descent_real_desktop.png`: Gerçek ay yüzeyi üzerinde iniş aracı alçalması.
+    - `vr_astronaut_exit_real_desktop.png`: Gerçek kasklı ve yaşam destek üniteli Apollo astronotu regolitte.
+  - Dar Mobil (`390×844`):
+    - `vr_landing_descent_real_narrow_mobile.png`
+    - `vr_astronaut_exit_real_narrow_mobile.png`
+  - Yatay Mobil (`844×390`):
+    - `vr_landing_descent_real_landscape_mobile.png`
+    - `vr_astronaut_exit_real_landscape_mobile.png`
+
+---
+
 # Test ve Kalite Güvence Raporu — “Hayalden Gerçeğe” Binası Açılır Kapısı ve Selçuklu VR Sınıfı
 
 ## 1. Çalıştırıldı ve Geçti

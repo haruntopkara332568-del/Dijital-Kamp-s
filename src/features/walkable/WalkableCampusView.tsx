@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, DoorOpen } from 'lucide-react';
 import { WalkableCanvasEngine } from './engine/WalkableCanvasEngine';
 import { createCourtyardLavenderLayer } from './engine/courtyardLavender';
 import {
@@ -23,6 +23,19 @@ import {
   renderDiscoveryClassroomEntities,
   renderDiscoveryClassroomForeground,
 } from './engine/discoveryClassroomSceneRenderer';
+import {
+  MOON_SCENE,
+  DISCOVERY_MOON_OBSTACLES,
+  renderDiscoveryMoonBackground,
+  renderDiscoveryMoonEntities,
+  renderDiscoveryMoonWalkableScene,
+} from './engine/discoveryMoonSceneRenderer';
+import {
+  DISCOVERY_VR_CONFIG,
+  type CareerDefinition,
+  type DiscoveryVrState,
+} from '@/src/data/discoveryCareerConfig';
+import { DiscoveryCareerModal } from './components/DiscoveryCareerModal';
 import {
   PORTAL,
   renderSultanhaniBackground,
@@ -73,6 +86,7 @@ export interface WalkableCampusViewProps {
     | 'courtyard'
     | 'classroom'
     | 'discovery_classroom'
+    | 'discovery_moon'
     | 'sultanhani_square'
     | 'sultanhani_inner';
   onBackToMap?: () => void;
@@ -144,11 +158,43 @@ export function WalkableCampusView({
     | 'courtyard'
     | 'classroom'
     | 'discovery_classroom'
+    | 'discovery_moon'
     | 'sultanhani_square'
     | 'sultanhani_inner'
   >(initialScene);
   const [activeZone, setActiveZone] = useState<InteractiveZone | null>(null);
   const [unreachableMessage, setUnreachableMessage] = useState<string | null>(null);
+
+  // Hayalden Gerçeğe — VR Meslek Keşfi Durum Makinesi
+  const [vrState, setVrState] = useState<DiscoveryVrState>('CLASS_IDLE');
+  const vrStateRef = useRef<DiscoveryVrState>('CLASS_IDLE');
+  const [isCareerModalOpen, setIsCareerModalOpen] = useState(false);
+  const vrTransitionLockRef = useRef(false);
+  const [isMoonLandingComplete, setIsMoonLandingComplete] = useState(false);
+  const isMoonLandingCompleteRef = useRef(false);
+  const isMoonLandingSkippedRef = useRef(false);
+  const moonAnimStartTimeRef = useRef(0);
+  const moonWatchdogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prefersReducedMotionRef = useRef(false);
+
+  useEffect(() => {
+    vrStateRef.current = vrState;
+  }, [vrState]);
+
+  // Parça 3 — Ay Yüzeyi Görevi ve Kaya Örneği Durumları
+  const [isSampleTaken, setIsSampleTaken] = useState(false);
+  const isSampleTakenRef = useRef(false);
+  const [, setIsCollectingSample] = useState(false);
+  const isCollectingSampleRef = useRef(false);
+  const sampleCollectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isMissionCompletedModalOpen, setIsMissionCompletedModalOpen] = useState(false);
+  const [landerEarlyHint, setLanderEarlyHint] = useState<string | null>(null);
+  const landerEarlyHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [offScreenIndicator, setOffScreenIndicator] = useState<{
+    visible: boolean;
+    angle: number;
+    targetName: string;
+  } | null>(null);
   const [isSmartBoardModalOpen, setIsSmartBoardModalOpen] = useState(false);
   const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
   const [activeTableStage, setActiveTableStage] = useState<MissionStageId | null>(null);
@@ -622,6 +668,207 @@ export function WalkableCampusView({
     setCurrentScene('courtyard');
   }, [clearDiscoveryDoorTimers]);
 
+  const handlePutOnGlasses = useCallback(() => {
+    if (vrTransitionLockRef.current) return;
+    engineRef.current?.stopMoving();
+    setVrState('CAREER_SELECT');
+    setIsCareerModalOpen(true);
+  }, []);
+
+  const handleSelectCareer = useCallback((career: CareerDefinition) => {
+    void career;
+    if (vrTransitionLockRef.current) return;
+    vrTransitionLockRef.current = true;
+    setActiveZone(null);
+    setIsMoonLandingComplete(false);
+    isMoonLandingCompleteRef.current = false;
+    isMoonLandingSkippedRef.current = false;
+    setIsCareerModalOpen(false);
+    setVrState('LANDING');
+    setIsTeleporting(true);
+    setTeleportMessage('VR Başlığı Takılıyor... Ay Görevi Başlatılıyor 🚀🌕');
+    setTimeout(() => {
+      setCurrentScene('discovery_moon');
+      setIsTeleporting(false);
+      vrTransitionLockRef.current = false;
+    }, DISCOVERY_VR_CONFIG.fadeTransitionMs);
+  }, []);
+
+  const handleRemoveGlasses = useCallback(() => {
+    if (vrTransitionLockRef.current) return;
+    vrTransitionLockRef.current = true;
+    setActiveZone(null);
+    if (moonWatchdogTimerRef.current) {
+      clearTimeout(moonWatchdogTimerRef.current);
+      moonWatchdogTimerRef.current = null;
+    }
+    if (sampleCollectTimerRef.current) {
+      clearTimeout(sampleCollectTimerRef.current);
+      sampleCollectTimerRef.current = null;
+    }
+    if (landerEarlyHintTimerRef.current) {
+      clearTimeout(landerEarlyHintTimerRef.current);
+      landerEarlyHintTimerRef.current = null;
+    }
+    moonAnimStartTimeRef.current = 0;
+    isMoonLandingCompleteRef.current = false;
+    isMoonLandingSkippedRef.current = false;
+    setIsMoonLandingComplete(false);
+    setIsCareerModalOpen(false);
+    isSampleTakenRef.current = false;
+    setIsSampleTaken(false);
+    isCollectingSampleRef.current = false;
+    setIsCollectingSample(false);
+    setIsMissionCompletedModalOpen(false);
+    setLanderEarlyHint(null);
+    setOffScreenIndicator(null);
+    setVrState('CLASS_RETURN');
+    setIsTeleporting(true);
+    setTeleportMessage('Gözlük Çıkarılıyor... Sınıfa Dönülüyor ✨');
+    setTimeout(() => {
+      lastDiscoveryClassroomPosRef.current = DISCOVERY_VR_CONFIG.returnClassroomSpawn;
+      setCurrentScene('discovery_classroom');
+      setVrState('CLASS_IDLE');
+      setIsTeleporting(false);
+      vrTransitionLockRef.current = false;
+      if (engineRef.current) {
+        engineRef.current.player.direction = 'up';
+      }
+    }, DISCOVERY_VR_CONFIG.fadeTransitionMs);
+  }, []);
+
+  const handleSkipLandingAnimation = useCallback(() => {
+    isMoonLandingSkippedRef.current = true;
+    isMoonLandingCompleteRef.current = true;
+    setIsMoonLandingComplete(true);
+    setVrState('GO_TO_ROCK');
+    if (moonWatchdogTimerRef.current) {
+      clearTimeout(moonWatchdogTimerRef.current);
+      moonWatchdogTimerRef.current = null;
+    }
+    if (engineRef.current) {
+      engineRef.current.setPosition(DISCOVERY_VR_CONFIG.astronautLanding.surfacePosition);
+      engineRef.current.stopMoving();
+      engineRef.current.setInputDisabled(false);
+    }
+  }, []);
+
+  const handleTakeRockSample = useCallback(() => {
+    if (isSampleTakenRef.current || isCollectingSampleRef.current) return;
+    isCollectingSampleRef.current = true;
+    setIsCollectingSample(true);
+    setActiveZone(null);
+
+    if (engineRef.current) {
+      engineRef.current.setInputDisabled(true);
+      engineRef.current.stopMoving();
+    }
+
+    if (sampleCollectTimerRef.current) clearTimeout(sampleCollectTimerRef.current);
+    sampleCollectTimerRef.current = setTimeout(() => {
+      sampleCollectTimerRef.current = null;
+      isCollectingSampleRef.current = false;
+      setIsCollectingSample(false);
+      isSampleTakenRef.current = true;
+      setIsSampleTaken(true);
+      setVrState('SAMPLE_TAKEN');
+      if (engineRef.current) {
+        engineRef.current.setInputDisabled(false);
+      }
+    }, DISCOVERY_VR_CONFIG.part3Mission.sampleCollectDurationMs);
+  }, []);
+
+  const handleLanderEarlyHint = useCallback(() => {
+    if (landerEarlyHintTimerRef.current) clearTimeout(landerEarlyHintTimerRef.current);
+    setLanderEarlyHint(DISCOVERY_VR_CONFIG.part3Mission.instructions.earlyLanderHint);
+    landerEarlyHintTimerRef.current = setTimeout(() => {
+      landerEarlyHintTimerRef.current = null;
+      setLanderEarlyHint(null);
+    }, 2800);
+  }, []);
+
+  const handleCompleteMoonMission = useCallback(() => {
+    if (!isSampleTakenRef.current) return;
+    setActiveZone(null);
+    if (engineRef.current) {
+      engineRef.current.setInputDisabled(true);
+      engineRef.current.stopMoving();
+    }
+    setVrState('COMPLETE');
+    setIsMissionCompletedModalOpen(true);
+  }, []);
+
+  useEffect(() => {
+    if (currentScene === 'discovery_moon') {
+      const prefersReduced =
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      prefersReducedMotionRef.current = prefersReduced;
+      moonAnimStartTimeRef.current = performance.now();
+      isMoonLandingCompleteRef.current = false;
+      isMoonLandingSkippedRef.current = false;
+
+      if (moonWatchdogTimerRef.current) clearTimeout(moonWatchdogTimerRef.current);
+      moonWatchdogTimerRef.current = setTimeout(() => {
+        if (!isMoonLandingCompleteRef.current) {
+          console.warn('[MoonLanding] 15 sn bekçi zaman aşımı: iniş son duruma zorlandı.');
+          isMoonLandingSkippedRef.current = true;
+          isMoonLandingCompleteRef.current = true;
+          setIsMoonLandingComplete(true);
+          setVrState('GO_TO_ROCK');
+          if (engineRef.current) {
+            engineRef.current.setPosition(DISCOVERY_VR_CONFIG.astronautLanding.surfacePosition);
+            engineRef.current.stopMoving();
+            engineRef.current.setInputDisabled(false);
+          }
+        }
+      }, DISCOVERY_VR_CONFIG.watchdogTimeoutMs);
+    } else {
+      if (moonWatchdogTimerRef.current) {
+        clearTimeout(moonWatchdogTimerRef.current);
+        moonWatchdogTimerRef.current = null;
+      }
+      if (sampleCollectTimerRef.current) {
+        clearTimeout(sampleCollectTimerRef.current);
+        sampleCollectTimerRef.current = null;
+      }
+      if (landerEarlyHintTimerRef.current) {
+        clearTimeout(landerEarlyHintTimerRef.current);
+        landerEarlyHintTimerRef.current = null;
+      }
+      moonAnimStartTimeRef.current = 0;
+      isMoonLandingCompleteRef.current = false;
+      isMoonLandingSkippedRef.current = false;
+    }
+
+    return () => {
+      if (moonWatchdogTimerRef.current) {
+        clearTimeout(moonWatchdogTimerRef.current);
+        moonWatchdogTimerRef.current = null;
+      }
+      if (sampleCollectTimerRef.current) {
+        clearTimeout(sampleCollectTimerRef.current);
+        sampleCollectTimerRef.current = null;
+      }
+      if (landerEarlyHintTimerRef.current) {
+        clearTimeout(landerEarlyHintTimerRef.current);
+        landerEarlyHintTimerRef.current = null;
+      }
+    };
+  }, [currentScene]);
+
+  useEffect(() => {
+    if (currentScene !== 'discovery_moon') return;
+    const handleMoonKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        handleRemoveGlasses();
+      }
+    };
+    window.addEventListener('keydown', handleMoonKeyDown);
+    return () => window.removeEventListener('keydown', handleMoonKeyDown);
+  }, [currentScene, handleRemoveGlasses]);
+
   // Sahneye göre konfigürasyon belirleme
   const getSceneConfig = useCallback(
     (
@@ -629,6 +876,7 @@ export function WalkableCampusView({
         | 'courtyard'
         | 'classroom'
         | 'discovery_classroom'
+        | 'discovery_moon'
         | 'sultanhani_square'
         | 'sultanhani_inner',
     ): WalkableSceneConfig => {
@@ -643,6 +891,16 @@ export function WalkableCampusView({
             radius: DISCOVERY_CLASSROOM.exitDoor.radius,
             action: handleExitDiscoveryClassroom,
           },
+          {
+            id: 'discovery-vr-glasses',
+            name: 'VR Gözlüğü',
+            prompt: 'VR Gözlüğünü Tak',
+            x: DISCOVERY_VR_CONFIG.pedestalInteraction.x,
+            y: DISCOVERY_VR_CONFIG.pedestalInteraction.y,
+            radius: DISCOVERY_VR_CONFIG.interactionEnterRadius,
+            exitRadius: DISCOVERY_VR_CONFIG.interactionExitRadius,
+            action: handlePutOnGlasses,
+          },
         ];
 
         return {
@@ -651,6 +909,41 @@ export function WalkableCampusView({
           playerSpawn: lastDiscoveryClassroomPosRef.current,
           obstacles: DISCOVERY_CLASSROOM_OBSTACLES,
           interactiveZones,
+        };
+      }
+      if (scene === 'discovery_moon') {
+        const mission = DISCOVERY_VR_CONFIG.part3Mission;
+        return {
+          width: MOON_SCENE.width,
+          height: MOON_SCENE.height,
+          playerSpawn: DISCOVERY_VR_CONFIG.astronautLanding.surfacePosition,
+          obstacles: DISCOVERY_MOON_OBSTACLES,
+          interactiveZones: [
+            {
+              id: 'moon-target-rock',
+              name: 'İşaretli Ay Kayası',
+              prompt: 'Kaya Örneği Al',
+              x: mission.targetRock.x,
+              y: mission.targetRock.y,
+              radius: mission.targetRock.interactionRadius,
+              exitRadius: mission.targetRock.exitRadius,
+              action: handleTakeRockSample,
+            },
+            {
+              id: 'moon-lander-station',
+              name: 'Ay Modülü',
+              prompt: isSampleTakenRef.current
+                ? 'Görevi Tamamla'
+                : 'Önce işaretli kayadan örnek al.',
+              x: mission.landerReturn.x,
+              y: mission.landerReturn.y,
+              radius: mission.landerReturn.interactionRadius,
+              exitRadius: mission.landerReturn.exitRadius,
+              action: isSampleTakenRef.current
+                ? handleCompleteMoonMission
+                : handleLanderEarlyHint,
+            },
+          ],
         };
       }
       if (scene === 'sultanhani_inner') {
@@ -1103,19 +1396,28 @@ export function WalkableCampusView({
       handleExitDiscoveryClassroom,
       handleExitInnerCourtyard,
       handleExitSultanhani,
+      handlePutOnGlasses,
+      handleTakeRockSample,
+      handleCompleteMoonMission,
+      handleLanderEarlyHint,
       resetEncounterState,
     ],
   );
 
-  // Sınıf seçimi veya aşama tamamlanma durumunda etkileşim bölgelerini (prompt ve kilitleri) dinamik güncelle
+  // Sınıf seçimi, aşama tamamlanma veya Ay görevi örnek alımı durumunda etkileşim bölgelerini dinamik güncelle
   useEffect(() => {
     selectedGradeRef.current = selectedGrade;
     completedStagesRef.current = completedStages;
-    if (engineRef.current && currentScene === 'classroom') {
-      const config = getSceneConfig('classroom');
-      engineRef.current.updateInteractiveZones(config.interactiveZones);
+    if (engineRef.current) {
+      if (currentScene === 'classroom') {
+        const config = getSceneConfig('classroom');
+        engineRef.current.updateInteractiveZones(config.interactiveZones);
+      } else if (currentScene === 'discovery_moon') {
+        const config = getSceneConfig('discovery_moon');
+        engineRef.current.updateInteractiveZones(config.interactiveZones);
+      }
     }
-  }, [selectedGrade, completedStages, currentScene, getSceneConfig]);
+  }, [selectedGrade, completedStages, currentScene, isSampleTaken, getSceneConfig]);
 
   // Motor başlatma ve sahne yükleme (Yalnızca sahne değiştiğinde çalışır, React durum güncellemelerinde motor sıfırlanmaz)
   useEffect(() => {
@@ -1150,9 +1452,11 @@ export function WalkableCampusView({
           ? lastSultanhaniPosRef.current
           : currentScene === 'discovery_classroom'
             ? lastDiscoveryClassroomPosRef.current
-            : currentScene === 'classroom'
-              ? lastClassroomPosRef.current
-              : lastCourtyardPosRef.current;
+            : currentScene === 'discovery_moon'
+              ? { x: 480, y: 320 }
+              : currentScene === 'classroom'
+                ? lastClassroomPosRef.current
+                : lastCourtyardPosRef.current;
 
     if (currentScene !== 'courtyard') {
       clearDiscoveryDoorTimers();
@@ -1196,6 +1500,8 @@ export function WalkableCampusView({
             renderSultanhaniBackground(ctx);
           } else if (currentScene === 'discovery_classroom') {
             renderDiscoveryClassroomLayeredBackground(ctx, config.width, config.height);
+          } else if (currentScene === 'discovery_moon') {
+            renderDiscoveryMoonBackground(ctx, config.width, config.height);
           } else if (currentScene === 'classroom') {
             renderClassroomLayeredBackground(
               ctx,
@@ -1217,6 +1523,67 @@ export function WalkableCampusView({
             renderSultanhaniEntities(ctx, player, npc);
           } else if (currentScene === 'discovery_classroom') {
             renderDiscoveryClassroomEntities(ctx, player, config.width, config.height);
+          } else if (currentScene === 'discovery_moon') {
+            if (!isMoonLandingCompleteRef.current) {
+              const elapsed = moonAnimStartTimeRef.current > 0 ? performance.now() - moonAnimStartTimeRef.current : 0;
+              const calc = renderDiscoveryMoonEntities(
+                ctx,
+                elapsed,
+                isMoonLandingSkippedRef.current,
+                prefersReducedMotionRef.current,
+              );
+              if (calc.isComplete && !isMoonLandingCompleteRef.current) {
+                isMoonLandingCompleteRef.current = true;
+                setIsMoonLandingComplete(true);
+                setVrState('GO_TO_ROCK');
+                if (engineRef.current) {
+                  engineRef.current.setPosition(DISCOVERY_VR_CONFIG.astronautLanding.surfacePosition);
+                  engineRef.current.stopMoving();
+                  engineRef.current.setInputDisabled(false);
+                }
+              }
+            } else {
+              renderDiscoveryMoonWalkableScene(
+                ctx,
+                player,
+                vrStateRef.current,
+                isCollectingSampleRef.current,
+                isSampleTakenRef.current,
+              );
+
+              // Ekran dışı yön oku hesaplaması (Kaya veya Araç yönü)
+              const mission = DISCOVERY_VR_CONFIG.part3Mission;
+              const target = isSampleTakenRef.current ? mission.landerReturn : mission.targetRock;
+              const targetName = isSampleTakenRef.current ? 'Araç' : 'Kaya';
+
+              if (containerRef.current) {
+                const viewportW = containerRef.current.clientWidth;
+                const viewportH = containerRef.current.clientHeight;
+                const zoom = engineRef.current ? engineRef.current.zoom : 1;
+                const camX = _camera.x;
+                const camY = _camera.y;
+
+                const screenTargetX = (target.x - camX) * zoom;
+                const screenTargetY = (target.y - camY) * zoom;
+
+                const padX = 65;
+                const padY = 85;
+                const isOffScreen =
+                  screenTargetX < padX ||
+                  screenTargetX > viewportW - padX ||
+                  screenTargetY < padY ||
+                  screenTargetY > viewportH - padY;
+
+                if (isOffScreen && vrStateRef.current !== 'COMPLETE') {
+                  const centerX = viewportW / 2;
+                  const centerY = viewportH / 2;
+                  const angle = Math.atan2(screenTargetY - centerY, screenTargetX - centerX);
+                  setOffScreenIndicator({ visible: true, angle, targetName });
+                } else {
+                  setOffScreenIndicator((prev) => (prev ? null : prev));
+                }
+              }
+            }
           } else if (currentScene === 'classroom') {
             renderClassroomEntities(
               ctx,
@@ -1279,6 +1646,8 @@ export function WalkableCampusView({
             renderSultanhaniBackground(ctx);
           } else if (currentScene === 'discovery_classroom') {
             renderDiscoveryClassroomBackground(ctx, config.width, config.height);
+          } else if (currentScene === 'discovery_moon') {
+            renderDiscoveryMoonBackground(ctx, config.width, config.height);
           } else if (currentScene === 'classroom') {
             renderClassroomBackground(
               ctx,
@@ -1381,12 +1750,24 @@ export function WalkableCampusView({
   // Modallar açıldığında motoru duraklat
   useEffect(() => {
     if (!engineRef.current) return;
-    if (isSmartBoardModalOpen || isGradeModalOpen || isTableModalOpen) {
+    if (
+      isSmartBoardModalOpen ||
+      isGradeModalOpen ||
+      isTableModalOpen ||
+      isCareerModalOpen ||
+      isMissionCompletedModalOpen
+    ) {
       engineRef.current.pause();
     } else {
       engineRef.current.resume();
     }
-  }, [isSmartBoardModalOpen, isGradeModalOpen, isTableModalOpen]);
+  }, [
+    isSmartBoardModalOpen,
+    isGradeModalOpen,
+    isTableModalOpen,
+    isCareerModalOpen,
+    isMissionCompletedModalOpen,
+  ]);
 
   const handleVirtualDirection = (vx: number, vy: number) => {
     if (engineRef.current) {
@@ -1414,6 +1795,7 @@ export function WalkableCampusView({
       ref={containerRef}
       data-scene={currentScene}
       data-encounter-phase={encounterPhase}
+      data-vr-state={vrState}
       className="relative w-full h-dvh bg-[var(--campus-canvas)] overflow-hidden select-none"
     >
       <canvas
@@ -1429,16 +1811,18 @@ export function WalkableCampusView({
         onVirtualDirection={handleVirtualDirection}
         onBackToMap={handleBackToMap}
         onExitClassroom={
-          currentScene === 'classroom'
-            ? () => {
-                lastCourtyardPosRef.current = { x: 970, y: 350 };
-                setCurrentScene('courtyard');
-              }
-            : currentScene === 'discovery_classroom'
-              ? handleExitDiscoveryClassroom
-              : currentScene === 'sultanhani_square' || currentScene === 'sultanhani_inner'
-                ? handleExitSultanhani
-                : undefined
+          currentScene === 'discovery_moon'
+            ? handleRemoveGlasses
+            : currentScene === 'classroom'
+              ? () => {
+                  lastCourtyardPosRef.current = { x: 970, y: 350 };
+                  setCurrentScene('courtyard');
+                }
+              : currentScene === 'discovery_classroom'
+                ? handleExitDiscoveryClassroom
+                : currentScene === 'sultanhani_square' || currentScene === 'sultanhani_inner'
+                  ? handleExitSultanhani
+                  : undefined
         }
         unreachableMessage={unreachableMessage}
         currentScene={currentScene}
@@ -1506,6 +1890,134 @@ export function WalkableCampusView({
             setActiveTableStage(nextStage);
           }}
         />
+      )}
+
+      {/* Meslek Seçim Modalı */}
+      <DiscoveryCareerModal
+        isOpen={isCareerModalOpen}
+        onSelectCareer={handleSelectCareer}
+        onClose={() => {
+          setIsCareerModalOpen(false);
+          setVrState('CLASS_IDLE');
+        }}
+      />
+
+      {/* İniş Animasyonunu Atla ("Geç") Düğmesi */}
+      {currentScene === 'discovery_moon' && !isMoonLandingComplete && (
+        <div className="absolute top-16 right-4 sm:top-20 sm:right-6 z-30 pointer-events-auto animate-fade-in">
+          <button
+            type="button"
+            onClick={handleSkipLandingAnimation}
+            className="min-h-[44px] min-w-[44px] px-4 py-2 rounded-xl bg-stone-900/90 hover:bg-stone-800 text-amber-200 hover:text-amber-100 border-2 border-amber-500/50 hover:border-amber-400 shadow-xl text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer backdrop-blur-xs focus:outline-none focus:ring-2 focus:ring-amber-400"
+            aria-label="İniş animasyonunu atla"
+          >
+            <span>Geç</span>
+            <span aria-hidden="true">⏭</span>
+          </button>
+        </div>
+      )}
+
+      {/* Parça 3 — Ay Görevi Üst Yönerge Satırı */}
+      {currentScene === 'discovery_moon' && isMoonLandingComplete && (
+        <aside
+          role="region"
+          aria-label="Ay görevi yönergesi"
+          className="absolute top-16 left-1/2 -translate-x-1/2 z-20 pointer-events-none max-w-[90vw] sm:max-w-md animate-fade-in"
+        >
+          <div className="flex items-center gap-2.5 px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl bg-stone-950/90 border border-amber-500/60 shadow-2xl text-center backdrop-blur-md">
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shrink-0" />
+            <p className="text-xs sm:text-sm font-semibold text-amber-100 tracking-wide">
+              {vrState === 'GO_TO_ROCK' && DISCOVERY_VR_CONFIG.part3Mission.instructions.goToRock}
+              {vrState === 'SAMPLE_TAKEN' && DISCOVERY_VR_CONFIG.part3Mission.instructions.sampleTaken}
+              {vrState === 'COMPLETE' && DISCOVERY_VR_CONFIG.part3Mission.instructions.complete}
+            </p>
+          </div>
+        </aside>
+      )}
+
+      {/* Parça 3 — Ekran Dışı Hedefe Yönlendiren Ok Göstergesi */}
+      {currentScene === 'discovery_moon' && isMoonLandingComplete && offScreenIndicator && (
+        <div
+          role="status"
+          aria-label={`${offScreenIndicator.targetName} yönü`}
+          className="fixed pointer-events-none z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-stone-900/95 border-2 border-amber-400 shadow-2xl text-amber-200 text-xs font-bold backdrop-blur-xs animate-pulse transition-all duration-150"
+          style={{
+            left: `calc(50% + ${Math.cos(offScreenIndicator.angle) * 42}vw)`,
+            top: `calc(50% + ${Math.sin(offScreenIndicator.angle) * 38}vh)`,
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <span
+            className="inline-block text-base leading-none text-cyan-300 transition-transform duration-150"
+            style={{ transform: `rotate(${offScreenIndicator.angle}rad)` }}
+          >
+            ➔
+          </span>
+          <span>{offScreenIndicator.targetName}</span>
+        </div>
+      )}
+
+      {/* Parça 3 — Örnek Almadan Araca Yaklaşınca Kısa İpucu */}
+      {landerEarlyHint && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed top-28 left-1/2 -translate-x-1/2 z-40 pointer-events-none animate-bounce"
+        >
+          <div className="px-5 py-2.5 rounded-xl bg-amber-500 text-stone-950 font-bold text-xs sm:text-sm shadow-2xl border-2 border-amber-300">
+            {landerEarlyHint}
+          </div>
+        </div>
+      )}
+
+      {/* Parça 3 — Ay Görevi Tamamlandı Kutlama Modalı */}
+      {isMissionCompletedModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="mission-complete-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+        >
+          <div className="relative w-full max-w-md bg-stone-900 border-2 border-amber-500 rounded-3xl p-6 sm:p-8 shadow-2xl text-stone-100 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-3xl mb-4 animate-bounce">
+              🌕
+            </div>
+            <h2 id="mission-complete-title" className="text-xl sm:text-2xl font-bold text-amber-200 mb-2">
+              Tebrikler! Ay Görevi Tamamlandı
+            </h2>
+            <p className="text-sm text-stone-300 leading-relaxed mb-6">
+              {DISCOVERY_VR_CONFIG.part3Mission.instructions.complete}
+            </p>
+            <button
+              type="button"
+              onClick={handleRemoveGlasses}
+              className="min-h-[48px] px-8 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-sm sm:text-base border-2 border-amber-300 shadow-xl inline-flex items-center gap-2 cursor-pointer transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-300"
+            >
+              <DoorOpen className="w-5 h-5 text-stone-950" />
+              <span>Gözlüğü Çıkar</span>
+              <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] rounded bg-amber-600/30 border border-amber-700/50 text-stone-900 font-mono">
+                Esc
+              </kbd>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Ay Sahnesinde Ekrandaki "Gözlüğü Çıkar" Düğmesi */}
+      {currentScene === 'discovery_moon' && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
+          <button
+            type="button"
+            onClick={handleRemoveGlasses}
+            className="min-h-[48px] px-6 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold border-2 border-amber-300 shadow-2xl text-sm flex items-center gap-2 cursor-pointer transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-amber-300"
+          >
+            <DoorOpen className="w-5 h-5 text-stone-950" aria-hidden="true" />
+            <span>Gözlüğü Çıkar</span>
+            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] rounded bg-amber-600/30 border border-amber-700/50 text-stone-900 font-mono">
+              Esc
+            </kbd>
+          </button>
+        </div>
       )}
     </div>
   );

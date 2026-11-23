@@ -252,6 +252,7 @@ export class WalkableCanvasEngine {
     this.player.x = Math.max(16, Math.min(this.config.width - 16, pos.x));
     this.player.y = Math.max(20, Math.min(this.config.height - 20, pos.y));
     this.updateCamera(true);
+    this.checkInteractiveZones();
   }
 
   /**
@@ -496,6 +497,15 @@ export class WalkableCanvasEngine {
     if (vx !== 0 || vy !== 0) {
       this.clearPath();
     }
+  }
+
+  /**
+   * Oyuncunun aktif hareketini, sanal yönlendirmesini ve hedeflerini sıfırlar.
+   */
+  public stopMoving() {
+    this.player.state = 'idle';
+    this.virtualMovement = { x: 0, y: 0 };
+    this.clearPath();
   }
 
   public triggerActiveInteraction() {
@@ -1177,7 +1187,9 @@ export class WalkableCanvasEngine {
 
     for (const zone of this.config.interactiveZones) {
       const dist = Math.hypot(this.player.x - zone.x, this.player.y - zone.y);
-      if (dist <= zone.radius && dist < minDist) {
+      const isCurrentlyActive = this.activeZone?.id === zone.id;
+      const effectiveRadius = isCurrentlyActive && zone.exitRadius ? zone.exitRadius : zone.radius;
+      if (dist <= effectiveRadius && dist < minDist) {
         nearest = zone;
         minDist = dist;
       }

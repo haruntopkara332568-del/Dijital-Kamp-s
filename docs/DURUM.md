@@ -1,3 +1,99 @@
+# Proje Durum Raporu — Hayalden Gerçeğe: VR Meslek Keşfi ve Ay Yüzeyinde Yürüme (Sürüm 2 — Parça 3: Kaya Örneği ve Görevin Tamamlanması)
+
+## 1. Kapsam ve Tamamlanan İşler (Parça 3)
+- **Yürünebilir Ay Yüzeyi Dünyası ve Boyutlar (`discoveryMoonSceneRenderer.ts`, `discoveryCareerConfig.ts`)**:
+  - `MOON_SCENE` dünya koordinatları `1340×680 px`, ufuk çizgisi `260 px` olarak sabitlendi.
+  - Yürünebilir alan: `x: 100 .. 1240 px`, `y: 290 .. 640 px`.
+  - Lander çıkış konumu `{ x: 330, y: 405 }`, hedef Ay kayası konumu `{ x: 900, y: 440 }` olarak yerleştirildi. İki nokta arası mesafe `571 px = 8.52 AB` olup şart koşulan 8–10 AB aralığına tam uymaktadır.
+- **Astronot Karakteri Yürüyüş ve Kontrol Sistemi**:
+  - Kampüsün mevcut öğrenci avatarı kontrol mekanizması (yön tuşları, W-A-S-D, fare ile zemine tıklayarak yürüme, mobil D-pad) astronot için birebir geçerlidir.
+  - Ay yerçekimine uygun dikey sekme (`lunar walking bounce`), sola yürürken yatay çevirme (`scale(-1, 1)`), dinamik eliptik regolit gölgesi ve ayak basma izleri uygulandı.
+  - Kaya örneği alma anında (`isCollectingSample: true`) astronot gövdesi eğilme ve çömelme açısına geçirilerek (~1 sn) görsel geri bildirim sağlandı.
+- **Hedef Ay Kayası, Parlayan Halka ve HUD Pusula Oku**:
+  - Hedef kaya (`80×60 px` fasetli bazalt regolit kayası), henüz örnek alınmamışken parlayan radyal turkuaz halka ve üzerinde havada süzülen elmas işaretçiyle donatıldı.
+  - Hedef kaya veya araç ekran dışında kaldığında ekran kenarında hedefi işaret eden dinamik açılı pusula yön oku hapı (`↘ Kaya` veya `↖ Araç`) belirmekte, hedef kadraja girince kendiliğinden kaybolmaktadır.
+- **Çarpışma Engelleri ve Yol Koridoru Güvenliği (`DISCOVERY_MOON_OBSTACLES`)**:
+  - Lander gövdesi (`200×110 px`), hedef kaya (`80×60 px`), 5 adet dekoratif krater kayası ve 4 sahne sınırı çarpışma engeli olarak sisteme kaydedildi.
+  - Lander ile hedef kaya arasındaki koridor (Y: `380 .. 500 px`) tamamen açık tutuldu; koridor genişliği `212 px = 3.16 AB` olup en az 2 AB şartını fazlasıyla karşılamaktadır.
+- **Kaya Örneği Alma ve Araca Dönüş Akışı**:
+  - Hedef kayaya `1.5 AB` (101 px) yaklaşıldığında "Kaya Örneği Al" seçeneği çıkar; çıkış eşiği `2.0 AB` (134 px) ile titreme önlenir.
+  - Örnek alındığında kontroller 1 saniye kilitlenir, eğilme hareketi yapılır, durum `SAMPLE_TAKEN` olur, üst yönerge *"Örneği aldın. Şimdi aracına dön."* olarak güncellenir ve kayanın parlayan işareti silinerek delgi oyuğu görünür (örnek ikinci kez alınamaz).
+  - Örnek almadan araca dönülürse "Görevi Tamamla" gösterilmez; *"Önce işaretli kayadan örnek al."* nazik ipucu balonu belirir.
+- **Görev Tamamlama ve Kutlama Modalı**:
+  - Örnek alındıktan sonra araca dönüldüğünde "Görevi Tamamla" etkileşimi açılır.
+  - Tıklandığında durum `COMPLETE` olur ve kutlama modalı açılır:
+    - 🌕 Parlayan Ay simgesi,
+    - *"Tebrikler! Ay Görevi Tamamlandı"*,
+    - *"Ay yüzeyinden bir kaya örneği alıp aracına getirdin."*,
+    - Belirgin *"Gözlüğü Çıkar"* butonu (Esc tuşu ile de kapatılabilir).
+- **Sınıfa Temiz Dönüş ve Yeniden Başlama**:
+  - "Gözlüğü Çıkar" tıklandığında tüm Ay zamanlayıcıları, dinleyicileri ve döngüleri temizlenir.
+  - Öğrenci `discovery_classroom` sahnesinde sehpa önünde (`{ x: 480, y: 350 }`, yukarı bakar vaziyette) belirir ve durum `CLASS_IDLE` olur.
+  - Gözlük tekrar takıldığında akış sıfırdan ve hatasız olarak yeniden başlatılabilir.
+- **Hata Ayıklama Katmanı (`?debug=ay`)**:
+  - Yalnızca geliştirme modunda (`import.meta.env.DEV`) ve URL'de `debug=ay` varken yürünebilir sınırları, çarpışma engellerini ve etkileşim yarıçaplarını şeffaf renklerle çizer.
+
+## 2. Kalite Güvencesi ve Test Doğrulaması
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata**.
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **236 / 236 test** (%100 başarı, 15 test dosyası).
+- **`npm run build` (`vite build`)**: Geçti — **920ms** içinde hatasız optimize edilmiş üretim paketi (`dist/`).
+- **Canlı Tarayıcı Görsel Kayıtları (Chromium Playwright ile 3 Ekran Boyutu)**:
+  - Masaüstü (`1366×768`):
+    - `vr_moon_walking_to_rock_desktop.png`: Astronot yüzeyde yürürken, hedef kaya parlayan işaretçisi ve yönerge çubuğu.
+    - `vr_moon_mission_complete_desktop.png`: Kaya örneği teslimi sonrası açılan tebrik modalı ve "Gözlüğü Çıkar" butonu.
+  - Dar Dikey Mobil (`390×844`):
+    - `vr_moon_walking_to_rock_narrow_mobile.png`: Mobil D-pad, hedef kaya ekran dışında iken kenarda beliren `↘ Kaya` yön oku hapı.
+    - `vr_moon_mission_complete_narrow_mobile.png`: Mobilde ortalanmış tebrik modalı.
+  - Yatay Mobil (`844×390`):
+    - `vr_moon_walking_to_rock_landscape_mobile.png`: Geniş açılı yatay mobil kadrajı.
+    - `vr_moon_mission_complete_landscape_mobile.png`: Yatay mobilde görev tamamlama modalı.
+
+---
+
+# Proje Durum Raporu — Hayalden Gerçeğe: VR Meslek Keşfi ve Ay İnişi (Sürüm 2 — Parça 2 ve Gerçek Fotoğrafik Varlıklar)
+
+## 1. Kapsam ve Tamamlanan İşler (Parça 2 & Gerçek Ay/Astronot Görselleri)
+- **Kullanıcı Fotoğrafı Entegrasyonu (Apollo 17 Gerçek Ay ve Astronot Varlıkları)**:
+  - Kullanıcı tarafından sağlanan yüksek çözünürlüklü Apollo 17 fotoğrafı temel alınarak üç özgün varlık üretildi ve projeye entegre edildi:
+    1. `public/assets/walkable/career_astronaut_card.png` (`512×384`): Meslek seçim modalındaki Astronot kartında kullanılan, ön planda astronot ve uzakta ay modülü bulunan gerçek fotoğraf kesiti.
+    2. `public/assets/walkable/moon_surface_photo.jpg` (`1024×571`): Gökyüzü uzay siyahı, ufukta ay dağları, sağ tarafta orijinal ay modülü ve astronotun ön plandan temizlendiği yürünebilir geniş zemin içeren fotoğrafik arka plan plakası.
+    3. `public/assets/walkable/astronaut_real.png` (`219×511`, şeffaf RGBA): Orijinal fotoğraftan tulum, altın kask siperliği, yaşam destek sırt çantası ve botlarıyla saydam katman olarak ayrıştırılmış gerçek astronot karakteri.
+  - Varlık yükleyici (`assetLoader.ts`) ve ay render motoru (`discoveryMoonSceneRenderer.ts`) güncellendi; resimler yüklenirken veya bulunamadığında usulüne uygun prosedürel çizime kesintisiz geri dönüş (graceful fallback) sağlandı.
+  - Astronot çizimi öğrenci karakter boyuna (`72 px` toplam ölçek, taban çapa noktası) ve iniş aracı merdiveninin zemin basamağına milimetrik olarak hizalandı.
+- **Ay İniş Animasyonu Zaman Çizelgesi (`discoveryMoonSceneRenderer.ts`, `discoveryCareerConfig.ts`)**:
+  - Toplam süre ~8.0 saniye olarak yapılandırıldı (`totalAnimationDurationMs: 8000`).
+  - **1. Aşama — Alçalma (`0..4.2 sn`)**: Araç yukarıdan (`startAltitudeY: -220`) yumuşak frenleme (`ease-out`) ile yüzeye doğru alçalır; dinamik itiş motoru alev parıltısı yanar.
+  - **2. Aşama — Dinamik Gölge ve Temas (`4.2..5.6 sn`)**: İniş aracının regolit üzerindeki gölgesi araç yüksekliğine bağlı olarak küçülür ve koyulaşır (`altitudeFactor` 1.0 -> 0.0). Temas anında ayaklar zemine oturur, yaylanma sönümü (`suspensionOffset: sinüs dalgası`) gerçekleşir, motor anında söner ve yatay ay tozu kabarması açılıp kaybolur.
+  - **3. Aşama — Kabin Kapağı Açılması (`5.6..6.4 sn`)**: Üst kabin kapağı (`hatchProgress: 0..1`) açılarak iç kısımdan sıcak kehribar kabin ışığı sızar; astronot merdiven tepesinde belirir.
+  - **4. Aşama — Merdivenden Yüzeye İniş (`6.4..8.0 sn`)**: Gerçek astronot merdiven basamaklarını adım adım inerek ay regoliti üzerinde iki ayağıyla sağlam şekilde durur (`{ x: 350, y: 440 }`).
+- **Kullanıcı Kontrolleri ve Güvenlik Ağları**:
+  - **"Geç" (Skip) Düğmesi**: Animasyon başladığı andan itibaren sağ üstte (`min 44×44 px`, koyu taş / amber çerçeveli) görünür; tıklandığında veya klavyeden tetiklendiğinde animasyonu doğrudan son landed + yüzeyde duruş durumuna geçirir ve kendini gizler.
+  - **15 Sn Bekçi Zamanlayıcısı (Watchdog Timer)**: Herhangi bir tarayıcı donması veya gecikmesinde 15 saniye sonunda tek bir `console.warn` ile inişi son duruma zorlar.
+  - **Erişilebilirlik (`prefers-reduced-motion`)**: Hareketi azaltma tercihi açık olan kullanıcılarda animasyonu 600 ms içinde doğrudan son duruma bağlar.
+  - **"Gözlüğü Çıkar" Düğmesi**: Animasyonun herhangi bir anında tıklandığında veya Esc tuşuna basıldığında tüm animasyon döngüsü ve zamanlayıcıları temizlenir; öğrenci `discovery_classroom` sahnesinde sehpa önüne (`{ x: 480, y: 350 }`) güvenle geri döner.
+  - Bellek koruması: Durum makinesi yalnızca oturum içi bellekte tutulur; hiçbir yerel depolama veya profil şeması değiştirilmez.
+  - Parça 2'de astronot yürüyüşü eklenmemiştir (Parça 3'e bırakılmıştır).
+
+## 2. Kalite Güvencesi ve Test Doğrulaması
+- **`npm run typecheck` (`tsc --noEmit`)**: Geçti — **0 hata**.
+- **`npm run lint` (`eslint .`)**: Geçti — **0 hata, 0 uyarı**.
+- **`npm run test` (`vitest run`)**: Geçti — **219 / 219 test** (%100 başarı, 14 test dosyası; `src/test/discoveryCareerPart2.test.tsx` [11 test] ve `src/test/discoveryCareerPart1.test.tsx` [4 test] dahil).
+- **`npm run build` (`vite build`)**: Geçti — 1.83s içinde hatasız optimize edilmiş üretim paketi (`dist/`).
+- **Canlı Tarayıcı Görsel Kayıtları (Gerçek Fotoğraf Varlıklarıyla Güncellendi)**:
+  - Masaüstü (`1366×768`):
+    - `vr_career_modal_real_photo_desktop.png`: Fotoğrafik astronot kartı ve "Ay Görevine Başla" modalı.
+    - `vr_landing_descent_real_desktop.png`: Gerçek ay yüzeyi arka planında iniş aracı alçalması ve motor alevi.
+    - `vr_astronaut_exit_real_desktop.png`: Gerçek astronotun iniş aracından inip ay regolitine basmış hâli.
+  - Dar Mobil (`390×844`):
+    - `vr_landing_descent_real_narrow_mobile.png`
+    - `vr_astronaut_exit_real_narrow_mobile.png`
+  - Yatay Mobil (`844×390`):
+    - `vr_landing_descent_real_landscape_mobile.png`
+    - `vr_astronaut_exit_real_landscape_mobile.png`
+
+---
+
 # Proje Durum Raporu — “Hayalden Gerçeğe” Binası Açılır Kapısı ve Selçuklu VR Sınıfı
 
 ## 1. Kapsam ve Tamamlanan İşler
