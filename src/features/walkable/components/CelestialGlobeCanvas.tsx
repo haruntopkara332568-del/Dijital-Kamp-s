@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import type { CelestialBodyId } from '@/src/data/earthSunMoonActivity';
+import { projectSurfacePoint } from '@/src/data/earthSunMoonExperiments';
 
 const TEX_W = 512;
 const TEX_H = 256;
@@ -404,6 +405,33 @@ const BACKGROUND_STARS = Array.from({ length: 46 }, (_, i) => ({
   a: 0.35 + ((i * 29) % 10) * 0.06,
 }));
 
+export interface Vec3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface SurfacePin {
+  id: string;
+  lonDeg: number;
+  latDeg: number;
+  label: string;
+  color: string;
+  showWhenBack?: boolean;
+}
+
+export interface SurfaceClickHit {
+  lonDeg: number;
+  latDeg: number;
+  dotLight: number;
+}
+
+function normalizeVec3(v: Vec3): Vec3 {
+  const len = Math.hypot(v.x, v.y, v.z);
+  if (len < 1e-6) return { x: -1, y: 0, z: 0 };
+  return { x: v.x / len, y: v.y / len, z: v.z / len };
+}
+
 export interface CelestialGlobeCanvasProps {
   bodyId: CelestialBodyId;
   size: number;
@@ -412,8 +440,14 @@ export interface CelestialGlobeCanvasProps {
   zoom?: number;
   interactive?: boolean;
   showStarfield?: boolean;
+  lightingMode?: 'museum' | 'directional';
+  lightDirection?: Vec3;
+  isLightOn?: boolean;
+  showAxisLine?: boolean;
+  surfacePins?: readonly SurfacePin[];
   onRotate?: (deltaY: number, deltaX: number) => void;
   onZoomWheel?: (deltaZoom: number) => void;
+  onSurfaceClick?: (hit: SurfaceClickHit) => void;
   ariaLabel?: string;
   className?: string;
 }
@@ -426,17 +460,37 @@ export function CelestialGlobeCanvas({
   zoom = 1,
   interactive = false,
   showStarfield = true,
+  lightingMode = 'museum',
+  lightDirection = { x: -1, y: 0, z: 0 },
+  isLightOn = true,
+  showAxisLine = false,
+  surfacePins,
   onRotate,
   onZoomWheel,
+  onSurfaceClick,
   ariaLabel,
   className = '',
 }: CelestialGlobeCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const dragRef = useRef<{ active: boolean; lastX: number; lastY: number }>({
+  const dragRef = useRef<{
+    active: boolean;
+    startX: number;
+    startY: number;
+    lastX: number;
+    lastY: number;
+    moved: boolean;
+  }>({
     active: false,
+    startX: 0,
+    startY: 0,
     lastX: 0,
     lastY: 0,
+    moved: false,
   });
+
+  const lightDirX = lightDirection.x;
+  const lightDirY = lightDirection.y;
+  const lightDirZ = lightDirection.z;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -473,6 +527,19 @@ export function CelestialGlobeCanvas({
     const baseRadius = showStarfield ? w * 0.34 : w * 0.44;
     const radius = Math.min(w * 0.485, baseRadius * zoom);
 
+    // İsteğe bağlı dönme ekseni çizgisi (arka yarım çubuk)
+    if (showAxisLine) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(246, 220, 155, 0.58)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - radius * 1.24);
+      ctx.lineTo(cx, cy + radius * 1.24);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     // Dış atmosfer veya Güneş tacı parıltısı
     if (bodyId === 'sun') {
       const corona = ctx.createRadialGradient(cx, cy, radius * 0.88, cx, cy, radius * 1.42);
@@ -484,9 +551,10 @@ export function CelestialGlobeCanvas({
       ctx.arc(cx, cy, radius * 1.42, 0, Math.PI * 2);
       ctx.fill();
     } else if (bodyId === 'earth') {
+      const haloAlpha = lightingMode === 'directional' && !isLightOn ? 0.14 : 0.48;
       const atmo = ctx.createRadialGradient(cx, cy, radius * 0.93, cx, cy, radius * 1.15);
-      atmo.addColorStop(0, 'rgba(96, 189, 255, 0.48)');
-      atmo.addColorStop(0.6, 'rgba(56, 189, 248, 0.14)');
+      atmo.addColorStop(0, `rgba(96, 189, 255, ${haloAlpha})`);
+      atmo.addColorStop(0.6, `rgba(56, 189, 248, ${haloAlpha * 0.3})`);
       atmo.addColorStop(1, 'rgba(56, 189, 248, 0)');
       ctx.fillStyle = atmo;
       ctx.beginPath();
@@ -516,10 +584,13 @@ export function CelestialGlobeCanvas({
     const cosX = Math.cos(rotX);
     const sinX = Math.sin(rotX);
 
-    // Dengeli müze aydınlatması (gündüz-gece veya Ay evresi simülasyonu oluşturmadan tüm yüzeyi net gösterir)
-    const lightX = -0.34;
-    const lightY = -0.28;
-    const lightZ = 0.898;
+    const normLight =
+      lightingMode === 'directional'
+        ? normalizeVec3({ x: lightDirX, y: lightDirY, z: lightDirZ })
+        : { x: -0.34, y: -0.28, z: 0.898 };
+    const lightX = normLight.x;
+    const lightY = normLight.y;
+    const lightZ = normLight.z;
 
     const invR = 1 / radius;
     const invTwoPi = 1 / (Math.PI * 2);
@@ -561,7 +632,53 @@ export function CelestialGlobeCanvas({
           r = Math.min(255, r * limb + 10);
           g = Math.min(255, g * limb);
           b = Math.min(255, b * limb);
+        } else if (lightingMode === 'directional') {
+          const rawDot = nx * lightX + ny * lightY + nz * lightZ;
+          if (!isLightOn) {
+            const dim = 0.25 + 0.08 * nz;
+            r = Math.min(255, r * dim);
+            g = Math.min(255, g * dim + 4);
+            b = Math.min(255, b * dim + 14);
+          } else if (bodyId === 'earth') {
+            const termT = Math.min(1, Math.max(0, (rawDot + 0.07) / 0.22));
+            const dayFactor = smoothstep(termT);
+            const litShade = 0.3 + 0.85 * Math.max(0, rawDot);
+            const nightShade = 0.13;
+            const shade = lerp(nightShade, litShade, dayFactor);
+            const isLandPixel = g > b * 0.85 && r > 35;
+
+            r = Math.min(255, r * shade);
+            g = Math.min(255, g * shade + (1 - dayFactor) * 4);
+            b = Math.min(255, b * shade + (1 - dayFactor) * 16);
+
+            // Karanlık yarım kürede hafif gece yerleşim parıltısı
+            if (dayFactor < 0.25 && isLandPixel) {
+              const twinkle = ((tx * 37 + ty * 73) % 29 === 0) ? (1 - dayFactor * 4) : 0;
+              if (twinkle > 0) {
+                r = Math.min(255, r + 150 * twinkle);
+                g = Math.min(255, g + 115 * twinkle);
+                b = Math.min(255, b + 45 * twinkle);
+              }
+            }
+
+            // İnce mavi atmosfer kenar parıltısı (aydınlık kenarda belirgin)
+            const fresnel = Math.pow(1 - nz, 3.0) * (0.14 + 0.58 * dayFactor);
+            r = Math.min(255, r + 64 * fresnel);
+            g = Math.min(255, g + 168 * fresnel);
+            b = Math.min(255, b + 255 * fresnel);
+          } else {
+            // Ay evreleri için keskin ve bilimsel aydınlanma sınırı (Dünya'dan görünüm)
+            const termT = Math.min(1, Math.max(0, (rawDot + 0.035) / 0.13));
+            const litFactor = smoothstep(termT);
+            const litShade = 0.28 + 0.86 * Math.pow(Math.max(0, rawDot), 0.72);
+            const earthshine = 0.09;
+            const shade = lerp(earthshine, litShade, litFactor);
+            r = Math.min(255, r * shade);
+            g = Math.min(255, g * shade);
+            b = Math.min(255, b * shade + (1 - litFactor) * 7);
+          }
         } else {
+          // Dengeli müze aydınlatması (Görev 02)
           const ndotl = Math.max(0, nx * lightX + ny * lightY + nz * lightZ);
           const shade = bodyId === 'earth' ? 0.42 + 0.64 * ndotl : 0.44 + 0.62 * ndotl;
           r = Math.min(255, r * shade);
@@ -569,7 +686,6 @@ export function CelestialGlobeCanvas({
           b = Math.min(255, b * shade);
 
           if (bodyId === 'earth') {
-            // İnce mavi atmosfer kenar parıltısı (Fresnel)
             const fresnel = Math.pow(1 - nz, 3.0) * 0.58;
             r = Math.min(255, r + 64 * fresnel);
             g = Math.min(255, g + 168 * fresnel);
@@ -598,11 +714,99 @@ export function CelestialGlobeCanvas({
     }
 
     ctx.putImageData(imgData, minX, minY);
-  }, [bodyId, size, rotY, rotX, zoom, showStarfield]);
+
+    // Eksen kutup uç noktaları (isteğe bağlı)
+    if (showAxisLine) {
+      ctx.save();
+      ctx.fillStyle = '#f6dc9b';
+      ctx.beginPath();
+      ctx.arc(cx, cy - radius * 1.24, 3.5, 0, Math.PI * 2);
+      ctx.arc(cx, cy + radius * 1.24, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Yüzey işaretçileri (Türkiye, Aydınlık/Karanlık vb.)
+    if (surfacePins && surfacePins.length > 0) {
+      ctx.save();
+      ctx.font = '700 11px system-ui, -apple-system, sans-serif';
+      ctx.textBaseline = 'middle';
+
+      for (const pin of surfacePins) {
+        const proj = projectSurfacePoint(pin.lonDeg, pin.latDeg, rotY, rotX);
+        const px = cx + proj.nx * radius;
+        const py = cy + proj.ny * radius;
+        const isFront = proj.nz > 0.02;
+
+        if (!isFront && !pin.showWhenBack) continue;
+
+        ctx.save();
+        ctx.globalAlpha = isFront ? 1 : 0.45;
+
+        // İşaretçi halkası ve merkezi
+        ctx.beginPath();
+        ctx.arc(px, py, isFront ? 7 : 5.5, 0, Math.PI * 2);
+        ctx.fillStyle = isFront ? pin.color : 'rgba(15, 23, 42, 0.75)';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = isFront ? '#ffffff' : pin.color;
+        if (!isFront) ctx.setLineDash([2.5, 2]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Etiket kutusu (tuval sınırları içinde tut)
+        const text = isFront ? pin.label : `${pin.label} (Arka)`;
+        const textW = ctx.measureText(text).width;
+        const padX = 7;
+        const boxWLabel = textW + padX * 2;
+        const boxHLabel = 20;
+        let lxBox = px - boxWLabel / 2;
+        let lyBox = py - 28;
+        if (lyBox < 6) lyBox = py + 11;
+        lxBox = Math.max(6, Math.min(w - boxWLabel - 6, lxBox));
+
+        ctx.fillStyle = 'rgba(7, 17, 38, 0.9)';
+        ctx.strokeStyle = pin.color;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.roundRect(lxBox, lyBox, boxWLabel, boxHLabel, 7);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#fff9e8';
+        ctx.textAlign = 'center';
+        ctx.fillText(text, lxBox + boxWLabel / 2, lyBox + boxHLabel / 2 + 0.5);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+  }, [
+    bodyId,
+    size,
+    rotY,
+    rotX,
+    zoom,
+    showStarfield,
+    lightingMode,
+    lightDirX,
+    lightDirY,
+    lightDirZ,
+    isLightOn,
+    showAxisLine,
+    surfacePins,
+  ]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!interactive) return;
-    dragRef.current = { active: true, lastX: e.clientX, lastY: e.clientY };
+    if (!interactive && !onSurfaceClick) return;
+    dragRef.current = {
+      active: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      lastX: e.clientX,
+      lastY: e.clientY,
+      moved: false,
+    };
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
@@ -611,7 +815,15 @@ export function CelestialGlobeCanvas({
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!interactive || !dragRef.current.active) return;
+    if (!dragRef.current.active) return;
+    const totalMove = Math.hypot(
+      e.clientX - dragRef.current.startX,
+      e.clientY - dragRef.current.startY,
+    );
+    if (totalMove > 5) {
+      dragRef.current.moved = true;
+    }
+    if (!interactive) return;
     const dx = e.clientX - dragRef.current.lastX;
     const dy = e.clientY - dragRef.current.lastY;
     dragRef.current.lastX = e.clientX;
@@ -621,6 +833,7 @@ export function CelestialGlobeCanvas({
 
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!dragRef.current.active) return;
+    const wasClick = !dragRef.current.moved;
     dragRef.current.active = false;
     try {
       if (e.currentTarget.hasPointerCapture(e.pointerId)) {
@@ -629,6 +842,46 @@ export function CelestialGlobeCanvas({
     } catch {
       // Emniyet
     }
+
+    if (wasClick && onSurfaceClick && canvasRef.current) {
+      const rect = canvasRef.current.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      const sx = ((e.clientX - rect.left) / rect.width) * size;
+      const sy = ((e.clientY - rect.top) / rect.height) * size;
+
+      const cx = size / 2;
+      const cy = size / 2;
+      const baseRadius = showStarfield ? size * 0.34 : size * 0.44;
+      const radius = Math.min(size * 0.485, baseRadius * zoom);
+
+      const nx = (sx - cx) / radius;
+      const ny = (sy - cy) / radius;
+      const r2 = nx * nx + ny * ny;
+      if (r2 > 1.0) return;
+
+      const nz = Math.sqrt(Math.max(0, 1 - r2));
+      const cosY = Math.cos(rotY);
+      const sinY = Math.sin(rotY);
+      const cosX = Math.cos(rotX);
+      const sinX = Math.sin(rotX);
+
+      const y1 = ny * cosX - nz * sinX;
+      const z1 = ny * sinX + nz * cosX;
+      const lx = nx * cosY + z1 * sinY;
+      const lz = -nx * sinY + z1 * cosY;
+      const ly = -y1;
+
+      const lonDeg = (Math.atan2(lx, lz) * 180) / Math.PI;
+      const latDeg = (Math.asin(Math.max(-1, Math.min(1, ly))) * 180) / Math.PI;
+
+      const normLight =
+        lightingMode === 'directional'
+          ? normalizeVec3({ x: lightDirX, y: lightDirY, z: lightDirZ })
+          : { x: -0.34, y: -0.28, z: 0.898 };
+      const dotLight = nx * normLight.x + ny * normLight.y + nz * normLight.z;
+
+      onSurfaceClick({ lonDeg, latDeg, dotLight });
+    }
   };
 
   const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
@@ -636,6 +889,14 @@ export function CelestialGlobeCanvas({
     e.preventDefault();
     onZoomWheel(e.deltaY < 0 ? 0.15 : -0.15);
   };
+
+  const pointerClass = interactive
+    ? onSurfaceClick
+      ? 'cursor-crosshair touch-none'
+      : 'cursor-grab active:cursor-grabbing touch-none'
+    : onSurfaceClick
+      ? 'cursor-pointer'
+      : '';
 
   return (
     <canvas
@@ -649,7 +910,7 @@ export function CelestialGlobeCanvas({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       onWheel={handleWheel}
-      className={`${interactive ? 'cursor-grab active:cursor-grabbing touch-none' : ''} ${className}`}
+      className={`${pointerClass} ${className}`}
     />
   );
 }

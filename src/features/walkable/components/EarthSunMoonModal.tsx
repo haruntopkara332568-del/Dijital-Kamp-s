@@ -3,6 +3,8 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  FlaskConical,
+  Globe2,
   RotateCcw,
   RotateCw,
   Sparkles,
@@ -23,15 +25,18 @@ import {
   type CelestialBodyId,
   type CelestialCategoryId,
 } from '@/src/data/earthSunMoonActivity';
+import { ACTIVE_DISCOVERY_UI_COPY } from '@/src/data/earthSunMoonExperiments';
 import { speakSegments, stopSpeaking } from '@/src/services/speech';
 import type { MissionProgress, MissionStageId, SupportedGrade } from '@/src/types/campus';
 import { CelestialGlobeCanvas } from './CelestialGlobeCanvas';
+import { EarthSunMoonExperimentsView } from './EarthSunMoonExperimentsView';
 
 export interface EarthSunMoonModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+type WorkspaceTab = 'learn' | 'experiments';
 type ActivityMode = 'explore' | 'reinforce';
 
 const DEFAULT_ROTATION: Record<CelestialBodyId, { rotY: number; rotX: number }> = {
@@ -66,6 +71,7 @@ function EarthSunMoonModalInner({ onClose }: { onClose: () => void }) {
     campus?.state.selectedGrade ?? campus?.activeProfile?.selectedGrade ?? 3;
   const speechEnabled = campus?.state.speechEnabled ?? true;
 
+  const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>('learn');
   const [mode, setMode] = useState<ActivityMode>('explore');
   const [selectedBodyId, setSelectedBodyId] = useState<CelestialBodyId>('sun');
   const [rotY, setRotY] = useState<number>(DEFAULT_ROTATION.sun.rotY);
@@ -271,6 +277,12 @@ function EarthSunMoonModalInner({ onClose }: { onClose: () => void }) {
     }
   };
 
+  const handleSwitchWorkspaceTab = (nextTab: WorkspaceTab) => {
+    stopAllNarration();
+    setSpeechNotice(null);
+    setWorkspaceTab(nextTab);
+  };
+
   const handleCloseModal = () => {
     stopAllNarration();
     onClose();
@@ -326,82 +338,133 @@ function EarthSunMoonModalInner({ onClose }: { onClose: () => void }) {
           </button>
         </header>
 
-        {/* Üç Gök Cismi Seçim Çubuğu ve Kısa Pekiştirme Sekmesi */}
-        <nav
-          aria-label="Gök cismi seçimi"
-          className="grid grid-cols-2 gap-2 border-b border-[#d8a94c]/20 bg-[#0b1834] px-4 py-2.5 sm:grid-cols-4 sm:px-6"
+        {/* Ana Bölüm Geçişi: Gök Cisimlerini Tanı (Görev 02) / Aktif Keşif Deneyleri (Görev 03) */}
+        <div
+          role="tablist"
+          aria-label="Dünya, Güneş ve Ay çalışma bölümleri"
+          className="grid grid-cols-2 gap-2 border-b border-[#d8a94c]/25 bg-[#08132a] px-4 py-2 sm:px-6"
         >
-          {CELESTIAL_BODIES.map((body) => {
-            const isSelected = mode === 'explore' && selectedBodyId === body.id;
-            const isInspected = inspectedIds.includes(body.id);
-
-            return (
-              <button
-                key={body.id}
-                type="button"
-                data-testid={`celestial-tab-${body.id}`}
-                onClick={() => handleSelectBody(body.id)}
-                className={`flex min-h-[56px] cursor-pointer items-center gap-2.5 rounded-2xl border px-3 py-1.5 text-left transition-all ${
-                  isSelected
-                    ? 'border-[#f6dc9b] bg-[#1a3469] shadow-lg ring-2 ring-[#f6dc9b]/35'
-                    : 'border-[#d8a94c]/25 bg-[#102247]/80 hover:border-[#f3cc7a]/60 hover:bg-[#152c5a]'
-                }`}
-              >
-                <CelestialGlobeCanvas
-                  bodyId={body.id}
-                  size={44}
-                  rotY={DEFAULT_ROTATION[body.id].rotY}
-                  rotX={DEFAULT_ROTATION[body.id].rotX}
-                  showStarfield={false}
-                  className="shrink-0 rounded-full"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="truncate text-sm font-extrabold text-[#fff8e6]">
-                      {body.name}
-                    </span>
-                    {isInspected && (
-                      <CheckCircle2
-                        className="h-4 w-4 shrink-0 text-emerald-400"
-                        aria-label="İncelendi"
-                      />
-                    )}
-                  </div>
-                  <span className="block truncate text-[11px] text-[#bfd0ee]">
-                    {body.categoryLabel}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
+          <button
+            type="button"
+            role="tab"
+            aria-selected={workspaceTab === 'learn'}
+            data-testid="workspace-tab-learn"
+            onClick={() => handleSwitchWorkspaceTab('learn')}
+            className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-extrabold transition-all sm:text-sm ${
+              workspaceTab === 'learn'
+                ? 'border-[#f6dc9b] bg-[#1a3469] text-[#fff8e6] shadow-md'
+                : 'border-[#d8a94c]/25 bg-[#0e1e40]/80 text-[#c5d5f2] hover:border-[#f3cc7a]/55 hover:bg-[#142b59]'
+            }`}
+          >
+            <Globe2 className="h-4 w-4 shrink-0 text-[#f6dc9b]" aria-hidden="true" />
+            <span>{ACTIVE_DISCOVERY_UI_COPY.learnTabLabel}</span>
+          </button>
 
           <button
             type="button"
-            data-testid="celestial-tab-reinforce"
-            onClick={handleOpenReinforcement}
-            className={`flex min-h-[56px] cursor-pointer items-center justify-center gap-2 rounded-2xl border px-3 py-1.5 text-center transition-all ${
-              mode === 'reinforce'
-                ? 'border-emerald-300 bg-emerald-900/70 text-emerald-100 shadow-lg ring-2 ring-emerald-400/35'
-                : allBodiesInspected
-                  ? 'border-[#f6dc9b] bg-amber-500/20 text-[#fff4cf] hover:bg-amber-500/30'
-                  : 'border-[#d8a94c]/25 bg-[#102247]/80 text-[#d3e0f7] hover:border-[#f3cc7a]/60'
+            role="tab"
+            aria-selected={workspaceTab === 'experiments'}
+            data-testid="workspace-tab-experiments"
+            onClick={() => handleSwitchWorkspaceTab('experiments')}
+            className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-extrabold transition-all sm:text-sm ${
+              workspaceTab === 'experiments'
+                ? 'border-amber-300 bg-amber-500/25 text-[#fff8e6] shadow-md ring-1 ring-amber-300/40'
+                : 'border-amber-400/45 bg-amber-500/10 text-[#ffe8ad] hover:border-amber-300 hover:bg-amber-500/20'
             }`}
           >
-            <Sparkles className="h-4 w-4 shrink-0 text-[#f6dc9b]" aria-hidden="true" />
-            <div className="text-left">
-              <span className="block text-xs font-extrabold sm:text-sm">
-                {EARTH_SUN_MOON_UI_COPY.reinforcementTabLabel}
-              </span>
-              <span className="block text-[11px] opacity-85">
-                {allMatched ? '3/3 Tamamlandı' : `${matchedIds.length}/3 Eşleştirme`}
-              </span>
-            </div>
+            <FlaskConical className="h-4 w-4 shrink-0 text-amber-300" aria-hidden="true" />
+            <span>{ACTIVE_DISCOVERY_UI_COPY.sectionTabLabel} (3 Deney)</span>
           </button>
-        </nav>
+        </div>
+
+        {/* Üç Gök Cismi Seçim Çubuğu ve Kısa Pekiştirme Sekmesi (yalnızca Gök Cisimlerini Tanı bölümünde) */}
+        {workspaceTab === 'learn' && (
+          <nav
+            aria-label="Gök cismi seçimi"
+            className="grid grid-cols-2 gap-2 border-b border-[#d8a94c]/20 bg-[#0b1834] px-4 py-2.5 sm:grid-cols-4 sm:px-6"
+          >
+            {CELESTIAL_BODIES.map((body) => {
+              const isSelected = mode === 'explore' && selectedBodyId === body.id;
+              const isInspected = inspectedIds.includes(body.id);
+
+              return (
+                <button
+                  key={body.id}
+                  type="button"
+                  data-testid={`celestial-tab-${body.id}`}
+                  onClick={() => handleSelectBody(body.id)}
+                  className={`flex min-h-[56px] cursor-pointer items-center gap-2.5 rounded-2xl border px-3 py-1.5 text-left transition-all ${
+                    isSelected
+                      ? 'border-[#f6dc9b] bg-[#1a3469] shadow-lg ring-2 ring-[#f6dc9b]/35'
+                      : 'border-[#d8a94c]/25 bg-[#102247]/80 hover:border-[#f3cc7a]/60 hover:bg-[#152c5a]'
+                  }`}
+                >
+                  <CelestialGlobeCanvas
+                    bodyId={body.id}
+                    size={44}
+                    rotY={DEFAULT_ROTATION[body.id].rotY}
+                    rotX={DEFAULT_ROTATION[body.id].rotX}
+                    showStarfield={false}
+                    className="shrink-0 rounded-full"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate text-sm font-extrabold text-[#fff8e6]">
+                        {body.name}
+                      </span>
+                      {isInspected && (
+                        <CheckCircle2
+                          className="h-4 w-4 shrink-0 text-emerald-400"
+                          aria-label="İncelendi"
+                        />
+                      )}
+                    </div>
+                    <span className="block truncate text-[11px] text-[#bfd0ee]">
+                      {body.categoryLabel}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+
+            <button
+              type="button"
+              data-testid="celestial-tab-reinforce"
+              onClick={handleOpenReinforcement}
+              className={`flex min-h-[56px] cursor-pointer items-center justify-center gap-2 rounded-2xl border px-3 py-1.5 text-center transition-all ${
+                mode === 'reinforce'
+                  ? 'border-emerald-300 bg-emerald-900/70 text-emerald-100 shadow-lg ring-2 ring-emerald-400/35'
+                  : allBodiesInspected
+                    ? 'border-[#f6dc9b] bg-amber-500/20 text-[#fff4cf] hover:bg-amber-500/30'
+                    : 'border-[#d8a94c]/25 bg-[#102247]/80 text-[#d3e0f7] hover:border-[#f3cc7a]/60'
+              }`}
+            >
+              <Sparkles className="h-4 w-4 shrink-0 text-[#f6dc9b]" aria-hidden="true" />
+              <div className="text-left">
+                <span className="block text-xs font-extrabold sm:text-sm">
+                  {EARTH_SUN_MOON_UI_COPY.reinforcementTabLabel}
+                </span>
+                <span className="block text-[11px] opacity-85">
+                  {allMatched ? '3/3 Tamamlandı' : `${matchedIds.length}/3 Eşleştirme`}
+                </span>
+              </div>
+            </button>
+          </nav>
+        )}
 
         {/* Ana İçerik Gövdesi */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {mode === 'explore' ? (
+          {workspaceTab === 'experiments' ? (
+            <EarthSunMoonExperimentsView
+              activeGrade={activeGrade}
+              speechEnabled={speechEnabled}
+              isSpeaking={isSpeaking}
+              speechNotice={speechNotice}
+              onSpeak={(text) => void speakTurkishText(text)}
+              onStopSpeech={stopAllNarration}
+              onBackToObservatory={handleCloseModal}
+            />
+          ) : mode === 'explore' ? (
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
               {/* Sol / Merkez: Büyük Etkileşimli 3B Küre Görünümü */}
               <section
@@ -682,14 +745,24 @@ function EarthSunMoonModalInner({ onClose }: { onClose: () => void }) {
                       {EARTH_SUN_MOON_UI_COPY.completedBannerText}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="inline-flex min-h-[46px] shrink-0 cursor-pointer items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2 text-sm font-extrabold text-[#061c14] transition-colors hover:bg-emerald-400"
-                  >
-                    <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                    <span>Gözlemevine Dön</span>
-                  </button>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSwitchWorkspaceTab('experiments')}
+                      className="inline-flex min-h-[46px] shrink-0 cursor-pointer items-center gap-2 rounded-xl bg-amber-400 px-5 py-2 text-sm font-extrabold text-[#0b1834] transition-colors hover:bg-amber-300"
+                    >
+                      <FlaskConical className="h-4 w-4" aria-hidden="true" />
+                      <span>Aktif Keşif Deneylerine Geç</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCloseModal}
+                      className="inline-flex min-h-[46px] shrink-0 cursor-pointer items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2 text-sm font-extrabold text-[#061c14] transition-colors hover:bg-emerald-400"
+                    >
+                      <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                      <span>Gözlemevine Dön</span>
+                    </button>
+                  </div>
                 </div>
               )}
 
