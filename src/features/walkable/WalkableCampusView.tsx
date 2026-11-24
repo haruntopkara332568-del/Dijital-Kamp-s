@@ -58,7 +58,7 @@ import { DOCTOR_ROOM, DOCTOR_VISIT_STEPS } from '@/src/data/doctorVisitContent';
 import { DoctorVisitOverlay, useDoctorVisit } from './components/DoctorVisitOverlay';
 import { VETERINARY_CLINIC, VET_SECTIONS } from '@/src/data/veterinaryClinicContent';
 import { useVeterinaryClinicVisit } from './useVeterinaryClinicVisit';
-import { PILOT_APRON, PILOT_PARTS } from '@/src/data/pilotExperienceContent';
+import { PILOT_APRON } from '@/src/data/pilotExperienceContent';
 import { usePilotExperience } from './usePilotExperience';
 import { PilotApronOverlay } from './components/PilotApronOverlay';
 import { PilotCockpit } from './components/PilotCockpit';
@@ -247,7 +247,6 @@ export function WalkableCampusView({
   const doctorBubbleRef = useRef<HTMLDivElement>(null);
   const vetBubbleRef = useRef<HTMLDivElement>(null);
   const vetReducedMotionRef = useRef(false);
-  const pilotBubbleRef = useRef<HTMLDivElement>(null);
   const pilotBoardTimer = useRef<number | null>(null);
   const pilotReducedMotion = useRef(false);
   const doctorSpeechEnabled = campus?.state.speechEnabled ?? false;
@@ -307,15 +306,12 @@ export function WalkableCampusView({
     begin: beginVetVisit, cancel: cancelVetVoice, openStation: openVetStation, read: readVetVisit, readScene: readVetScene,
   } = vetVisit;
   const isVetVisitLocked = vetVisit.dialogOpen;
-  const pilotVoiceGender = resolveStudentVoiceGender(characterId ?? campus?.activeProfile?.characterId ?? null);
   const pilotVisit = usePilotExperience(
     currentScene === 'discovery_pilot' && !isTeleporting && !campus?.isProfileModalOpen,
-    doctorSpeechEnabled, pilotVoiceGender, campus?.activeProfile?.id ?? null, campus?.activeProfile?.selectedGrade ?? 3,
+    campus?.activeProfile?.id ?? null,
+    campus?.activeProfile?.selectedGrade ?? 3,
   );
-  const {
-    begin: beginPilot, cancel: cancelPilotVoice, read: readPilot, readSpeaker: readPilotSpeaker,
-    openPart: openPilotPart, boarding: startPilotBoarding, enterCockpit: enterPilotCockpit,
-  } = pilotVisit;
+  const { begin: beginPilot, boarding: startPilotBoarding, enterCockpit: enterPilotCockpit } = pilotVisit;
   const pilotSeated = pilotVisit.state.milestone > 0;
   const [teleportMessage, setTeleportMessage] = useState("Sultanhanı Kervansarayı Meydanı'na Işınlanıyorsun... 🏛️✨");
 
@@ -937,7 +933,6 @@ export function WalkableCampusView({
     if (!entering) {
       cancelDoctorSpeech();
       cancelVetVoice();
-      cancelPilotVoice();
       if (pilotBoardTimer.current !== null) {
         window.clearTimeout(pilotBoardTimer.current);
         pilotBoardTimer.current = null;
@@ -980,14 +975,15 @@ export function WalkableCampusView({
       setIsTeleporting(false);
       vrTransitionLockRef.current = false;
     }, reducedMotion ? 140 : DISCOVERY_VR_CONFIG.fadeTransitionMs);
-  }, [beginDoctorVisit, beginPilot, beginVetVisit, cancelDoctorSpeech, cancelPilotVoice, cancelVetVoice]);
+  }, [beginDoctorVisit, beginPilot, beginVetVisit, cancelDoctorSpeech, cancelVetVoice]);
 
   const handleExitClinic = useCallback(() => transitionClinicVisit('discovery_classroom'), [transitionClinicVisit]);
 
   const handlePilotBoard = useCallback(() => {
     const engine = engineRef.current;
-    if (!engine || !startPilotBoarding()) return;
+    if (!engine || pilotBoardTimer.current !== null || !startPilotBoarding()) return;
     setActiveZone(null);
+    engine.setInputDisabled(true);
     engine.stopMoving();
     const finish = () => {
       if (pilotBoardTimer.current === null || engineRef.current !== engine) return;
@@ -1234,32 +1230,9 @@ export function WalkableCampusView({
         | 'sultanhani_inner',
     ): WalkableSceneConfig => {
       if (scene === 'discovery_pilot') {
-        const state = readPilot();
-        const interactiveZones: InteractiveZone[] = [
-          { id: 'pilot-exit', name: 'Gözlüğü Çıkar', prompt: 'Sınıfa Dön', ...PILOT_APRON.exit, action: handleExitClinic },
-        ];
-        if (state.milestone === 0) {
-          if (state.visited.length === PILOT_PARTS.length) {
-            interactiveZones.push({
-              id: 'pilot-boarding', name: 'Uçak merdiveni', prompt: 'Kaptanla Uçağa Bin',
-              ...PILOT_APRON.stairs, radius: 33, action: handlePilotBoard,
-            });
-          } else {
-            PILOT_PARTS.forEach((part, index) => {
-              if (state.visited.includes(index)) return;
-              interactiveZones.push({
-                id: 'pilot-' + part.id, name: part.name, prompt: part.action,
-                ...part.position, radius: 31, action: () => {
-                  engineRef.current?.stopMoving();
-                  openPilotPart(index);
-                },
-              });
-            });
-          }
-        }
         return {
           width: PILOT_APRON.width, height: PILOT_APRON.height, playerSpawn: PILOT_APRON.spawn,
-          obstacles: PILOT_APRON_OBSTACLES, interactiveZones,
+          obstacles: PILOT_APRON_OBSTACLES, interactiveZones: [],
           npc: {
             id: 'pilot-captain', name: 'Kaptan Pilot', scene: 'discovery_pilot', atlasUrl: PILOT_CAPTAIN_ATLAS,
             width: 28, height: 96, startPosition: PILOT_APRON.captainSpawn, speed: 154,
@@ -1904,9 +1877,6 @@ export function WalkableCampusView({
       readDoctorVisit,
       openVetStation,
       readVetVisit,
-      handlePilotBoard,
-      openPilotPart,
-      readPilot,
       handleEnterObservatoryClassroom,
       handleExitObservatoryClassroom,
       handleExitInnerCourtyard,
@@ -2111,10 +2081,7 @@ export function WalkableCampusView({
           } else if (currentScene === 'discovery_classroom') {
             renderDiscoveryClassroomEntities(ctx, player, config.width, config.height);
           } else if (currentScene === 'discovery_pilot') {
-            renderPilotApronActors(
-              ctx, player, npc, readPilot(), readPilotSpeaker(), pilotBubbleRef.current,
-              careerOverlayScaleX, careerOverlayScaleY, pilotReducedMotion.current,
-            );
+            renderPilotApronActors(ctx, player, npc, pilotReducedMotion.current);
           } else if (currentScene === 'discovery_vet') {
             renderVeterinaryClinicEntities(
               ctx, player, npc, readVetScene(), vetBubbleRef.current,
@@ -2382,6 +2349,10 @@ export function WalkableCampusView({
       if (typeof window !== 'undefined') {
         delete (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine }).__WALKABLE_ENGINE__;
       }
+      if (currentScene === 'discovery_pilot' && pilotBoardTimer.current !== null) {
+        window.clearTimeout(pilotBoardTimer.current);
+        pilotBoardTimer.current = null;
+      }
       engine.destroy();
       lavender?.dispose();
       engineRef.current = null;
@@ -2398,8 +2369,6 @@ export function WalkableCampusView({
     readDoctorAnimation,
     readVetScene,
     readVetVisit,
-    readPilot,
-    readPilotSpeaker,
     resetEncounterState,
   ]);
 
@@ -2439,19 +2408,14 @@ export function WalkableCampusView({
   }, [campus?.isProfileModalOpen, currentScene, doctorVisit.isDialogOpen, isTeleporting, isVetVisitLocked]);
 
   useEffect(() => {
-    if (currentScene === 'discovery_pilot') {
-      engineRef.current?.updateInteractiveZones(getSceneConfig('discovery_pilot').interactiveZones);
+    if (currentScene !== 'discovery_pilot') return;
+    if (pilotSeated) {
+      engineRef.current?.setInputDisabled(true);
+      engineRef.current?.pause();
+    } else if (!isTeleporting && !campus?.isProfileModalOpen) {
+      handlePilotBoard();
     }
-  }, [currentScene, getSceneConfig, pilotVisit.state.visited.length, pilotSeated]);
-
-  const pilotDialogue = pilotVisit.state.dialogue !== null;
-  useEffect(() => {
-    if (currentScene !== 'discovery_pilot' || pilotVisit.state.boarding) return;
-    const locked = pilotSeated || pilotDialogue || isTeleporting || Boolean(campus?.isProfileModalOpen);
-    engineRef.current?.setInputDisabled(locked);
-    if (pilotSeated) engineRef.current?.pause();
-    else engineRef.current?.setNpcTalking(pilotDialogue);
-  }, [campus?.isProfileModalOpen, currentScene, isTeleporting, pilotDialogue, pilotSeated, pilotVisit.state.boarding]);
+  }, [campus?.isProfileModalOpen, currentScene, getSceneConfig, handlePilotBoard, isTeleporting, pilotSeated]);
 
   // Modallar açıldığında motoru duraklat
   useEffect(() => {
@@ -2499,7 +2463,7 @@ export function WalkableCampusView({
     (currentScene === 'sultanhani_inner' && innerFlowState.stepPhase !== 'DONE') ||
     (currentScene === 'discovery_doctor' && doctorVisit.isDialogOpen) ||
     (currentScene === 'discovery_vet' && isVetVisitLocked) ||
-    (currentScene === 'discovery_pilot' && (pilotDialogue || pilotSeated || pilotVisit.state.boarding));
+    currentScene === 'discovery_pilot';
 
   const activeBubbleAnchor =
     activeBubble?.speaker === 'student' ? studentAnchorPos : npcAnchorPos;
@@ -2565,15 +2529,14 @@ export function WalkableCampusView({
           key={(pilotVisit.state.profileId ?? 'guest') + ':' + pilotVisit.state.grade}
           milestone={pilotVisit.state.milestone}
           grade={pilotVisit.state.grade}
-          studentGender={pilotVoiceGender}
-          characterId={characterId}
+          characterId={characterId ?? campus?.activeProfile?.characterId}
           speechEnabled={doctorSpeechEnabled}
           suspended={isTeleporting || Boolean(campus?.isProfileModalOpen)}
           onMilestone={pilotVisit.saveCheckpoint}
           onExit={handleExitClinic}
         />
       ) : (
-        <PilotApronOverlay visit={pilotVisit} bubbleRef={pilotBubbleRef} showInstruction={!activeZone} />
+        <PilotApronOverlay />
       ))}
 
       {currentScene === 'discovery_vet' && (

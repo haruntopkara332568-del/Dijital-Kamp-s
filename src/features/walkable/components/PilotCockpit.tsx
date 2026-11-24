@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react';
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Award, Check, CloudLightning, CloudSun, Compass, Gauge, Navigation } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Award, Check, Compass, Gauge, Navigation } from 'lucide-react';
 import {
-  PILOT_COURSES, PILOT_GAUGES, PILOT_LANDING, PILOT_PREPARATION, PILOT_TITLE,
-  PILOT_WEATHER, PILOT_WEATHER_ANSWERS, type PilotCheckpoint, type PilotLine,
+  PILOT_COURSES, PILOT_INTRO, PILOT_LANDING, PILOT_TITLE, type PilotCheckpoint, type PilotLine,
 } from '@/src/data/pilotExperienceContent';
 import type { StudentCharacterId } from '@/src/data/studentCharacters';
 import type { SupportedGrade } from '@/src/types/campus';
@@ -13,7 +12,7 @@ import {
 import { PILOT_COCKPIT_FRAME, renderPilotCockpit } from '../engine/pilotCockpitSceneRenderer';
 import { usePilotSpeech, type PilotMilestone } from '../usePilotExperience';
 
-type Stage = 'prepare' | 'course' | 'landing-preview' | 'approach' | 'flare' | 'landed';
+type Stage = 'intro' | 'course' | 'landing-preview' | 'approach' | 'flare' | 'landed';
 type FlightEvent = 'checkpoint' | 'aligned' | 'landed';
 type Direction = 'left' | 'right' | 'up' | 'down';
 const keys: Partial<Record<string, Direction>> = {
@@ -33,11 +32,11 @@ const panel = 'pointer-events-auto absolute inset-x-3 bottom-3 z-30 mx-auto max-
 function getInitialStage(mark: PilotMilestone): Stage {
   if (mark === 4) return 'landed';
   if (mark === 3) return 'landing-preview';
-  return mark === 2 ? 'course' : 'prepare';
+  return mark === 2 ? 'course' : 'intro';
 }
 
-function getCaptainLine(stage: Stage, preparation: number, point: number, grade: SupportedGrade): PilotLine {
-  const text = stage === 'prepare' ? PILOT_PREPARATION[preparation].line
+function getCaptainLine(stage: Stage, introLine: 0 | 1, point: number, grade: SupportedGrade): PilotLine {
+  const text = stage === 'intro' ? PILOT_INTRO[introLine]
     : stage === 'course' ? PILOT_COURSES[grade].points[point]?.guidance ?? PILOT_LANDING.line
       : stage === 'landing-preview' ? PILOT_LANDING.line
         : stage === 'approach' ? PILOT_LANDING.approach
@@ -111,10 +110,9 @@ function RunwayChoice({ centered }: { centered: boolean }) {
   );
 }
 
-export function PilotCockpit({ milestone, grade, studentGender, characterId, speechEnabled, suspended, onMilestone, onExit }: {
+export function PilotCockpit({ milestone, grade, characterId, speechEnabled, suspended, onMilestone, onExit }: {
   milestone: PilotMilestone;
   grade: SupportedGrade;
-  studentGender: 'male' | 'female';
   characterId?: StudentCharacterId;
   speechEnabled: boolean;
   suspended: boolean;
@@ -122,10 +120,7 @@ export function PilotCockpit({ milestone, grade, studentGender, characterId, spe
   onExit: () => void;
 }) {
   const [stage, setStage] = useState<Stage>(() => getInitialStage(milestone));
-  const [preparation, setPreparation] = useState(0);
-  const [gauges, setGauges] = useState<number[]>([]);
-  const [weather, setWeather] = useState<number[]>([]);
-  const [confirmed, setConfirmed] = useState<number[]>([]);
+  const [introLine, setIntroLine] = useState<0 | 1>(0);
   const [point, setPoint] = useState(0);
   const [reply, setReply] = useState<PilotLine | null>(null);
   const [feedback, setFeedback] = useState('');
@@ -138,8 +133,8 @@ export function PilotCockpit({ milestone, grade, studentGender, characterId, spe
   const touch = useRef<Direction | null>(null);
   const tap = useRef<{ direction: Direction; until: number } | null>(null);
   const held = useRef(new Set<string>());
-  const line = reply ?? getCaptainLine(stage, preparation, point, grade);
-  const speech = usePilotSpeech(!suspended, speechEnabled, line, studentGender);
+  const line = reply ?? getCaptainLine(stage, introLine, point, grade);
+  const speech = usePilotSpeech(!suspended, speechEnabled, line, characterId);
   const course = PILOT_COURSES[grade];
   const target = stage === 'course' ? course.points[point] : undefined;
   const flying = stage === 'course' || stage === 'approach';
@@ -166,7 +161,7 @@ export function PilotCockpit({ milestone, grade, studentGender, characterId, spe
     mode: 'parked' as PilotMode, target, point, course, canAdvance: false, suspended, speaker: line.speaker, receive,
   });
   useEffect(() => {
-    const mode: PilotMode = stage === 'prepare' ? 'parked' : stage;
+    const mode: PilotMode = stage === 'intro' ? 'parked' : stage;
     runtime.current = { mode, target, point, course, canAdvance: !speech.reading, suspended, speaker: line.speaker, receive };
     if (suspended || (mode !== 'course' && mode !== 'approach')) {
       held.current.clear();
@@ -176,8 +171,23 @@ export function PilotCockpit({ milestone, grade, studentGender, characterId, spe
   }, [course, line.speaker, point, receive, speech.reading, stage, suspended, target]);
 
   useEffect(() => {
-    if (stage === 'prepare' || stage === 'landing-preview' || stage === 'landed') controlsRef.current?.focus({ preventScroll: true });
-  }, [preparation, stage]);
+    if (stage !== 'intro' || suspended || speech.reading) return;
+    const readingTime = introLine === 0 ? 3200 : 2300;
+    const timer = window.setTimeout(() => {
+      if (introLine === 0) {
+        setIntroLine(1);
+      } else {
+        flightRef.current = initialFlightState(2);
+        setStage('course');
+        onMilestone(2);
+      }
+    }, speech.played ? 0 : readingTime);
+    return () => window.clearTimeout(timer);
+  }, [introLine, onMilestone, speech.played, speech.reading, stage, suspended]);
+
+  useEffect(() => {
+    if (stage === 'landing-preview' || stage === 'landed') controlsRef.current?.focus({ preventScroll: true });
+  }, [stage]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -247,31 +257,10 @@ export function PilotCockpit({ milestone, grade, studentGender, characterId, spe
     };
   }, [characterId]);
 
-  function nextPreparation() {
-    setReply(null);
-    setFeedback('');
-    setPreparation((step) => Math.min(PILOT_PREPARATION.length - 1, step + 1));
-  }
-
-  function takeOff() {
-    flightRef.current = initialFlightState(2);
-    setStage('course');
-    onMilestone(2);
-  }
-
   function startApproach() {
     setReply(null);
     setFeedback('');
     setStage('approach');
-  }
-
-  function selectWeather(index: number) {
-    if (index !== 0) {
-      setFeedback('Fırtınalı koşullarda kalkışı ertelemek güvenli. Hava raporuna tekrar bak.');
-      return;
-    }
-    setFeedback('');
-    setReply({ speaker: 'student', text: PILOT_WEATHER_ANSWERS[grade][index] });
   }
 
   function selectRunway(centered: boolean) {
@@ -297,7 +286,7 @@ export function PilotCockpit({ milestone, grade, studentGender, characterId, spe
         </div>
       </div>
 
-      {stage !== 'prepare' && stage !== 'landed' && (
+      {stage !== 'intro' && stage !== 'landed' && (
         <aside className="pointer-events-none absolute right-3 top-[52%] z-20 flex max-w-[calc(100%-24px)] flex-wrap items-center gap-2 rounded-xl border border-white/25 bg-slate-950/90 px-3 py-2 text-xs text-white sm:right-5 sm:top-[5.5rem]" aria-label="Uçuş göstergeleri">
           <span className="font-bold">{status}</span>
           {stage === 'course' && (
@@ -331,67 +320,6 @@ export function PilotCockpit({ milestone, grade, studentGender, characterId, spe
             <p className="hidden text-slate-200 sm:block">Yön tuşlarını kullan veya kumandaya dokun.</p>
           </section>
         </>
-      )}
-
-      {stage === 'prepare' && (
-        <section ref={controlsRef} tabIndex={-1} className={panel} aria-label="Uçuş hazırlığı">
-          <p className="text-xs font-bold text-sky-800">Uçuş hazırlığı · {preparation + 1}/{PILOT_PREPARATION.length}</p>
-          <h2 className="text-base font-bold">{PILOT_PREPARATION[preparation].label}</h2>
-          {preparation === 0 && <button type="button" disabled={speech.reading} className={primary} onClick={nextPreparation}>{PILOT_PREPARATION[0].action}</button>}
-          {preparation === 1 && (
-            <>
-              <div className="grid grid-cols-2 gap-2">
-                {PILOT_GAUGES.map((gauge, index) => (
-                  <button key={gauge.id} type="button" className={option} aria-pressed={gauges.includes(index)} onClick={() => setGauges((old) => old.includes(index) ? old : [...old, index])}>
-                    <span className="block font-bold">{gauge.label}</span>
-                    {gauges.includes(index) && <span className="mt-1 block text-xs">{gauge.explanation}</span>}
-                  </button>
-                ))}
-              </div>
-              <button type="button" disabled={gauges.length !== 2 || speech.reading} className={primary} onClick={nextPreparation}>Göstergeleri Tanıdım</button>
-            </>
-          )}
-          {preparation === 2 && (
-            <>
-              <div className="grid grid-cols-2 gap-2">
-                {PILOT_WEATHER.map((condition, index) => {
-                  const Icon = index === 0 ? CloudSun : CloudLightning;
-                  return (
-                    <button key={condition.id} type="button" className={option} aria-pressed={weather.includes(index)} onClick={() => setWeather((old) => old.includes(index) ? old : [...old, index])}>
-                      <Icon className="mb-1 size-5" aria-hidden="true" />
-                      {condition.label}
-                      {weather.includes(index) && <span className="mt-1 block text-xs">{condition.report}</span>}
-                    </button>
-                  );
-                })}
-              </div>
-              <button type="button" disabled={weather.length !== 2 || speech.reading} className={primary} onClick={nextPreparation}>Hava Raporunu Okudum</button>
-            </>
-          )}
-          {preparation === 3 && (reply ? (
-            <button type="button" disabled={speech.reading} className={primary} onClick={nextPreparation}>Devam Et</button>
-          ) : (
-            <div className="grid gap-1.5">
-              {PILOT_WEATHER_ANSWERS[grade].map((answer, index) => <button key={answer} disabled={speech.reading} type="button" className={option} onClick={() => selectWeather(index)}>{answer}</button>)}
-            </div>
-          ))}
-          {preparation === 4 && (
-            <>
-              <fieldset className="space-y-1.5">
-                <legend className="sr-only">Üç hazırlık adımını doğrula</legend>
-                {['Kemer bağlı', 'Göstergeleri tanıdım', 'Hava uçuşa uygun'].map((item, index) => (
-                  <label key={item} className="flex min-h-10 items-center gap-2 rounded-lg bg-sky-50 px-2 text-sm font-semibold">
-                    <input type="checkbox" className="size-4 accent-sky-800" checked={confirmed.includes(index)} onChange={() => setConfirmed((old) => old.includes(index) ? old.filter((value) => value !== index) : [...old, index])} />
-                    {item}
-                  </label>
-                ))}
-              </fieldset>
-              <button type="button" disabled={confirmed.length !== 3 || speech.reading} className={primary} onClick={takeOff}>Uçuşu Başlat</button>
-            </>
-          )}
-          {feedback && <p role="status" className="text-sm font-semibold text-amber-900">{feedback}</p>}
-          {speech.unavailable && <p className="text-xs">Türkçe ses kullanılamıyor. Balondaki yazıyla devam edebilirsin.</p>}
-        </section>
       )}
 
       {stage === 'landing-preview' && (
