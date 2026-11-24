@@ -76,7 +76,12 @@ import {
   type SultanhaniInnerFlowEvent,
   type SultanhaniInnerFlowState,
 } from '@/src/data/sultanhaniDialogContent';
-import { playSultanhaniSpeechLine, waitAbortable } from './engine/sultanhaniSpeechRunner';
+import {
+  initSultanhaniSceneVoices,
+  playSultanhaniSpeechLine,
+  resetSultanhaniSceneVoices,
+  waitAbortable,
+} from './engine/sultanhaniSpeechRunner';
 import { stopSpeaking } from '@/src/services/speech';
 import type { StudentCharacterId } from '@/src/data/studentCharacters';
 import { useOptionalCampus } from '../../app/CampusProviders';
@@ -84,9 +89,11 @@ import type { InteractiveZone, Position, SceneObstacle, WalkableSceneConfig } fr
 import type { MissionStageId } from '@/src/types/campus';
 
 const REQUIRE_TABLE_COMPLETION_FOR_SMARTBOARD = false;
+const COURTYARD_GATE_ARRIVAL: Position = { x: 700, y: 780 };
 
 export interface WalkableCampusViewProps {
   characterId?: StudentCharacterId;
+  arrivedThroughGate?: boolean;
   initialScene?:
     | 'courtyard'
     | 'classroom'
@@ -100,6 +107,7 @@ export interface WalkableCampusViewProps {
 
 export function WalkableCampusView({
   characterId,
+  arrivedThroughGate = false,
   initialScene = 'courtyard',
   onBackToMap,
   onExitToGate,
@@ -149,7 +157,9 @@ export function WalkableCampusView({
   const sceneTransitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sahne içi son konumları saklayarak geri dönüşlerde konumu koruma (Section 6)
-  const lastCourtyardPosRef = useRef<Position>({ x: 700, y: 560 });
+  const lastCourtyardPosRef = useRef<Position>(
+    arrivedThroughGate ? COURTYARD_GATE_ARRIVAL : { x: 700, y: 560 },
+  );
   const lastClassroomPosRef = useRef<Position>({ x: 480, y: 520 });
   const lastDiscoveryClassroomPosRef = useRef<Position>(DISCOVERY_CLASSROOM.playerSpawn);
   const lastSultanhaniPosRef = useRef<Position>(SULTANHANI_SQUARE.spawn);
@@ -369,6 +379,7 @@ export function WalkableCampusView({
       if (sceneTransitionTimer.current !== null) clearTimeout(sceneTransitionTimer.current);
       clearDiscoveryDoorTimers();
       cancelAllEncounterAsync();
+      resetSultanhaniSceneVoices();
     },
     [cancelAllEncounterAsync, clearDiscoveryDoorTimers],
   );
@@ -699,6 +710,7 @@ export function WalkableCampusView({
     }
     sultanhaniSquareEntryRef.current = 'initial';
     innerDialogueCompletedRef.current = false;
+    resetSultanhaniSceneVoices();
     resetEncounterState('ARRIVAL');
     engineRef.current?.setInputDisabled(true);
     setActiveZone(null);
@@ -1589,7 +1601,9 @@ export function WalkableCampusView({
       encounterSeedRef.current += 1;
       const controller = new AbortController();
       encounterAbortRef.current = controller;
-      const { studentName } = getStudentVoiceMeta();
+      const { studentName, studentGender } = getStudentVoiceMeta();
+      resetSultanhaniSceneVoices();
+      void initSultanhaniSceneVoices({ studentGender, signal: controller.signal });
       dialogExchangesRef.current = buildSultanhaniDialogExchanges(
         encounterSeedRef.current,
         studentName,
@@ -1604,6 +1618,8 @@ export function WalkableCampusView({
         encounterSeedRef.current += 1;
         const controller = new AbortController();
         encounterAbortRef.current = controller;
+        const { studentGender } = getStudentVoiceMeta();
+        void initSultanhaniSceneVoices({ studentGender, signal: controller.signal });
         dialogExchangesRef.current = buildSultanhaniInnerDialogExchanges(encounterSeedRef.current);
       } else {
         const doneInner: SultanhaniInnerFlowState = { stepPhase: 'DONE', exchangeIndex: 0 };
@@ -1813,6 +1829,7 @@ export function WalkableCampusView({
     engine.player.characterId = characterIdRef.current;
     engine.start();
     if (
+      (currentScene === 'courtyard' && spawnPos === COURTYARD_GATE_ARRIVAL) ||
       currentScene === 'discovery_classroom' ||
       (currentScene === 'sultanhani_square' && sultanhaniSquareEntryRef.current !== 'courtyard-exit') ||
       currentScene === 'sultanhani_inner'

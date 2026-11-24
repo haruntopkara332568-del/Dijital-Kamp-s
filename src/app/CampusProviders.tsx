@@ -42,11 +42,12 @@ interface CampusContextValue {
   activeGradeProfile: ReturnType<typeof getGradeProfile>;
   profiles: StudentProfile[];
   activeProfile: StudentProfile | null;
+  enteredCourtyardProfileId: string | null;
   createProfile: (alias: string, avatarId: string, grade: SupportedGrade) => StudentProfile;
   switchProfile: (profileId: string) => void;
   updateProfile: (
     profileId: string,
-    updates: Partial<Pick<StudentProfile, 'alias' | 'avatarId' | 'selectedGrade' | 'characterId'>>,
+    updates: Partial<Pick<StudentProfile, 'alias' | 'avatarId' | 'selectedGrade' | 'characterId' | 'hasSeenEntranceCinematic'>>,
   ) => void;
   deleteProfile: (profileId: string) => Promise<void>;
   isProfileModalOpen: boolean;
@@ -84,6 +85,7 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
     typeof window !== 'undefined' ? getActiveProfileId() : null,
   );
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [enteredCourtyardProfileId, setEnteredCourtyardProfileId] = useState<string | null>(null);
 
   const [state, setState] = useState<CampusStudentState>(() =>
     typeof window !== 'undefined' ? loadStudentState() : createInitialStudentState(),
@@ -98,6 +100,8 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
     if (!activeProfileId) return profiles[0] ?? null;
     return profiles.find((p) => p.id === activeProfileId) ?? profiles[0] ?? null;
   }, [profiles, activeProfileId]);
+
+  const currentProfileId = activeProfile?.id ?? null;
 
   const updateAndPersist = useCallback(
     (updater: (prev: CampusStudentState) => CampusStudentState) => {
@@ -139,11 +143,11 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
   const updateProfile = useCallback(
     (
       profileId: string,
-      updates: Partial<Pick<StudentProfile, 'alias' | 'avatarId' | 'selectedGrade' | 'characterId'>>,
+      updates: Partial<Pick<StudentProfile, 'alias' | 'avatarId' | 'selectedGrade' | 'characterId' | 'hasSeenEntranceCinematic'>>,
     ) => {
       const updated = updateStudentProfile(profileId, updates);
       if (updated) {
-        setProfiles(loadStudentProfiles());
+        setProfiles(loadStudentProfiles().map((profile) => profile.id === profileId ? updated : profile));
         if (profileId === activeProfileId && updates.selectedGrade) {
           setState((prev) => ({ ...prev, selectedGrade: updates.selectedGrade! }));
         }
@@ -172,13 +176,14 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
   const closeProfileModal = useCallback(() => setIsProfileModalOpen(false), []);
 
   const markGateSeen = useCallback(() => {
+    setEnteredCourtyardProfileId(currentProfileId);
     updateAndPersist((prev) => ({
       ...prev,
       hasSeenGate: true,
       hasCompletedOnboarding: true,
       selectedGrade: prev.selectedGrade,
     }));
-  }, [updateAndPersist]);
+  }, [currentProfileId, updateAndPersist]);
 
   const setDiscoveryPreference = useCallback(
     (pref: DiscoveryPreference) => {
@@ -217,6 +222,7 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
   }, [updateAndPersist]);
 
   const replayWelcomeFlow = useCallback(() => {
+    setEnteredCourtyardProfileId(null);
     updateAndPersist((prev) => ({
       ...prev,
       hasSeenGate: false,
@@ -277,6 +283,7 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
 
   const resetAllData = useCallback(async () => {
     await clearAllCampusData();
+    setEnteredCourtyardProfileId(null);
     setProfiles([]);
     setActiveProfileIdState(null);
     setState(createInitialStudentState());
@@ -296,6 +303,7 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
       activeGradeProfile,
       profiles,
       activeProfile,
+      enteredCourtyardProfileId,
       createProfile,
       switchProfile,
       updateProfile,
@@ -323,6 +331,7 @@ export function CampusProviders({ children }: { children: React.ReactNode }) {
       activeGradeProfile,
       profiles,
       activeProfile,
+      enteredCourtyardProfileId,
       createProfile,
       switchProfile,
       updateProfile,

@@ -104,6 +104,11 @@ export function getStudentCharacterAtlas(characterId?: StudentCharacterId): HTML
   return character ? getLoadedAsset(character.atlasUrl) : null;
 }
 
+export function hasStudentCharacterAtlasFailed(characterId: StudentCharacterId): boolean {
+  const character = getStudentCharacter(characterId);
+  return !character || failedAssets.has(character.atlasUrl);
+}
+
 export function getClassroomBackgroundAsset(): HTMLImageElement | null {
   return getLoadedAsset(CLASSROOM_BACKGROUND_ASSET_URL);
 }

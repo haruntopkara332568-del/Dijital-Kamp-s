@@ -3,8 +3,11 @@ import { ArrowRight, Check } from 'lucide-react';
 import { FullscreenButton } from '@/src/components/FullscreenButton';
 import { STUDENT_ATLAS_FRAME, STUDENT_CHARACTERS, type StudentCharacterId } from '@/src/data/studentCharacters';
 
-export function CharacterSelectionView({ onConfirm }: { onConfirm: (characterId: StudentCharacterId) => void }) {
-  const [selectedId, setSelectedId] = useState<StudentCharacterId | null>(null);
+export function CharacterSelectionView({ initialCharacterId, onConfirm }: {
+  initialCharacterId?: StudentCharacterId;
+  onConfirm: (characterId: StudentCharacterId) => void;
+}) {
+  const [selectedId, setSelectedId] = useState<StudentCharacterId | null>(initialCharacterId ?? null);
 
   return (
     <main className="min-h-dvh bg-[var(--campus-canvas)] px-4 py-5 sm:py-10">

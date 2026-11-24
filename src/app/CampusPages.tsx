@@ -1,9 +1,9 @@
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy, useCallback, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router';
 import { useCampus } from '@/src/app/CampusProviders';
 import { isSupportedGrade } from '@/src/types/campus';
 import { CampusTopBar } from '@/src/components/CampusTopBar';
-import { getStudentCharacter } from '@/src/data/studentCharacters';
+import { getStudentCharacter, type StudentCharacterId } from '@/src/data/studentCharacters';
 import { CharacterSelectionView } from '@/src/features/walkable/CharacterSelectionView';
 
 const CampusGateView = lazy(() =>
@@ -43,55 +43,83 @@ function RouteLoadingFallback() {
   );
 }
 
-function CampusWalkableEntrance({ onExitToGate }: { onExitToGate?: () => void }) {
-  const { hydrated, activeProfile, openProfileModal, updateProfile } = useCampus();
+type CampusEntry =
+  | { step: 'gate' | 'select' | 'arrived' }
+  | { step: 'cinematic'; profileId: string; characterId: StudentCharacterId };
 
-  useEffect(() => {
-    if (hydrated && !activeProfile) openProfileModal();
-  }, [hydrated, activeProfile, openProfileModal]);
+export function HomeRoutePage() {
+  const {
+    hydrated, activeProfile, enteredCourtyardProfileId, openProfileModal, updateProfile,
+    markGateSeen, replayWelcomeFlow,
+  } = useCampus();
+  const [entry, setEntry] = useState<CampusEntry>({ step: 'gate' });
+  const profileId = activeProfile?.id;
+  const character = getStudentCharacter(activeProfile?.characterId);
+  const hasSeenCinematic = activeProfile?.hasSeenEntranceCinematic === true;
 
-  if (!hydrated || !activeProfile) return <RouteLoadingFallback />;
+  const startEntry = () => {
+    setEntry({ step: 'select' });
+    if (!profileId) openProfileModal();
+  };
 
-  const character = getStudentCharacter(activeProfile.characterId);
-  if (!character) {
+  const finishEntry = useCallback((playedCinematic: boolean) => {
+    if (entry.step !== 'cinematic' || entry.profileId !== profileId) return;
+    if (playedCinematic && !hasSeenCinematic) {
+      updateProfile(entry.profileId, {
+        characterId: entry.characterId,
+        hasSeenEntranceCinematic: true,
+      });
+    }
+    setEntry({ step: playedCinematic ? 'arrived' : 'gate' });
+    markGateSeen();
+  }, [entry, hasSeenCinematic, markGateSeen, profileId, updateProfile]);
+
+  if (!hydrated) return <RouteLoadingFallback />;
+
+  if (entry.step === 'select') {
+    if (!profileId) return <RouteLoadingFallback />;
     return (
       <CharacterSelectionView
-        key={activeProfile.id}
-        onConfirm={(characterId) => updateProfile(activeProfile.id, { characterId })}
+        key={profileId}
+        initialCharacterId={character?.id}
+        onConfirm={(characterId) => {
+          updateProfile(profileId, { characterId });
+          setEntry({ step: 'cinematic', profileId, characterId });
+        }}
       />
+    );
+  }
+
+  if (entry.step === 'cinematic' && entry.profileId === profileId) {
+    return (
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <CampusGateView
+          key={profileId}
+          characterId={entry.characterId}
+          canSkipCinematic={hasSeenCinematic}
+          onEnterCourtyard={finishEntry}
+        />
+      </Suspense>
+    );
+  }
+
+  if (character && enteredCourtyardProfileId === profileId) {
+    return (
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <WalkableCampusView
+          characterId={character.id}
+          arrivedThroughGate={entry.step === 'arrived'}
+          onExitToGate={replayWelcomeFlow}
+        />
+      </Suspense>
     );
   }
 
   return (
     <Suspense fallback={<RouteLoadingFallback />}>
-      <WalkableCampusView characterId={character.id} onExitToGate={onExitToGate} />
+      <CampusGateView onEnterCourtyard={startEntry} />
     </Suspense>
   );
-}
-
-export function HomeRoutePage() {
-  const { hydrated, state, markGateSeen, replayWelcomeFlow } = useCampus();
-
-  if (!hydrated) {
-    return (
-      <main className="min-h-dvh flex items-center justify-center bg-[var(--campus-canvas)] p-6">
-        <p className="text-sm font-medium text-[var(--campus-ink-muted)]">
-          Kampüs hazırlanıyor...
-        </p>
-      </main>
-    );
-  }
-
-  // 1. Henüz kapıyı görmediyse: Sinematik Taç Kapı Giriş Sahnesi
-  if (!state.hasSeenGate) {
-    return (
-      <Suspense fallback={<RouteLoadingFallback />}>
-        <CampusGateView onEnterCourtyard={markGateSeen} />
-      </Suspense>
-    );
-  }
-
-  return <CampusWalkableEntrance onExitToGate={replayWelcomeFlow} />;
 }
 
 export function CampusMapRoutePage() {
@@ -142,7 +170,7 @@ export function DesignSystemRoutePage() {
 }
 
 export function WalkableCampusRoutePage() {
-  return <CampusWalkableEntrance />;
+  return <HomeRoutePage />;
 }
 
 export function NotFoundRoutePage() {

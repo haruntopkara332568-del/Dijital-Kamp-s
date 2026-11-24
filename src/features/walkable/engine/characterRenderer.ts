@@ -1,6 +1,6 @@
 import { STUDENT_ATLAS_FRAME } from '@/src/data/studentCharacters';
 import type { NpcCharacter, PlayerCharacter } from '../types';
-import { getStudentCharacterAtlas, getSultanhaniTouristAtlas } from './assetLoader';
+import { getStudentCharacterAtlas, getSultanhaniTouristAtlas, hasStudentCharacterAtlasFailed } from './assetLoader';
 
 /**
  * Karakter ölçek seçenekleri ve referans ölçüleri (Aşama 4.5).
@@ -142,23 +142,25 @@ export function drawTouristNpc(ctx: CanvasRenderingContext2D, npc: NpcCharacter)
  * ve 4 kareli yürüyüş/bekleme döngüsüyle yüksek kaliteli Pixar/Disney estetiğinde çizilir.
  * Görsel yüklenene kadar veya test ortamlarında geriye dönük vektörel çizim yedeği devreye girer.
  */
-export function drawCharacter(ctx: CanvasRenderingContext2D, player: PlayerCharacter) {
-  const { x, y, direction, state, walkFrame } = player;
+export function drawCharacter(
+  ctx: CanvasRenderingContext2D,
+  player: AtlasSpriteState & Pick<PlayerCharacter, 'characterId'>,
+  missingAtlas: 'hide' | 'idle' = 'hide',
+) {
+  const { characterId, x, y, direction, state, walkFrame } = player;
+  const atlas = getStudentCharacterAtlas(characterId);
+  if (atlas) {
+    drawAtlasSprite(ctx, atlas, player);
+    return;
+  }
+  if (characterId && (missingAtlas === 'hide' || !hasStudentCharacterAtlasFailed(characterId))) return;
 
   const isReducedMotion =
     typeof window !== 'undefined' &&
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
   const now = isReducedMotion ? 0 : performance.now();
-  const isWalking = state === 'walk';
-
-  // 1. Yeni 2,5B Sinematik Sprite Atlas Entegrasyonu (Aşama 4.4 & 4.5)
-  const atlas = getStudentCharacterAtlas(player.characterId);
-  if (!atlas && player.characterId) return;
-  if (atlas) {
-    drawAtlasSprite(ctx, atlas, player);
-    return;
-  }
+  const isWalking = !characterId && state === 'walk';
 
   // 1. Zemin Gölgeleri (Katmanlı temas ve ortam gölgesi)
   ctx.save();

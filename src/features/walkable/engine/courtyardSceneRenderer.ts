@@ -268,7 +268,7 @@ export function renderCourtyardEntities(
     {
       id: 'player-character',
       baseY: player.y + 18, // Ayak temas noktası
-      draw: (c) => drawCharacter(c, player),
+      draw: (c) => drawCharacter(c, player, 'idle'),
     },
   ];
 

@@ -15,6 +15,7 @@ export interface StudentProfile {
   alias: string; // Takma ad (Gezgin, Bilgin, Kâşif vb.)
   avatarId: string; // Seçilen profil rozeti
   characterId?: StudentCharacterId;
+  hasSeenEntranceCinematic?: boolean;
   selectedGrade: SupportedGrade; // Yalnızca 2, 3 veya 4. sınıf
   createdAt: string; // ISO
   lastUsedAt: string; // ISO

@@ -294,21 +294,25 @@ export const SULTANHANI_TIMINGS = {
 } as const;
 
 export const SULTANHANI_VOICE_PITCH = {
-  studentFemale: 1.16,
-  studentFemaleSameVoice: 1.28,
-  studentMale: 1.12,
-  studentMaleSameVoice: 1.24,
+  studentFemale: 1.6,
+  studentFemaleSameVoice: 1.65,
+  studentMale: 1.35,
+  studentMaleSameVoice: 1.42,
   tourist: 0.9,
-  touristSameVoice: 0.86,
-  can: 1.04,
+  touristSameVoice: 0.9,
+  canFemale: 1.6,
+  canFemaleSameVoice: 1.75,
+  canMale: 1.35,
+  canMaleSameVoice: 1.48,
+  can: 1.35,
 } as const;
 
 export const SULTANHANI_SPEECH_RATES = {
-  student: 0.86,
-  tourist: 0.82,
-  can: 0.84,
-  'en-US': 0.84,
-  'tr-TR': 0.9,
+  student: 0.85,
+  tourist: 0.85,
+  can: 0.85,
+  'en-US': 0.85,
+  'tr-TR': 0.85,
 } as const;
 
 export function estimateLineDurationMs(text: string): number {
