@@ -11,6 +11,7 @@ export const DOCTOR_ROOM = {
 
 export const DOCTOR_STETHOSCOPE = {
   pickup: { x: 86, y: 496 },
+  pickupRadius: 36,
   counter: { x: 82, y: 309 },
   approach: { x: 682, y: 462 },
   chest: { x: 690, y: 416 },
@@ -31,7 +32,7 @@ export function doctorStethoscopeGrip({ x, y, direction }: Pick<PlayerCharacter,
 }
 
 export type DoctorSpeaker = 'guide' | 'patient' | 'student';
-export type DoctorLine = { speaker: DoctorSpeaker; text: string };
+export type DoctorLine = { speaker: DoctorSpeaker; text: string; audioSrc: string };
 
 export const DOCTOR_SPEAKER_NAMES: Record<DoctorSpeaker, string> = {
   guide: 'Doktor',
@@ -40,11 +41,20 @@ export const DOCTOR_SPEAKER_NAMES: Record<DoctorSpeaker, string> = {
 };
 
 export const DOCTOR_INTRO: readonly [DoctorLine, DoctorLine] = [
-  { speaker: 'guide', text: 'Hoş geldin! Ben doktorum. İnsanların sağlığını korumak için çalışırım.' },
-  { speaker: 'guide', text: 'Bu bir stetoskop. Kalp seslerini dinlememize yardımcı olur. Haydi, birlikte deneyelim!' },
+  {
+    speaker: 'guide',
+    text: 'Hoş geldin! Ben doktorum. İnsanların sağlığını korumak için çalışırım.',
+    audioSrc: '/assets/walkable/doctor-voice/doctor-welcome.wav',
+  },
+  {
+    speaker: 'guide',
+    text: 'Bu bir stetoskop. Kalp seslerini dinlememize yardımcı olur. Haydi, birlikte deneyelim!',
+    audioSrc: '/assets/walkable/doctor-voice/doctor-stethoscope.wav',
+  },
 ];
 
 export const DOCTOR_FEEDBACK: DoctorLine = {
   speaker: 'guide',
   text: 'Harika! Kalbimizin atışını dinledin. Doktorlar hastalarını dikkatle muayene eder.',
+  audioSrc: '/assets/walkable/doctor-voice/doctor-feedback.wav',
 };

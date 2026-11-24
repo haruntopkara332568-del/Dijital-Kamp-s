@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type Ref, type RefObject } from 'react';
+import { Volume2 } from 'lucide-react';
 import {
   DOCTOR_FEEDBACK, DOCTOR_HEARTBEAT_MS, DOCTOR_INTRO, DOCTOR_LISTEN_MS, DOCTOR_ROOM,
   DOCTOR_SPEAKER_NAMES, DOCTOR_STETHOSCOPE, type DoctorLine,
 } from '@/src/data/doctorVisitContent';
-import type { StudentCharacterId } from '@/src/data/studentCharacters';
-import { getSpeechVoices, speakSegments, stopSpeaking } from '@/src/services/speech';
 import type { Position } from '../types';
 
 type Visit = {
@@ -21,34 +20,10 @@ function getLine(visit: Visit) {
   return visit.heard && visit.contactAt === null ? DOCTOR_FEEDBACK : null;
 }
 
-type VoiceIdentity = 'guide' | 'patient' | StudentCharacterId;
-const voiceProfiles: Record<VoiceIdentity, { name: RegExp; pitch: number }> = {
-  guide: { name: /\b(emel(?:neural)?|yelda|filiz)\b/i, pitch: 1 },
-  patient: { name: /\bboy\b|\b(?:male|erkek)[ -](?:child|çocuk)\b|\b(?:child|çocuk)[ -](?:male|erkek)\b/i, pitch: 1 },
-  ece: { name: /\btr-tr-(?:standard|wavenet)-a\b/i, pitch: 1.25 },
-  deniz: { name: /\b(aydın|aydin|tr-tr-(?:standard|wavenet)-b)\b/i, pitch: 1.18 },
-  elif: { name: /\b(elif|tr-tr-(?:standard|wavenet)-c)\b/i, pitch: 1.21 },
-  mert: { name: /\btr-tr-(?:standard|wavenet)-e\b/i, pitch: 1.24 },
-  zeynep: { name: /\btr-tr-(?:standard|wavenet)-d\b/i, pitch: 1.29 },
-  arda: { name: /\btr-tr-chirp3-hd-achird\b/i, pitch: 1.16 },
-};
-
-function assignDoctorVoices(voices: SpeechSynthesisVoice[]) {
-  const turkish = voices.filter((voice) => /^tr(?:[-_]|$)/i.test(voice.lang))
-    .sort((first, second) => Number(second.localService) - Number(first.localService) || first.voiceURI.localeCompare(second.voiceURI));
-  const used = new Set<string>();
-  const assignments = new Map<VoiceIdentity, SpeechSynthesisVoice>();
-  for (const identity of Object.keys(voiceProfiles) as VoiceIdentity[]) {
-    const voice = turkish.find((candidate) =>
-      !used.has(candidate.voiceURI || candidate.name) && voiceProfiles[identity].name.test(candidate.name + ' ' + candidate.voiceURI),
-    );
-    if (voice) {
-      assignments.set(identity, voice);
-      used.add(voice.voiceURI || voice.name);
-    }
-  }
-  return assignments;
-}
+type SpeechStatus = 'playing' | 'played' | 'text' | 'retry';
+type LineSpeech = { line: DoctorLine; status: SpeechStatus };
+type NarrationPlayback = { source: AudioBufferSourceNode | null; timeout: number };
+type NarrationAssets = { controller: AbortController; clips: Map<string, Promise<AudioBuffer | null>> };
 
 function playHeartbeat(context: AudioContext, elapsed: number) {
   const bus = context.createGain();
@@ -89,16 +64,17 @@ function playHeartbeat(context: AudioContext, elapsed: number) {
   };
 }
 
-export function useDoctorVisit(active: boolean, speechEnabled: boolean, characterId?: StudentCharacterId) {
+export function useDoctorVisit(active: boolean, speechEnabled: boolean) {
   const [visit, setVisit] = useState(initialVisit);
   const visitRef = useRef(visit);
   const tip = useRef<Position | null>(null);
   const audio = useRef<AudioContext | null>(null);
   const sound = useRef<(() => void) | null>(null);
   const audioSettings = useRef({ active, speechEnabled });
-  const voices = useRef<ReturnType<typeof assignDoctorVoices> | null>(null);
-  const speaking = useRef<{ controller: AbortController; started: boolean } | null>(null);
-  const [settled, setSettled] = useState<{ line: DoctorLine; played: boolean } | null>(null);
+  const narrationAssets = useRef<NarrationAssets | null>(null);
+  const speaking = useRef<NarrationPlayback | null>(null);
+  const [lineSpeech, setLineSpeech] = useState<LineSpeech | null>(null);
+  const lineSpeechRef = useRef<LineSpeech | null>(null);
   const motion = useRef<{ line: DoctorLine | null; start: number }>({ line: null, start: 0 });
   const line = getLine(visit);
 
@@ -107,12 +83,38 @@ export function useDoctorVisit(active: boolean, speechEnabled: boolean, characte
     setVisit(next);
   }, []);
 
+  const showSpeech = useCallback((next: LineSpeech | null) => {
+    lineSpeechRef.current = next;
+    setLineSpeech(next);
+  }, []);
+
   const stopVoice = useCallback(() => {
     const request = speaking.current;
     if (!request) return;
     speaking.current = null;
-    request.controller.abort();
-    if (request.started) stopSpeaking();
+    window.clearTimeout(request.timeout);
+    if (request.source) {
+      request.source.onended = null;
+      request.source.stop();
+      request.source.disconnect();
+    }
+  }, []);
+
+  const loadNarration = useCallback((context: AudioContext, line: DoctorLine) => {
+    const assets = narrationAssets.current ??= { controller: new AbortController(), clips: new Map() };
+    const cached = assets.clips.get(line.audioSrc);
+    if (cached) return cached;
+
+    const { signal } = assets.controller;
+    const clip = fetch(line.audioSrc, { signal })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const data = await response.arrayBuffer();
+        return signal.aborted ? null : context.decodeAudioData(data);
+      })
+      .catch(() => null);
+    assets.clips.set(line.audioSrc, clip);
+    return clip;
   }, []);
 
   const stopHeartbeat = useCallback(() => {
@@ -129,19 +131,73 @@ export function useDoctorVisit(active: boolean, speechEnabled: boolean, characte
   }, []);
 
   const prepareAudio = useCallback(() => {
-    if (typeof AudioContext === 'undefined') return;
+    if (typeof AudioContext === 'undefined') return null;
     try {
-      audio.current ??= new AudioContext();
-      if (audio.current.state !== 'running') void audio.current.resume().then(startHeartbeat).catch(() => {});
-      else startHeartbeat();
+      const context = audio.current ??= new AudioContext();
+      const ready = context.state === 'running'
+        ? Promise.resolve(true)
+        : context.resume().then(() => true, () => false);
+      void ready.then((running) => { if (running) startHeartbeat(); });
+      return { context, ready };
     } catch {
-      // Temsili kalp animasyonu ses desteği olmadan da çalışır.
+      return null;
     }
   }, [startHeartbeat]);
+
+  const playLine = useCallback((spokenLine: DoctorLine) => {
+    const output = prepareAudio();
+    if (!output) {
+      showSpeech({ line: spokenLine, status: 'text' });
+      return;
+    }
+
+    showSpeech(null);
+    const finish = (status: SpeechStatus) => {
+      if (speaking.current !== request) return;
+      stopVoice();
+      showSpeech({ line: spokenLine, status });
+    };
+    const request: NarrationPlayback = {
+      source: null,
+      timeout: window.setTimeout(() => finish('retry'), 4000),
+    };
+    speaking.current = request;
+
+    const { context, ready } = output;
+    void Promise.all([ready, loadNarration(context, spokenLine)])
+      .then(([running, buffer]) => {
+        if (speaking.current !== request) return;
+        if (!buffer) {
+          finish('text');
+          return;
+        }
+        if (!running || context.state !== 'running') {
+          finish('retry');
+          return;
+        }
+        const source = context.createBufferSource();
+        source.buffer = buffer;
+        source.connect(context.destination);
+        source.onended = () => finish('played');
+        try {
+          source.start();
+        } catch {
+          source.disconnect();
+          finish('retry');
+          return;
+        }
+        request.source = source;
+        window.clearTimeout(request.timeout);
+        showSpeech({ line: spokenLine, status: 'playing' });
+      })
+      .catch(() => finish('retry'));
+  }, [loadNarration, prepareAudio, showSpeech, stopVoice]);
 
   const cancel = useCallback(() => {
     stopVoice();
     stopHeartbeat();
+    narrationAssets.current?.controller.abort();
+    narrationAssets.current = null;
     const context = audio.current;
     audio.current = null;
     if (context && context.state !== 'closed') void context.close().catch(() => {});
@@ -152,11 +208,18 @@ export function useDoctorVisit(active: boolean, speechEnabled: boolean, characte
 
   const begin = useCallback(() => {
     cancel();
-    voices.current = null;
     motion.current = { line: null, start: 0 };
-    setSettled(null);
+    showSpeech(null);
     update(initialVisit);
-  }, [cancel, update]);
+
+    if (!audioSettings.current.speechEnabled) return;
+    // VR gözlüğü etkileşimi sırasında ses çıkışını aç ve ilk replikleri hazırla.
+    const output = prepareAudio();
+    if (!output) return;
+    for (const spokenLine of [...DOCTOR_INTRO, DOCTOR_FEEDBACK]) {
+      void loadNarration(output.context, spokenLine);
+    }
+  }, [cancel, loadNarration, prepareAudio, showSpeech, update]);
 
   const pickUp = useCallback(() => {
     const current = visitRef.current;
@@ -186,53 +249,19 @@ export function useDoctorVisit(active: boolean, speechEnabled: boolean, characte
   }, [active, moveTip, speechEnabled, startHeartbeat, stopHeartbeat]);
 
   useEffect(() => {
-    if (!active || !speechEnabled || !line || settled?.line === line) return;
-    const request = { controller: new AbortController(), started: false };
-    speaking.current = request;
-    const { signal } = request.controller;
-    void (async () => {
-      let played = false;
-      try {
-        const identity = line.speaker === 'student' ? characterId : line.speaker;
-        if (!identity) return;
-        if (!voices.current) {
-          const available = await getSpeechVoices(signal);
-          if (!available || signal.aborted) return;
-          voices.current = assignDoctorVoices(window.speechSynthesis.getVoices());
-        }
-        const voice = voices.current.get(identity);
-        if (!voice || signal.aborted) return;
-        let timedOut = false;
-        request.started = true;
-        const result = await speakSegments([{ text: line.text, lang: 'tr-TR' }], {
-          queued: {
-            signal,
-            voices: { 'tr-TR': voice, 'en-US': null },
-            rates: { 'tr-TR': 0.93, 'en-US': 0.92 },
-            pitch: voiceProfiles[identity].pitch,
-            onTimeoutFallback: () => {
-              timedOut = true;
-              stopSpeaking();
-            },
-          },
-        });
-        played = result.spoken && !timedOut;
-      } catch {
-        // Uygun ses yoksa konuşma balonu gösterilir.
-      } finally {
-        if (speaking.current === request && !signal.aborted) {
-          speaking.current = null;
-          setSettled({ line, played });
-        }
-      }
-    })();
-    return () => {
-      if (speaking.current === request) stopVoice();
-    };
-  }, [active, characterId, line, settled?.line, speechEnabled, stopVoice]);
+    if (!active || !speechEnabled || !line) return;
+    const previous = lineSpeechRef.current;
+    if (previous?.line !== line || previous.status === 'playing') playLine(line);
+    return stopVoice;
+  }, [active, line, playLine, speechEnabled, stopVoice]);
 
-  const reading = speechEnabled && line && settled?.line !== line;
-  const played = speechEnabled && settled?.line === line && settled?.played;
+  const replay = () => {
+    if (active && speechEnabled && line && !speaking.current) playLine(line);
+  };
+
+  const status = lineSpeech?.line === line ? lineSpeech.status : undefined;
+  const reading = speechEnabled && line && (status === undefined || status === 'playing');
+  const played = speechEnabled && status === 'played';
   useEffect(() => {
     if (!active || visit.stage !== 'intro' || reading) return;
     const timer = window.setTimeout(() => {
@@ -253,21 +282,25 @@ export function useDoctorVisit(active: boolean, speechEnabled: boolean, characte
   const read = useCallback(() => visitRef.current, []);
   const readAnimation = useCallback(() => {
     const current = visitRef.current;
-    const caption = getLine(current);
+    const currentLine = getLine(current);
+    const status = lineSpeechRef.current;
+    const caption = !audioSettings.current.speechEnabled || status?.line === currentLine ? currentLine : null;
     const now = performance.now();
     if (motion.current.line !== caption) motion.current = { line: caption, start: now };
     return {
       stage: current.stage,
       tip: tip.current,
       contactAt: current.contactAt,
-      speaker: speaking.current?.started || now - motion.current.start < 1250 ? caption?.speaker : undefined,
+      speaker: speaking.current?.source || now - motion.current.start < 1250 ? caption?.speaker : undefined,
       displaySpeaker: caption?.speaker,
     };
   }, []);
 
   return {
     begin, cancel, read, readAnimation, pickUp, moveTip, prepareAudio,
-    bubble: line,
+    bubble: !speechEnabled || status ? line : null,
+    retrySpeech: speechEnabled && status === 'retry' ? replay : undefined,
+    canPickUp: active && visit.stage === 'pickup',
     stage: visit.stage,
     isDialogOpen: visit.stage === 'intro',
     canUseTool: active && visit.stage === 'listen',
@@ -386,22 +419,37 @@ function StethoscopeControl({ layerRef, canReach, prepareAudio, moveTip }: {
   );
 }
 
-export function DoctorVisitOverlay({ visit, bubbleRef, layerRef, canReach, showInstruction, onExit }: {
+export function DoctorVisitOverlay({ visit, bubbleRef, layerRef, canReach, onPickUp, showInstruction, onExit }: {
   visit: VisitController;
   bubbleRef: Ref<HTMLDivElement>;
   layerRef: RefObject<HTMLDivElement | null>;
   canReach: () => boolean;
+  onPickUp: () => void;
   showInstruction: boolean;
   onExit: () => void;
 }) {
   const line = visit.bubble;
-  const instruction = visit.stage === 'pickup' ? 'Sol tezgahtaki stetoskoba yaklaş.'
-    : visit.contact ? (visit.heard ? 'Kalbi dinledin. Şimdi stetoskobu çek.' : 'Temsilî kalp atışı')
-      : visit.stage === 'listen' && !visit.heard ? 'Deniz’e yaklaş. Stetoskobu işarete sürükle ya da işareti veya E tuşunu basılı tut.'
-        : null;
+  const instruction = visit.contact ? (visit.heard ? 'Kalbi dinledin. Şimdi stetoskobu çek.' : 'Temsilî kalp atışı')
+    : visit.stage === 'listen' && !visit.heard ? 'Deniz’e yaklaş. Stetoskobu işarete sürükle ya da işareti veya E tuşunu basılı tut.'
+      : null;
 
   return (
     <>
+      {visit.canPickUp && (
+        <div
+          ref={layerRef}
+          className="pointer-events-none invisible absolute left-0 top-0 z-10 origin-top-left"
+          style={{ width: DOCTOR_ROOM.width, height: DOCTOR_ROOM.height }}
+        >
+          <button
+            type="button"
+            aria-label="Stetoskobu al"
+            onClick={onPickUp}
+            className="pointer-events-auto absolute h-[52px] w-[104px] -translate-x-1/2 -translate-y-1/2 touch-manipulation cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-800"
+            style={{ left: DOCTOR_STETHOSCOPE.counter.x, top: DOCTOR_STETHOSCOPE.counter.y }}
+          />
+        </div>
+      )}
       {visit.canUseTool && (
         <StethoscopeControl layerRef={layerRef} canReach={canReach} prepareAudio={visit.prepareAudio} moveTip={visit.moveTip} />
       )}
@@ -418,6 +466,16 @@ export function DoctorVisitOverlay({ visit, bubbleRef, layerRef, canReach, showI
         >
           <p className="text-xs font-bold text-sky-800">{DOCTOR_SPEAKER_NAMES[line.speaker]}</p>
           <p className="mt-1 text-sm font-semibold leading-snug">{line.text}</p>
+          {visit.retrySpeech && (
+            <button
+              type="button"
+              aria-label="Doktoru dinle"
+              onClick={visit.retrySpeech}
+              className="pointer-events-auto mt-1 inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-sky-800 hover:bg-sky-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700"
+            >
+              <Volume2 size={20} aria-hidden="true" />
+            </button>
+          )}
         </div>
       )}
       {instruction && showInstruction && (

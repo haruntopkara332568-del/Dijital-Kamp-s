@@ -152,10 +152,15 @@ function drawPickupMarker(ctx: CanvasRenderingContext2D) {
   ctx.ellipse(pickup.x, pickup.y + 15, 19, 8, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = '#d8fbff';
   ctx.beginPath();
-  ctx.arc(counter.x, counter.y, 6, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.roundRect(counter.x - 54, counter.y - 27, 108, 55, 15);
+  ctx.strokeStyle = '#135c6c';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.strokeStyle = '#d2fffa';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = '#6de7db';
+  ctx.shadowBlur = 9;
   ctx.stroke();
   ctx.restore();
 }
@@ -231,10 +236,13 @@ function drawHeartbeat(ctx: CanvasRenderingContext2D, elapsed: number, reduceMot
   ctx.restore();
 }
 
-function updateStethoscopeLayer(ctx: CanvasRenderingContext2D, layer: HTMLDivElement, player: PlayerCharacter, scaleX: number, scaleY: number) {
+function updateStethoscopeLayer(
+  ctx: CanvasRenderingContext2D, layer: HTMLDivElement, player: PlayerCharacter,
+  scaleX: number, scaleY: number, pickingUp: boolean,
+) {
   const projection = ctx.getTransform?.();
   if (!projection) return;
-  const visible = canReachDoctorPatient(player) ? 'visible' : 'hidden';
+  const visible = pickingUp || canReachDoctorPatient(player) ? 'visible' : 'hidden';
   if (layer.style.visibility !== visible) layer.style.visibility = visible;
   if (visible === 'hidden') return;
 
@@ -243,6 +251,7 @@ function updateStethoscopeLayer(ctx: CanvasRenderingContext2D, layer: HTMLDivEle
   ].join(',') + ')';
   if (layer.style.transform !== transform) layer.style.transform = transform;
 
+  if (pickingUp) return;
   const grip = doctorStethoscopeGrip(player);
   const x = grip.x + 'px';
   const y = grip.y + 'px';
@@ -279,8 +288,8 @@ export function renderDoctorRoomEntities(
     drawChestMarker(ctx, contact);
     drawStethoscope(ctx, animation.tip ?? doctorStethoscopeGrip(player));
     if (animation.contactAt !== null) drawHeartbeat(ctx, now - animation.contactAt, reduceMotion);
-    if (toolLayer) updateStethoscopeLayer(ctx, toolLayer, player, scaleX, scaleY);
   }
+  if (toolLayer) updateStethoscopeLayer(ctx, toolLayer, player, scaleX, scaleY, animation.stage === 'pickup');
 }
 
 export function updateDoctorSpeechAnchor(ctx: CanvasRenderingContext2D, bubble: HTMLDivElement, player: PlayerCharacter, speaker: DoctorSpeaker, scaleX: number, scaleY: number) {

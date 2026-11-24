@@ -295,7 +295,6 @@ export function WalkableCampusView({
   const doctorVisit = useDoctorVisit(
     currentScene === 'discovery_doctor' && !isTeleporting && !campus?.isProfileModalOpen,
     doctorSpeechEnabled,
-    characterId ?? campus?.activeProfile?.characterId,
   );
   const {
     begin: beginDoctorVisit, cancel: cancelDoctorSpeech, pickUp: pickUpDoctorStethoscope,
@@ -931,7 +930,10 @@ export function WalkableCampusView({
     if (vrTransitionLockRef.current) return;
     vrTransitionLockRef.current = true;
     const entering = target !== 'discovery_classroom';
-    if (target === 'discovery_doctor') preloadDoctorRoom();
+    if (target === 'discovery_doctor') {
+      preloadDoctorRoom();
+      beginDoctorVisit();
+    }
     if (target === 'discovery_vet') preloadVeterinaryClinic();
     if (target === 'discovery_pilot') preloadPilotExperience();
     if (!entering) {
@@ -964,7 +966,6 @@ export function WalkableCampusView({
     if (target === 'discovery_pilot') pilotReducedMotion.current = Boolean(reducedMotion);
     clinicTransitionRef.current = window.setTimeout(() => {
       clinicTransitionRef.current = null;
-      if (target === 'discovery_doctor') beginDoctorVisit();
       if (target === 'discovery_vet') {
         const profile = campusRef.current?.activeProfile;
         beginVetVisit(profile?.id ?? null, profile?.selectedGrade ?? 3);
@@ -982,6 +983,19 @@ export function WalkableCampusView({
   }, [beginDoctorVisit, beginPilot, beginVetVisit, cancelDoctorSpeech, cancelVetVoice]);
 
   const handleExitClinic = useCallback(() => transitionClinicVisit('discovery_classroom'), [transitionClinicVisit]);
+
+  const handleDoctorPickup = useCallback(() => {
+    const engine = engineRef.current;
+    if (!engine || engine.getInputDisabled() || readDoctorVisit().stage !== 'pickup') return;
+    const student = engine.getPosition();
+    const { pickup, pickupRadius } = DOCTOR_STETHOSCOPE;
+    if (Math.hypot(student.x - pickup.x, student.y - pickup.y) > pickupRadius) {
+      engine.navigateWalkToTarget(pickup.x, pickup.y);
+      return;
+    }
+    engine.stopMoving();
+    pickUpDoctorStethoscope();
+  }, [pickUpDoctorStethoscope, readDoctorVisit]);
 
   const canUseDoctorStethoscope = useCallback(() => {
     const engine = engineRef.current;
@@ -1303,11 +1317,8 @@ export function WalkableCampusView({
         if (readDoctorVisit().stage === 'pickup') {
           interactiveZones.push({
             id: 'doctor-stethoscope', name: 'Stetoskop', prompt: 'Stetoskobu Al',
-            ...DOCTOR_STETHOSCOPE.pickup, radius: 36,
-            action: () => {
-              engineRef.current?.stopMoving();
-              pickUpDoctorStethoscope();
-            },
+            ...DOCTOR_STETHOSCOPE.pickup, radius: DOCTOR_STETHOSCOPE.pickupRadius,
+            action: handleDoctorPickup,
           });
         }
         return {
@@ -1880,7 +1891,7 @@ export function WalkableCampusView({
       handleEnterDiscoveryClassroom,
       handleExitDiscoveryClassroom,
       handleExitClinic,
-      pickUpDoctorStethoscope,
+      handleDoctorPickup,
       readDoctorVisit,
       handleEnterObservatoryClassroom,
       handleExitObservatoryClassroom,
@@ -2500,7 +2511,7 @@ export function WalkableCampusView({
 
       {/* Ekran Üstü Kontroller ve İpuçları */}
       <WalkableControlsOverlay
-        activeZone={activeZone}
+        activeZone={activeZone?.id === 'doctor-stethoscope' ? null : activeZone}
         onTriggerInteraction={handleTriggerInteraction}
         onVirtualDirection={handleVirtualDirection}
         onBackToMap={handleBackToMap}
@@ -2559,6 +2570,7 @@ export function WalkableCampusView({
           bubbleRef={doctorBubbleRef}
           layerRef={doctorToolLayerRef}
           canReach={canUseDoctorStethoscope}
+          onPickUp={handleDoctorPickup}
           showInstruction={!activeZone}
           onExit={handleExitClinic}
         />
