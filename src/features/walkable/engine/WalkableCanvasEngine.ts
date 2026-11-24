@@ -1,4 +1,3 @@
-import type { SceneNpcConfig } from '@/src/data/sultanhaniNpc';
 import type {
   CharacterDirection,
   InteractiveZone,
@@ -72,7 +71,7 @@ export class WalkableCanvasEngine {
   private currentWaypointIndex: number = 0;
   private activeZone: InteractiveZone | null = null;
 
-  private npcConfig: SceneNpcConfig | null = null;
+  private npcConfig: NonNullable<WalkableSceneConfig['npc']> | null = null;
   private npcPatrolPhase: NpcPatrolPhase = 'moving_left';
   private npcPauseTimerMs: number = 0;
   private npcInRange: boolean = false;

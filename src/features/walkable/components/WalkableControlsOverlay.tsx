@@ -33,6 +33,7 @@ interface WalkableControlsOverlayProps {
     | 'discovery_classroom'
     | 'discovery_moon'
     | 'discovery_doctor'
+    | 'discovery_vet'
     | 'observatory_classroom'
     | 'sultanhani_square'
     | 'sultanhani_inner';
@@ -96,11 +97,13 @@ export function WalkableControlsOverlay({
                     ? 'Hayalden Gerçeğe — Ay Görevi'
                     : currentScene === 'discovery_doctor'
                       ? 'Çocuk Hastanesi — Muayene Odası'
-                      : currentScene === 'observatory_classroom'
-                      ? `${CAMPUS_BUILDING_NAMES.observatory} — Gözlemevi Sınıfı`
-                      : currentScene === 'sultanhani_square'
-                        ? 'Aksaray Sultanhanı Kervansarayı — Dış Meydan'
-                        : 'Aksaray Sultanhanı Kervansarayı — İç Avlu'}
+                      : currentScene === 'discovery_vet'
+                        ? 'Veteriner Hekim — Klinik'
+                        : currentScene === 'observatory_classroom'
+                          ? `${CAMPUS_BUILDING_NAMES.observatory} — Gözlemevi Sınıfı`
+                          : currentScene === 'sultanhani_square'
+                            ? 'Aksaray Sultanhanı Kervansarayı — Dış Meydan'
+                            : 'Aksaray Sultanhanı Kervansarayı — İç Avlu'}
           </span>
         </div>
 
@@ -162,7 +165,7 @@ export function WalkableControlsOverlay({
           )}
 
           {/* Ay Görevi Sahnesindeyken Gözlüğü Çıkar Düğmesi */}
-          {(currentScene === 'discovery_moon' || currentScene === 'discovery_doctor') && onExitClassroom && (
+          {(currentScene === 'discovery_moon' || currentScene === 'discovery_doctor' || currentScene === 'discovery_vet') && onExitClassroom && (
             <button
               type="button"
               onClick={onExitClassroom}
@@ -299,7 +302,7 @@ export function WalkableControlsOverlay({
       )}
 
       {/* Ulaşılamayan nokta veya etkileşim bildirimi */}
-      <div className={currentScene === 'discovery_classroom' || currentScene === 'discovery_doctor'
+      <div className={currentScene === 'discovery_classroom' || currentScene === 'discovery_doctor' || currentScene === 'discovery_vet'
         ? 'absolute inset-x-3 bottom-[24dvh] flex flex-col items-center gap-2'
         : 'flex flex-col items-center gap-2'}>
         {unreachableMessage && (
