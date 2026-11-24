@@ -56,7 +56,7 @@ import { EarthSunMoonModal } from './components/EarthSunMoonModal';
 import { DiscoveryCareerLayer, DiscoveryCareerModal } from './components/DiscoveryCareerModal';
 import { DOCTOR_ROOM, DOCTOR_VISIT_STEPS } from '@/src/data/doctorVisitContent';
 import { DoctorVisitOverlay, useDoctorVisit } from './components/DoctorVisitOverlay';
-import { VETERINARY_CLINIC, VET_SECTIONS } from '@/src/data/veterinaryClinicContent';
+import { VETERINARY_CLINIC, VET_ITEM_REACH } from '@/src/data/veterinaryClinicContent';
 import { useVeterinaryClinicVisit } from './useVeterinaryClinicVisit';
 import { PILOT_APRON } from '@/src/data/pilotExperienceContent';
 import { usePilotExperience } from './usePilotExperience';
@@ -246,6 +246,7 @@ export function WalkableCampusView({
   const clinicTransitionRef = useRef<number | null>(null);
   const doctorBubbleRef = useRef<HTMLDivElement>(null);
   const vetBubbleRef = useRef<HTMLDivElement>(null);
+  const vetCareLayerRef = useRef<HTMLDivElement>(null);
   const vetReducedMotionRef = useRef(false);
   const pilotBoardTimer = useRef<number | null>(null);
   const pilotReducedMotion = useRef(false);
@@ -298,13 +299,11 @@ export function WalkableCampusView({
   const vetVisit = useVeterinaryClinicVisit(
     currentScene === 'discovery_vet' && !isTeleporting && !campus?.isProfileModalOpen,
     doctorSpeechEnabled,
-    resolveStudentVoiceGender(characterId ?? campus?.activeProfile?.characterId ?? null),
+    characterId ?? campus?.activeProfile?.characterId,
     campus?.activeProfile?.id ?? null,
     campus?.activeProfile?.selectedGrade ?? 3,
   );
-  const {
-    begin: beginVetVisit, cancel: cancelVetVoice, openStation: openVetStation, read: readVetVisit, readScene: readVetScene,
-  } = vetVisit;
+  const { begin: beginVetVisit, cancel: cancelVetVoice, readScene: readVetScene } = vetVisit;
   const isVetVisitLocked = vetVisit.dialogOpen;
   const pilotVisit = usePilotExperience(
     currentScene === 'discovery_pilot' && !isTeleporting && !campus?.isProfileModalOpen,
@@ -979,6 +978,18 @@ export function WalkableCampusView({
 
   const handleExitClinic = useCallback(() => transitionClinicVisit('discovery_classroom'), [transitionClinicVisit]);
 
+  const reachVetItem = useCallback((position: Position) => {
+    const engine = engineRef.current;
+    if (!engine || engine.getInputDisabled()) return false;
+    const student = engine.getPosition();
+    if (Math.hypot(student.x - position.x, student.y - position.y) > VET_ITEM_REACH) {
+      engine.navigateWalkToTarget(position.x, position.y + 23);
+      return false;
+    }
+    engine.stopMoving();
+    return true;
+  }, []);
+
   const handlePilotBoard = useCallback(() => {
     const engine = engineRef.current;
     if (!engine || pilotBoardTimer.current !== null || !startPilotBoarding()) return;
@@ -1242,8 +1253,6 @@ export function WalkableCampusView({
         };
       }
       if (scene === 'discovery_vet') {
-        const visit = readVetVisit();
-        const station = VET_SECTIONS[visit.section]?.station;
         const interactiveZones: InteractiveZone[] = [
           {
             id: 'vet-exit', name: 'Gözlüğü Çıkar', prompt: 'Sınıfa Dön',
@@ -1251,16 +1260,6 @@ export function WalkableCampusView({
             action: handleExitClinic,
           },
         ];
-        if (station) {
-          interactiveZones.push({
-            id: station.id, name: station.label, prompt: station.prompt,
-            ...station.position, radius: 36,
-            action: () => {
-              engineRef.current?.stopMoving();
-              openVetStation(visit.section);
-            },
-          });
-        }
         return {
           width: VETERINARY_CLINIC.width,
           height: VETERINARY_CLINIC.height,
@@ -1875,8 +1874,6 @@ export function WalkableCampusView({
       handleExitClinic,
       openDoctorStation,
       readDoctorVisit,
-      openVetStation,
-      readVetVisit,
       handleEnterObservatoryClassroom,
       handleExitObservatoryClassroom,
       handleExitInnerCourtyard,
@@ -2052,7 +2049,7 @@ export function WalkableCampusView({
           } else if (currentScene === 'discovery_pilot') {
             renderPilotApron(ctx);
           } else if (currentScene === 'discovery_vet') {
-            renderVeterinaryClinicBackground(ctx, readVetVisit().careCount);
+            renderVeterinaryClinicBackground(ctx);
           } else if (currentScene === 'discovery_doctor') {
             renderDoctorRoomBackground(ctx);
           } else if (currentScene === 'discovery_moon') {
@@ -2084,7 +2081,7 @@ export function WalkableCampusView({
             renderPilotApronActors(ctx, player, npc, pilotReducedMotion.current);
           } else if (currentScene === 'discovery_vet') {
             renderVeterinaryClinicEntities(
-              ctx, player, npc, readVetScene(), vetBubbleRef.current,
+              ctx, player, npc, readVetScene(), vetBubbleRef.current, vetCareLayerRef.current,
               careerOverlayScaleX, careerOverlayScaleY, vetReducedMotionRef.current,
             );
           } else if (currentScene === 'discovery_doctor') {
@@ -2220,7 +2217,7 @@ export function WalkableCampusView({
           } else if (currentScene === 'discovery_pilot') {
             renderPilotApron(ctx);
           } else if (currentScene === 'discovery_vet') {
-            renderVeterinaryClinicBackground(ctx, readVetVisit().careCount);
+            renderVeterinaryClinicBackground(ctx);
           } else if (currentScene === 'discovery_doctor') {
             renderDoctorRoomBackground(ctx);
           } else if (currentScene === 'discovery_moon') {
@@ -2368,7 +2365,6 @@ export function WalkableCampusView({
     openExchangeChoice,
     readDoctorAnimation,
     readVetScene,
-    readVetVisit,
     resetEncounterState,
   ]);
 
@@ -2391,12 +2387,6 @@ export function WalkableCampusView({
       engineRef.current?.updateInteractiveZones(getSceneConfig('discovery_doctor').interactiveZones);
     }
   }, [currentScene, doctorVisit.stepIndex, getSceneConfig]);
-
-  useEffect(() => {
-    if (currentScene === 'discovery_vet') {
-      engineRef.current?.updateInteractiveZones(getSceneConfig('discovery_vet').interactiveZones);
-    }
-  }, [currentScene, vetVisit.section, getSceneConfig]);
 
   useEffect(() => {
     if (currentScene === 'discovery_doctor' || currentScene === 'discovery_vet') {
@@ -2543,6 +2533,8 @@ export function WalkableCampusView({
         <VeterinaryClinicOverlay
           visit={vetVisit}
           bubbleRef={vetBubbleRef}
+          layerRef={vetCareLayerRef}
+          reachItem={reachVetItem}
           showInstruction={!activeZone}
           onExit={handleExitClinic}
         />
