@@ -1,26 +1,26 @@
-/**
- * Hayalden Gerçeğe — Selçuklu VR Sınıfı Görsel Sahne Çizici.
- *
- * Mimari ve Pedagojik İlkeler:
- * - Sıcak bej kesme taş duvarlar, sivri kemerli duvar nişleri ve geometrik ahşap (kündekâri) işçiliği.
- * - Sekiz köşeli Selçuklu yıldızı ve geçme motifleri yalnızca birkaç belirgin odak noktasında kullanılır;
- *   duvarlar yoğun desenle doldurulmaz, öğrencinin dikkati doğrudan VR gözlüğüne yönelir.
- * - Sahne Dağılımı (Kesin Kural):
- *   1. Çocuk boyuna uygun, sade ahşap sergileme sehpasının üzerinde YALNIZCA 1 adet fiziksel VR gözlüğü
- *      (hafif çapraz açıda; ön gövdesi, yüzle temas eden koyu yastıklı bölümü, baş bandı, ön gövdede
- *      turkuaz tonlu sekiz köşeli yıldız motifi ve yan yüzlerde ince geometrik geçme şeridi seçilebilir).
- *   2. Sehpanın arkasındaki duvarda aynı tasarım dilini taşıyan 3 adet BOŞ gözlük askısı
- *      (her birinde ahşap arka plaka ve ileride bir gözlüğün baş bandını taşıyabilecek kısa çıkıntılı destek;
- *      askılarda gözlük resmi, silüet, kilit simgesi, numara veya "Yakında" yazısı YOKTUR).
- */
-
+/** Hayalden Gerçeğe Selçuklu VR sınıfının yürünebilir sahne çizimi. */
 import type { PlayerCharacter, SceneObstacle } from '../types';
 import { drawCharacter } from './characterRenderer';
+
+const WALL_BASE_Y = 246;
+const STONE_EDGE = 54;
+
+export const DISCOVERY_NICHE_LAYOUT = {
+  top: 76,
+  width: 100,
+  artTop: 113,
+  artSize: 83,
+  nameTop: 202,
+  nameHeight: 36,
+  slots: [57, 163, 269, 591, 697, 803],
+  interactionY: 273,
+} as const;
+
+export const DISCOVERY_PREVIEW_LAYOUT = { left: 420, top: 107, size: 120 } as const;
 
 export const DISCOVERY_CLASSROOM = {
   width: 960,
   height: 640,
-  /** Sınıf girişinde öğrencinin önü açık; hem VR gözlüğünü hem arkasındaki 3 boş askıyı ilk kadrajda görür */
   playerSpawn: { x: 480, y: 470 },
   exitDoor: { x: 480, y: 590, radius: 65 },
   pedestal: {
@@ -37,18 +37,18 @@ export const DISCOVERY_CLASSROOM = {
     baseY: 316,
     topSurfaceY: 254,
   },
-  /** Duvardaki 3 boş askı: aralarındaki boşluk sergilenen VR gözlüğünün genişliğine (~48 px) göre ayarlıdır */
+  // Eski sahne API'sini kullanan çağrılar için koordinatlar korunur.
   wallMounts: [
     { id: 'vr-wall-mount-1', centerX: 384, centerY: 110 },
     { id: 'vr-wall-mount-2', centerX: 480, centerY: 110 },
     { id: 'vr-wall-mount-3', centerX: 576, centerY: 110 },
-  ] as const,
+  ],
 } as const;
 
 export const DISCOVERY_CLASSROOM_OBSTACLES: SceneObstacle[] = [
-  { id: 'discovery-north-wall', name: 'Kuzey Taş Duvarı', x: 0, y: 0, width: 960, height: 158 },
-  { id: 'discovery-west-wall', name: 'Batı Kemerli Duvar', x: 0, y: 158, width: 54, height: 482 },
-  { id: 'discovery-east-wall', name: 'Doğu Kemerli Duvar', x: 906, y: 158, width: 54, height: 482 },
+  { id: 'discovery-north-wall', name: 'Kuzey Taş Duvarı', x: 0, y: 0, width: DISCOVERY_CLASSROOM.width, height: WALL_BASE_Y },
+  { id: 'discovery-west-wall', name: 'Batı Kemerli Duvar', x: 0, y: WALL_BASE_Y, width: STONE_EDGE, height: DISCOVERY_CLASSROOM.height - WALL_BASE_Y },
+  { id: 'discovery-east-wall', name: 'Doğu Kemerli Duvar', x: DISCOVERY_CLASSROOM.width - STONE_EDGE, y: WALL_BASE_Y, width: STONE_EDGE, height: DISCOVERY_CLASSROOM.height - WALL_BASE_Y },
   DISCOVERY_CLASSROOM.pedestal.obstacle,
 ];
 
@@ -97,32 +97,32 @@ function drawSeljukEightPointStar(
   ctx.restore();
 }
 
-/**
- * Katman 1: Selçuklu VR Sınıfı Arka Planı
- * Sıcak bej kesme taş duvarlar, sivri kemerli duvar nişleri, 3 boş ahşap duvar askısı,
- * aydınlık ahşap/taş zemin, merkez yıldız göbek mozaiği ve avluya çıkış kapısı.
- */
-export function renderDiscoveryClassroomLayeredBackground(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-) {
-  const isReducedMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  const now = isReducedMotion ? 0 : typeof performance !== 'undefined' ? performance.now() : 0;
+let classroomBackdrop: HTMLCanvasElement | null = null;
 
-  // 1. ZEMİN (Aydınlık, sıcak kesme taş ve ahşap çerçeveli sınıf zemini)
+function drawClassroomBackdrop(ctx: CanvasRenderingContext2D, width: number, height: number) {
   drawDiscoveryFloor(ctx, width, height);
-
-  // 2. KUZEY VE YAN KESME TAŞ DUVARLAR + SİVRİ KEMERLİ DUVAR NİŞLERİ
-  drawSeljukStoneWallsAndNiches(ctx, width, height, now);
-
-  // 3. SEHPANIN ARKASINDAKİ DUVARDA 3 ADET BOŞ GÖZLÜK ASKISI
-  drawEmptyVrWallMounts(ctx);
-
-  // 4. AVLUYA ÇIKIŞ KAPISI (Güney Duvarı — 480, 590)
+  drawSeljukStoneWallsAndNiches(ctx, width, height);
   drawDiscoveryExitDoor(ctx, width, height);
+}
+
+export function renderDiscoveryClassroomLayeredBackground(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  if (typeof document === 'undefined') {
+    drawClassroomBackdrop(ctx, width, height);
+    return;
+  }
+  if (!classroomBackdrop || classroomBackdrop.width !== width || classroomBackdrop.height !== height) {
+    const surface = document.createElement('canvas');
+    surface.width = width;
+    surface.height = height;
+    const drawingContext = surface.getContext('2d');
+    if (!drawingContext) {
+      drawClassroomBackdrop(ctx, width, height);
+      return;
+    }
+    drawClassroomBackdrop(drawingContext, width, height);
+    classroomBackdrop = surface;
+  }
+  ctx.drawImage(classroomBackdrop, 0, 0);
 }
 
 /**
@@ -170,17 +170,13 @@ export function renderDiscoveryClassroomForeground(
   width: number,
   height?: number,
 ) {
-  void width;
   void height;
   const isReducedMotion =
     typeof window !== 'undefined' &&
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const now = isReducedMotion ? 0 : typeof performance !== 'undefined' ? performance.now() : 0;
 
-  ctx.save();
-  drawSeljukPendantLamp(ctx, 210, 0, 44, now);
-  drawSeljukPendantLamp(ctx, 750, 0, 44, now);
-  ctx.restore();
+  drawSeljukChandelier(ctx, width / 2, now);
 }
 
 /**
@@ -214,25 +210,25 @@ function drawDiscoveryFloor(ctx: CanvasRenderingContext2D, width: number, height
   ctx.save();
 
   // Ana zemin sıcak krem-bej taş/ahşap tonu
-  const floorGrad = ctx.createLinearGradient(0, 158, 0, height);
-  floorGrad.addColorStop(0, '#f3ead8');
-  floorGrad.addColorStop(0.55, '#efe4ce');
-  floorGrad.addColorStop(1, '#e4d5b7');
+  const floorGrad = ctx.createLinearGradient(0, WALL_BASE_Y, 0, height);
+  floorGrad.addColorStop(0, '#efd2a7');
+  floorGrad.addColorStop(0.55, '#ead3b1');
+  floorGrad.addColorStop(1, '#d6b18a');
   ctx.fillStyle = floorGrad;
-  ctx.fillRect(0, 158, width, height - 158);
+  ctx.fillRect(0, WALL_BASE_Y, width, height - WALL_BASE_Y);
 
   // Zarif büyük kesme taş derz ızgarası (göz yormayan düşük kontrast)
   ctx.strokeStyle = 'rgba(184, 163, 130, 0.32)';
   ctx.lineWidth = 1;
   const tileW = 80;
   const tileH = 54;
-  for (let y = 158; y <= height; y += tileH) {
+  for (let y = WALL_BASE_Y; y <= height; y += tileH) {
     ctx.beginPath();
     ctx.moveTo(54, y);
     ctx.lineTo(width - 54, y);
     ctx.stroke();
 
-    const rowIdx = Math.round((y - 158) / tileH);
+    const rowIdx = Math.round((y - WALL_BASE_Y) / tileH);
     const shift = (rowIdx % 2) * (tileW / 2);
     for (let x = 54 + shift; x < width - 54; x += tileW) {
       ctx.beginPath();
@@ -245,11 +241,11 @@ function drawDiscoveryFloor(ctx: CanvasRenderingContext2D, width: number, height
   // Sınıfı çevreleyen kündekâri ahşap ve turkuaz ince yer bordürü
   ctx.strokeStyle = '#9a7144';
   ctx.lineWidth = 4;
-  ctx.strokeRect(76, 178, width - 152, height - 224);
+  ctx.strokeRect(76, WALL_BASE_Y + 13, width - 152, height - WALL_BASE_Y - 62);
 
   ctx.strokeStyle = 'rgba(14, 118, 138, 0.45)';
   ctx.lineWidth = 1.5;
-  ctx.strokeRect(82, 184, width - 164, height - 236);
+  ctx.strokeRect(82, WALL_BASE_Y + 19, width - 164, height - WALL_BASE_Y - 74);
 
   // Girişten VR sehpasına uzanan açık, davetkâr zemin halı/taş aksı
   const runnerGrad = ctx.createLinearGradient(480, 320, 480, 565);
@@ -258,21 +254,39 @@ function drawDiscoveryFloor(ctx: CanvasRenderingContext2D, width: number, height
   ctx.fillStyle = runnerGrad;
   ctx.fillRect(422, 316, 116, 250);
 
-  // Sehpa altında odaklayıcı büyük sekiz köşeli Selçuklu zemin madalyonu
+  stoneGrain(ctx, STONE_EDGE, WALL_BASE_Y, width - STONE_EDGE * 2, height - WALL_BASE_Y, 1200);
+
+  ctx.beginPath();
+  ctx.ellipse(480, 305, 160, 48, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#704b41';
+  ctx.strokeStyle = '#d29b5d';
+  ctx.lineWidth = 4;
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(480, 305, 148, 40, 0, 0, Math.PI * 2);
+  ctx.strokeStyle = '#d9b989';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  for (const x of [350, 382, 578, 610]) {
+    drawSeljukEightPointStar(ctx, x, 305, 11, '#0e6270', '#d29b5d', .8);
+  }
+
+  // Sekiz köşeli Selçuklu zemin madalyonu
   drawSeljukEightPointStar(
     ctx,
     480,
-    294,
-    82,
-    'rgba(216, 151, 43, 0.14)',
+    305,
+    40,
+    'rgba(232, 178, 105, 0.25)',
     'rgba(154, 113, 68, 0.48)',
     1.8,
   );
   drawSeljukEightPointStar(
     ctx,
     480,
-    294,
-    60,
+    305,
+    29,
     'rgba(14, 118, 138, 0.12)',
     'rgba(14, 118, 138, 0.42)',
     1.4,
@@ -281,16 +295,16 @@ function drawDiscoveryFloor(ctx: CanvasRenderingContext2D, width: number, height
   // Sol ve sağ kemerli pencerelerden zemine süzülen yumuşak gün ışığı
   ctx.fillStyle = 'rgba(255, 249, 224, 0.25)';
   ctx.beginPath();
-  ctx.moveTo(155, 158);
-  ctx.lineTo(255, 158);
+  ctx.moveTo(155, WALL_BASE_Y);
+  ctx.lineTo(255, WALL_BASE_Y);
   ctx.lineTo(340, height - 40);
   ctx.lineTo(185, height - 40);
   ctx.closePath();
   ctx.fill();
 
   ctx.beginPath();
-  ctx.moveTo(705, 158);
-  ctx.lineTo(805, 158);
+  ctx.moveTo(705, WALL_BASE_Y);
+  ctx.lineTo(805, WALL_BASE_Y);
   ctx.lineTo(775, height - 40);
   ctx.lineTo(620, height - 40);
   ctx.closePath();
@@ -299,354 +313,175 @@ function drawDiscoveryFloor(ctx: CanvasRenderingContext2D, width: number, height
   ctx.restore();
 }
 
-/**
- * Sıcak Bej Kesme Taş Duvarlar, Sivri Kemerli Duvar Nişleri ve Geometrik Ahşap İşçiliği.
- */
-function drawSeljukStoneWallsAndNiches(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  now: number,
-) {
-  void now;
+function tracePointedArch(ctx: CanvasRenderingContext2D, x: number, top: number, width: number, bottom: number) {
+  const mid = x + width / 2;
+  const shoulder = top + 38;
+  ctx.beginPath();
+  ctx.moveTo(x, bottom);
+  ctx.lineTo(x, shoulder);
+  ctx.bezierCurveTo(x, top + 22, mid - 16, top + 10, mid, top);
+  ctx.bezierCurveTo(mid + 16, top + 10, x + width, top + 22, x + width, shoulder);
+  ctx.lineTo(x + width, bottom);
+  ctx.closePath();
+}
+
+function stoneGrain(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, count: number) {
+  let seed = 4423;
+  const next = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+  for (let i = 0; i < count; i++) {
+    ctx.fillStyle = i % 3 === 0 ? 'rgba(255, 245, 218, .14)' : 'rgba(100, 57, 26, .08)';
+    ctx.fillRect(x + next() * width, y + next() * height, 0.6 + next() * 2.4, 0.55 + next() * 0.85);
+  }
+}
+
+function drawCareerNiche(ctx: CanvasRenderingContext2D, x: number) {
+  const { top, width, nameTop, nameHeight } = DISCOVERY_NICHE_LAYOUT;
+  const bottom = nameTop + nameHeight + 2;
+  const mid = x + width / 2;
+  const frame = ctx.createLinearGradient(x, top, x + width, bottom);
+  frame.addColorStop(0, '#ffe1aa');
+  frame.addColorStop(0.42, '#b87943');
+  frame.addColorStop(0.68, '#edbd81');
+  frame.addColorStop(1, '#855030');
+
   ctx.save();
+  ctx.shadowColor = 'rgba(63, 31, 15, .3)';
+  ctx.shadowBlur = 7;
+  ctx.shadowOffsetY = 4;
+  tracePointedArch(ctx, x, top, width, bottom);
+  ctx.fillStyle = frame;
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
 
-  // 1. Kuzey Ana Kesme Taş Duvarı (0..158 Y)
-  const wallGrad = ctx.createLinearGradient(0, 0, 0, 158);
-  wallGrad.addColorStop(0, '#e8dcc4');
-  wallGrad.addColorStop(0.75, '#f2e8d5');
-  wallGrad.addColorStop(1, '#dfd0b4');
-  ctx.fillStyle = wallGrad;
-  ctx.fillRect(0, 0, width, 158);
+  const recess = ctx.createLinearGradient(mid, top, mid, bottom);
+  recess.addColorStop(0, '#6b4229');
+  recess.addColorStop(0.3, '#aa7041');
+  recess.addColorStop(0.68, '#452a20');
+  recess.addColorStop(1, '#6f4027');
+  tracePointedArch(ctx, x + 6, top + 7, width - 12, bottom - 4);
+  ctx.fillStyle = recess;
+  ctx.fill();
 
-  // Sıcak kesme taş blok derzleri (sade, göz yormayan)
-  ctx.strokeStyle = 'rgba(176, 152, 116, 0.34)';
-  ctx.lineWidth = 1;
-  for (let y = 28; y < 146; y += 30) {
+  tracePointedArch(ctx, x + 8, top + 10, width - 16, bottom - 6);
+  ctx.strokeStyle = '#f9cd82';
+  ctx.lineWidth = 1.3;
+  ctx.stroke();
+  drawSeljukEightPointStar(ctx, mid, top + 24, 7, '#eac083', '#855030', .9);
+
+  ctx.fillStyle = '#39281f';
+  ctx.beginPath();
+  ctx.roundRect(x + 5, nameTop, width - 10, nameHeight, 5);
+  ctx.fill();
+  ctx.strokeStyle = '#d19960';
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawSeljukStoneWallsAndNiches(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  ctx.save();
+  const wall = ctx.createLinearGradient(0, 0, 0, WALL_BASE_Y);
+  wall.addColorStop(0, '#ad7850');
+  wall.addColorStop(0.38, '#edc394');
+  wall.addColorStop(0.8, '#d9a573');
+  wall.addColorStop(1, '#c78d5a');
+  ctx.fillStyle = wall;
+  ctx.fillRect(0, 0, width, WALL_BASE_Y);
+
+  for (let y = 16, row = 0; y < WALL_BASE_Y; y += 37, row++) {
+    for (let x = row % 2 === 0 ? -42 : 0, column = 0; x < width; x += 84, column++) {
+      const stone = ['#f4d4a8', '#c88e60', '#dca87e', '#f0bd87'][(row * 3 + column * 7) % 4];
+      ctx.globalAlpha = 0.27;
+      ctx.fillStyle = stone;
+      ctx.fillRect(x + 1, y + 1, 82, Math.min(35, WALL_BASE_Y - y));
+    }
+  }
+  ctx.globalAlpha = 1;
+  stoneGrain(ctx, 0, 10, width, WALL_BASE_Y - 10, 1250);
+
+  const outerBeam = ctx.createLinearGradient(0, 0, 0, 29);
+  outerBeam.addColorStop(0, '#493021');
+  outerBeam.addColorStop(0.6, '#755033');
+  outerBeam.addColorStop(1, '#503622');
+  ctx.fillStyle = outerBeam;
+  ctx.fillRect(0, 0, width, 25);
+  ctx.fillStyle = '#ba8651';
+  ctx.fillRect(0, 22, width, 3);
+
+  for (let x = 24; x < width; x += 25) {
+    drawSeljukEightPointStar(ctx, x, 12, 7, '#956435', '#e4b779', 0.65);
+  }
+
+  const side = ctx.createLinearGradient(0, 0, STONE_EDGE, 0);
+  side.addColorStop(0, '#99603c');
+  side.addColorStop(1, '#cc9b68');
+  ctx.fillStyle = side;
+  ctx.fillRect(0, WALL_BASE_Y, STONE_EDGE, height - WALL_BASE_Y);
+  ctx.save();
+  ctx.translate(width, 0);
+  ctx.scale(-1, 1);
+  ctx.fillStyle = side;
+  ctx.fillRect(0, WALL_BASE_Y, STONE_EDGE, height - WALL_BASE_Y);
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(113, 72, 41, .65)';
+  for (let y = WALL_BASE_Y + 28; y < height; y += 38) {
     ctx.beginPath();
     ctx.moveTo(0, y);
+    ctx.lineTo(STONE_EDGE, y);
+    ctx.moveTo(width - STONE_EDGE, y);
     ctx.lineTo(width, y);
     ctx.stroke();
+  }
 
-    const offset = ((y / 30) % 2) * 48;
-    for (let x = offset; x < width; x += 96) {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x, y + 30);
-      ctx.stroke();
+  const center = width / 2;
+  const glow = ctx.createRadialGradient(center, 91, 12, center, 119, 138);
+  glow.addColorStop(0, 'rgba(255, 236, 183, .9)');
+  glow.addColorStop(1, 'rgba(236, 172, 97, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(center - 166, 25, 332, 213);
+
+  tracePointedArch(ctx, center - 104, 34, 208, WALL_BASE_Y - 5);
+  ctx.fillStyle = '#deac79';
+  ctx.fill();
+  ctx.strokeStyle = '#98633c';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  tracePointedArch(ctx, center - 94, 44, 188, WALL_BASE_Y - 9);
+  ctx.fillStyle = '#efd0a3';
+  ctx.fill();
+  ctx.strokeStyle = '#fff1cb';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  for (const bandX of [43, 380, 580, width - 43]) {
+    ctx.fillStyle = bandX === 380 || bandX === 580 ? '#b17a4e' : '#956242';
+    ctx.fillRect(bandX - 6, 47, 12, WALL_BASE_Y - 54);
+    ctx.fillStyle = '#e9be89';
+    ctx.fillRect(bandX - 6, 47, 2, WALL_BASE_Y - 54);
+    for (let y = 57; y < 232; y += 18) {
+      drawSeljukEightPointStar(ctx, bandX, y, 4, '#935b3b', '#e4b575', 0.65);
     }
   }
 
-  // Üst Tavan Kündekâri Ahşap Kiriş ve Geometrik Geçme Bordürü
-  ctx.fillStyle = '#5c3c22';
-  ctx.fillRect(0, 0, width, 18);
-  ctx.fillStyle = '#7a5230';
-  ctx.fillRect(0, 18, width, 6);
 
-  // Üst kirişte sade geometrik geçme şeridi
-  ctx.strokeStyle = '#d8972b';
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  for (let x = 24; x < width - 24; x += 48) {
-    ctx.moveTo(x, 6);
-    ctx.lineTo(x + 12, 14);
-    ctx.lineTo(x + 24, 6);
-    ctx.lineTo(x + 36, 14);
-    ctx.lineTo(x + 48, 6);
+  // Yan duvar kanatlarında geçme kafesli iki küçük ışıklık.
+  for (const x of [width * 0.224, width * 0.776]) {
+    tracePointedArch(ctx, x - 11, 28, 22, 68);
+    ctx.fillStyle = '#735036';
+    ctx.fill();
+    ctx.strokeStyle = '#f1c48b';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    for (const y of [51, 61]) {
+      drawSeljukEightPointStar(ctx, x, y, 4.2, '#ffe0a6', '#b27748', .72);
+    }
   }
-  ctx.stroke();
 
-  // Duvar alt süpürgelik (Ahşap lambri kaide + ince turkuaz çini şerit)
-  ctx.fillStyle = '#6d492a';
-  ctx.fillRect(0, 146, width, 12);
-  ctx.fillStyle = '#0e768a';
-  ctx.fillRect(0, 141, width, 5);
-  ctx.fillStyle = '#d8972b';
-  ctx.fillRect(0, 139, width, 2);
+  for (const x of DISCOVERY_NICHE_LAYOUT.slots) drawCareerNiche(ctx, x);
 
-  // 2. Yan Kesme Taş Duvarlar (Perspektif Sol ve Sağ Duvar)
-  ctx.fillStyle = '#e5d7bc';
-  ctx.fillRect(0, 158, 54, height - 158);
-  ctx.fillRect(width - 54, 158, 54, height - 158);
-
-  ctx.strokeStyle = '#7a5230';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(54, 158);
-  ctx.lineTo(54, height);
-  ctx.moveTo(width - 54, 158);
-  ctx.lineTo(width - 54, height);
-  ctx.stroke();
-
-  // Yan duvarlarda gömme sivri kemerli taş nişler (Sol ve Sağ)
-  drawSideWallPointedNiche(ctx, 14, 230, 28, 95, 'left');
-  drawSideWallPointedNiche(ctx, 14, 380, 28, 95, 'left');
-  drawSideWallPointedNiche(ctx, width - 42, 230, 28, 95, 'right');
-  drawSideWallPointedNiche(ctx, width - 42, 380, 28, 95, 'right');
-
-  // 3. KUZEY DUVARI MERKEZ SİVRİ KEMERLİ NİŞ (3 Boş Askıyı Çerçeveleyen Selçuklu Taş Kemer Nişi)
-  drawCentralPointedArchNiche(ctx, 314, 24, 332, 117);
-
-  // 4. KUZEY DUVARI SOL VE SAĞ SİVRİ KEMERLİ AYDINLIK NİŞLER (Sade Selçuklu Yıldız Madalyonlu)
-  drawFlankingPointedArchNiche(ctx, 140, 32, 120, 108);
-  drawFlankingPointedArchNiche(ctx, 700, 32, 120, 108);
-
-  ctx.restore();
-}
-
-/**
- * Merkez Sivri Kemerli Büyük Taş Niş (x=314, y=24, w=332, h=117).
- * Sehpanın arkasındaki 3 boş VR gözlüğü askısını mimari olarak çerçeveler.
- */
-function drawCentralPointedArchNiche(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-) {
-  const cx = x + w / 2; // 480
-  const archShoulderY = y + 32;
-  const bottomY = y + h;
-
-  ctx.save();
-
-  // Dış kesme taş söve ve kündekâri ahşap çerçeve
-  ctx.fillStyle = '#d9c7a7';
-  ctx.strokeStyle = '#8b643b';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(x - 8, bottomY);
-  ctx.lineTo(x - 8, archShoulderY);
-  ctx.quadraticCurveTo(x - 8, y + 2, cx, y - 6);
-  ctx.quadraticCurveTo(x + w + 8, y + 2, x + w + 8, archShoulderY);
-  ctx.lineTo(x + w + 8, bottomY);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // Niş iç girinti yüzeyi (sıcak gölgeli taş derinliği)
-  const recessGrad = ctx.createLinearGradient(cx, y, cx, bottomY);
-  recessGrad.addColorStop(0, '#cbb692');
-  recessGrad.addColorStop(0.35, '#decba8');
-  recessGrad.addColorStop(1, '#e8d9bc');
-  ctx.fillStyle = recessGrad;
-
-  ctx.beginPath();
-  ctx.moveTo(x, bottomY);
-  ctx.lineTo(x, archShoulderY + 4);
-  ctx.quadraticCurveTo(x + 6, y + 10, cx, y + 3);
-  ctx.quadraticCurveTo(x + w - 6, y + 10, x + w, archShoulderY + 4);
-  ctx.lineTo(x + w, bottomY);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.strokeStyle = '#0e768a';
-  ctx.lineWidth = 1.8;
-  ctx.stroke();
-
-  // Kemer kilit taşında tek bir zarif Selçuklu sekiz köşeli yıldız rozeti
-  drawSeljukEightPointStar(ctx, cx, y + 17, 9.5, '#0e768a', '#d8972b', 1.2);
-
-  // Kemer omuzlarında ince geometrik ahşap geçme çıtası
-  ctx.strokeStyle = 'rgba(122, 82, 48, 0.55)';
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.moveTo(x + 14, y + 36);
-  ctx.lineTo(x + w - 14, y + 36);
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-/**
- * Yan Sivri Kemerli Duvar Nişleri (Sol: x=140, Sağ: x=700).
- * İçlerinde yoğun desen yerine gün ışığı ve tek bir sekiz köşeli yıldız kabartması bulunur.
- */
-function drawFlankingPointedArchNiche(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-) {
-  const cx = x + w / 2;
-  const shoulderY = y + 34;
-  const bottomY = y + h;
-
-  ctx.save();
-
-  // Taş kemer kasası
-  ctx.fillStyle = '#d8c5a3';
-  ctx.strokeStyle = '#9a7144';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(x, bottomY);
-  ctx.lineTo(x, shoulderY);
-  ctx.quadraticCurveTo(x + 4, y + 6, cx, y);
-  ctx.quadraticCurveTo(x + w - 4, y + 6, x + w, shoulderY);
-  ctx.lineTo(x + w, bottomY);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  // Niş içi aydınlık taş yüzey
-  ctx.fillStyle = '#e7d9be';
-  ctx.beginPath();
-  ctx.moveTo(x + 7, bottomY - 4);
-  ctx.lineTo(x + 7, shoulderY + 3);
-  ctx.quadraticCurveTo(x + 11, y + 13, cx, y + 7);
-  ctx.quadraticCurveTo(x + w - 11, y + 13, x + w - 7, shoulderY + 3);
-  ctx.lineTo(x + w - 7, bottomY - 4);
-  ctx.closePath();
-  ctx.fill();
-
-  // Ahşap kafesli üst ışık penceresi ve altında tek bir Selçuklu yıldız madalyonu
-  drawSeljukEightPointStar(ctx, cx, y + 48, 16, 'rgba(14, 118, 138, 0.22)', '#8b643b', 1.4);
-  drawSeljukEightPointStar(ctx, cx, y + 48, 8, '#0e768a', '#d8972b', 1);
-
-  // Niş alt ahşap raf tablası
-  ctx.fillStyle = '#6d492a';
-  ctx.fillRect(x + 4, bottomY - 8, w - 8, 6);
-
-  ctx.restore();
-}
-
-function drawSideWallPointedNiche(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  side: 'left' | 'right',
-) {
-  ctx.save();
-  ctx.fillStyle = '#d3c09d';
-  ctx.strokeStyle = '#8b643b';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, side === 'left' ? [12, 4, 4, 12] : [4, 12, 12, 4]);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = '#bfa982';
-  ctx.beginPath();
-  ctx.roundRect(x + 4, y + 8, w - 8, h - 16, 6);
-  ctx.fill();
-  ctx.restore();
-}
-
-/**
- * 4. GELECEKTEKİ GÖZLÜKLER İÇİN 3 ADET BOŞ DUVAR ASKISI
- *
- * Kurallar:
- * - Sehpanın arkasındaki duvarda 3 adet boş gözlük askısı (x = 384, 480, 576; merkez aralığı 96 px,
- *   sergilenen VR gözlüğünün ~48 px genişliğine göre dengeli boşluklu).
- * - Her askıda ahşap bir arka plaka ve ileride bir gözlüğün baş bandını taşıyabilecek kısa,
- *   çıkıntılı bir destek (peg/cradle) bulunur.
- * - Askılarda gözlük resmi, gözlük silüeti, kilit simgesi, numara veya "Yakında" yazısı KESİNLİKLE YOKTUR.
- */
-function drawEmptyVrWallMounts(ctx: CanvasRenderingContext2D) {
-  for (const mount of DISCOVERY_CLASSROOM.wallMounts) {
-    drawSingleEmptyWallMount(ctx, mount.centerX, mount.centerY);
-  }
-}
-
-function drawSingleEmptyWallMount(ctx: CanvasRenderingContext2D, cx: number, cy: number) {
-  const plaqueW = 50;
-  const plaqueH = 62;
-  const left = cx - plaqueW / 2;
-  const top = cy - plaqueH / 2;
-
-  ctx.save();
-
-  // 1. Duvar Üzerindeki Yumuşak Derinlik Gölgesi
-  ctx.fillStyle = 'rgba(23, 43, 71, 0.24)';
-  ctx.beginPath();
-  ctx.roundRect(left + 2, top + 4, plaqueW, plaqueH, [16, 16, 7, 7]);
-  ctx.fill();
-
-  // 2. Ahşap Arka Plaka (Selçuklu sivri kemer tepeli ceviz/meşe plaka)
-  const woodGrad = ctx.createLinearGradient(left, top, left + plaqueW, top + plaqueH);
-  woodGrad.addColorStop(0, '#7c5330');
-  woodGrad.addColorStop(0.5, '#634022');
-  woodGrad.addColorStop(1, '#4b2f18');
-  ctx.fillStyle = woodGrad;
-  ctx.strokeStyle = '#d8972b';
-  ctx.lineWidth = 1.8;
-
-  ctx.beginPath();
-  ctx.roundRect(left, top, plaqueW, plaqueH, [16, 16, 7, 7]);
-  ctx.fill();
-  ctx.stroke();
-
-  // Ahşap arka plaka üzerinde ince geometrik kakma iç çerçeve
-  ctx.strokeStyle = 'rgba(239, 219, 182, 0.55)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.roundRect(left + 4.5, top + 4.5, plaqueW - 9, plaqueH - 9, [13, 13, 4, 4]);
-  ctx.stroke();
-
-  // Plaka üst alınlığında küçük turkuaz kakma nokta (numara veya simge değil, saf ahşap kakma çivisi)
-  ctx.fillStyle = '#0e768a';
-  ctx.beginPath();
-  ctx.arc(cx, top + 13, 3, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#fef08a';
-  ctx.lineWidth = 0.8;
-  ctx.stroke();
-
-  // 3. İleride Bir Gözlüğün Baş Bandını Taşıyabilecek Kısa, Çıkıntılı Destek (3D Peg / Cradle)
-  const pegY = cy + 4;
-
-  // Desteğin plaka ve duvar üzerine düşen alt gölgesi (çıkıntı hissini verir)
-  ctx.fillStyle = 'rgba(15, 23, 42, 0.38)';
-  ctx.beginPath();
-  ctx.ellipse(cx + 2, pegY + 13, 13, 5.5, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Arka metal/pirinç bağlantı bileziği
-  ctx.fillStyle = '#b88632';
-  ctx.strokeStyle = '#4b2f18';
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.roundRect(cx - 11, pegY - 5, 22, 10, 3);
-  ctx.fill();
-  ctx.stroke();
-
-  // Öne doğru uzanan kısa ahşap boyun (gövde)
-  const stemGrad = ctx.createLinearGradient(cx, pegY - 3, cx, pegY + 9);
-  stemGrad.addColorStop(0, '#a57548');
-  stemGrad.addColorStop(1, '#5e3c1e');
-  ctx.fillStyle = stemGrad;
-  ctx.beginPath();
-  ctx.roundRect(cx - 8, pegY - 2, 16, 10, 3);
-  ctx.fill();
-  ctx.strokeStyle = '#3b2310';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  // Baş bandını kavrayacak kavisli ön dudak / çıkıntılı destek ucu (boş olduğu net seçilir)
-  const tipGrad = ctx.createLinearGradient(cx - 13, pegY + 3, cx + 13, pegY + 11);
-  tipGrad.addColorStop(0, '#cfa06c');
-  tipGrad.addColorStop(0.5, '#e8c391');
-  tipGrad.addColorStop(1, '#8c5e34');
-  ctx.fillStyle = tipGrad;
-  ctx.strokeStyle = '#3b2310';
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.roundRect(cx - 13, pegY + 3, 26, 7, [3, 3, 5, 5]);
-  ctx.fill();
-  ctx.stroke();
-
-  // Ön destek ucunda parlak ahşap pah çizgisi
-  ctx.strokeStyle = 'rgba(255, 248, 231, 0.75)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(cx - 10, pegY + 5);
-  ctx.lineTo(cx + 10, pegY + 5);
-  ctx.stroke();
-
+  ctx.fillStyle = '#744a31';
+  ctx.fillRect(STONE_EDGE, WALL_BASE_Y - 5, width - 2 * STONE_EDGE, 5);
+  ctx.fillStyle = '#dfad72';
+  ctx.fillRect(STONE_EDGE, WALL_BASE_Y - 7, width - 2 * STONE_EDGE, 2);
   ctx.restore();
 }
 
@@ -945,51 +780,40 @@ function drawDiscoveryExitDoor(ctx: CanvasRenderingContext2D, width: number, hei
   ctx.restore();
 }
 
-function drawSeljukPendantLamp(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  yTop: number,
-  chainLength: number,
-  now: number,
-) {
+function drawSeljukChandelier(ctx: CanvasRenderingContext2D, center: number, now: number) {
   ctx.save();
+  ctx.translate(center, 38);
+  const spread = ctx.createRadialGradient(0, 0, 5, 0, 0, 88);
+  spread.addColorStop(0, 'rgba(255, 228, 166, .46)');
+  spread.addColorStop(1, 'rgba(255, 212, 130, 0)');
+  ctx.fillStyle = spread;
+  ctx.fillRect(-88, -38, 176, 104);
 
-  ctx.strokeStyle = '#8a6836';
-  ctx.lineWidth = 1.8;
+  ctx.strokeStyle = '#714725';
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(x, yTop);
-  ctx.lineTo(x, yTop + chainLength);
+  ctx.moveTo(-39, -38);
+  ctx.lineTo(-57, -4);
+  ctx.moveTo(39, -38);
+  ctx.lineTo(57, -4);
   ctx.stroke();
 
-  const lampY = yTop + chainLength;
-  const pulse = Math.sin(now / 520) * 0.06 + 0.2;
-  if (typeof ctx.createRadialGradient === 'function') {
-    const glowGrad = ctx.createRadialGradient(x, lampY + 12, 4, x, lampY + 12, 44);
-    glowGrad.addColorStop(0, `rgba(255, 224, 140, ${pulse * 1.4})`);
-    glowGrad.addColorStop(1, 'rgba(255, 224, 140, 0)');
-    ctx.fillStyle = glowGrad;
-    ctx.beginPath();
-    ctx.arc(x, lampY + 12, 44, 0, Math.PI * 2);
-    ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(0, 3, 71, 10, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#744220';
+  ctx.strokeStyle = '#e6a75b';
+  ctx.lineWidth = 3;
+  ctx.fill();
+  ctx.stroke();
+
+  const shimmer = (0.83 + Math.sin(now / 700) * 0.04).toFixed(3);
+  ctx.beginPath();
+  ctx.ellipse(0, 3, 63, 6, 0, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255, 225, 155, ' + shimmer + ')';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  for (const x of [-48, -32, -16, 0, 16, 32, 48]) {
+    drawSeljukEightPointStar(ctx, x, 6, 3.5, '#ffdda0', '#b4763b', 0.65);
   }
-
-  ctx.fillStyle = '#b8893b';
-  ctx.beginPath();
-  ctx.moveTo(x - 9, lampY);
-  ctx.lineTo(x + 9, lampY);
-  ctx.lineTo(x + 12, lampY + 13);
-  ctx.lineTo(x, lampY + 24);
-  ctx.lineTo(x - 12, lampY + 13);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = '#5a3d16';
-  ctx.lineWidth = 1.2;
-  ctx.stroke();
-
-  ctx.fillStyle = '#fff4ce';
-  ctx.beginPath();
-  ctx.arc(x, lampY + 11, 4.5, 0, Math.PI * 2);
-  ctx.fill();
-
   ctx.restore();
 }

@@ -4,6 +4,7 @@ import { Sparkles, DoorOpen } from 'lucide-react';
 import { WalkableCanvasEngine } from './engine/WalkableCanvasEngine';
 import { createCourtyardLavenderLayer } from './engine/courtyardLavender';
 import {
+  COURTYARD_ENTRANCE_TREE_OBSTACLES,
   renderCourtyardBackground,
   renderCourtyardLayeredBackground,
   renderCourtyardEntities,
@@ -18,6 +19,7 @@ import {
 import {
   DISCOVERY_CLASSROOM,
   DISCOVERY_CLASSROOM_OBSTACLES,
+  DISCOVERY_NICHE_LAYOUT,
   renderDiscoveryClassroomBackground,
   renderDiscoveryClassroomLayeredBackground,
   renderDiscoveryClassroomEntities,
@@ -31,11 +33,13 @@ import {
   renderDiscoveryMoonWalkableScene,
 } from './engine/discoveryMoonSceneRenderer';
 import {
+  CAREER_PAGE_COUNT,
   DISCOVERY_VR_CONFIG,
+  getCareerPage,
   type CareerDefinition,
   type DiscoveryVrState,
 } from '@/src/data/discoveryCareerConfig';
-import { DiscoveryCareerModal } from './components/DiscoveryCareerModal';
+import { DiscoveryCareerLayer, DiscoveryCareerModal, DiscoveryCareerPages } from './components/DiscoveryCareerModal';
 import {
   PORTAL,
   renderSultanhaniBackground,
@@ -184,6 +188,10 @@ export function WalkableCampusView({
   const [vrState, setVrState] = useState<DiscoveryVrState>('CLASS_IDLE');
   const vrStateRef = useRef<DiscoveryVrState>('CLASS_IDLE');
   const [isCareerModalOpen, setIsCareerModalOpen] = useState(false);
+  const [allowCareerLaunch, setAllowCareerLaunch] = useState(false);
+  const [careerGallery, setCareerGallery] = useState({ page: 0, activeSlot: 0 });
+  const careerGalleryRef = useRef(careerGallery);
+  const careerLayerRef = useRef<HTMLDivElement>(null);
   const vrTransitionLockRef = useRef(false);
   const [isMoonLandingComplete, setIsMoonLandingComplete] = useState(false);
   const isMoonLandingCompleteRef = useRef(false);
@@ -798,16 +806,41 @@ export function WalkableCampusView({
     setCurrentScene('courtyard');
   }, [clearDiscoveryDoorTimers]);
 
-  const handlePutOnGlasses = useCallback(() => {
+  const handleSelectCareerSlot = useCallback((slot: number) => {
+    const current = careerGalleryRef.current;
+    if (current.activeSlot === slot || !getCareerPage(current.page)[slot]) return;
+    const next = { ...current, activeSlot: slot };
+    careerGalleryRef.current = next;
+    setCareerGallery(next);
+  }, []);
+
+  const handleCareerPageChange = useCallback((page: number) => {
+    if (page < 0 || page >= CAREER_PAGE_COUNT || page === careerGalleryRef.current.page) return;
+    const next = { page, activeSlot: 0 };
+    careerGalleryRef.current = next;
+    setCareerGallery(next);
+  }, []);
+
+  const openCareerGallery = useCallback((allowLaunch: boolean) => {
     if (vrTransitionLockRef.current) return;
     engineRef.current?.stopMoving();
+    setAllowCareerLaunch(allowLaunch);
     setVrState('CAREER_SELECT');
     setIsCareerModalOpen(true);
   }, []);
 
+  const closeCareerGallery = useCallback(() => {
+    setIsCareerModalOpen(false);
+    setVrState('CLASS_IDLE');
+  }, []);
+
+  const handlePutOnGlasses = useCallback(() => {
+    const { page, activeSlot } = careerGalleryRef.current;
+    if (getCareerPage(page)[activeSlot]?.sceneId === 'discovery_moon') openCareerGallery(true);
+  }, [openCareerGallery]);
+
   const handleSelectCareer = useCallback((career: CareerDefinition) => {
-    void career;
-    if (vrTransitionLockRef.current) return;
+    if (career.sceneId !== 'discovery_moon' || vrTransitionLockRef.current) return;
     vrTransitionLockRef.current = true;
     setActiveZone(null);
     setIsMoonLandingComplete(false);
@@ -1011,6 +1044,8 @@ export function WalkableCampusView({
         | 'sultanhani_inner',
     ): WalkableSceneConfig => {
       if (scene === 'discovery_classroom') {
+        const { page, activeSlot } = careerGalleryRef.current;
+        const careers = getCareerPage(page);
         const interactiveZones: InteractiveZone[] = [
           {
             id: 'discovery-exit-door',
@@ -1021,17 +1056,30 @@ export function WalkableCampusView({
             radius: DISCOVERY_CLASSROOM.exitDoor.radius,
             action: handleExitDiscoveryClassroom,
           },
-          {
+        ];
+        if (careers[activeSlot]?.sceneId === 'discovery_moon') {
+          interactiveZones.push({
             id: 'discovery-vr-glasses',
             name: 'VR Gözlüğü',
-            prompt: 'VR Gözlüğünü Tak',
+            prompt: 'Gözlüğü Tak',
             x: DISCOVERY_VR_CONFIG.pedestalInteraction.x,
             y: DISCOVERY_VR_CONFIG.pedestalInteraction.y,
             radius: DISCOVERY_VR_CONFIG.interactionEnterRadius,
             exitRadius: DISCOVERY_VR_CONFIG.interactionExitRadius,
             action: handlePutOnGlasses,
-          },
-        ];
+          });
+        }
+        careers.forEach((career, slot) => {
+          interactiveZones.push({
+            id: 'discovery-career-' + career.id,
+            name: career.title,
+            prompt: 'Mesleği Seç',
+            x: DISCOVERY_NICHE_LAYOUT.slots[slot] + DISCOVERY_NICHE_LAYOUT.width / 2,
+            y: DISCOVERY_NICHE_LAYOUT.interactionY,
+            radius: 72,
+            action: () => handleSelectCareerSlot(slot),
+          });
+        });
 
         return {
           width: DISCOVERY_CLASSROOM.width,
@@ -1406,6 +1454,8 @@ export function WalkableCampusView({
         { id: 'kiosk-missions', name: CAMPUS_BUILDING_NAMES.missions, x: 910, y: 560, width: 190, height: 140 },
         // Merkez Havuz / Fıskiye
         { id: 'fountain', name: 'Merkez Havuz', x: 670, y: 450, width: 60, height: 60 },
+        // Ana giriş yolunun iki yanındaki simetrik giriş ağaçlarının gövde çarpışma alanları
+        ...COURTYARD_ENTRANCE_TREE_OBSTACLES,
       ];
 
       const interactiveZones: InteractiveZone[] = [
@@ -1527,6 +1577,7 @@ export function WalkableCampusView({
       handleExitInnerCourtyard,
       handleExitSultanhani,
       handlePutOnGlasses,
+      handleSelectCareerSlot,
       handleTakeRockSample,
       handleCompleteMoonMission,
       handleLanderEarlyHint,
@@ -1557,6 +1608,8 @@ export function WalkableCampusView({
 
     const config = getSceneConfig(currentScene);
     const lavender = currentScene === 'courtyard' ? createCourtyardLavenderLayer() : undefined;
+    let careerOverlayScaleX = 1;
+    let careerOverlayScaleY = 1;
 
     // Canvas boyutunu container ve ekran alanına göre tam uyarla
     const updateCanvasSize = () => {
@@ -1565,6 +1618,8 @@ export function WalkableCampusView({
       const rawH = rect.height || container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight : 600);
       const newW = Math.max(320, Math.round(rawW));
       const newH = Math.max(240, Math.round(rawH));
+      careerOverlayScaleX = rawW / newW;
+      careerOverlayScaleY = rawH / newH;
       if (engineRef.current) {
         engineRef.current.updateDimensions(newW, newH);
       } else {
@@ -1655,6 +1710,17 @@ export function WalkableCampusView({
             renderSultanhaniBackground(ctx);
           } else if (currentScene === 'discovery_classroom') {
             renderDiscoveryClassroomLayeredBackground(ctx, config.width, config.height);
+            const layer = careerLayerRef.current;
+            const projection = ctx.getTransform?.();
+            if (layer && projection) {
+              const { a, d, e, f } = projection;
+              const sx = careerOverlayScaleX;
+              const sy = careerOverlayScaleY;
+              const values = [a * sx, 0, 0, d * sy, e * sx, f * sy];
+              const transform = 'matrix(' + values.map((value) => Number(value.toFixed(4))).join(', ') + ')';
+              if (layer.style.transform !== transform) layer.style.transform = transform;
+              if (layer.style.visibility !== 'visible') layer.style.visibility = 'visible';
+            }
           } else if (currentScene === 'discovery_moon') {
             renderDiscoveryMoonBackground(ctx, config.width, config.height);
           } else if (currentScene === 'classroom') {
@@ -1947,6 +2013,12 @@ export function WalkableCampusView({
     }
   }, [currentScene, getSceneConfig, selectedGrade, completedStages]);
 
+  useEffect(() => {
+    if (currentScene === 'discovery_classroom') {
+      engineRef.current?.updateInteractiveZones(getSceneConfig('discovery_classroom').interactiveZones);
+    }
+  }, [careerGallery, currentScene, getSceneConfig]);
+
   // Modallar açıldığında motoru duraklat
   useEffect(() => {
     if (!engineRef.current) return;
@@ -2005,6 +2077,27 @@ export function WalkableCampusView({
         data-testid="walkable-canvas"
         className="w-full h-full block cursor-crosshair touch-none"
       />
+
+      {currentScene === 'discovery_classroom' && (
+        <>
+          <DiscoveryCareerLayer
+            page={careerGallery.page}
+            activeSlot={careerGallery.activeSlot}
+            onSelectSlot={handleSelectCareerSlot}
+            layerRef={careerLayerRef}
+          />
+          <nav aria-label="Meslekler" className="absolute bottom-[4.25rem] right-3 z-10 flex flex-col items-stretch gap-2 sm:bottom-5 sm:right-5 sm:flex-row sm:items-center">
+            <button
+              type="button"
+              onClick={() => openCareerGallery(false)}
+              className="min-h-[44px] rounded-lg border border-[#9b633c] bg-[#70492e] px-3 py-2 text-xs font-bold text-[#fff3d8] shadow-md hover:bg-[#553622] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#fff3d8] sm:text-sm"
+            >
+              Mesleği Seç
+            </button>
+            <DiscoveryCareerPages page={careerGallery.page} onPageChange={handleCareerPageChange} />
+          </nav>
+        </>
+      )}
 
       {/* Ekran Üstü Kontroller ve İpuçları */}
       <WalkableControlsOverlay
@@ -2097,11 +2190,16 @@ export function WalkableCampusView({
       {/* Meslek Seçim Modalı */}
       <DiscoveryCareerModal
         isOpen={isCareerModalOpen}
-        onSelectCareer={handleSelectCareer}
-        onClose={() => {
-          setIsCareerModalOpen(false);
-          setVrState('CLASS_IDLE');
+        allowLaunch={allowCareerLaunch}
+        page={careerGallery.page}
+        activeSlot={careerGallery.activeSlot}
+        onPageChange={handleCareerPageChange}
+        onSelectSlot={(slot) => {
+          handleSelectCareerSlot(slot);
+          if (!allowCareerLaunch || !getCareerPage(careerGallery.page)[slot]?.sceneId) closeCareerGallery();
         }}
+        onStartCareer={handleSelectCareer}
+        onClose={closeCareerGallery}
       />
 
       {/* İniş Animasyonunu Atla ("Geç") Düğmesi */}

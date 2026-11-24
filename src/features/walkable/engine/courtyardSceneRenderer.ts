@@ -8,7 +8,7 @@
  * mevcut motor ve testlerle %100 uyumlu olarak korunmuştur.
  */
 
-import type { PlayerCharacter } from '../types';
+import type { PlayerCharacter, SceneObstacle } from '../types';
 import { drawCharacter } from './characterRenderer';
 import { COURTYARD_GRASS_PLOTS, type CourtyardLavenderLayer } from './courtyardLavender';
 import { CAMPUS_BUILDING_NAMES } from '@/src/data/brandConfig';
@@ -49,6 +49,25 @@ const COURTYARD_PATHS: readonly CourtyardPath[] = [
   { id: 'gorev-panosu', x: 980, y: 640, sign: { lines: ['Kızıl Minareli', 'Camii'], side: -1, setback: 30 } },
   { id: 'exit-gate', x: 700, y: 860 },
 ];
+
+// Ana giriş yolunun (x = 700) sağında ve solunda simetrik konumlanan gölgeli giriş ağaçları
+const COURTYARD_ENTRANCE_TREES = [
+  { id: 'tree-6-left', name: 'Sol Giriş Ağacı', x: 475, y: 820, scale: 1.05 },
+  { id: 'tree-6-right', name: 'Sağ Giriş Ağacı', x: 925, y: 820, scale: 1.05 },
+] as const;
+
+export const COURTYARD_ENTRANCE_TREE_OBSTACLES: readonly SceneObstacle[] =
+  COURTYARD_ENTRANCE_TREES.map((tree) => {
+    const groundY = Math.round(tree.y + 34 * tree.scale);
+    return {
+      id: tree.id,
+      name: tree.name,
+      x: tree.x - 18,
+      y: groundY - 14,
+      width: 36,
+      height: 18,
+    };
+  });
 
 export interface DepthEntity {
   id: string;
@@ -216,11 +235,11 @@ export function renderCourtyardEntities(
       baseY: 540 + 34, // 574
       draw: (c) => drawLushTree(c, 1240, 540, 0.95, now),
     },
-    {
-      id: 'tree-6',
-      baseY: 760 + 34, // 794
-      draw: (c) => drawLushTree(c, 700, 760, 1.05, now),
-    },
+    ...COURTYARD_ENTRANCE_TREES.map((tree) => ({
+      id: tree.id,
+      baseY: Math.round(tree.y + 34 * tree.scale),
+      draw: (c: CanvasRenderingContext2D) => drawLushTree(c, tree.x, tree.y, tree.scale, now),
+    })),
 
     // SERVİ AĞAÇLARI (Selçuklu Avlu Konsept Görselindeki Zarif Serviler)
     {
@@ -1841,7 +1860,7 @@ function drawCourtyardLandscape(ctx: CanvasRenderingContext2D, now: number) {
     { x: 500, y: 290, scale: 0.9 },
     { x: 1240, y: 380, scale: 1 },
     { x: 1240, y: 540, scale: 0.95 },
-    { x: 700, y: 760, scale: 1.05 },
+    ...COURTYARD_ENTRANCE_TREES.map(({ x, y, scale }) => ({ x, y, scale })),
   ];
 
   for (const t of trees) {

@@ -5,7 +5,7 @@
  * İleride yapılacak ince ayarlar için "ELLE AYARLANACAK" yorumları ile işaretlenmiştir.
  */
 
-import { DISCOVERY_CLASSROOM } from '../features/walkable/engine/discoveryClassroomSceneRenderer';
+import { DISCOVERY_CLASSROOM, DISCOVERY_NICHE_LAYOUT } from '../features/walkable/engine/discoveryClassroomSceneRenderer';
 
 /**
  * Durum Makinesi Durumları (Tüm akış için tek tip)
@@ -30,11 +30,9 @@ export type DiscoveryVrState =
 export interface CareerDefinition {
   id: string;
   title: string;
-  imageKey: string;
-  imageUrl: string;
-  sceneId: string;
-  missionText: string;
-  buttonText: string;
+  portrait: number;
+  sceneId?: 'discovery_moon';
+  buttonText?: string;
 }
 
 /**
@@ -197,17 +195,27 @@ export const DISCOVERY_VR_CONFIG = {
   },
 } as const;
 
-/**
- * İlk Sürüm Meslek Listesi (Tek meslek: Astronot)
- */
-export const CAREER_LIST: CareerDefinition[] = [
-  {
-    id: 'astronaut',
-    title: 'Astronot',
-    imageKey: 'career_astronaut',
-    imageUrl: '/assets/walkable/career_astronaut_card.png',
-    sceneId: 'discovery_moon',
-    missionText: 'Ay Görevi',
-    buttonText: 'Ay Görevine Başla',
-  },
+export const CAREER_ATLAS = { url: '/assets/walkable/career-portraits.png', columns: 4, rows: 3 } as const;
+
+export const CAREER_LIST: readonly CareerDefinition[] = [
+  { id: 'astronaut', title: 'Astronot', portrait: 0, sceneId: 'discovery_moon', buttonText: 'Ay Görevine Başla' },
+  { id: 'doctor', title: 'Doktor', portrait: 1 },
+  { id: 'veterinarian', title: 'Veteriner Hekim', portrait: 2 },
+  { id: 'pilot', title: 'Pilot', portrait: 3 },
+  { id: 'architect', title: 'Mimar', portrait: 4 },
+  { id: 'firefighter', title: 'İtfaiyeci', portrait: 5 },
+  { id: 'traffic-officer', title: 'Trafik Polisi', portrait: 6 },
+  { id: 'archaeologist', title: 'Arkeolog', portrait: 7 },
+  { id: 'software-developer', title: 'Yazılım Geliştirici', portrait: 8 },
+  { id: 'scientist', title: 'Bilim İnsanı', portrait: 9 },
+  { id: 'agricultural-engineer', title: 'Ziraat Mühendisi', portrait: 10 },
+  { id: 'marine-biologist', title: 'Deniz Biyoloğu', portrait: 11 },
 ];
+
+const careersPerPage = DISCOVERY_NICHE_LAYOUT.slots.length;
+export const CAREER_PAGE_COUNT = Math.ceil(CAREER_LIST.length / careersPerPage);
+
+export function getCareerPage(page: number): readonly CareerDefinition[] {
+  const start = page * careersPerPage;
+  return CAREER_LIST.slice(start, start + careersPerPage);
+}
