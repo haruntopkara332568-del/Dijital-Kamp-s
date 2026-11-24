@@ -23,7 +23,7 @@ import {
   renderDiscoveryClassroomBackground,
   renderDiscoveryClassroomLayeredBackground,
   renderDiscoveryClassroomEntities,
-  renderDiscoveryClassroomForeground,
+  preloadDiscoveryClassroom,
 } from './engine/discoveryClassroomSceneRenderer';
 import {
   MOON_SCENE,
@@ -33,13 +33,12 @@ import {
   renderDiscoveryMoonWalkableScene,
 } from './engine/discoveryMoonSceneRenderer';
 import {
-  CAREER_PAGE_COUNT,
+  CAREER_LIST,
   DISCOVERY_VR_CONFIG,
-  getCareerPage,
   type CareerDefinition,
   type DiscoveryVrState,
 } from '@/src/data/discoveryCareerConfig';
-import { DiscoveryCareerLayer, DiscoveryCareerModal, DiscoveryCareerPages } from './components/DiscoveryCareerModal';
+import { DiscoveryCareerLayer, DiscoveryCareerModal } from './components/DiscoveryCareerModal';
 import {
   PORTAL,
   renderSultanhaniBackground,
@@ -188,9 +187,8 @@ export function WalkableCampusView({
   const [vrState, setVrState] = useState<DiscoveryVrState>('CLASS_IDLE');
   const vrStateRef = useRef<DiscoveryVrState>('CLASS_IDLE');
   const [isCareerModalOpen, setIsCareerModalOpen] = useState(false);
-  const [allowCareerLaunch, setAllowCareerLaunch] = useState(false);
-  const [careerGallery, setCareerGallery] = useState({ page: 0, activeSlot: 0 });
-  const careerGalleryRef = useRef(careerGallery);
+  const [activeCareerSlot, setActiveCareerSlot] = useState(0);
+  const activeCareerSlotRef = useRef(0);
   const careerLayerRef = useRef<HTMLDivElement>(null);
   const vrTransitionLockRef = useRef(false);
   const [isMoonLandingComplete, setIsMoonLandingComplete] = useState(false);
@@ -753,6 +751,7 @@ export function WalkableCampusView({
   const handleEnterDiscoveryClassroom = useCallback(() => {
     if (discoveryDoorOpeningLockRef.current) return;
     discoveryDoorOpeningLockRef.current = true;
+    preloadDiscoveryClassroom();
     discoveryDoorProgressRef.current = 0;
 
     if (engineRef.current) {
@@ -807,26 +806,9 @@ export function WalkableCampusView({
   }, [clearDiscoveryDoorTimers]);
 
   const handleSelectCareerSlot = useCallback((slot: number) => {
-    const current = careerGalleryRef.current;
-    if (current.activeSlot === slot || !getCareerPage(current.page)[slot]) return;
-    const next = { ...current, activeSlot: slot };
-    careerGalleryRef.current = next;
-    setCareerGallery(next);
-  }, []);
-
-  const handleCareerPageChange = useCallback((page: number) => {
-    if (page < 0 || page >= CAREER_PAGE_COUNT || page === careerGalleryRef.current.page) return;
-    const next = { page, activeSlot: 0 };
-    careerGalleryRef.current = next;
-    setCareerGallery(next);
-  }, []);
-
-  const openCareerGallery = useCallback((allowLaunch: boolean) => {
-    if (vrTransitionLockRef.current) return;
-    engineRef.current?.stopMoving();
-    setAllowCareerLaunch(allowLaunch);
-    setVrState('CAREER_SELECT');
-    setIsCareerModalOpen(true);
+    if (!CAREER_LIST[slot] || activeCareerSlotRef.current === slot) return;
+    activeCareerSlotRef.current = slot;
+    setActiveCareerSlot(slot);
   }, []);
 
   const closeCareerGallery = useCallback(() => {
@@ -835,9 +817,11 @@ export function WalkableCampusView({
   }, []);
 
   const handlePutOnGlasses = useCallback(() => {
-    const { page, activeSlot } = careerGalleryRef.current;
-    if (getCareerPage(page)[activeSlot]?.sceneId === 'discovery_moon') openCareerGallery(true);
-  }, [openCareerGallery]);
+    if (vrTransitionLockRef.current || CAREER_LIST[activeCareerSlotRef.current]?.sceneId !== 'discovery_moon') return;
+    engineRef.current?.stopMoving();
+    setVrState('CAREER_SELECT');
+    setIsCareerModalOpen(true);
+  }, []);
 
   const handleSelectCareer = useCallback((career: CareerDefinition) => {
     if (career.sceneId !== 'discovery_moon' || vrTransitionLockRef.current) return;
@@ -1044,8 +1028,6 @@ export function WalkableCampusView({
         | 'sultanhani_inner',
     ): WalkableSceneConfig => {
       if (scene === 'discovery_classroom') {
-        const { page, activeSlot } = careerGalleryRef.current;
-        const careers = getCareerPage(page);
         const interactiveZones: InteractiveZone[] = [
           {
             id: 'discovery-exit-door',
@@ -1057,7 +1039,7 @@ export function WalkableCampusView({
             action: handleExitDiscoveryClassroom,
           },
         ];
-        if (careers[activeSlot]?.sceneId === 'discovery_moon') {
+        if (CAREER_LIST[activeCareerSlotRef.current]?.sceneId === 'discovery_moon') {
           interactiveZones.push({
             id: 'discovery-vr-glasses',
             name: 'VR Gözlüğü',
@@ -1069,14 +1051,16 @@ export function WalkableCampusView({
             action: handlePutOnGlasses,
           });
         }
-        careers.forEach((career, slot) => {
+        DISCOVERY_NICHE_LAYOUT.forEach(({ approach }, slot) => {
+          const career = CAREER_LIST[slot];
+          if (!career) return;
           interactiveZones.push({
             id: 'discovery-career-' + career.id,
             name: career.title,
             prompt: 'Mesleği Seç',
-            x: DISCOVERY_NICHE_LAYOUT.slots[slot] + DISCOVERY_NICHE_LAYOUT.width / 2,
-            y: DISCOVERY_NICHE_LAYOUT.interactionY,
-            radius: 72,
+            x: approach.x,
+            y: approach.y,
+            radius: 28,
             action: () => handleSelectCareerSlot(slot),
           });
         });
@@ -1852,9 +1836,7 @@ export function WalkableCampusView({
           })();
         },
         onRenderForeground: (ctx) => {
-          if (currentScene === 'discovery_classroom') {
-            renderDiscoveryClassroomForeground(ctx, config.width, config.height);
-          } else if (currentScene === 'classroom') {
+          if (currentScene === 'classroom') {
             renderClassroomForeground(ctx, config.width, config.height);
           } else if (currentScene === 'courtyard') {
             renderCourtyardForeground(ctx, config.width, config.height);
@@ -2017,7 +1999,7 @@ export function WalkableCampusView({
     if (currentScene === 'discovery_classroom') {
       engineRef.current?.updateInteractiveZones(getSceneConfig('discovery_classroom').interactiveZones);
     }
-  }, [careerGallery, currentScene, getSceneConfig]);
+  }, [activeCareerSlot, currentScene, getSceneConfig]);
 
   // Modallar açıldığında motoru duraklat
   useEffect(() => {
@@ -2079,24 +2061,11 @@ export function WalkableCampusView({
       />
 
       {currentScene === 'discovery_classroom' && (
-        <>
-          <DiscoveryCareerLayer
-            page={careerGallery.page}
-            activeSlot={careerGallery.activeSlot}
-            onSelectSlot={handleSelectCareerSlot}
-            layerRef={careerLayerRef}
-          />
-          <nav aria-label="Meslekler" className="absolute bottom-[4.25rem] right-3 z-10 flex flex-col items-stretch gap-2 sm:bottom-5 sm:right-5 sm:flex-row sm:items-center">
-            <button
-              type="button"
-              onClick={() => openCareerGallery(false)}
-              className="min-h-[44px] rounded-lg border border-[#9b633c] bg-[#70492e] px-3 py-2 text-xs font-bold text-[#fff3d8] shadow-md hover:bg-[#553622] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#fff3d8] sm:text-sm"
-            >
-              Mesleği Seç
-            </button>
-            <DiscoveryCareerPages page={careerGallery.page} onPageChange={handleCareerPageChange} />
-          </nav>
-        </>
+        <DiscoveryCareerLayer
+          activeSlot={activeCareerSlot}
+          onSelectSlot={handleSelectCareerSlot}
+          layerRef={careerLayerRef}
+        />
       )}
 
       {/* Ekran Üstü Kontroller ve İpuçları */}
@@ -2190,14 +2159,7 @@ export function WalkableCampusView({
       {/* Meslek Seçim Modalı */}
       <DiscoveryCareerModal
         isOpen={isCareerModalOpen}
-        allowLaunch={allowCareerLaunch}
-        page={careerGallery.page}
-        activeSlot={careerGallery.activeSlot}
-        onPageChange={handleCareerPageChange}
-        onSelectSlot={(slot) => {
-          handleSelectCareerSlot(slot);
-          if (!allowCareerLaunch || !getCareerPage(careerGallery.page)[slot]?.sceneId) closeCareerGallery();
-        }}
+        career={CAREER_LIST[activeCareerSlot]}
         onStartCareer={handleSelectCareer}
         onClose={closeCareerGallery}
       />

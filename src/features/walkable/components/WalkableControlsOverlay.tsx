@@ -283,8 +283,10 @@ export function WalkableControlsOverlay({
         </div>
       )}
 
-      {/* Orta Bildirim: Ulaşılamayan Nokta veya Etkileşim Bildirimi */}
-      <div className="flex flex-col items-center gap-2">
+      {/* Ulaşılamayan nokta veya etkileşim bildirimi */}
+      <div className={currentScene === 'discovery_classroom'
+        ? 'absolute inset-x-3 bottom-[24dvh] flex flex-col items-center gap-2'
+        : 'flex flex-col items-center gap-2'}>
         {unreachableMessage && (
           <div
             role="alert"

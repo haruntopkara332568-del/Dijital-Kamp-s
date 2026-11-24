@@ -5,7 +5,7 @@
  * İleride yapılacak ince ayarlar için "ELLE AYARLANACAK" yorumları ile işaretlenmiştir.
  */
 
-import { DISCOVERY_CLASSROOM, DISCOVERY_NICHE_LAYOUT } from '../features/walkable/engine/discoveryClassroomSceneRenderer';
+import { DISCOVERY_CLASSROOM } from '../features/walkable/engine/discoveryClassroomSceneRenderer';
 
 /**
  * Durum Makinesi Durumları (Tüm akış için tek tip)
@@ -45,15 +45,10 @@ export const STUDENT_WIDTH_PX = 53;  /* ELLE AYARLANACAK: Karakter genişliği (
  * Gözlük ve Sehpa Etkileşim Ayarları
  */
 export const DISCOVERY_VR_CONFIG = {
-  /** Sehpa etkileşim merkezi */
-  pedestalInteraction: {
-    x: DISCOVERY_CLASSROOM.pedestal.centerX, // 480
-    y: DISCOVERY_CLASSROOM.pedestal.baseY - 16, // ~300 px (öğrencinin yaklaştığı odak)
-  },
-  /** Yaklaşma giriş eşiği: 1.5 öğrenci boyu (~100.5 px) */
-  interactionEnterRadius: Math.round(STUDENT_HEIGHT_PX * 1.5), /* ELLE AYARLANACAK: Giriş eşiği (~101 px) */
-  /** Uzaklaşma çıkış eşiği: 2.0 öğrenci boyu (~134 px, titremeyi önleme histerezisi) */
-  interactionExitRadius: Math.round(STUDENT_HEIGHT_PX * 2.0), /* ELLE AYARLANACAK: Çıkış eşiği (~134 px) */
+  /** Gözlük eylemi, masanın güneyindeki açık zemine yaklaşınca belirir. */
+  pedestalInteraction: DISCOVERY_CLASSROOM.pedestal.approach,
+  interactionEnterRadius: 42,
+  interactionExitRadius: 54,
 
   /** Sahne geçiş (fade) süresi (ms) */
   fadeTransitionMs: 400, /* ELLE AYARLANACAK: Sahneler arası karar / aydınlan süresi */
@@ -64,7 +59,7 @@ export const DISCOVERY_VR_CONFIG = {
   /** Sınıfa dönüşte öğrencinin sehpa önündeki doğuş noktası */
   returnClassroomSpawn: {
     x: 480,
-    y: 350, /* ELLE AYARLANACAK: Sehpanın güneyinde, gözlüğe bakan konum */
+    y: 530,
   },
 
   /** Ay Sahnesi Dünya Ölçüleri */
@@ -211,11 +206,3 @@ export const CAREER_LIST: readonly CareerDefinition[] = [
   { id: 'agricultural-engineer', title: 'Ziraat Mühendisi', portrait: 10 },
   { id: 'marine-biologist', title: 'Deniz Biyoloğu', portrait: 11 },
 ];
-
-const careersPerPage = DISCOVERY_NICHE_LAYOUT.slots.length;
-export const CAREER_PAGE_COUNT = Math.ceil(CAREER_LIST.length / careersPerPage);
-
-export function getCareerPage(page: number): readonly CareerDefinition[] {
-  const start = page * careersPerPage;
-  return CAREER_LIST.slice(start, start + careersPerPage);
-}
