@@ -54,7 +54,7 @@ import {
 } from './components/ObservatoryClassroomOverlay';
 import { EarthSunMoonModal } from './components/EarthSunMoonModal';
 import { DiscoveryCareerLayer, DiscoveryCareerModal } from './components/DiscoveryCareerModal';
-import { DOCTOR_ROOM, DOCTOR_VISIT_STEPS } from '@/src/data/doctorVisitContent';
+import { DOCTOR_ROOM, DOCTOR_STETHOSCOPE, canReachDoctorPatient } from '@/src/data/doctorVisitContent';
 import { DoctorVisitOverlay, useDoctorVisit } from './components/DoctorVisitOverlay';
 import { VETERINARY_CLINIC, VET_ITEM_REACH } from '@/src/data/veterinaryClinicContent';
 import { useVeterinaryClinicVisit } from './useVeterinaryClinicVisit';
@@ -245,17 +245,13 @@ export function WalkableCampusView({
   const [activeCareerSlot, setActiveCareerSlot] = useState(0);
   const clinicTransitionRef = useRef<number | null>(null);
   const doctorBubbleRef = useRef<HTMLDivElement>(null);
+  const doctorToolLayerRef = useRef<HTMLDivElement>(null);
   const vetBubbleRef = useRef<HTMLDivElement>(null);
   const vetCareLayerRef = useRef<HTMLDivElement>(null);
   const vetReducedMotionRef = useRef(false);
   const pilotBoardTimer = useRef<number | null>(null);
   const pilotReducedMotion = useRef(false);
   const doctorSpeechEnabled = campus?.state.speechEnabled ?? false;
-  const doctorVisit = useDoctorVisit(currentScene === 'discovery_doctor', doctorSpeechEnabled);
-  const {
-    begin: beginDoctorVisit, cancel: cancelDoctorSpeech, openStation: openDoctorStation,
-    read: readDoctorVisit, readAnimation: readDoctorAnimation,
-  } = doctorVisit;
 
   useEffect(() => () => {
     if (clinicTransitionRef.current !== null) window.clearTimeout(clinicTransitionRef.current);
@@ -296,6 +292,15 @@ export function WalkableCampusView({
   const [isSmartBoardPoweringOn, setIsSmartBoardPoweringOn] = useState(false);
   const [isSmartBoardActive, setIsSmartBoardActive] = useState(false);
   const [isTeleporting, setIsTeleporting] = useState(false);
+  const doctorVisit = useDoctorVisit(
+    currentScene === 'discovery_doctor' && !isTeleporting && !campus?.isProfileModalOpen,
+    doctorSpeechEnabled,
+    characterId ?? campus?.activeProfile?.characterId,
+  );
+  const {
+    begin: beginDoctorVisit, cancel: cancelDoctorSpeech, pickUp: pickUpDoctorStethoscope,
+    moveTip: moveDoctorTip, read: readDoctorVisit, readAnimation: readDoctorAnimation,
+  } = doctorVisit;
   const vetVisit = useVeterinaryClinicVisit(
     currentScene === 'discovery_vet' && !isTeleporting && !campus?.isProfileModalOpen,
     doctorSpeechEnabled,
@@ -978,6 +983,11 @@ export function WalkableCampusView({
 
   const handleExitClinic = useCallback(() => transitionClinicVisit('discovery_classroom'), [transitionClinicVisit]);
 
+  const canUseDoctorStethoscope = useCallback(() => {
+    const engine = engineRef.current;
+    return Boolean(engine && !engine.getInputDisabled() && canReachDoctorPatient(engine.getPosition()));
+  }, []);
+
   const reachVetItem = useCallback((position: Position) => {
     const engine = engineRef.current;
     if (!engine || engine.getInputDisabled()) return false;
@@ -1283,8 +1293,6 @@ export function WalkableCampusView({
         };
       }
       if (scene === 'discovery_doctor') {
-        const visit = readDoctorVisit();
-        const station = DOCTOR_VISIT_STEPS[visit.stepIndex]?.station;
         const interactiveZones: InteractiveZone[] = [
           {
             id: 'doctor-exit', name: 'Gözlüğü Çıkar', prompt: 'Sınıfa Dön',
@@ -1292,13 +1300,13 @@ export function WalkableCampusView({
             action: handleExitClinic,
           },
         ];
-        if (station) {
+        if (readDoctorVisit().stage === 'pickup') {
           interactiveZones.push({
-            id: 'doctor-station-' + visit.stepIndex, name: station.name, prompt: station.prompt,
-            x: station.position.x, y: station.position.y, radius: 36,
+            id: 'doctor-stethoscope', name: 'Stetoskop', prompt: 'Stetoskobu Al',
+            ...DOCTOR_STETHOSCOPE.pickup, radius: 36,
             action: () => {
               engineRef.current?.stopMoving();
-              openDoctorStation(visit.stepIndex);
+              pickUpDoctorStethoscope();
             },
           });
         }
@@ -1872,7 +1880,7 @@ export function WalkableCampusView({
       handleEnterDiscoveryClassroom,
       handleExitDiscoveryClassroom,
       handleExitClinic,
-      openDoctorStation,
+      pickUpDoctorStethoscope,
       readDoctorVisit,
       handleEnterObservatoryClassroom,
       handleExitObservatoryClassroom,
@@ -2003,6 +2011,8 @@ export function WalkableCampusView({
             lastSultanhaniPosRef.current = pos;
           } else if (currentScene === 'observatory_classroom') {
             lastObservatoryClassroomPosRef.current = pos;
+          } else if (currentScene === 'discovery_doctor' && !canReachDoctorPatient(pos)) {
+            moveDoctorTip(null);
           } else if (currentScene === 'discovery_classroom') {
             lastDiscoveryClassroomPosRef.current = pos;
           } else if (currentScene === 'classroom') {
@@ -2086,7 +2096,9 @@ export function WalkableCampusView({
             );
           } else if (currentScene === 'discovery_doctor') {
             const animation = readDoctorAnimation();
-            renderDoctorRoomEntities(ctx, player, animation);
+            renderDoctorRoomEntities(
+              ctx, player, animation, doctorToolLayerRef.current, careerOverlayScaleX, careerOverlayScaleY,
+            );
             if (doctorBubbleRef.current && animation.displaySpeaker) {
               updateDoctorSpeechAnchor(ctx, doctorBubbleRef.current, player, animation.displaySpeaker, careerOverlayScaleX, careerOverlayScaleY);
             }
@@ -2363,6 +2375,7 @@ export function WalkableCampusView({
     getSceneConfig,
     getStudentVoiceMeta,
     openExchangeChoice,
+    moveDoctorTip,
     readDoctorAnimation,
     readVetScene,
     resetEncounterState,
@@ -2386,7 +2399,7 @@ export function WalkableCampusView({
     if (currentScene === 'discovery_doctor') {
       engineRef.current?.updateInteractiveZones(getSceneConfig('discovery_doctor').interactiveZones);
     }
-  }, [currentScene, doctorVisit.stepIndex, getSceneConfig]);
+  }, [currentScene, doctorVisit.stage, getSceneConfig]);
 
   useEffect(() => {
     if (currentScene === 'discovery_doctor' || currentScene === 'discovery_vet') {
@@ -2544,7 +2557,8 @@ export function WalkableCampusView({
         <DoctorVisitOverlay
           visit={doctorVisit}
           bubbleRef={doctorBubbleRef}
-          speechEnabled={doctorSpeechEnabled}
+          layerRef={doctorToolLayerRef}
+          canReach={canUseDoctorStethoscope}
           showInstruction={!activeZone}
           onExit={handleExitClinic}
         />

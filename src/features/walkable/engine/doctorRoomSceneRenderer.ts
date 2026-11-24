@@ -1,4 +1,8 @@
-import { DOCTOR_ROOM, type ClinicDemo, type DoctorSpeaker } from '@/src/data/doctorVisitContent';
+import {
+  DOCTOR_HEARTBEAT_MS, DOCTOR_ROOM, DOCTOR_STETHOSCOPE, canReachDoctorPatient,
+  doctorStethoscopeGrip, type DoctorSpeaker,
+} from '@/src/data/doctorVisitContent';
+import type { useDoctorVisit } from '../components/DoctorVisitOverlay';
 import { drawCharacter } from './characterRenderer';
 import { getLoadedAsset } from './assetLoader';
 import type { PlayerCharacter, Position, SceneObstacle } from '../types';
@@ -20,12 +24,7 @@ export const DOCTOR_ROOM_OBSTACLES: SceneObstacle[] = [
   { id: 'doctor-patient', name: 'Deniz', x: DOCTOR_ROOM.patient.x - 10, y: DOCTOR_ROOM.patient.y + 7, width: 20, height: 13 },
 ];
 
-type DoctorAnimation = {
-  speaker?: DoctorSpeaker;
-  demo?: ClinicDemo;
-  demoElapsed: number;
-  station?: { position: Position; marker: Position };
-};
+type DoctorAnimation = ReturnType<ReturnType<typeof useDoctorVisit>['readAnimation']>;
 
 export function preloadDoctorRoom() {
   getLoadedAsset(roomUrl);
@@ -143,66 +142,145 @@ function drawPatient(ctx: CanvasRenderingContext2D, player: PlayerCharacter, tal
   }, 'idle');
 }
 
-function drawStationMarkers(ctx: CanvasRenderingContext2D, station: NonNullable<DoctorAnimation['station']>, now: number) {
+function drawPickupMarker(ctx: CanvasRenderingContext2D) {
+  const { pickup, counter } = DOCTOR_STETHOSCOPE;
   ctx.save();
   ctx.strokeStyle = '#0b647e';
   ctx.fillStyle = 'rgba(177, 242, 251, .23)';
-  ctx.lineWidth = 1.9;
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.ellipse(station.position.x, station.position.y + 15, 19, 8, 0, 0, Math.PI * 2);
+  ctx.ellipse(pickup.x, pickup.y + 15, 19, 8, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
   ctx.fillStyle = '#d8fbff';
-  ctx.strokeStyle = '#1b7388';
-  ctx.lineWidth = 1.3;
   ctx.beginPath();
-  ctx.arc(station.marker.x, station.marker.y, 5 + Math.sin(now / 260) * 1.25, 0, Math.PI * 2);
+  ctx.arc(counter.x, counter.y, 6, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
   ctx.restore();
 }
 
-function drawDemo(ctx: CanvasRenderingContext2D, demo: ClinicDemo, elapsed: number) {
+function drawChestMarker(ctx: CanvasRenderingContext2D, contact: boolean) {
+  const { chest, contactRadius } = DOCTOR_STETHOSCOPE;
   ctx.save();
-  ctx.strokeStyle = '#9ff6ef';
-  ctx.lineWidth = 2;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
   ctx.beginPath();
-  if (demo === 'heartbeat') {
-    const pulse = elapsed < 420 ? 6 + Math.sin(elapsed / 28) * 4 : 7;
-    ctx.moveTo(781, 231);
-    ctx.lineTo(789, 231);
-    ctx.lineTo(794, 231 - pulse);
-    ctx.lineTo(800, 237);
-    ctx.lineTo(806, 228);
-    ctx.lineTo(812, 231);
-    ctx.lineTo(820, 231);
-  } else {
-    ctx.moveTo(790, 231);
-    ctx.lineTo(797, 237);
-    ctx.lineTo(810, 222);
-  }
+  ctx.arc(chest.x, chest.y, contactRadius, 0, Math.PI * 2);
+  ctx.fillStyle = contact ? 'rgba(86, 222, 210, .34)' : 'rgba(15, 118, 110, .24)';
+  ctx.fill();
+  ctx.strokeStyle = '#134e4a';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.strokeStyle = '#d9fffa';
+  ctx.lineWidth = 2;
   ctx.stroke();
   ctx.restore();
 }
 
-export function renderDoctorRoomEntities(ctx: CanvasRenderingContext2D, player: PlayerCharacter, animation: DoctorAnimation) {
-  const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  const now = reduce ? 0 : performance.now();
+function drawStethoscope(ctx: CanvasRenderingContext2D, tip: Position) {
+  ctx.save();
+  ctx.translate(tip.x, tip.y);
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#18546a';
+  ctx.beginPath();
+  ctx.moveTo(-12, -21);
+  ctx.bezierCurveTo(-17, -12, -8, -7, -5, -16);
+  ctx.bezierCurveTo(-3, -10, -14, -5, -11, 1);
+  ctx.quadraticCurveTo(-8, 7, 0, 1);
+  ctx.stroke();
+  ctx.strokeStyle = '#d6eff2';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-12, -21);
+  ctx.lineTo(-9, -23);
+  ctx.moveTo(-5, -16);
+  ctx.lineTo(-4, -20);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0, 0, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#e1f5fa';
+  ctx.fill();
+  ctx.strokeStyle = '#204e64';
+  ctx.stroke();
+  ctx.restore();
+}
 
-  if (animation.station) drawStationMarkers(ctx, animation.station, now);
-  if (animation.demo) drawDemo(ctx, animation.demo, reduce ? 420 : animation.demoElapsed);
+function drawHeartbeat(ctx: CanvasRenderingContext2D, elapsed: number, reduceMotion: boolean) {
+  const phase = elapsed % DOCTOR_HEARTBEAT_MS;
+  const firstBeat = Math.max(0, 1 - phase / 160);
+  const secondBeat = Math.max(0, 1 - Math.abs(phase - 170) / 90);
+  const pulse = Math.max(firstBeat, secondBeat * 0.6);
+  const scale = reduceMotion ? 1 : 1 + 0.24 * pulse;
+  const { chest } = DOCTOR_STETHOSCOPE;
+
+  ctx.save();
+  ctx.translate(chest.x + 42, chest.y - 22);
+  ctx.scale(scale, scale);
+  ctx.beginPath();
+  ctx.moveTo(0, 12);
+  ctx.bezierCurveTo(-7, 7, -16, 0, -12, -7);
+  ctx.bezierCurveTo(-9, -13, -3, -12, 0, -7);
+  ctx.bezierCurveTo(3, -12, 9, -13, 12, -7);
+  ctx.bezierCurveTo(16, 0, 7, 7, 0, 12);
+  ctx.closePath();
+  ctx.fillStyle = pulse > 0.4 ? '#f43f62' : '#cc304d';
+  ctx.fill();
+  ctx.strokeStyle = '#fff2f4';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function updateStethoscopeLayer(ctx: CanvasRenderingContext2D, layer: HTMLDivElement, player: PlayerCharacter, scaleX: number, scaleY: number) {
+  const projection = ctx.getTransform?.();
+  if (!projection) return;
+  const visible = canReachDoctorPatient(player) ? 'visible' : 'hidden';
+  if (layer.style.visibility !== visible) layer.style.visibility = visible;
+  if (visible === 'hidden') return;
+
+  const transform = 'matrix(' + [
+    projection.a * scaleX, 0, 0, projection.d * scaleY, projection.e * scaleX, projection.f * scaleY,
+  ].join(',') + ')';
+  if (layer.style.transform !== transform) layer.style.transform = transform;
+
+  const grip = doctorStethoscopeGrip(player);
+  const x = grip.x + 'px';
+  const y = grip.y + 'px';
+  if (layer.style.getPropertyValue('--doctor-grip-x') !== x) layer.style.setProperty('--doctor-grip-x', x);
+  if (layer.style.getPropertyValue('--doctor-grip-y') !== y) layer.style.setProperty('--doctor-grip-y', y);
+}
+
+export function renderDoctorRoomEntities(
+  ctx: CanvasRenderingContext2D,
+  player: PlayerCharacter,
+  animation: DoctorAnimation,
+  toolLayer: HTMLDivElement | null,
+  scaleX: number,
+  scaleY: number,
+) {
+  const reduceMotion = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+  const now = performance.now();
+  const motionTime = reduceMotion ? 0 : now;
+
+  if (animation.stage === 'pickup') drawPickupMarker(ctx);
 
   const ordered = [
-    { y: DOCTOR_ROOM.guide.y, draw: () => drawGuide(ctx, animation.speaker === 'guide', now) },
-    { y: DOCTOR_ROOM.patient.y, draw: () => drawPatient(ctx, player, animation.speaker === 'patient', now) },
+    { y: DOCTOR_ROOM.guide.y, draw: () => drawGuide(ctx, animation.speaker === 'guide', motionTime) },
+    { y: DOCTOR_ROOM.patient.y, draw: () => drawPatient(ctx, player, animation.speaker === 'patient', motionTime) },
     { y: player.y, draw: () => {
       drawCharacter(ctx, player, 'idle');
       drawClinicCoat(ctx, player);
     } },
   ].sort((first, second) => first.y - second.y);
   ordered.forEach(({ draw }) => draw());
+
+  if (animation.stage === 'listen') {
+    const contact = animation.contactAt !== null;
+    drawChestMarker(ctx, contact);
+    drawStethoscope(ctx, animation.tip ?? doctorStethoscopeGrip(player));
+    if (animation.contactAt !== null) drawHeartbeat(ctx, now - animation.contactAt, reduceMotion);
+    if (toolLayer) updateStethoscopeLayer(ctx, toolLayer, player, scaleX, scaleY);
+  }
 }
 
 export function updateDoctorSpeechAnchor(ctx: CanvasRenderingContext2D, bubble: HTMLDivElement, player: PlayerCharacter, speaker: DoctorSpeaker, scaleX: number, scaleY: number) {
