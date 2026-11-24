@@ -34,6 +34,7 @@ interface WalkableControlsOverlayProps {
     | 'discovery_moon'
     | 'discovery_doctor'
     | 'discovery_vet'
+    | 'discovery_pilot'
     | 'observatory_classroom'
     | 'sultanhani_square'
     | 'sultanhani_inner';
@@ -87,7 +88,7 @@ export function WalkableControlsOverlay({
         <div className="pointer-events-auto flex items-center gap-2 bg-[var(--campus-surface)]/95 backdrop-blur-xs px-3.5 py-1.5 rounded-xl border border-[var(--campus-border)] shadow-xs">
           <Sparkles className="w-4 h-4 text-[var(--seljuk-teal)] shrink-0" aria-hidden="true" />
           <span className="text-xs sm:text-sm font-bold text-[var(--seljuk-navy)]">
-            {currentScene === 'courtyard'
+            {currentScene === 'discovery_pilot' ? 'Pilot · Gökyüzünde İlk Görevim' : currentScene === 'courtyard'
               ? 'Yürünebilir Kampüs Avlusu'
               : currentScene === 'classroom'
                 ? 'İngilizce Sınıfı'
@@ -165,7 +166,7 @@ export function WalkableControlsOverlay({
           )}
 
           {/* Ay Görevi Sahnesindeyken Gözlüğü Çıkar Düğmesi */}
-          {(currentScene === 'discovery_moon' || currentScene === 'discovery_doctor' || currentScene === 'discovery_vet') && onExitClassroom && (
+          {(currentScene === 'discovery_moon' || currentScene === 'discovery_doctor' || currentScene === 'discovery_vet' || currentScene === 'discovery_pilot') && onExitClassroom && (
             <button
               type="button"
               onClick={onExitClassroom}
@@ -302,7 +303,7 @@ export function WalkableControlsOverlay({
       )}
 
       {/* Ulaşılamayan nokta veya etkileşim bildirimi */}
-      <div className={currentScene === 'discovery_classroom' || currentScene === 'discovery_doctor' || currentScene === 'discovery_vet'
+      <div className={currentScene === 'discovery_classroom' || currentScene === 'discovery_doctor' || currentScene === 'discovery_vet' || currentScene === 'discovery_pilot'
         ? 'absolute inset-x-3 bottom-[24dvh] flex flex-col items-center gap-2'
         : 'flex flex-col items-center gap-2'}>
         {unreachableMessage && (

@@ -47,7 +47,7 @@ export interface WalkableSceneConfig {
   playerSpawn: Position;
   obstacles: SceneObstacle[];
   interactiveZones: InteractiveZone[];
-  npc?: Omit<SceneNpcConfig, 'scene'> & { scene: SceneNpcConfig['scene'] | 'discovery_vet' };
+  npc?: Omit<SceneNpcConfig, 'scene'> & { scene: SceneNpcConfig['scene'] | 'discovery_vet' | 'discovery_pilot' };
   npcInitialDirection?: CharacterDirection;
   npcFollowsPlayer?: boolean;
   isNpcVisible?: () => boolean;

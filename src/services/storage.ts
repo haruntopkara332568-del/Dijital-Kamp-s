@@ -45,6 +45,10 @@ export function getVeterinaryClinicProgressKey(profileId: string): string {
   return getProfileStateKey(profileId) + ':veterinary-visit-v1';
 }
 
+export function getPilotExperienceProgressKey(profileId: string): string {
+  return getProfileStateKey(profileId) + ':pilot-experience-v1';
+}
+
 export function generateProfileId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return `prof_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
@@ -300,6 +304,7 @@ export async function deleteStudentProfile(profileId: string): Promise<{
       window.localStorage.removeItem(getProfileStateKey(profileId));
       window.localStorage.removeItem(getGrade3StageFiveProgressKey(profileId));
       window.localStorage.removeItem(getVeterinaryClinicProgressKey(profileId));
+      window.localStorage.removeItem(getPilotExperienceProgressKey(profileId));
     } catch {
       // LocalStorage erişim engeli yoksayılır
     }
