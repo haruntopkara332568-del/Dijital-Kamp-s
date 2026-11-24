@@ -53,6 +53,15 @@ import {
   ObservatoryStationCard,
 } from './components/ObservatoryClassroomOverlay';
 import { DiscoveryCareerLayer, DiscoveryCareerModal } from './components/DiscoveryCareerModal';
+import { DOCTOR_ROOM, DOCTOR_VISIT_STEPS } from '@/src/data/doctorVisitContent';
+import { DoctorVisitOverlay, useDoctorVisit } from './components/DoctorVisitOverlay';
+import {
+  DOCTOR_ROOM_OBSTACLES,
+  preloadDoctorRoom,
+  renderDoctorRoomBackground,
+  renderDoctorRoomEntities,
+  updateDoctorSpeechAnchor,
+} from './engine/doctorRoomSceneRenderer';
 import {
   PORTAL,
   renderSultanhaniBackground,
@@ -116,6 +125,7 @@ export interface WalkableCampusViewProps {
     | 'classroom'
     | 'discovery_classroom'
     | 'discovery_moon'
+    | 'discovery_doctor'
     | 'observatory_classroom'
     | 'sultanhani_square'
     | 'sultanhani_inner';
@@ -193,6 +203,7 @@ export function WalkableCampusView({
     | 'classroom'
     | 'discovery_classroom'
     | 'discovery_moon'
+    | 'discovery_doctor'
     | 'observatory_classroom'
     | 'sultanhani_square'
     | 'sultanhani_inner'
@@ -208,6 +219,18 @@ export function WalkableCampusView({
   const vrStateRef = useRef<DiscoveryVrState>('CLASS_IDLE');
   const [isCareerModalOpen, setIsCareerModalOpen] = useState(false);
   const [activeCareerSlot, setActiveCareerSlot] = useState(0);
+  const doctorTransitionRef = useRef<number | null>(null);
+  const doctorBubbleRef = useRef<HTMLDivElement>(null);
+  const doctorSpeechEnabled = campus?.state.speechEnabled ?? false;
+  const doctorVisit = useDoctorVisit(currentScene === 'discovery_doctor', doctorSpeechEnabled);
+  const {
+    begin: beginDoctorVisit, cancel: cancelDoctorSpeech, openStation: openDoctorStation,
+    read: readDoctorVisit, readAnimation: readDoctorAnimation,
+  } = doctorVisit;
+
+  useEffect(() => () => {
+    if (doctorTransitionRef.current !== null) window.clearTimeout(doctorTransitionRef.current);
+  }, []);
   const activeCareerSlotRef = useRef(0);
   const careerLayerRef = useRef<HTMLDivElement>(null);
   const vrTransitionLockRef = useRef(false);
@@ -851,12 +874,44 @@ export function WalkableCampusView({
     setVrState('CLASS_IDLE');
   }, []);
 
+  const transitionDoctorVisit = useCallback((target: 'discovery_doctor' | 'discovery_classroom') => {
+    if (vrTransitionLockRef.current) return;
+    vrTransitionLockRef.current = true;
+    const entering = target === 'discovery_doctor';
+    if (entering) preloadDoctorRoom();
+    else cancelDoctorSpeech();
+    engineRef.current?.setInputDisabled(true);
+    setActiveZone(null);
+    setUnreachableMessage(null);
+    setIsTeleporting(true);
+    setTeleportMessage(entering ? 'Çocuk hastanesinin muayene odasına gidiyorsun…' : 'Gözlüğünü çıkarıp sınıfa dönüyorsun…');
+    setVrState(entering ? 'DOCTOR_VISIT' : 'CLASS_RETURN');
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    doctorTransitionRef.current = window.setTimeout(() => {
+      doctorTransitionRef.current = null;
+      if (entering) beginDoctorVisit();
+      else lastDiscoveryClassroomPosRef.current = DISCOVERY_VR_CONFIG.returnClassroomSpawn;
+      setCurrentScene(target);
+      if (!entering) setVrState('CLASS_IDLE');
+      setIsTeleporting(false);
+      vrTransitionLockRef.current = false;
+    }, reducedMotion ? 140 : DISCOVERY_VR_CONFIG.fadeTransitionMs);
+  }, [beginDoctorVisit, cancelDoctorSpeech]);
+
+  const handleExitDoctorRoom = useCallback(() => transitionDoctorVisit('discovery_classroom'), [transitionDoctorVisit]);
+
   const handlePutOnGlasses = useCallback(() => {
-    if (vrTransitionLockRef.current || CAREER_LIST[activeCareerSlotRef.current]?.sceneId !== 'discovery_moon') return;
+    if (vrTransitionLockRef.current) return;
+    const career = CAREER_LIST[activeCareerSlotRef.current];
+    if (career?.sceneId === 'discovery_doctor') {
+      transitionDoctorVisit('discovery_doctor');
+      return;
+    }
+    if (career?.sceneId !== 'discovery_moon') return;
     engineRef.current?.stopMoving();
     setVrState('CAREER_SELECT');
     setIsCareerModalOpen(true);
-  }, []);
+  }, [transitionDoctorVisit]);
 
   const handleSelectCareer = useCallback((career: CareerDefinition) => {
     if (career.sceneId !== 'discovery_moon' || vrTransitionLockRef.current) return;
@@ -1051,6 +1106,18 @@ export function WalkableCampusView({
     return () => window.removeEventListener('keydown', handleMoonKeyDown);
   }, [currentScene, handleRemoveGlasses]);
 
+  useEffect(() => {
+    if (currentScene !== 'discovery_doctor') return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        handleExitDoctorRoom();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [currentScene, handleExitDoctorRoom]);
+
   // Sahneye göre konfigürasyon belirleme
   const getSceneConfig = useCallback(
     (
@@ -1059,10 +1126,36 @@ export function WalkableCampusView({
         | 'classroom'
         | 'discovery_classroom'
         | 'discovery_moon'
+        | 'discovery_doctor'
         | 'observatory_classroom'
         | 'sultanhani_square'
         | 'sultanhani_inner',
     ): WalkableSceneConfig => {
+      if (scene === 'discovery_doctor') {
+        const visit = readDoctorVisit();
+        const station = DOCTOR_VISIT_STEPS[visit.stepIndex]?.station;
+        const interactiveZones: InteractiveZone[] = [
+          {
+            id: 'doctor-exit', name: 'Gözlüğü Çıkar', prompt: 'Sınıfa Dön',
+            x: DOCTOR_ROOM.exit.x, y: DOCTOR_ROOM.exit.y, radius: DOCTOR_ROOM.exit.radius,
+            action: handleExitDoctorRoom,
+          },
+        ];
+        if (station) {
+          interactiveZones.push({
+            id: 'doctor-station-' + visit.stepIndex, name: station.name, prompt: station.prompt,
+            x: station.position.x, y: station.position.y, radius: 36,
+            action: () => {
+              engineRef.current?.stopMoving();
+              openDoctorStation(visit.stepIndex);
+            },
+          });
+        }
+        return {
+          width: DOCTOR_ROOM.width, height: DOCTOR_ROOM.height, playerSpawn: DOCTOR_ROOM.playerSpawn,
+          obstacles: DOCTOR_ROOM_OBSTACLES, interactiveZones,
+        };
+      }
       if (scene === 'observatory_classroom') {
         const interactiveZones: InteractiveZone[] = [
           {
@@ -1108,7 +1201,7 @@ export function WalkableCampusView({
             action: handleExitDiscoveryClassroom,
           },
         ];
-        if (CAREER_LIST[activeCareerSlotRef.current]?.sceneId === 'discovery_moon') {
+        if (CAREER_LIST[activeCareerSlotRef.current]?.sceneId) {
           interactiveZones.push({
             id: 'discovery-vr-glasses',
             name: 'VR Gözlüğü',
@@ -1622,6 +1715,9 @@ export function WalkableCampusView({
       dispatchFlowEvent,
       handleEnterDiscoveryClassroom,
       handleExitDiscoveryClassroom,
+      handleExitDoctorRoom,
+      openDoctorStation,
+      readDoctorVisit,
       handleEnterObservatoryClassroom,
       handleExitObservatoryClassroom,
       handleExitInnerCourtyard,
@@ -1691,9 +1787,11 @@ export function WalkableCampusView({
               ? lastDiscoveryClassroomPosRef.current
               : currentScene === 'discovery_moon'
                 ? { x: 480, y: 320 }
-                : currentScene === 'classroom'
-                  ? lastClassroomPosRef.current
-                  : lastCourtyardPosRef.current;
+                : currentScene === 'discovery_doctor'
+                  ? DOCTOR_ROOM.playerSpawn
+                  : currentScene === 'classroom'
+                    ? lastClassroomPosRef.current
+                    : lastCourtyardPosRef.current;
 
     if (currentScene !== 'courtyard') {
       clearDiscoveryDoorTimers();
@@ -1788,6 +1886,8 @@ export function WalkableCampusView({
               if (layer.style.transform !== transform) layer.style.transform = transform;
               if (layer.style.visibility !== 'visible') layer.style.visibility = 'visible';
             }
+          } else if (currentScene === 'discovery_doctor') {
+            renderDoctorRoomBackground(ctx);
           } else if (currentScene === 'discovery_moon') {
             renderDiscoveryMoonBackground(ctx, config.width, config.height);
           } else if (currentScene === 'classroom') {
@@ -1813,6 +1913,12 @@ export function WalkableCampusView({
             renderObservatoryClassroomEntities(ctx, player);
           } else if (currentScene === 'discovery_classroom') {
             renderDiscoveryClassroomEntities(ctx, player, config.width, config.height);
+          } else if (currentScene === 'discovery_doctor') {
+            const animation = readDoctorAnimation();
+            renderDoctorRoomEntities(ctx, player, animation);
+            if (doctorBubbleRef.current && animation.displaySpeaker) {
+              updateDoctorSpeechAnchor(ctx, doctorBubbleRef.current, player, animation.displaySpeaker, careerOverlayScaleX, careerOverlayScaleY);
+            }
           } else if (currentScene === 'discovery_moon') {
             if (!isMoonLandingCompleteRef.current) {
               const elapsed = moonAnimStartTimeRef.current > 0 ? performance.now() - moonAnimStartTimeRef.current : 0;
@@ -1936,6 +2042,8 @@ export function WalkableCampusView({
             renderObservatoryClassroomLayeredBackground(ctx, config.width, config.height);
           } else if (currentScene === 'discovery_classroom') {
             renderDiscoveryClassroomBackground(ctx, config.width, config.height);
+          } else if (currentScene === 'discovery_doctor') {
+            renderDoctorRoomBackground(ctx);
           } else if (currentScene === 'discovery_moon') {
             renderDiscoveryMoonBackground(ctx, config.width, config.height);
           } else if (currentScene === 'classroom') {
@@ -1966,6 +2074,7 @@ export function WalkableCampusView({
     if (
       (currentScene === 'courtyard' && spawnPos === COURTYARD_GATE_ARRIVAL) ||
       currentScene === 'discovery_classroom' ||
+      currentScene === 'discovery_doctor' ||
       currentScene === 'observatory_classroom' ||
       (currentScene === 'sultanhani_square' && sultanhaniSquareEntryRef.current !== 'courtyard-exit') ||
       currentScene === 'sultanhani_inner'
@@ -2072,6 +2181,7 @@ export function WalkableCampusView({
     getSceneConfig,
     getStudentVoiceMeta,
     openExchangeChoice,
+    readDoctorAnimation,
     resetEncounterState,
   ]);
 
@@ -2088,6 +2198,18 @@ export function WalkableCampusView({
       engineRef.current?.updateInteractiveZones(getSceneConfig('discovery_classroom').interactiveZones);
     }
   }, [activeCareerSlot, currentScene, getSceneConfig]);
+
+  useEffect(() => {
+    if (currentScene === 'discovery_doctor') {
+      engineRef.current?.updateInteractiveZones(getSceneConfig('discovery_doctor').interactiveZones);
+    }
+  }, [currentScene, doctorVisit.stepIndex, getSceneConfig]);
+
+  useEffect(() => {
+    if (currentScene === 'discovery_doctor') {
+      engineRef.current?.setInputDisabled(doctorVisit.isDialogOpen || isTeleporting || Boolean(campus?.isProfileModalOpen));
+    }
+  }, [campus?.isProfileModalOpen, currentScene, doctorVisit.isDialogOpen, isTeleporting]);
 
   // Modallar açıldığında motoru duraklat
   useEffect(() => {
@@ -2130,7 +2252,8 @@ export function WalkableCampusView({
       encounterPhase !== 'ARRIVAL' &&
       encounterPhase !== 'APPROACH' &&
       encounterPhase !== 'DONE') ||
-    (currentScene === 'sultanhani_inner' && innerFlowState.stepPhase !== 'DONE');
+    (currentScene === 'sultanhani_inner' && innerFlowState.stepPhase !== 'DONE') ||
+    (currentScene === 'discovery_doctor' && doctorVisit.isDialogOpen);
 
   const activeBubbleAnchor =
     activeBubble?.speaker === 'student' ? studentAnchorPos : npcAnchorPos;
@@ -2169,25 +2292,37 @@ export function WalkableCampusView({
         onVirtualDirection={handleVirtualDirection}
         onBackToMap={handleBackToMap}
         onExitClassroom={
-          currentScene === 'discovery_moon'
-            ? handleRemoveGlasses
-            : currentScene === 'classroom'
-              ? () => {
-                  lastCourtyardPosRef.current = { x: 970, y: 350 };
-                  setCurrentScene('courtyard');
-                }
-              : currentScene === 'discovery_classroom'
-                ? handleExitDiscoveryClassroom
-                : currentScene === 'observatory_classroom'
-                  ? handleExitObservatoryClassroom
-                  : currentScene === 'sultanhani_square' || currentScene === 'sultanhani_inner'
-                    ? handleExitSultanhani
-                    : undefined
+          currentScene === 'discovery_doctor'
+            ? handleExitDoctorRoom
+            : currentScene === 'discovery_moon'
+              ? handleRemoveGlasses
+              : currentScene === 'classroom'
+                ? () => {
+                    lastCourtyardPosRef.current = { x: 970, y: 350 };
+                    setCurrentScene('courtyard');
+                  }
+                : currentScene === 'discovery_classroom'
+                  ? handleExitDiscoveryClassroom
+                  : currentScene === 'observatory_classroom'
+                    ? handleExitObservatoryClassroom
+                    : currentScene === 'sultanhani_square' || currentScene === 'sultanhani_inner'
+                      ? handleExitSultanhani
+                      : undefined
         }
         unreachableMessage={unreachableMessage}
         currentScene={currentScene}
         isEncounterLocked={isEncounterLocked}
       />
+
+      {currentScene === 'discovery_doctor' && (
+        <DoctorVisitOverlay
+          visit={doctorVisit}
+          bubbleRef={doctorBubbleRef}
+          speechEnabled={doctorSpeechEnabled}
+          showInstruction={!activeZone}
+          onExit={handleExitDoctorRoom}
+        />
+      )}
 
       {/* Yerden Göklere Gözlemevi İstasyon Bilgi Kartı */}
       {currentScene === 'observatory_classroom' && (

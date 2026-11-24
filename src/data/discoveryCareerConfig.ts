@@ -21,7 +21,8 @@ export type DiscoveryVrState =
   | 'GO_TO_ROCK'
   | 'SAMPLE_TAKEN'
   | 'COMPLETE'
-  | 'CLASS_RETURN';
+  | 'CLASS_RETURN'
+  | 'DOCTOR_VISIT';
 
 /**
  * Meslek Tanım Arayüzü
@@ -31,7 +32,7 @@ export interface CareerDefinition {
   id: string;
   title: string;
   portrait: number;
-  sceneId?: 'discovery_moon';
+  sceneId?: 'discovery_moon' | 'discovery_doctor';
   buttonText?: string;
 }
 
@@ -194,7 +195,7 @@ export const CAREER_ATLAS = { url: '/assets/walkable/career-portraits.png', colu
 
 export const CAREER_LIST: readonly CareerDefinition[] = [
   { id: 'astronaut', title: 'Astronot', portrait: 0, sceneId: 'discovery_moon', buttonText: 'Ay Görevine Başla' },
-  { id: 'doctor', title: 'Doktor', portrait: 1 },
+  { id: 'doctor', title: 'Doktor', portrait: 1, sceneId: 'discovery_doctor' },
   { id: 'veterinarian', title: 'Veteriner Hekim', portrait: 2 },
   { id: 'pilot', title: 'Pilot', portrait: 3 },
   { id: 'architect', title: 'Mimar', portrait: 4 },

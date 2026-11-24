@@ -32,6 +32,7 @@ interface WalkableControlsOverlayProps {
     | 'classroom'
     | 'discovery_classroom'
     | 'discovery_moon'
+    | 'discovery_doctor'
     | 'observatory_classroom'
     | 'sultanhani_square'
     | 'sultanhani_inner';
@@ -93,7 +94,9 @@ export function WalkableControlsOverlay({
                   ? 'Hayalden Gerçeğe — VR Sınıfı'
                   : currentScene === 'discovery_moon'
                     ? 'Hayalden Gerçeğe — Ay Görevi'
-                    : currentScene === 'observatory_classroom'
+                    : currentScene === 'discovery_doctor'
+                      ? 'Çocuk Hastanesi — Muayene Odası'
+                      : currentScene === 'observatory_classroom'
                       ? `${CAMPUS_BUILDING_NAMES.observatory} — Gözlemevi Sınıfı`
                       : currentScene === 'sultanhani_square'
                         ? 'Aksaray Sultanhanı Kervansarayı — Dış Meydan'
@@ -159,7 +162,7 @@ export function WalkableControlsOverlay({
           )}
 
           {/* Ay Görevi Sahnesindeyken Gözlüğü Çıkar Düğmesi */}
-          {currentScene === 'discovery_moon' && onExitClassroom && (
+          {(currentScene === 'discovery_moon' || currentScene === 'discovery_doctor') && onExitClassroom && (
             <button
               type="button"
               onClick={onExitClassroom}
@@ -296,7 +299,7 @@ export function WalkableControlsOverlay({
       )}
 
       {/* Ulaşılamayan nokta veya etkileşim bildirimi */}
-      <div className={currentScene === 'discovery_classroom'
+      <div className={currentScene === 'discovery_classroom' || currentScene === 'discovery_doctor'
         ? 'absolute inset-x-3 bottom-[24dvh] flex flex-col items-center gap-2'
         : 'flex flex-col items-center gap-2'}>
         {unreachableMessage && (
