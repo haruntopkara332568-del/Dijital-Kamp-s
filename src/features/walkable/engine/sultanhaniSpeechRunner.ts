@@ -215,6 +215,49 @@ function getEnglishOnlyVoices(voices: SpeechSynthesisVoice[]): SpeechSynthesisVo
   return [...usVoices, ...gbVoices];
 }
 
+const ANA_CHILD_VOICE_PATTERN = /\bana\b/i;
+const PREFERRED_NATURAL_FEMALE_PATTERN = /\b(aria|jenny|samantha)\b|\bgoogle us english\b/i;
+const NATURAL_VOICE_TAG_PATTERN = /\b(natural|online|neural)\b/i;
+const ROBOTIC_OR_COMPACT_VOICE_PATTERN =
+  /\b(compact|espeak|festival|mbrola|sapi|desktop|legacy|eloquence|zira|hazel|susan|heera|reed|shelley|sandy|flo|grandma|grandpa|trinoids|zarvox|whisper|bells|bubbles|boing|albert|bad news|bahh|cellos|good news|jester|organ|superstar|wobble)\b/i;
+
+function getFemaleChildVoicePriority(
+  voice: Pick<SpeechSynthesisVoice, 'name' | 'voiceURI'>,
+): number {
+  const haystack = `${voice.name ?? ''} ${voice.voiceURI ?? ''}`;
+  const isRoboticOrCompact = ROBOTIC_OR_COMPACT_VOICE_PATTERN.test(haystack);
+
+  if (ANA_CHILD_VOICE_PATTERN.test(haystack) && !isRoboticOrCompact) {
+    return 0;
+  }
+  if (isRoboticOrCompact) {
+    return 5;
+  }
+  const isPreferredNamed = PREFERRED_NATURAL_FEMALE_PATTERN.test(haystack);
+  const isNaturalTagged = NATURAL_VOICE_TAG_PATTERN.test(haystack);
+
+  if (isPreferredNamed && (isNaturalTagged || /\b(samantha|google us english)\b/i.test(haystack))) {
+    return 1;
+  }
+  if (isNaturalTagged) {
+    return 2;
+  }
+  if (isPreferredNamed) {
+    return 3;
+  }
+  return 4;
+}
+
+function sortFemaleChildVoices(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
+  return [...voices].sort(
+    (a, b) => getFemaleChildVoicePriority(a) - getFemaleChildVoicePriority(b),
+  );
+}
+
+function clampFemaleChildPitch(pitch: number): number {
+  return Math.min(1.25, Math.max(1.15, pitch));
+}
+
 /**
  * Sahne başında bir kez çağrılmak üzere öğrenci, Alex ve Can için kilitli İngilizce (en-US/en-GB)
  * ses haritasını oluşturur. Konuşmacılar farklı seslerle, aynı ses çıkarsa pitch farkıyla ayrılır.
@@ -230,12 +273,14 @@ export function buildSultanhaniSceneVoiceMap(
     return {
       student: {
         englishVoice: null,
-        pitch: clampPitch(
+        pitch:
           studentGender === 'female'
-            ? SULTANHANI_VOICE_PITCH.studentFemale
-            : SULTANHANI_VOICE_PITCH.studentMale,
-        ),
-        englishRate: SULTANHANI_SPEECH_RATES.student,
+            ? clampFemaleChildPitch(SULTANHANI_VOICE_PITCH.studentFemale)
+            : clampPitch(SULTANHANI_VOICE_PITCH.studentMale),
+        englishRate:
+          studentGender === 'female'
+            ? SULTANHANI_SPEECH_RATES.studentFemale
+            : SULTANHANI_SPEECH_RATES.student,
       },
       tourist: {
         englishVoice: null,
@@ -244,24 +289,28 @@ export function buildSultanhaniSceneVoiceMap(
       },
       can: {
         englishVoice: null,
-        pitch: clampPitch(
+        pitch:
           canGender === 'female'
-            ? SULTANHANI_VOICE_PITCH.canFemale
-            : SULTANHANI_VOICE_PITCH.canMale,
-        ),
-        englishRate: SULTANHANI_SPEECH_RATES.can,
+            ? clampFemaleChildPitch(SULTANHANI_VOICE_PITCH.canFemale)
+            : clampPitch(SULTANHANI_VOICE_PITCH.canMale),
+        englishRate:
+          canGender === 'female'
+            ? SULTANHANI_SPEECH_RATES.canFemale
+            : SULTANHANI_SPEECH_RATES.can,
       },
     };
   }
 
-  const femaleVoices = englishVoices.filter((v) => classifyVoiceGender(v) === 'female');
+  const femaleVoices = sortFemaleChildVoices(
+    englishVoices.filter((v) => classifyVoiceGender(v) === 'female'),
+  );
   const maleVoices = englishVoices.filter((v) => classifyVoiceGender(v) === 'male');
   const unknownVoices = englishVoices.filter((v) => classifyVoiceGender(v) === 'unknown');
 
   // Alex: yetişkin erkek sesi, pitch ≈ 0.9, rate ≈ 0.85
   const alexVoice = maleVoices[0] ?? unknownVoices[0] ?? englishVoices[0] ?? null;
 
-  // Öğrenci: kız → kadın sesi (pitch ≈ 1.6), erkek → erkek sesi (pitch ≈ 1.35), Alex'ten farklı ses öncelikli
+  // Öğrenci: kız → doğal çocuk/kadın sesi (pitch 1.15–1.25), erkek → erkek sesi (pitch ≈ 1.35)
   const studentVoice =
     studentGender === 'female'
       ? (femaleVoices.find((v) => v !== alexVoice) ??
@@ -275,15 +324,18 @@ export function buildSultanhaniSceneVoiceMap(
         alexVoice);
 
   const studentSharesAlexVoice = Boolean(studentVoice && alexVoice && studentVoice === alexVoice);
-  const studentPitch = clampPitch(
+  const studentPitch =
     studentGender === 'female'
-      ? studentSharesAlexVoice
-        ? SULTANHANI_VOICE_PITCH.studentFemaleSameVoice
-        : SULTANHANI_VOICE_PITCH.studentFemale
-      : studentSharesAlexVoice
-        ? SULTANHANI_VOICE_PITCH.studentMaleSameVoice
-        : SULTANHANI_VOICE_PITCH.studentMale,
-  );
+      ? clampFemaleChildPitch(
+          studentSharesAlexVoice
+            ? SULTANHANI_VOICE_PITCH.studentFemaleSameVoice
+            : SULTANHANI_VOICE_PITCH.studentFemale,
+        )
+      : clampPitch(
+          studentSharesAlexVoice
+            ? SULTANHANI_VOICE_PITCH.studentMaleSameVoice
+            : SULTANHANI_VOICE_PITCH.studentMale,
+        );
 
   // Can: cinsiyetine göre üçüncü ayrı ses, aynı ses çıkarsa öğrenci ve Alex'ten ayrı çocuk pitch'i
   const canVoice =
@@ -302,21 +354,27 @@ export function buildSultanhaniSceneVoiceMap(
         studentVoice);
 
   const canSharesStudentVoice = Boolean(canVoice && studentVoice && canVoice === studentVoice);
-  const canPitch = clampPitch(
+  const canPitch =
     canGender === 'female'
-      ? canSharesStudentVoice
-        ? SULTANHANI_VOICE_PITCH.canFemaleSameVoice
-        : SULTANHANI_VOICE_PITCH.canFemale
-      : canSharesStudentVoice
-        ? SULTANHANI_VOICE_PITCH.canMaleSameVoice
-        : SULTANHANI_VOICE_PITCH.canMale,
-  );
+      ? clampFemaleChildPitch(
+          canSharesStudentVoice
+            ? SULTANHANI_VOICE_PITCH.canFemaleSameVoice
+            : SULTANHANI_VOICE_PITCH.canFemale,
+        )
+      : clampPitch(
+          canSharesStudentVoice
+            ? SULTANHANI_VOICE_PITCH.canMaleSameVoice
+            : SULTANHANI_VOICE_PITCH.canMale,
+        );
 
   return {
     student: {
       englishVoice: studentVoice,
       pitch: studentPitch,
-      englishRate: SULTANHANI_SPEECH_RATES.student,
+      englishRate:
+        studentGender === 'female'
+          ? SULTANHANI_SPEECH_RATES.studentFemale
+          : SULTANHANI_SPEECH_RATES.student,
     },
     tourist: {
       englishVoice: alexVoice,
@@ -326,7 +384,8 @@ export function buildSultanhaniSceneVoiceMap(
     can: {
       englishVoice: canVoice,
       pitch: canPitch,
-      englishRate: SULTANHANI_SPEECH_RATES.can,
+      englishRate:
+        canGender === 'female' ? SULTANHANI_SPEECH_RATES.canFemale : SULTANHANI_SPEECH_RATES.can,
     },
   };
 }

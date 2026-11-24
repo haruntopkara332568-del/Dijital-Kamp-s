@@ -294,14 +294,14 @@ export const SULTANHANI_TIMINGS = {
 } as const;
 
 export const SULTANHANI_VOICE_PITCH = {
-  studentFemale: 1.6,
-  studentFemaleSameVoice: 1.65,
+  studentFemale: 1.18,
+  studentFemaleSameVoice: 1.24,
   studentMale: 1.35,
   studentMaleSameVoice: 1.42,
   tourist: 0.9,
   touristSameVoice: 0.9,
-  canFemale: 1.6,
-  canFemaleSameVoice: 1.75,
+  canFemale: 1.2,
+  canFemaleSameVoice: 1.25,
   canMale: 1.35,
   canMaleSameVoice: 1.48,
   can: 1.35,
@@ -309,8 +309,10 @@ export const SULTANHANI_VOICE_PITCH = {
 
 export const SULTANHANI_SPEECH_RATES = {
   student: 0.85,
+  studentFemale: 0.87,
   tourist: 0.85,
   can: 0.85,
+  canFemale: 0.87,
   'en-US': 0.85,
   'tr-TR': 0.85,
 } as const;
