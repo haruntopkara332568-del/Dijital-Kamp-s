@@ -52,6 +52,7 @@ import {
   ObservatoryArchitecturalLabels,
   ObservatoryStationCard,
 } from './components/ObservatoryClassroomOverlay';
+import { EarthSunMoonModal } from './components/EarthSunMoonModal';
 import { DiscoveryCareerLayer, DiscoveryCareerModal } from './components/DiscoveryCareerModal';
 import { DOCTOR_ROOM, DOCTOR_VISIT_STEPS } from '@/src/data/doctorVisitContent';
 import { DoctorVisitOverlay, useDoctorVisit } from './components/DoctorVisitOverlay';
@@ -212,6 +213,7 @@ export function WalkableCampusView({
   const [unreachableMessage, setUnreachableMessage] = useState<string | null>(null);
   const [activeObservatoryStation, setActiveObservatoryStation] =
     useState<ObservatoryStationDefinition | null>(null);
+  const [isEarthSunMoonOpen, setIsEarthSunMoonOpen] = useState(false);
   const observatoryLayerRef = useRef<HTMLDivElement>(null);
 
   // Hayalden Gerçeğe — VR Meslek Keşfi Durum Makinesi
@@ -851,6 +853,7 @@ export function WalkableCampusView({
   const handleEnterObservatoryClassroom = useCallback(() => {
     setActiveZone(null);
     setActiveObservatoryStation(null);
+    setIsEarthSunMoonOpen(false);
     lastCourtyardPosRef.current = OBSERVATORY_CLASSROOM.courtyardReturnPos;
     lastObservatoryClassroomPosRef.current = OBSERVATORY_CLASSROOM.playerSpawn;
     setCurrentScene('observatory_classroom');
@@ -858,6 +861,7 @@ export function WalkableCampusView({
 
   const handleExitObservatoryClassroom = useCallback(() => {
     setActiveObservatoryStation(null);
+    setIsEarthSunMoonOpen(false);
     lastCourtyardPosRef.current = OBSERVATORY_CLASSROOM.courtyardReturnPos;
     setActiveZone(null);
     setCurrentScene('courtyard');
@@ -1176,7 +1180,12 @@ export function WalkableCampusView({
             radius: station.interaction.radius,
             action: () => {
               engineRef.current?.stopMoving();
-              setActiveObservatoryStation(station);
+              if (station.id === 'observatory-area-earth-sun-moon') {
+                setActiveObservatoryStation(null);
+                setIsEarthSunMoonOpen(true);
+              } else {
+                setActiveObservatoryStation(station);
+              }
             },
           })),
         ];
@@ -2220,7 +2229,8 @@ export function WalkableCampusView({
       isTableModalOpen ||
       isCareerModalOpen ||
       isMissionCompletedModalOpen ||
-      activeObservatoryStation !== null
+      activeObservatoryStation !== null ||
+      isEarthSunMoonOpen
     ) {
       engineRef.current.pause();
     } else {
@@ -2233,6 +2243,7 @@ export function WalkableCampusView({
     isCareerModalOpen,
     isMissionCompletedModalOpen,
     activeObservatoryStation,
+    isEarthSunMoonOpen,
   ]);
 
   const handleVirtualDirection = (vx: number, vy: number) => {
@@ -2326,10 +2337,16 @@ export function WalkableCampusView({
 
       {/* Yerden Göklere Gözlemevi İstasyon Bilgi Kartı */}
       {currentScene === 'observatory_classroom' && (
-        <ObservatoryStationCard
-          station={activeObservatoryStation}
-          onClose={() => setActiveObservatoryStation(null)}
-        />
+        <>
+          <ObservatoryStationCard
+            station={activeObservatoryStation}
+            onClose={() => setActiveObservatoryStation(null)}
+          />
+          <EarthSunMoonModal
+            isOpen={isEarthSunMoonOpen}
+            onClose={() => setIsEarthSunMoonOpen(false)}
+          />
+        </>
       )}
 
       {/* Sultanhanı Dış Meydan ve İç Mekân Konuşma Balonu ve Seçenek Paneli */}

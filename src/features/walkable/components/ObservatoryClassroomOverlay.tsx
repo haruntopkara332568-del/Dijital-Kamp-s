@@ -3,8 +3,10 @@ import { Sparkles, Telescope, X } from 'lucide-react';
 import {
   OBSERVATORY_CLASSROOM,
   OBSERVATORY_STATIONS,
+  type ObservatoryCloseUpCrop,
   type ObservatoryStationDefinition,
 } from '@/src/data/observatoryClassroomConfig';
+import { OBSERVATORY_CLASSROOM_BG_ASSET_URL } from '../engine/assetLoader';
 
 interface ObservatoryArchitecturalLabelsProps {
   layerRef: RefObject<HTMLDivElement | null>;
@@ -17,7 +19,7 @@ interface ObservatoryArchitecturalLabelsProps {
 export function ObservatoryArchitecturalLabels({
   layerRef,
 }: ObservatoryArchitecturalLabelsProps) {
-  const { width, height, title, subtitle, headerPlacement, centerPodiumPlacement } =
+  const { width, height, titleLines, subtitle, headerPlacement, centerPodiumPlacement } =
     OBSERVATORY_CLASSROOM;
 
   return (
@@ -32,23 +34,27 @@ export function ObservatoryArchitecturalLabels({
       }}
       className="pointer-events-none absolute top-0 left-0 z-10 select-none overflow-hidden"
     >
-      {/* Merkezî Kemer Ana Başlık: YERDEN GÖKLERE */}
+      {/* Merkezî Kemer Ana Başlık: İki satır hâlinde ortalanmış YERDEN / GÖKLERE */}
       <div
         style={{
           left: headerPlacement.titleCenterX,
           top: headerPlacement.titleTopY,
-          width: 224,
+          width: 210,
           transform: 'translateX(-50%)',
         }}
         className="absolute text-center"
       >
         <h1
-          className="font-serif text-[21px] font-extrabold tracking-[0.06em] text-[#f7df9d] uppercase leading-none"
+          className="font-serif text-[15.5px] font-extrabold tracking-[0.07em] text-[#f7df9d] uppercase leading-[1.06]"
           style={{
-            textShadow: '0 2px 6px rgba(9, 18, 42, 0.95), 0 0 12px rgba(247, 223, 157, 0.25)',
+            textShadow: '0 2px 5px rgba(9, 18, 42, 0.96), 0 0 10px rgba(247, 223, 157, 0.25)',
           }}
         >
-          {title}
+          {titleLines.map((line) => (
+            <span key={line} className="block">
+              {line}
+            </span>
+          ))}
         </h1>
       </div>
 
@@ -57,12 +63,12 @@ export function ObservatoryArchitecturalLabels({
         style={{
           left: headerPlacement.subtitleCenterX,
           top: headerPlacement.subtitleTopY,
-          width: 168,
+          width: 170,
           transform: 'translateX(-50%)',
         }}
         className="absolute text-center"
       >
-        <p className="font-serif text-[13.5px] font-bold tracking-[0.02em] text-[#172747] leading-none">
+        <p className="whitespace-nowrap font-serif text-[11.5px] font-bold tracking-[0.02em] text-[#172747] leading-none">
           {subtitle}
         </p>
       </div>
@@ -133,14 +139,45 @@ export function ObservatoryArchitecturalLabels({
   );
 }
 
+function ObservatoryCloseUpPreview({
+  crop,
+  title,
+}: {
+  crop: ObservatoryCloseUpCrop;
+  title: string;
+}) {
+  const bgSizeX = (OBSERVATORY_CLASSROOM.width / crop.width) * 100;
+  const bgSizeY = (OBSERVATORY_CLASSROOM.height / crop.height) * 100;
+  const maxPosX = OBSERVATORY_CLASSROOM.width - crop.width;
+  const maxPosY = OBSERVATORY_CLASSROOM.height - crop.height;
+  const bgPosX = maxPosX > 0 ? (crop.x / maxPosX) * 100 : 0;
+  const bgPosY = maxPosY > 0 ? (crop.y / maxPosY) * 100 : 0;
+
+  return (
+    <div
+      role="img"
+      aria-label={`${title} yakın görseli`}
+      style={{
+        aspectRatio: `${crop.width} / ${crop.height}`,
+        backgroundImage: `url(${OBSERVATORY_CLASSROOM_BG_ASSET_URL})`,
+        backgroundSize: `${bgSizeX.toFixed(2)}% ${bgSizeY.toFixed(2)}%`,
+        backgroundPosition: `${bgPosX.toFixed(2)}% ${bgPosY.toFixed(2)}%`,
+        backgroundRepeat: 'no-repeat',
+      }}
+      className="mx-auto mb-4 max-h-56 w-full rounded-2xl border border-[#f3cc7a]/45 bg-[#09152e] shadow-inner"
+    />
+  );
+}
+
 interface ObservatoryStationCardProps {
   station: ObservatoryStationDefinition | null;
   onClose: () => void;
 }
 
 /**
- * Gözlemevindeki keşif alanları, merkezî Güneş Sistemi veya pirinç teleskoba
- * yaklaşıp etkileşim başlatıldığında açılan bilimsel özet kartı.
+ * Gözlemevindeki keşif panoları, merkezî Güneş Sistemi veya pirinç teleskoba
+ * yaklaşıp etkileşim başlatıldığında açılan yakın inceleme / bilgi kartı.
+ * Henüz etkinliği olmayan panolarda yakın görsel ile yalnızca "Yakında" bilgisi gösterilir.
  */
 export function ObservatoryStationCard({ station, onClose }: ObservatoryStationCardProps) {
   useEffect(() => {
@@ -157,6 +194,8 @@ export function ObservatoryStationCard({ station, onClose }: ObservatoryStationC
 
   if (!station) return null;
 
+  const isComingSoonPanel = Boolean(station.comingSoon);
+
   return (
     <div
       role="dialog"
@@ -164,7 +203,7 @@ export function ObservatoryStationCard({ station, onClose }: ObservatoryStationC
       aria-labelledby="observatory-station-title"
       data-testid="observatory-station-card"
       data-station-id={station.id}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#09142c]/70 p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#09142c]/75 p-4 backdrop-blur-xs"
       onClick={onClose}
     >
       <div
@@ -196,31 +235,45 @@ export function ObservatoryStationCard({ station, onClose }: ObservatoryStationC
           <button
             type="button"
             onClick={onClose}
-            aria-label="Bilgi kartını kapat"
+            aria-label="Panoyu kapat"
             className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-xl border border-[#f6dc9b]/30 bg-[#182d59] text-[#f7e7ba] transition-colors hover:bg-[#223e77]"
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
-        <p className="mb-3.5 text-sm leading-relaxed text-[#e6ecf8]">{station.summary}</p>
+        {station.closeUpCrop && (
+          <ObservatoryCloseUpPreview crop={station.closeUpCrop} title={station.title} />
+        )}
 
-        <ul className="mb-4 space-y-2 rounded-2xl border border-[#f6dc9b]/20 bg-[#0b1733]/80 p-3.5 text-xs sm:text-sm text-[#f4ecda]">
-          {station.scientificFacts.map((fact) => (
-            <li key={fact} className="flex items-start gap-2">
-              <span
-                className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#f3cc7a]"
-                aria-hidden="true"
-              />
-              <span>{fact}</span>
-            </li>
-          ))}
-        </ul>
+        {isComingSoonPanel ? (
+          <div className="mb-4 rounded-2xl border border-[#f3cc7a]/40 bg-[#0b1733]/85 px-4 py-3 text-center">
+            <span className="inline-block rounded-full border border-[#f6dc9b]/50 bg-[#1b3263] px-3.5 py-1 text-sm font-extrabold tracking-wide text-[#f7df9d]">
+              Yakında
+            </span>
+          </div>
+        ) : (
+          <>
+            <p className="mb-3.5 text-sm leading-relaxed text-[#e6ecf8]">{station.summary}</p>
 
-        {station.representativeNotice && (
-          <p className="mb-4 rounded-xl border border-[#f3cc7a]/35 bg-[#1b315f]/85 px-3 py-2 text-xs font-semibold text-[#fbe4a8]">
-            {station.representativeNotice}
-          </p>
+            <ul className="mb-4 space-y-2 rounded-2xl border border-[#f6dc9b]/20 bg-[#0b1733]/80 p-3.5 text-xs sm:text-sm text-[#f4ecda]">
+              {station.scientificFacts.map((fact) => (
+                <li key={fact} className="flex items-start gap-2">
+                  <span
+                    className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#f3cc7a]"
+                    aria-hidden="true"
+                  />
+                  <span>{fact}</span>
+                </li>
+              ))}
+            </ul>
+
+            {station.representativeNotice && (
+              <p className="mb-4 rounded-xl border border-[#f3cc7a]/35 bg-[#1b315f]/85 px-3 py-2 text-xs font-semibold text-[#fbe4a8]">
+                {station.representativeNotice}
+              </p>
+            )}
+          </>
         )}
 
         <div className="flex justify-end">
@@ -229,7 +282,7 @@ export function ObservatoryStationCard({ station, onClose }: ObservatoryStationC
             onClick={onClose}
             className="min-h-[44px] cursor-pointer rounded-xl bg-[#d8a94c] px-5 py-2 text-sm font-bold text-[#102042] transition-colors hover:bg-[#e8be66]"
           >
-            Gözlemevine Devam Et
+            Gözlemevine Dön
           </button>
         </div>
       </div>

@@ -323,7 +323,12 @@ export function WalkableControlsOverlay({
               className="min-h-[48px] px-6 py-2 rounded-xl bg-[var(--seljuk-teal)] hover:bg-[var(--seljuk-teal-hover)] text-white text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer shadow-md"
             >
               <Sparkles className="w-4 h-4" />
-              <span>Etkileşimi Başlat [E]</span>
+              <span>
+                {currentScene === 'observatory_classroom' &&
+                activeZone.id !== 'observatory-exit-door'
+                  ? 'Keşfet [E]'
+                  : 'Etkileşimi Başlat [E]'}
+              </span>
             </button>
           </div>
         )}
