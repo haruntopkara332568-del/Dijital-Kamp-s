@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { VET_CLOSING, VET_DOG_REDUCED_REST_MS, VET_DOG_REST_MS, VET_INTRO, VET_REMAINING_ITEM, type VetCareItemId, type VetLine } from '@/src/data/veterinaryClinicContent';
-import type { StudentCharacterId } from '@/src/data/studentCharacters';
-import { getSpeechVoices, speakSegments, stopSpeaking } from '@/src/services/speech';
 import { getVeterinaryClinicProgressKey } from '@/src/services/storage';
 import type { SupportedGrade } from '@/src/types/campus';
 import type { Position } from './types';
@@ -48,46 +46,42 @@ function getLine(visit: Visit): VetLine | null {
   return visit.phase === 'closing' || visit.phase === 'complete' ? VET_CLOSING : null;
 }
 
-type VoiceIdentity = 'veterinarian' | 'father' | StudentCharacterId;
-const voiceProfiles: Record<VoiceIdentity, { name: RegExp; pitch: number }> = {
-  veterinarian: { name: /\b(emel(?:neural)?|yelda|filiz)\b/i, pitch: 1 },
-  father: { name: /\b(tolga|ahmet(?:neural)?)\b/i, pitch: 0.92 },
-  ece: { name: /\btr-tr-(?:standard|wavenet)-a\b/i, pitch: 1.25 },
-  deniz: { name: /\b(aydın|aydin|tr-tr-(?:standard|wavenet)-b)\b/i, pitch: 1.18 },
-  elif: { name: /\b(elif|tr-tr-(?:standard|wavenet)-c)\b/i, pitch: 1.21 },
-  mert: { name: /\btr-tr-(?:standard|wavenet)-e\b/i, pitch: 1.24 },
-  zeynep: { name: /\btr-tr-(?:standard|wavenet)-d\b/i, pitch: 1.29 },
-  arda: { name: /\btr-tr-chirp3-hd-achird\b/i, pitch: 1.16 },
+type NarrationStatus = 'playing' | 'played' | 'text';
+type Narration = { line: VetLine; status: NarrationStatus };
+type Playback = { source: AudioBufferSourceNode | null; timeout: number };
+type VoiceAudio = {
+  context: AudioContext;
+  controller: AbortController;
+  clips: Map<VetLine, Promise<AudioBuffer | null>>;
 };
 
-function assignVoices(voices: SpeechSynthesisVoice[]) {
-  const turkish = voices
-    .filter((voice) => /^tr(?:[-_]|$)/i.test(voice.lang))
-    .sort((first, second) => Number(second.localService) - Number(first.localService) || first.voiceURI.localeCompare(second.voiceURI));
-  const used = new Set<string>();
-  const assignments = new Map<VoiceIdentity, SpeechSynthesisVoice>();
-  for (const identity of Object.keys(voiceProfiles) as VoiceIdentity[]) {
-    const voice = turkish.find((candidate) =>
-      !used.has(candidate.voiceURI || candidate.name) && voiceProfiles[identity].name.test(candidate.name + ' ' + candidate.voiceURI),
-    );
-    if (voice) {
-      assignments.set(identity, voice);
-      used.add(voice.voiceURI || voice.name);
-    }
-  }
-  return assignments;
+function loadClip(audio: VoiceAudio, line: VetLine) {
+  const cached = audio.clips.get(line);
+  if (cached) return cached;
+
+  const { signal } = audio.controller;
+  const clip = fetch(line.audioSrc, { signal })
+    .then(async (response) => {
+      if (!response.ok) return null;
+      const data = await response.arrayBuffer();
+      return signal.aborted ? null : audio.context.decodeAudioData(data);
+    })
+    .catch(() => null);
+  audio.clips.set(line, clip);
+  return clip;
 }
 
 export function useVeterinaryClinicVisit(
-  active: boolean, speechEnabled: boolean, characterId: StudentCharacterId | undefined,
-  profileId: string | null, profileGrade: SupportedGrade,
+  active: boolean, speechEnabled: boolean, profileId: string | null, profileGrade: SupportedGrade,
 ) {
   const [visit, setVisit] = useState(idleVisit);
   const visitRef = useRef(visit);
   const dragging = useRef<{ item: VetCareItemId; position: Position } | null>(null);
-  const voices = useRef<ReturnType<typeof assignVoices> | null>(null);
-  const speaking = useRef<{ controller: AbortController; started: boolean } | null>(null);
-  const [settled, setSettled] = useState<{ line: VetLine; played: boolean } | null>(null);
+  const audio = useRef<VoiceAudio | null>(null);
+  const speaking = useRef<Playback | null>(null);
+  const [narration, setNarration] = useState<Narration | null>(null);
+  const narrationRef = useRef<Narration | null>(null);
+  const speechEnabledRef = useRef(speechEnabled);
   const visualTalk = useRef<{ line: VetLine | null; since: number }>({ line: null, since: 0 });
   const line = getLine(visit);
 
@@ -96,76 +90,126 @@ export function useVeterinaryClinicVisit(
     setVisit(next);
   }, []);
 
-  const cancel = useCallback(() => {
+  const showNarration = useCallback((next: Narration | null) => {
+    narrationRef.current = next;
+    setNarration(next);
+  }, []);
+
+  const stopVoice = useCallback(() => {
     const request = speaking.current;
     if (!request) return;
     speaking.current = null;
-    request.controller.abort();
-    if (request.started) stopSpeaking();
+    window.clearTimeout(request.timeout);
+    if (request.source) {
+      request.source.onended = null;
+      request.source.stop();
+      request.source.disconnect();
+    }
   }, []);
 
+  const openAudio = useCallback(() => {
+    if (typeof AudioContext === 'undefined') return null;
+    try {
+      const output = audio.current ??= { context: new AudioContext(), controller: new AbortController(), clips: new Map() };
+      const ready = output.context.state === 'running'
+        ? Promise.resolve(true)
+        : output.context.resume().then(() => true, () => false);
+      return { output, ready };
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const prepareVoice = useCallback(() => {
+    const session = openAudio();
+    if (!session) return;
+    for (const spokenLine of [...VET_INTRO, ...Object.values(VET_REMAINING_ITEM), VET_CLOSING]) {
+      void loadClip(session.output, spokenLine);
+    }
+  }, [openAudio]);
+
+  const cancel = useCallback(() => {
+    stopVoice();
+    const output = audio.current;
+    audio.current = null;
+    if (!output) return;
+    output.controller.abort();
+    if (output.context.state !== 'closed') void output.context.close().catch(() => {});
+  }, [stopVoice]);
+
+  useEffect(() => cancel, [cancel]);
+
   const begin = useCallback((owner: string | null, grade: SupportedGrade) => {
-    cancel();
+    stopVoice();
     dragging.current = null;
-    voices.current = null;
     visualTalk.current = { line: null, since: 0 };
-    setSettled(null);
+    showNarration(null);
     update({ ...idleVisit, profileId: owner, grade });
-  }, [cancel, update]);
+  }, [showNarration, stopVoice, update]);
 
   useEffect(() => {
     if (active && (visit.profileId !== profileId || visit.grade !== profileGrade)) begin(profileId, profileGrade);
   }, [active, begin, profileGrade, profileId, visit.grade, visit.profileId]);
 
   useEffect(() => {
-    if (!active || !speechEnabled || !line || visit.phase === 'complete' || settled?.line === line) return;
-    const request = { controller: new AbortController(), started: false };
-    speaking.current = request;
-    const { signal } = request.controller;
-    void (async () => {
-      let played = false;
-      try {
-        const identity = line.speaker === 'student' ? characterId : line.speaker;
-        if (!identity) return;
-        if (!voices.current) {
-          const available = await getSpeechVoices(signal);
-          if (!available || signal.aborted) return;
-          voices.current = assignVoices(window.speechSynthesis.getVoices());
-        }
-        const voice = voices.current.get(identity);
-        if (!voice || signal.aborted) return;
+    speechEnabledRef.current = speechEnabled;
+  }, [speechEnabled]);
 
-        let timedOut = false;
-        request.started = true;
-        const result = await speakSegments([{ lang: 'tr-TR', text: line.text }], {
-          queued: {
-            voices: { 'tr-TR': voice, 'en-US': null },
-            signal,
-            rates: { 'tr-TR': 0.93, 'en-US': 0.92 },
-            pitch: voiceProfiles[identity].pitch,
-            onTimeoutFallback: () => {
-              timedOut = true;
-              stopSpeaking();
-            },
-          },
-        });
-        played = result.spoken && !timedOut;
-      } catch {
-        // Uygun ses bulunmadığında yalnızca konuşma balonu kullanılır.
-      } finally {
-        if (speaking.current === request && !signal.aborted) {
-          speaking.current = null;
-          setSettled({ line, played });
-        }
-      }
-    })();
-    return () => {
-      if (speaking.current === request) cancel();
+  const isComplete = visit.phase === 'complete';
+  useEffect(() => {
+    if (!active || !speechEnabled || !line || isComplete) return;
+    const current = narrationRef.current;
+    if (current?.line === line && current.status !== 'playing') return;
+    const session = openAudio();
+    if (!session) {
+      showNarration({ line, status: 'text' });
+      return;
+    }
+
+    showNarration(null);
+    const finish = (status: NarrationStatus) => {
+      if (speaking.current !== request) return;
+      stopVoice();
+      showNarration({ line, status });
     };
-  }, [active, cancel, characterId, line, settled?.line, speechEnabled, visit.phase]);
+    const request: Playback = { source: null, timeout: window.setTimeout(() => finish('text'), 4000) };
+    speaking.current = request;
 
-  const reading = speechEnabled && line && settled?.line !== line;
-  const played = speechEnabled && settled?.line === line && settled?.played;
+    const { context } = session.output;
+    void Promise.all([session.ready, loadClip(session.output, line)])
+      .then(([running, buffer]) => {
+        if (speaking.current !== request) return;
+        if (!running || !buffer || context.state !== 'running') {
+          finish('text');
+          return;
+        }
+        const source = context.createBufferSource();
+        source.buffer = buffer;
+        source.connect(context.destination);
+        source.onended = () => {
+          source.disconnect();
+          request.source = null;
+          finish('played');
+        };
+        try {
+          source.start();
+        } catch {
+          source.disconnect();
+          finish('text');
+          return;
+        }
+        request.source = source;
+        window.clearTimeout(request.timeout);
+        showNarration({ line, status: 'playing' });
+      })
+      .catch(() => finish('text'));
+
+    return stopVoice;
+  }, [active, isComplete, line, openAudio, showNarration, speechEnabled, stopVoice]);
+
+  const status = narration?.line === line ? narration.status : undefined;
+  const reading = speechEnabled && line && (status === undefined || status === 'playing');
+  const played = speechEnabled && status === 'played';
   useEffect(() => {
     if (!active || reading || (visit.phase !== 'intro' && visit.phase !== 'closing')) return;
     const duration = played ? 0 : visit.phase === 'closing' ? 3850 : 3400;
@@ -207,7 +251,9 @@ export function useVeterinaryClinicVisit(
 
   const readScene = useCallback(() => {
     const current = visitRef.current;
-    const caption = getLine(current);
+    const currentLine = getLine(current);
+    const caption = !speechEnabledRef.current || current.phase === 'complete' || narrationRef.current?.line === currentLine
+      ? currentLine : null;
     const now = performance.now();
     if (visualTalk.current.line !== caption) visualTalk.current = { line: caption, since: now };
     return {
@@ -216,15 +262,15 @@ export function useVeterinaryClinicVisit(
       dragging: dragging.current,
       dogMovedAt: current.dogMovedAt,
       displaySpeaker: caption?.speaker,
-      talkingSpeaker: speaking.current?.started || now - visualTalk.current.since < 1250 ? caption?.speaker : undefined,
+      talkingSpeaker: speaking.current?.source || now - visualTalk.current.since < 1250 ? caption?.speaker : undefined,
     };
   }, []);
 
   return {
-    begin, cancel, readScene, dragItem, placeItem,
+    begin, cancel, prepareVoice, readScene, dragItem, placeItem,
     phase: visit.phase,
     placed: visit.placed,
-    bubble: line,
+    bubble: !speechEnabled || isComplete || status ? line : null,
     dialogOpen: visit.phase === 'intro',
     canCare: active && visit.phase === 'care',
   };

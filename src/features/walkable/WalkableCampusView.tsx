@@ -303,11 +303,10 @@ export function WalkableCampusView({
   const vetVisit = useVeterinaryClinicVisit(
     currentScene === 'discovery_vet' && !isTeleporting && !campus?.isProfileModalOpen,
     doctorSpeechEnabled,
-    characterId ?? campus?.activeProfile?.characterId,
     campus?.activeProfile?.id ?? null,
     campus?.activeProfile?.selectedGrade ?? 3,
   );
-  const { begin: beginVetVisit, cancel: cancelVetVoice, readScene: readVetScene } = vetVisit;
+  const { begin: beginVetVisit, cancel: cancelVetVoice, prepareVoice: prepareVetVoice, readScene: readVetScene } = vetVisit;
   const isVetVisitLocked = vetVisit.dialogOpen;
   const pilotVisit = usePilotExperience(
     currentScene === 'discovery_pilot' && !isTeleporting && !campus?.isProfileModalOpen,
@@ -934,7 +933,10 @@ export function WalkableCampusView({
       preloadDoctorRoom();
       beginDoctorVisit();
     }
-    if (target === 'discovery_vet') preloadVeterinaryClinic();
+    if (target === 'discovery_vet') {
+      preloadVeterinaryClinic();
+      if (speechEnabledRef.current) prepareVetVoice();
+    }
     if (target === 'discovery_pilot') preloadPilotExperience();
     if (!entering) {
       cancelDoctorSpeech();
@@ -980,7 +982,7 @@ export function WalkableCampusView({
       setIsTeleporting(false);
       vrTransitionLockRef.current = false;
     }, reducedMotion ? 140 : DISCOVERY_VR_CONFIG.fadeTransitionMs);
-  }, [beginDoctorVisit, beginPilot, beginVetVisit, cancelDoctorSpeech, cancelVetVoice]);
+  }, [beginDoctorVisit, beginPilot, beginVetVisit, cancelDoctorSpeech, cancelVetVoice, prepareVetVoice]);
 
   const handleExitClinic = useCallback(() => transitionClinicVisit('discovery_classroom'), [transitionClinicVisit]);
 

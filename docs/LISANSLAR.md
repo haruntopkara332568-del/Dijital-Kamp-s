@@ -14,3 +14,4 @@ Uygulama çalışma zamanında Google Fonts veya başka bir harici yazı tipi se
 ## 4. Ses Kayıtları
 
 - Doktorun üç Türkçe repliği, [Seslen TTS](https://huggingface.co/seslen-tr/seslen-tts/tree/1fcd865) 0.3.16 modelinin Ayşe kadın sesiyle üretilmiş sentetik kayıtlardır. Kayıtlara seviye ayarı ve hafif filtre uygulanmıştır. 24 kHz mono WAV dosyaları [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) ile sunulur ve uygulamanın kendi alan adından yüklenir.
+- Veterinerin replikleri aynı modelin Selin sesiyle, babanın replikleri Ege sesiyle üretilmiştir. Seviye ayarı ve hafif filtre uygulanan 24 kHz mono WAV kayıtları [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) ile sunulur.

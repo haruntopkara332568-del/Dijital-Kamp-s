@@ -36,7 +36,7 @@ export const VET_CARE_ITEMS: readonly {
 export const VET_ITEM_REACH = 54;
 
 export type VetSpeaker = 'father' | 'student' | 'veterinarian';
-export type VetLine = { speaker: VetSpeaker; text: string };
+export type VetLine = { speaker: VetSpeaker; text: string; audioSrc: string };
 
 export const VET_SPEAKERS: Record<VetSpeaker, string> = {
   father: 'Baba',
@@ -45,16 +45,33 @@ export const VET_SPEAKERS: Record<VetSpeaker, string> = {
 };
 
 export const VET_INTRO: readonly [VetLine, VetLine] = [
-  { speaker: 'veterinarian', text: 'Hoş geldin! Ben veteriner hekimim. Hayvanların sağlığını korumak için çalışırım.' },
-  { speaker: 'veterinarian', text: 'Boncuk biraz huzursuz. Haydi, ona rahat edebileceği bir yer hazırlayalım.' },
+  {
+    speaker: 'veterinarian',
+    text: 'Hoş geldin! Ben veteriner hekimim. Hayvanların sağlığını korumak için çalışırım.',
+    audioSrc: '/assets/walkable/vet-voice/vet-welcome.wav',
+  },
+  {
+    speaker: 'veterinarian',
+    text: 'Boncuk biraz huzursuz. Haydi, ona rahat edebileceği bir yer hazırlayalım.',
+    audioSrc: '/assets/walkable/vet-voice/vet-care.wav',
+  },
 ];
 
 export const VET_REMAINING_ITEM: Record<VetCareItemId, VetLine> = {
-  mat: { speaker: 'father', text: 'Bir de minderi yerine koy.' },
-  water: { speaker: 'father', text: 'Bir de su kabını yerine koy.' },
+  mat: {
+    speaker: 'father',
+    text: 'Bir de minderi yerine koy.',
+    audioSrc: '/assets/walkable/vet-voice/vet-father-mat.wav',
+  },
+  water: {
+    speaker: 'father',
+    text: 'Bir de su kabını yerine koy.',
+    audioSrc: '/assets/walkable/vet-voice/vet-father-water.wav',
+  },
 };
 
 export const VET_CLOSING: VetLine = {
   speaker: 'veterinarian',
   text: 'Harika! Boncuk artık daha rahat. Hayvanların bakımında güvenli ve temiz bir ortam çok önemlidir.',
+  audioSrc: '/assets/walkable/vet-voice/vet-feedback.wav',
 };
