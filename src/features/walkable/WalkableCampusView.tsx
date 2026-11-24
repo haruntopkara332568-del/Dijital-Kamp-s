@@ -2085,6 +2085,7 @@ export function WalkableCampusView({
           enableGrade3StageTwo
           enableGrade3StageThree
           enableGrade3StageFour
+          enableGrade3StageFive={currentScene === 'classroom'}
           missionId="kapilarin-anlattigi-hikaye"
           onClose={() => setIsTableModalOpen(false)}
           onAdvanceToStage={(nextStage) => {

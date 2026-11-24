@@ -37,6 +37,10 @@ export function getProfileStateKey(profileId: string): string {
   return `${PROFILE_STATE_KEY_PREFIX}${profileId}:state`;
 }
 
+export function getGrade3StageFiveProgressKey(profileId: string): string {
+  return getProfileStateKey(profileId) + ':grade3-stage5';
+}
+
 export function generateProfileId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return `prof_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
@@ -290,6 +294,7 @@ export async function deleteStudentProfile(profileId: string): Promise<{
   if (typeof window !== 'undefined') {
     try {
       window.localStorage.removeItem(getProfileStateKey(profileId));
+      window.localStorage.removeItem(getGrade3StageFiveProgressKey(profileId));
     } catch {
       // LocalStorage erişim engeli yoksayılır
     }
