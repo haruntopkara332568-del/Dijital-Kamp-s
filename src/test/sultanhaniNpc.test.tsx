@@ -27,14 +27,17 @@ import {
   SULTANHANI_READY_STUDENT_NAMES,
   SULTANHANI_TIMINGS,
   advanceSultanhaniFlowState,
+  advanceSultanhaniInnerFlowState,
   buildSultanhaniDialogExchanges,
   buildSultanhaniDialogueSteps,
+  buildSultanhaniInnerDialogExchanges,
   buildSultanhaniSpeechSegments,
-  buildSultanhaniUnusedExtendedSteps,
   canTransitionSultanhaniPhase,
   getSpeechTimeoutMs,
+  resolveStudentVoiceGender,
   resolveSultanhaniStudentName,
 } from '@/src/data/sultanhaniDialogContent';
+import { resolveSultanhaniSpeakerVoice } from '@/src/features/walkable/engine/sultanhaniSpeechRunner';
 import { NpcSpeechBubble } from '@/src/features/walkable/components/NpcSpeechBubble';
 import {
   clearAllCampusData,
@@ -177,18 +180,48 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
     expect(canTransitionSultanhaniPhase('TRANSITION', 'DONE')).toBe(true);
   });
 
-  it('2. Öğrenci adı önceliği, İngilizce diyalog sırası ve Türkçe isim parçalama/Alex/Can kuralları doğrudur', () => {
+  it('2. Öğrenci adı, dış/iç mekân diyalog sırası, cinsiyet sesi ayrımı ve Türkçe isim parçalama kuralları doğrudur', () => {
     expect(resolveSultanhaniStudentName('Zeynep', 'ece')).toBe('Zeynep');
     expect(resolveSultanhaniStudentName('', 'arda')).toBe('Arda');
     expect(SULTANHANI_READY_STUDENT_NAMES).toContain(resolveSultanhaniStudentName(null, null, 0));
 
-    const exchanges = buildSultanhaniDialogExchanges(1);
+    // Karakter cinsiyet eşlemesi (bilinmiyorsa kız sesi varsayılır)
+    expect(resolveStudentVoiceGender('ece')).toBe('female');
+    expect(resolveStudentVoiceGender('mert')).toBe('male');
+    expect(resolveStudentVoiceGender('deniz')).toBe('male');
+    expect(resolveStudentVoiceGender(null)).toBe('female');
+
+    // Farklı ses ve pitch/rate ayrımı doğrulaması
+    const twoMaleOneFemale = [
+      { lang: 'en-US', name: 'Microsoft David', voiceURI: 'Microsoft David' },
+      { lang: 'en-GB', name: 'Microsoft Ryan', voiceURI: 'Microsoft Ryan' },
+      { lang: 'en-US', name: 'Microsoft Zira', voiceURI: 'Microsoft Zira' },
+    ] as unknown as SpeechSynthesisVoice[];
+    const girlProfile = resolveSultanhaniSpeakerVoice(twoMaleOneFemale, 'student', 'female');
+    const alexProfile = resolveSultanhaniSpeakerVoice(twoMaleOneFemale, 'tourist', 'female');
+    const boyProfile = resolveSultanhaniSpeakerVoice(twoMaleOneFemale, 'student', 'male');
+    expect(girlProfile.englishVoice?.name).toBe('Microsoft Zira');
+    expect(alexProfile.englishVoice?.name).toBe('Microsoft David');
+    expect(boyProfile.englishVoice?.name).toBe('Microsoft Ryan');
+    expect(boyProfile.englishVoice).not.toBe(alexProfile.englishVoice);
+
+    // Tek erkek ses varsa pitch ve rate farkıyla ayrılır
+    const singleMaleVoice = [
+      { lang: 'en-US', name: 'Microsoft David', voiceURI: 'Microsoft David' },
+    ] as unknown as SpeechSynthesisVoice[];
+    const boySingle = resolveSultanhaniSpeakerVoice(singleMaleVoice, 'student', 'male');
+    const alexSingle = resolveSultanhaniSpeakerVoice(singleMaleVoice, 'tourist', 'male');
+    expect(boySingle.pitch).not.toBe(alexSingle.pitch);
+    expect(boySingle.englishRate).not.toBe(alexSingle.englishRate);
+
+    const exchanges = buildSultanhaniDialogExchanges(1, 'Ece');
     expect(
-      exchanges.map((ex) => `${ex.studentText} -> ${ex.touristText}`),
+      exchanges.map((ex) => `${ex.studentText} -> ${ex.touristText ?? 'END'}`),
     ).toEqual([
       'Hello! -> Hello!',
       'Good morning! -> Good morning!',
-      "What's your name? -> My name is Alex.",
+      "My name is Ece. What's your name? -> My name is Alex. Nice to meet you!",
+      'Nice to meet you, too! -> END',
     ]);
 
     const steps = buildSultanhaniDialogueSteps('Ece', 1);
@@ -197,20 +230,27 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
       'tourist:Hello!',
       'student:Good morning!',
       'tourist:Good morning!',
-      "student:What's your name?",
-      'tourist:My name is Alex.',
-    ]);
-
-    // Akıştan çıkarılan adımlar silinmemiş, ayrı listede korunmuştur ve aktif akışta yoktur
-    const unusedSteps = buildSultanhaniUnusedExtendedSteps('Ece', 1);
-    expect(unusedSteps.map((s) => `${s.speaker}:${s.text}`)).toEqual([
-      "tourist:What's your name?",
-      'student:My name is Ece.',
-      'tourist:Nice to meet you, Ece!',
+      "student:My name is Ece. What's your name?",
+      'tourist:My name is Alex. Nice to meet you!',
       'student:Nice to meet you, too!',
     ]);
 
-    // Saf durum makinesi geçiş fonksiyonu: "değişim sonrası turist cevabı" ve "son değişimden sonra yürüyüş"
+    // İç mekân diyalog sırası ve önceden öğretilmemiş kalıp notları (Can atlanır)
+    const innerExchanges = buildSultanhaniInnerDialogExchanges(1);
+    expect(
+      innerExchanges.map((ex) => `${ex.studentText} -> ${ex.touristText ?? 'NEXT'}`),
+    ).toEqual([
+      'Welcome, Alex! -> Thank you! Where are we?',
+      "This is Sultanhanı Caravanserai. -> Wow! It's beautiful!",
+      "Yes! It's very old. -> How old are you?",
+      "I'm nine years old. -> NEXT",
+      "How old are you? -> I'm twenty-five years old.",
+    ]);
+    expect(innerExchanges[1].learningNote?.phrase).toBe('Where are we?');
+    expect(innerExchanges[2].learningNote?.phrase).toBe("It's very old.");
+    expect(innerExchanges.some((ex) => /\bCan\b/.test(ex.studentText))).toBe(false);
+
+    // Dış mekân durum makinesi geçişleri
     const total = exchanges.length;
     const afterSelect = advanceSultanhaniFlowState(
       { stepPhase: 'STUDENT_CHOICE', exchangeIndex: 0 },
@@ -230,28 +270,32 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
       total,
     )!;
     expect(touristSpeaking).toEqual({ stepPhase: 'TOURIST_SPEAKING', exchangeIndex: 0 });
-    // Aynı adım ikinci kez tetiklenemez
     expect(
       advanceSultanhaniFlowState(touristSpeaking, { type: 'START_TOURIST_REPLY' }, total),
     ).toBeNull();
 
-    // Kapıya yürüyüş için soru bitmeli ve öğrenci kendi söz sırasını tamamlamalı.
-    const lastAfterTourist = advanceSultanhaniFlowState(
-      { stepPhase: 'TOURIST_SPEAKING', exchangeIndex: total - 1 },
-      { type: 'TOURIST_SPEECH_COMPLETE' },
+    // Son dış mekân öğrenci repliği ("Nice to meet you, too!") bitince kapıya yürüyüş başlar
+    const walkToDoor = advanceSultanhaniFlowState(
+      { stepPhase: 'WAIT_BEFORE_TOURIST', exchangeIndex: total - 1 },
+      { type: 'SKIP_TOURIST_REPLY' },
       total,
     )!;
-    const question = advanceSultanhaniFlowState(lastAfterTourist, { type: 'AFTER_TOURIST_PAUSE_COMPLETE' }, total)!;
-    expect(question).toEqual({ stepPhase: 'TOURIST_ASKING_NAME', exchangeIndex: total - 1 });
-    expect(advanceSultanhaniFlowState(question, { type: 'STUDENT_INTRODUCTION_CONFIRMED' }, total)).toBeNull();
-
-    const introduction = advanceSultanhaniFlowState(question, { type: 'TOURIST_NAME_QUESTION_COMPLETE' }, total)!;
-    expect(introduction).toEqual({ stepPhase: 'STUDENT_INTRODUCTION', exchangeIndex: total - 1 });
-    expect(advanceSultanhaniFlowState(introduction, { type: 'FORCE_DOOR_WATCHDOG' }, total)).toBeNull();
-
-    const walkToDoor = advanceSultanhaniFlowState(introduction, { type: 'STUDENT_INTRODUCTION_CONFIRMED' }, total)!;
     expect(walkToDoor).toEqual({ stepPhase: 'WALK_TO_DOOR', exchangeIndex: total - 1 });
-    expect(advanceSultanhaniFlowState(walkToDoor, { type: 'STUDENT_INTRODUCTION_CONFIRMED' }, total)).toBeNull();
+
+    // İç mekân durum makinesi geçişleri (iki ardışık öğrenci repliği + tamamlanma)
+    const innerNextStudent = advanceSultanhaniInnerFlowState(
+      { stepPhase: 'WAIT_BEFORE_TOURIST', exchangeIndex: 3 },
+      { type: 'SKIP_TOURIST_REPLY' },
+      innerExchanges.length,
+    );
+    expect(innerNextStudent).toEqual({ stepPhase: 'STUDENT_CHOICE', exchangeIndex: 4 });
+    const innerDone = advanceSultanhaniInnerFlowState(
+      { stepPhase: 'WAIT_AFTER_TOURIST', exchangeIndex: 4 },
+      { type: 'AFTER_TOURIST_PAUSE_COMPLETE' },
+      innerExchanges.length,
+    );
+    expect(innerDone).toEqual({ stepPhase: 'DONE', exchangeIndex: 4 });
+
     // "How are you?" ve "Goodbye!" içermemeli
     for (const s of steps) {
       expect(s.text).not.toMatch(/How are you|Goodbye/i);
@@ -479,7 +523,7 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
 
     const chooseAnswerAndFinishExchange = async (
       correctText: string,
-      expectedTouristReply: string,
+      expectedTouristReply: string | null,
     ) => {
       const btn = screen.getByRole('button', { name: correctText });
       await act(async () => {
@@ -496,7 +540,7 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
         expect(screen.getByTestId('npc-speech-bubble')).toHaveAttribute('data-speaker', 'student');
       }
 
-      // Öğrenci sesi biter -> öğrenci balonu kapanır -> 500 ms sonra turist balonu açılır
+      // Öğrenci sesi biter -> öğrenci balonu kapanır -> 500 ms sonra sıradaki adım
       await act(async () => {
         await finishNextUtterances();
       });
@@ -506,6 +550,9 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
         vi.advanceTimersByTime(SULTANHANI_TIMINGS.afterStudentLinePauseMs + 20);
         await flushAllMicrotasks();
       });
+
+      if (!expectedTouristReply) return;
+
       expect(screen.getByTestId('npc-speech-bubble')).toHaveAttribute('data-speaker', 'tourist');
       expect(screen.getByTestId('npc-speech-bubble').textContent).toContain(expectedTouristReply);
 
@@ -523,7 +570,7 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
 
     // Değişim 1: Yanlış seçim -> Tekrar dene! -> Doğru "Hello!" -> Turist "Hello!"
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Nice to meet you.' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Nice to meet you, too!' }));
       await flushAllMicrotasks();
     });
     expect(screen.getByTestId('choice-feedback-banner').textContent).toContain('Tekrar dene!');
@@ -533,34 +580,18 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
     // Değişim 2: Öğrenci "Good morning!" -> Turist "Good morning!"
     await chooseAnswerAndFinishExchange('Good morning!', 'Good morning!');
 
-    // Alex kendini tanıtır, ardından öğrenciye kendi adını sorar.
+    // Değişim 3: Öğrenci "My name is Ece. What's your name?" -> Alex "My name is Alex. Nice to meet you!"
     expect(document.querySelector('[data-encounter-phase]')?.getAttribute('data-encounter-phase')).toBe('DIALOG_2');
     const cancelCountBeforeThird = synth.cancel.mock.calls.length;
-    await chooseAnswerAndFinishExchange("What's your name?", 'My name is Alex.');
+    await chooseAnswerAndFinishExchange("My name is Ece. What's your name?", 'My name is Alex. Nice to meet you!');
 
-    // Turist cevabından önce ekstra speechSynthesis.cancel() çağrılmamış olmalı (yalnızca öğrenci başında 1 kez)
-    expect(synth.cancel.mock.calls.length - cancelCountBeforeThird).toBe(1);
-    expect(utterances.some((u) => u.text === 'My name is Alex.' && u.pitch === 0.95)).toBe(true);
+    // Her yeni replikten önce speechSynthesis.cancel() çağrılır (öğrenci + Alex = 2 kez)
+    expect(synth.cancel.mock.calls.length - cancelCountBeforeThird).toBe(2);
+    expect(utterances.some((u) => u.text === 'My name is Alex. Nice to meet you!' && u.pitch < 1)).toBe(true);
     expect(profile.alias).toBe('Ece');
 
-    expect(screen.getByTestId('npc-speech-bubble')).toHaveTextContent('What is your name?');
-    expect(utterances.at(-1)).toMatchObject({ text: 'What is your name?', lang: 'en-US' });
-    expect(screen.queryByTestId('student-introduction-panel')).not.toBeInTheDocument();
-
-    await act(async () => { await vi.advanceTimersByTimeAsync(1500); });
-    expect(screen.queryByTestId('student-introduction-panel')).not.toBeInTheDocument();
-    await act(async () => { await finishNextUtterances(); });
-
-    const introduction = screen.getByTestId('student-introduction-panel');
-    expect(introduction).toHaveTextContent('My name is …');
-    expect(introduction).toHaveTextContent('Şimdi kendi adını söyle.');
-    expect(introduction.querySelector('input, textarea')).toBeNull();
-    await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
-    expect(screen.getByTestId('student-introduction-panel')).toBeInTheDocument();
-    expect(document.querySelector('[data-encounter-phase]')).toHaveAttribute('data-encounter-phase', 'DIALOG_2');
-
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Söyledim' })); });
-    expect(screen.queryByTestId('student-introduction-panel')).not.toBeInTheDocument();
+    // Değişim 4: Öğrenci "Nice to meet you, too!" -> kapıya birlikte yürüyüş başlar
+    await chooseAnswerAndFinishExchange('Nice to meet you, too!', null);
     expect(document.querySelector('[data-encounter-phase]')?.getAttribute('data-encounter-phase')).toBe('WALK_TO_DOOR');
     expect(screen.queryByTestId('npc-speech-bubble')).not.toBeInTheDocument();
     expect(screen.queryByTestId('student-choice-panel')).not.toBeInTheDocument();
@@ -577,17 +608,38 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
       vi.advanceTimersByTime(SULTANHANI_TIMINGS.transitionFadeMs + 50);
     });
 
-    // İç mekân sahnesine geçildiğinde durum DONE ve iki karakter yan yana görünür
+    // İç mekân sahnesine geçildiğinde durum DONE, iç mekân yürüyüşü (WALK_IN) başlar
     expect(document.querySelector('[data-scene]')?.getAttribute('data-scene')).toBe('sultanhani_inner');
     expect(document.querySelector('[data-encounter-phase]')?.getAttribute('data-encounter-phase')).toBe('DONE');
     const innerEngine = (window as unknown as { __WALKABLE_ENGINE__?: WalkableCanvasEngine })
       .__WALKABLE_ENGINE__!;
     expect(innerEngine.player.x).toBe(SULTANHANI_INNER.playerSpawn.x);
     expect(innerEngine.npc?.x).toBe(SULTANHANI_INNER.touristSpawn.x);
-
-    // İlerleme şeması değişmedi, Stage 3/4 konuşmaları başlamadı
-    expect(loadStudentState().selectedGrade).toBe(3);
     expect(screen.queryByTestId('npc-speech-bubble')).not.toBeInTheDocument();
+
+    // İç mekânda birlikte ilerleyip karşı karşıya durduktan sonra iç mekân diyaloğu tamamlanır
+    await act(async () => {
+      for (let i = 0; i < 20; i++) {
+        (innerEngine as unknown as { update: (delta: number) => void }).update(0.1);
+      }
+    });
+    expect(document.querySelector('[data-inner-phase]')?.getAttribute('data-inner-phase')).toBe('FACING');
+
+    await act(async () => {
+      vi.advanceTimersByTime(SULTANHANI_TIMINGS.facingPauseMs + 20);
+      await flushAllMicrotasks();
+    });
+    await chooseAnswerAndFinishExchange('Welcome, Alex!', 'Thank you! Where are we?');
+    expect(screen.getByTestId('learning-note-card').textContent).toContain('Where are we?');
+    await chooseAnswerAndFinishExchange('This is Sultanhanı Caravanserai.', "Wow! It's beautiful!");
+    expect(screen.getByTestId('learning-note-card').textContent).toContain("It's very old.");
+    await chooseAnswerAndFinishExchange("Yes! It's very old.", 'How old are you?');
+    await chooseAnswerAndFinishExchange("I'm nine years old.", null);
+    await chooseAnswerAndFinishExchange('How old are you?', "I'm twenty-five years old.");
+
+    expect(document.querySelector('[data-inner-phase]')?.getAttribute('data-inner-phase')).toBe('DONE');
+    expect(innerEngine.getInputDisabled()).toBe(false);
+    expect(loadStudentState().selectedGrade).toBe(3);
 
     // Sınıfa Dön tıklandığında temizlenir ve classroom'a döner
     await act(async () => {
@@ -702,7 +754,7 @@ describe('Sultanhanı Dış Meydan Etkileşimli Konuşma ve Geçiş Doğrulamas�
       await vi.advanceTimersByTimeAsync(getSpeechTimeoutMs('Hello!') + SULTANHANI_TIMINGS.afterStudentLinePauseMs + 20);
     });
     expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(synth.cancel.mock.calls.length - cancelCount).toBe(1);
+    expect(synth.cancel.mock.calls.length - cancelCount).toBe(2);
     expect(screen.getByTestId('npc-speech-bubble')).toHaveAttribute('data-speaker', 'tourist');
 
     // Turist onend de hiç gelmezse 1.5x (3000 ms) koruma devreye girer ve balon kapanır

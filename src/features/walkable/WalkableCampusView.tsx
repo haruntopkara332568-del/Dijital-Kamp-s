@@ -59,17 +59,22 @@ import { CAMPUS_BUILDING_NAMES } from '@/src/data/brandConfig';
 import { STUDENT_REFERENCE_SPEED_PX, SULTANHANI_TOURIST_NPC } from '@/src/data/sultanhaniNpc';
 import {
   advanceSultanhaniFlowState,
+  advanceSultanhaniInnerFlowState,
   buildSultanhaniDialogExchanges,
+  buildSultanhaniInnerDialogExchanges,
   logSultanhaniFlow,
   mapFlowStateToEncounterPhase,
+  resolveStudentVoiceGender,
+  resolveSultanhaniStudentName,
   SULTANHANI_FEEDBACK_COPY,
-  SULTANHANI_SELF_INTRODUCTION,
   SULTANHANI_TIMINGS,
   type SultanhaniDialogChoiceOption,
   type SultanhaniDialogExchange,
   type SultanhaniEncounterPhase,
   type SultanhaniFlowEvent,
   type SultanhaniFlowState,
+  type SultanhaniInnerFlowEvent,
+  type SultanhaniInnerFlowState,
 } from '@/src/data/sultanhaniDialogContent';
 import { playSultanhaniSpeechLine, waitAbortable } from './engine/sultanhaniSpeechRunner';
 import { stopSpeaking } from '@/src/services/speech';
@@ -204,7 +209,7 @@ export function WalkableCampusView({
   const [isTeleporting, setIsTeleporting] = useState(false);
   const [teleportMessage, setTeleportMessage] = useState("Sultanhanı Kervansarayı Meydanı'na Işınlanıyorsun... 🏛️✨");
 
-  // Sultanhanı Dış Meydan karşılaşma durum makinesi (tek kaynak)
+  // Sultanhanı Dış Meydan ve İç Mekân karşılaşma durum makineleri
   const [flowState, setFlowState] = useState<SultanhaniFlowState>({
     stepPhase: initialScene === 'sultanhani_inner' ? 'DONE' : 'ARRIVAL',
     exchangeIndex: 0,
@@ -212,6 +217,16 @@ export function WalkableCampusView({
   const flowStateRef = useRef(flowState);
   const encounterPhase = mapFlowStateToEncounterPhase(flowState);
   const encounterPhaseRef = useRef(encounterPhase);
+  const [innerFlowState, setInnerFlowState] = useState<SultanhaniInnerFlowState>({
+    stepPhase: initialScene === 'sultanhani_inner' ? 'WALK_IN' : 'DONE',
+    exchangeIndex: 0,
+  });
+  const innerFlowStateRef = useRef(innerFlowState);
+  const innerDialogueCompletedRef = useRef(false);
+  const currentSceneRef = useRef(currentScene);
+  useEffect(() => {
+    currentSceneRef.current = currentScene;
+  }, [currentScene]);
   const [activeBubble, setActiveBubble] = useState<ActiveSpeechBubbleState | null>(null);
   const [choicePrompt, setChoicePrompt] = useState<StudentChoicePromptState | null>(null);
   const [isSpeakingLine, setIsSpeakingLine] = useState(false);
@@ -229,6 +244,7 @@ export function WalkableCampusView({
   const encounterAbortRef = useRef<AbortController | null>(null);
   const speechAbortRef = useRef<AbortController | null>(null);
   const walkWatchdogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const innerWalkWatchdogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dialogExchangesRef = useRef<readonly SultanhaniDialogExchange[]>(
     buildSultanhaniDialogExchanges(0),
   );
@@ -267,10 +283,38 @@ export function WalkableCampusView({
     return next;
   }, []);
 
+  const dispatchInnerFlowEvent = useCallback(
+    (event: SultanhaniInnerFlowEvent): SultanhaniInnerFlowState | null => {
+      const totalExchanges = Math.max(1, dialogExchangesRef.current.length);
+      const next = advanceSultanhaniInnerFlowState(innerFlowStateRef.current, event, totalExchanges);
+      if (!next) return null;
+      innerFlowStateRef.current = next;
+      setInnerFlowState(next);
+      logSultanhaniFlow(`INNER:${next.stepPhase} (${next.exchangeIndex + 1}/${totalExchanges})`);
+      return next;
+    },
+    [],
+  );
+
+  const getStudentVoiceMeta = useCallback(() => {
+    const effectiveCharacterId =
+      characterIdRef.current ?? campusRef.current?.activeProfile?.characterId ?? null;
+    const studentName = resolveSultanhaniStudentName(
+      campusRef.current?.activeProfile?.alias,
+      effectiveCharacterId,
+    );
+    const studentGender = resolveStudentVoiceGender(effectiveCharacterId);
+    return { studentName, studentGender };
+  }, []);
+
   const cancelAllEncounterAsync = useCallback(() => {
     if (walkWatchdogTimerRef.current !== null) {
       clearTimeout(walkWatchdogTimerRef.current);
       walkWatchdogTimerRef.current = null;
+    }
+    if (innerWalkWatchdogTimerRef.current !== null) {
+      clearTimeout(innerWalkWatchdogTimerRef.current);
+      innerWalkWatchdogTimerRef.current = null;
     }
     if (encounterAbortRef.current) {
       encounterAbortRef.current.abort();
@@ -293,6 +337,9 @@ export function WalkableCampusView({
       flowStateRef.current = initialFlow;
       encounterPhaseRef.current = targetPhase;
       setFlowState(initialFlow);
+      const doneInner: SultanhaniInnerFlowState = { stepPhase: 'DONE', exchangeIndex: 0 };
+      innerFlowStateRef.current = doneInner;
+      setInnerFlowState(doneInner);
       lastTouristLineRef.current = null;
       setIsSpeakingLine(false);
       setActiveBubble(null);
@@ -329,9 +376,9 @@ export function WalkableCampusView({
   const speakEncounterLine = useCallback(
     async (
       text: string,
-      speaker: 'student' | 'tourist',
+      speaker: 'student' | 'tourist' | 'can',
       signal: AbortSignal,
-      cancelPrevious = false,
+      cancelPrevious = true,
     ) => {
       if (speechAbortRef.current) {
         speechAbortRef.current.abort();
@@ -340,11 +387,14 @@ export function WalkableCampusView({
       speechAbortRef.current = lineAbort;
       const onParentAbort = () => lineAbort.abort();
       signal.addEventListener('abort', onParentAbort, { once: true });
+      const { studentName, studentGender } = getStudentVoiceMeta();
 
       try {
         return await playSultanhaniSpeechLine({
           text,
           speaker,
+          studentGender,
+          extraTurkishName: studentName,
           speechEnabled: speechEnabledRef.current,
           signal: lineAbort.signal,
           cancelPrevious,
@@ -358,7 +408,7 @@ export function WalkableCampusView({
         }
       }
     },
-    [],
+    [getStudentVoiceMeta],
   );
 
   const triggerPortalTransition = useCallback(
@@ -437,61 +487,87 @@ export function WalkableCampusView({
       options: exchange.options,
       wrongAttempts: 0,
       hintTurkish: exchange.hintTurkish,
+      learningNote: exchange.learningNote,
     });
   }, []);
 
-  const speakTouristLine = useCallback((text: string, signal: AbortSignal) => {
-    const anchors = engineRef.current?.getEntityScreenPositions();
-    if (anchors?.npc) setNpcAnchorPos(anchors.npc);
-    if (anchors?.student) setStudentAnchorPos(anchors.student);
+  const finishInnerDialogue = useCallback(() => {
+    innerDialogueCompletedRef.current = true;
+    setActiveBubble(null);
+    setChoicePrompt(null);
+    engineRef.current?.stopEncounterControl();
+  }, []);
 
-    setActiveBubble({ speaker: 'tourist', speakerLabel: SULTANHANI_TOURIST_NPC.name, text });
-    lastTouristLineRef.current = text;
-    return speakEncounterLine(text, 'tourist', signal);
-  }, [speakEncounterLine]);
+  const speakTouristLine = useCallback(
+    (text: string, signal: AbortSignal) => {
+      const anchors = engineRef.current?.getEntityScreenPositions();
+      if (anchors?.npc) setNpcAnchorPos(anchors.npc);
+      if (anchors?.student) setStudentAnchorPos(anchors.student);
+
+      setActiveBubble({ speaker: 'tourist', speakerLabel: SULTANHANI_TOURIST_NPC.name, text });
+      lastTouristLineRef.current = text;
+      return speakEncounterLine(text, 'tourist', signal, true);
+    },
+    [speakEncounterLine],
+  );
 
   const executeTouristReply = useCallback(
-    async (exchangeIndex: number) => {
+    async (exchangeIndex: number, isInnerScene: boolean) => {
       const controller = encounterAbortRef.current;
       if (!controller || controller.signal.aborted) return;
       const { signal } = controller;
       const exchange = dialogExchangesRef.current[exchangeIndex];
-      if (!exchange) return;
+      if (!exchange || !exchange.touristText) return;
 
       setChoicePrompt(null);
       await speakTouristLine(exchange.touristText, signal);
-      if (signal.aborted || !dispatchFlowEvent({ type: 'TOURIST_SPEECH_COMPLETE' })) return;
+      if (signal.aborted) return;
+
+      const speechDone = isInnerScene
+        ? dispatchInnerFlowEvent({ type: 'TOURIST_SPEECH_COMPLETE' })
+        : dispatchFlowEvent({ type: 'TOURIST_SPEECH_COMPLETE' });
+      if (!speechDone) return;
       setActiveBubble(null);
 
       const ok = await waitAbortable(SULTANHANI_TIMINGS.afterTouristLinePauseMs, signal);
       if (!ok || signal.aborted) return;
-      const afterPause = dispatchFlowEvent({ type: 'AFTER_TOURIST_PAUSE_COMPLETE' });
 
+      if (isInnerScene) {
+        const afterPause = dispatchInnerFlowEvent({ type: 'AFTER_TOURIST_PAUSE_COMPLETE' });
+        if (afterPause?.stepPhase === 'STUDENT_CHOICE') {
+          openExchangeChoice(afterPause.exchangeIndex);
+        } else if (afterPause?.stepPhase === 'DONE') {
+          finishInnerDialogue();
+        }
+        return;
+      }
+
+      const afterPause = dispatchFlowEvent({ type: 'AFTER_TOURIST_PAUSE_COMPLETE' });
       if (afterPause?.stepPhase === 'STUDENT_CHOICE') {
         openExchangeChoice(afterPause.exchangeIndex);
-      } else if (afterPause?.stepPhase === 'TOURIST_ASKING_NAME') {
-        await speakTouristLine(SULTANHANI_SELF_INTRODUCTION.question, signal);
-        if (signal.aborted) return;
-        setActiveBubble(null);
-        dispatchFlowEvent({ type: 'TOURIST_NAME_QUESTION_COMPLETE' });
+      } else if (afterPause?.stepPhase === 'WALK_TO_DOOR') {
+        beginWalkToDoorEngine();
       }
     },
-    [dispatchFlowEvent, openExchangeChoice, speakTouristLine],
+    [
+      beginWalkToDoorEngine,
+      dispatchFlowEvent,
+      dispatchInnerFlowEvent,
+      finishInnerDialogue,
+      openExchangeChoice,
+      speakTouristLine,
+    ],
   );
-
-  const handleConfirmIntroduction = useCallback(() => {
-    const signal = encounterAbortRef.current?.signal;
-    if (!signal || signal.aborted) return;
-    if (dispatchFlowEvent({ type: 'STUDENT_INTRODUCTION_CONFIRMED' })) {
-      beginWalkToDoorEngine();
-    }
-  }, [beginWalkToDoorEngine, dispatchFlowEvent]);
 
   const handleSelectOption = useCallback(
     (option: SultanhaniDialogChoiceOption) => {
       const controller = encounterAbortRef.current;
       if (!controller || controller.signal.aborted) return;
-      if (flowStateRef.current.stepPhase !== 'STUDENT_CHOICE') return;
+      const isInnerScene = currentSceneRef.current === 'sultanhani_inner';
+      const activePhase = isInnerScene
+        ? innerFlowStateRef.current.stepPhase
+        : flowStateRef.current.stepPhase;
+      if (activePhase !== 'STUDENT_CHOICE') return;
 
       if (!option.isCorrect) {
         let shouldReplayLastTouristLine = false;
@@ -510,10 +586,13 @@ export function WalkableCampusView({
         return;
       }
 
-      const studentSpeakingState = dispatchFlowEvent({ type: 'STUDENT_OPTION_SELECTED' });
+      const studentSpeakingState = isInnerScene
+        ? dispatchInnerFlowEvent({ type: 'STUDENT_OPTION_SELECTED' })
+        : dispatchFlowEvent({ type: 'STUDENT_OPTION_SELECTED' });
       if (!studentSpeakingState) return;
 
       const currentExchangeIndex = studentSpeakingState.exchangeIndex;
+      const currentExchange = dialogExchangesRef.current[currentExchangeIndex];
       setChoicePrompt(null);
       const anchors = engineRef.current?.getEntityScreenPositions();
       if (anchors?.student) setStudentAnchorPos(anchors.student);
@@ -528,7 +607,9 @@ export function WalkableCampusView({
         await speakEncounterLine(option.text, 'student', controller.signal, true);
         if (controller.signal.aborted) return;
 
-        const waitBeforeTourist = dispatchFlowEvent({ type: 'STUDENT_SPEECH_COMPLETE' });
+        const waitBeforeTourist = isInnerScene
+          ? dispatchInnerFlowEvent({ type: 'STUDENT_SPEECH_COMPLETE' })
+          : dispatchFlowEvent({ type: 'STUDENT_SPEECH_COMPLETE' });
         if (!waitBeforeTourist) return;
 
         // Öğrenci repliği bitince öğrenci balonu kapanır, kısa bekleme (~500 ms)
@@ -540,40 +621,76 @@ export function WalkableCampusView({
         );
         if (!ok || controller.signal.aborted) return;
 
-        const touristStart = dispatchFlowEvent({ type: 'START_TOURIST_REPLY' });
-        if (!touristStart) return;
-        void executeTouristReply(currentExchangeIndex);
+        if (currentExchange?.touristText) {
+          const touristStart = isInnerScene
+            ? dispatchInnerFlowEvent({ type: 'START_TOURIST_REPLY' })
+            : dispatchFlowEvent({ type: 'START_TOURIST_REPLY' });
+          if (!touristStart) return;
+          void executeTouristReply(currentExchangeIndex, isInnerScene);
+          return;
+        }
+
+        if (isInnerScene) {
+          const afterSkip = dispatchInnerFlowEvent({ type: 'SKIP_TOURIST_REPLY' });
+          if (afterSkip?.stepPhase === 'STUDENT_CHOICE') {
+            openExchangeChoice(afterSkip.exchangeIndex);
+          } else if (afterSkip?.stepPhase === 'DONE') {
+            finishInnerDialogue();
+          }
+          return;
+        }
+
+        const afterSkip = dispatchFlowEvent({ type: 'SKIP_TOURIST_REPLY' });
+        if (afterSkip?.stepPhase === 'STUDENT_CHOICE') {
+          openExchangeChoice(afterSkip.exchangeIndex);
+        } else if (afterSkip?.stepPhase === 'WALK_TO_DOOR') {
+          beginWalkToDoorEngine();
+        }
       })();
     },
-    [dispatchFlowEvent, executeTouristReply, speakEncounterLine],
+    [
+      beginWalkToDoorEngine,
+      dispatchFlowEvent,
+      dispatchInnerFlowEvent,
+      executeTouristReply,
+      finishInnerDialogue,
+      openExchangeChoice,
+      speakEncounterLine,
+    ],
   );
 
-  const handlePreviewOption = useCallback((optionText: string) => {
-    const parentSignal = encounterAbortRef.current?.signal;
-    if (parentSignal?.aborted) return;
-    if (speechAbortRef.current) {
-      speechAbortRef.current.abort();
-    }
-    const previewController = new AbortController();
-    speechAbortRef.current = previewController;
-    const onParentAbort = () => previewController.abort();
-    parentSignal?.addEventListener('abort', onParentAbort, { once: true });
-
-    void playSultanhaniSpeechLine({
-      text: optionText,
-      speaker: 'student',
-      speechEnabled: speechEnabledRef.current,
-      signal: previewController.signal,
-      cancelPrevious: true,
-      waitWhenSilent: false,
-      onSpeakingChange: setIsSpeakingLine,
-    }).finally(() => {
-      parentSignal?.removeEventListener('abort', onParentAbort);
-      if (speechAbortRef.current === previewController) {
-        speechAbortRef.current = null;
+  const handlePreviewOption = useCallback(
+    (optionText: string) => {
+      const parentSignal = encounterAbortRef.current?.signal;
+      if (parentSignal?.aborted) return;
+      if (speechAbortRef.current) {
+        speechAbortRef.current.abort();
       }
-    });
-  }, []);
+      const previewController = new AbortController();
+      speechAbortRef.current = previewController;
+      const onParentAbort = () => previewController.abort();
+      parentSignal?.addEventListener('abort', onParentAbort, { once: true });
+      const { studentName, studentGender } = getStudentVoiceMeta();
+
+      void playSultanhaniSpeechLine({
+        text: optionText,
+        speaker: 'student',
+        studentGender,
+        extraTurkishName: studentName,
+        speechEnabled: speechEnabledRef.current,
+        signal: previewController.signal,
+        cancelPrevious: true,
+        waitWhenSilent: false,
+        onSpeakingChange: setIsSpeakingLine,
+      }).finally(() => {
+        parentSignal?.removeEventListener('abort', onParentAbort);
+        if (speechAbortRef.current === previewController) {
+          speechAbortRef.current = null;
+        }
+      });
+    },
+    [getStudentVoiceMeta],
+  );
 
   const handleExitSultanhani = useCallback(() => {
     if (sceneTransitionTimer.current !== null) {
@@ -581,6 +698,7 @@ export function WalkableCampusView({
       sceneTransitionTimer.current = null;
     }
     sultanhaniSquareEntryRef.current = 'initial';
+    innerDialogueCompletedRef.current = false;
     resetEncounterState('ARRIVAL');
     engineRef.current?.setInputDisabled(true);
     setActiveZone(null);
@@ -1466,11 +1584,32 @@ export function WalkableCampusView({
       cancelAllEncounterAsync();
       flowStateRef.current = { stepPhase: 'ARRIVAL', exchangeIndex: 0 };
       encounterPhaseRef.current = 'ARRIVAL';
+      innerDialogueCompletedRef.current = false;
       lastTouristLineRef.current = null;
       encounterSeedRef.current += 1;
       const controller = new AbortController();
       encounterAbortRef.current = controller;
-      dialogExchangesRef.current = buildSultanhaniDialogExchanges(encounterSeedRef.current);
+      const { studentName } = getStudentVoiceMeta();
+      dialogExchangesRef.current = buildSultanhaniDialogExchanges(
+        encounterSeedRef.current,
+        studentName,
+      );
+    } else if (currentScene === 'sultanhani_inner') {
+      cancelAllEncounterAsync();
+      lastTouristLineRef.current = null;
+      if (!innerDialogueCompletedRef.current) {
+        const initialInner: SultanhaniInnerFlowState = { stepPhase: 'WALK_IN', exchangeIndex: 0 };
+        innerFlowStateRef.current = initialInner;
+        setInnerFlowState(initialInner);
+        encounterSeedRef.current += 1;
+        const controller = new AbortController();
+        encounterAbortRef.current = controller;
+        dialogExchangesRef.current = buildSultanhaniInnerDialogExchanges(encounterSeedRef.current);
+      } else {
+        const doneInner: SultanhaniInnerFlowState = { stepPhase: 'DONE', exchangeIndex: 0 };
+        innerFlowStateRef.current = doneInner;
+        setInnerFlowState(doneInner);
+      }
     }
 
     const engine = new WalkableCanvasEngine(
@@ -1693,6 +1832,48 @@ export function WalkableCampusView({
           if (ready && sultanhaniSquareEntryRef.current === 'smart-board') engine.startEncounterApproach();
         }
       });
+    } else if (currentScene === 'sultanhani_inner' && !innerDialogueCompletedRef.current) {
+      const controllerForScene = encounterAbortRef.current;
+      const finishInnerWalk = () => {
+        if (innerWalkWatchdogTimerRef.current !== null) {
+          clearTimeout(innerWalkWatchdogTimerRef.current);
+          innerWalkWatchdogTimerRef.current = null;
+        }
+        if (!controllerForScene || controllerForScene.signal.aborted) return;
+        const facing = dispatchInnerFlowEvent({ type: 'INNER_WALK_COMPLETE' });
+        if (!facing) return;
+        engine.startEncounterFacing();
+
+        const anchors = engine.getEntityScreenPositions();
+        if (anchors?.npc) setNpcAnchorPos(anchors.npc);
+        if (anchors?.student) setStudentAnchorPos(anchors.student);
+
+        void (async () => {
+          const ok = await waitAbortable(SULTANHANI_TIMINGS.facingPauseMs, controllerForScene.signal);
+          if (!ok || controllerForScene.signal.aborted) return;
+          const choiceState = dispatchInnerFlowEvent({ type: 'FACING_COMPLETE' });
+          if (!choiceState) return;
+          openExchangeChoice(choiceState.exchangeIndex);
+        })();
+      };
+
+      engine.startWalkTogether(
+        SULTANHANI_INNER.innerWalkTargets.player,
+        SULTANHANI_INNER.innerWalkTargets.tourist,
+        finishInnerWalk,
+      );
+
+      innerWalkWatchdogTimerRef.current = setTimeout(() => {
+        innerWalkWatchdogTimerRef.current = null;
+        if (innerFlowStateRef.current.stepPhase === 'WALK_IN') {
+          engine.setPosition(SULTANHANI_INNER.innerWalkTargets.player);
+          if (engine.npc) {
+            engine.npc.x = SULTANHANI_INNER.innerWalkTargets.tourist.x;
+            engine.npc.y = SULTANHANI_INNER.innerWalkTargets.tourist.y;
+          }
+          finishInnerWalk();
+        }
+      }, SULTANHANI_TIMINGS.innerWalkWatchdogMs);
     }
 
     let ro: ResizeObserver | null = null;
@@ -1734,7 +1915,9 @@ export function WalkableCampusView({
     clearDiscoveryDoorTimers,
     currentScene,
     dispatchFlowEvent,
+    dispatchInnerFlowEvent,
     getSceneConfig,
+    getStudentVoiceMeta,
     openExchangeChoice,
     resetEncounterState,
   ]);
@@ -1782,10 +1965,11 @@ export function WalkableCampusView({
   };
 
   const isEncounterLocked =
-    currentScene === 'sultanhani_square' &&
-    encounterPhase !== 'ARRIVAL' &&
-    encounterPhase !== 'APPROACH' &&
-    encounterPhase !== 'DONE';
+    (currentScene === 'sultanhani_square' &&
+      encounterPhase !== 'ARRIVAL' &&
+      encounterPhase !== 'APPROACH' &&
+      encounterPhase !== 'DONE') ||
+    (currentScene === 'sultanhani_inner' && innerFlowState.stepPhase !== 'DONE');
 
   const activeBubbleAnchor =
     activeBubble?.speaker === 'student' ? studentAnchorPos : npcAnchorPos;
@@ -1795,6 +1979,7 @@ export function WalkableCampusView({
       ref={containerRef}
       data-scene={currentScene}
       data-encounter-phase={encounterPhase}
+      data-inner-phase={innerFlowState.stepPhase}
       data-vr-state={vrState}
       className="relative w-full h-dvh bg-[var(--campus-canvas)] overflow-hidden select-none"
     >
@@ -1829,8 +2014,8 @@ export function WalkableCampusView({
         isEncounterLocked={isEncounterLocked}
       />
 
-      {/* Sultanhanı Dış Meydan Turist NPC Konuşma Balonu ve Seçenek Paneli */}
-      {currentScene === 'sultanhani_square' && (
+      {/* Sultanhanı Dış Meydan ve İç Mekân Konuşma Balonu ve Seçenek Paneli */}
+      {(currentScene === 'sultanhani_square' || currentScene === 'sultanhani_inner') && (
         <NpcSpeechBubble
           activeBubble={activeBubble}
           anchorPos={activeBubbleAnchor}
@@ -1838,7 +2023,6 @@ export function WalkableCampusView({
           isSpeaking={isSpeakingLine}
           onSelectOption={handleSelectOption}
           onPreviewOption={handlePreviewOption}
-          onConfirmIntroduction={flowState.stepPhase === 'STUDENT_INTRODUCTION' ? handleConfirmIntroduction : undefined}
         />
       )}
 

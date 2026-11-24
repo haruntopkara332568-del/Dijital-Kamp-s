@@ -88,6 +88,12 @@ export class WalkableCanvasEngine {
     onArrived: () => void;
     arrived: boolean;
   } | null = null;
+  private walkTogetherState: {
+    playerTarget: Position;
+    npcTarget: Position;
+    onArrived: () => void;
+    arrived: boolean;
+  } | null = null;
 
   private isRunning: boolean = false;
   private isPaused: boolean = false;
@@ -306,6 +312,7 @@ export class WalkableCanvasEngine {
     this.npcApproach = null;
     this.npcEncounterLocked = true;
     this.walkToDoorState = null;
+    this.walkTogetherState = null;
     this.isNpcTalking = true;
     this.setInputDisabled(true);
 
@@ -320,6 +327,33 @@ export class WalkableCanvasEngine {
     if (this.isRunning) {
       this.render();
     }
+  }
+
+  /**
+   * İç mekânda öğrenci ve Alex'i yan yana kısa bir mesafe birlikte ilerletir;
+   * hedeflere ulaşınca callback çağırır.
+   */
+  public startWalkTogether(
+    playerTarget: Position,
+    npcTarget: Position,
+    onArrived: () => void,
+  ) {
+    this.npcApproach = null;
+    this.walkToDoorState = null;
+    this.npcEncounterLocked = true;
+    this.isNpcTalking = false;
+    this.setInputDisabled(true);
+    this.clearPath();
+    this.player.state = 'walk';
+    if (this.npc && this.npc.visible) {
+      this.npc.state = 'walk';
+    }
+    this.walkTogetherState = {
+      playerTarget,
+      npcTarget,
+      onArrived,
+      arrived: false,
+    };
   }
 
   /**
@@ -363,6 +397,13 @@ export class WalkableCanvasEngine {
     }
     this.npcEncounterLocked = false;
     this.walkToDoorState = null;
+    this.walkTogetherState = null;
+    if (this.npcFollow) {
+      this.npcFollow.plannedAt = null;
+      this.npcFollow.waypoints = [];
+      this.npcFollow.playerWasMoving = false;
+      this.npcFollow.direction = this.player.direction;
+    }
     this.npcInRange = false;
     this.lastNpcScreenPos = null;
     this.lastStudentScreenPos = null;
@@ -544,6 +585,11 @@ export class WalkableCanvasEngine {
   private update(delta: number) {
     if (this.walkToDoorState && !this.walkToDoorState.arrived) {
       this.updateWalkToDoor(delta);
+      return;
+    }
+
+    if (this.walkTogetherState && !this.walkTogetherState.arrived) {
+      this.updateWalkTogether(delta);
       return;
     }
 
@@ -761,6 +807,66 @@ export class WalkableCanvasEngine {
       }
       walkState.arrived = true;
       this.walkToDoorState = null;
+      walkState.onArrived();
+    }
+  }
+
+  private updateWalkTogether(delta: number) {
+    const walkState = this.walkTogetherState;
+    if (!walkState || walkState.arrived) return;
+
+    const strollSpeed = 100;
+    const step = strollSpeed * delta;
+
+    // 1. Öğrenciyi hedef noktaya yürüt
+    const pDx = walkState.playerTarget.x - this.player.x;
+    const pDy = walkState.playerTarget.y - this.player.y;
+    const pDist = Math.hypot(pDx, pDy);
+    const playerReached = pDist <= step || pDist <= 3;
+
+    if (playerReached) {
+      this.player.x = walkState.playerTarget.x;
+      this.player.y = walkState.playerTarget.y;
+      this.player.state = 'idle';
+      this.player.walkFrame = 0;
+    } else {
+      this.player.x += (pDx / pDist) * step;
+      this.player.y += (pDy / pDist) * step;
+      this.player.state = 'walk';
+      this.player.walkFrame += delta * 6.5;
+      this.player.direction =
+        Math.abs(pDx) >= Math.abs(pDy) ? (pDx >= 0 ? 'right' : 'left') : pDy >= 0 ? 'down' : 'up';
+    }
+
+    // 2. Alex'i yanındaki hedef noktaya yürüt
+    let npcReached = true;
+    if (this.npc && this.npc.visible) {
+      const nDx = walkState.npcTarget.x - this.npc.x;
+      const nDy = walkState.npcTarget.y - this.npc.y;
+      const nDist = Math.hypot(nDx, nDy);
+      npcReached = nDist <= step || nDist <= 3;
+
+      if (npcReached) {
+        this.npc.x = walkState.npcTarget.x;
+        this.npc.y = walkState.npcTarget.y;
+        this.npc.state = 'idle';
+        this.npc.walkFrame = 0;
+      } else {
+        this.npc.x += (nDx / nDist) * step;
+        this.npc.y += (nDy / nDist) * step;
+        this.npc.state = 'walk';
+        this.npc.walkFrame += delta * 5.2;
+        this.npc.direction =
+          Math.abs(nDx) >= Math.abs(nDy) ? (nDx >= 0 ? 'right' : 'left') : nDy >= 0 ? 'down' : 'up';
+      }
+    }
+
+    this.updateCamera();
+    this.checkNpcProximity();
+
+    if (playerReached && npcReached) {
+      walkState.arrived = true;
+      this.walkTogetherState = null;
       walkState.onArrived();
     }
   }

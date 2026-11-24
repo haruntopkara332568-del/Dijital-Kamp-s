@@ -43,6 +43,10 @@ export const SULTANHANI_INNER = {
   height: INNER_SCENE_HEIGHT,
   playerSpawn: { x: 472, y: 492 },
   touristSpawn: { x: 544, y: 492 },
+  innerWalkTargets: {
+    player: { x: 472, y: 434 },
+    tourist: { x: 548, y: 434 },
+  },
   exit: { x: 512, y: 545, radius: 38 },
   obstacles: [
     // 1024 × 585 görselinde zeminin başladığı çizgi. Kamera merkez aksından içeri bakıyor.
