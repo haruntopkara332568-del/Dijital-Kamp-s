@@ -38,6 +38,20 @@ import {
   type CareerDefinition,
   type DiscoveryVrState,
 } from '@/src/data/discoveryCareerConfig';
+import {
+  OBSERVATORY_CLASSROOM,
+  OBSERVATORY_CLASSROOM_OBSTACLES,
+  OBSERVATORY_STATIONS,
+  type ObservatoryStationDefinition,
+} from '@/src/data/observatoryClassroomConfig';
+import {
+  renderObservatoryClassroomEntities,
+  renderObservatoryClassroomLayeredBackground,
+} from './engine/observatoryClassroomSceneRenderer';
+import {
+  ObservatoryArchitecturalLabels,
+  ObservatoryStationCard,
+} from './components/ObservatoryClassroomOverlay';
 import { DiscoveryCareerLayer, DiscoveryCareerModal } from './components/DiscoveryCareerModal';
 import {
   PORTAL,
@@ -102,6 +116,7 @@ export interface WalkableCampusViewProps {
     | 'classroom'
     | 'discovery_classroom'
     | 'discovery_moon'
+    | 'observatory_classroom'
     | 'sultanhani_square'
     | 'sultanhani_inner';
   onBackToMap?: () => void;
@@ -165,6 +180,7 @@ export function WalkableCampusView({
   );
   const lastClassroomPosRef = useRef<Position>({ x: 480, y: 520 });
   const lastDiscoveryClassroomPosRef = useRef<Position>(DISCOVERY_CLASSROOM.playerSpawn);
+  const lastObservatoryClassroomPosRef = useRef<Position>(OBSERVATORY_CLASSROOM.playerSpawn);
   const lastSultanhaniPosRef = useRef<Position>(SULTANHANI_SQUARE.spawn);
   const sultanhaniSquareEntryRef = useRef<'initial' | 'smart-board' | 'courtyard-exit'>('initial');
   const discoveryDoorOpeningLockRef = useRef(false);
@@ -177,11 +193,15 @@ export function WalkableCampusView({
     | 'classroom'
     | 'discovery_classroom'
     | 'discovery_moon'
+    | 'observatory_classroom'
     | 'sultanhani_square'
     | 'sultanhani_inner'
   >(initialScene);
   const [activeZone, setActiveZone] = useState<InteractiveZone | null>(null);
   const [unreachableMessage, setUnreachableMessage] = useState<string | null>(null);
+  const [activeObservatoryStation, setActiveObservatoryStation] =
+    useState<ObservatoryStationDefinition | null>(null);
+  const observatoryLayerRef = useRef<HTMLDivElement>(null);
 
   // Hayalden Gerçeğe — VR Meslek Keşfi Durum Makinesi
   const [vrState, setVrState] = useState<DiscoveryVrState>('CLASS_IDLE');
@@ -805,6 +825,21 @@ export function WalkableCampusView({
     setCurrentScene('courtyard');
   }, [clearDiscoveryDoorTimers]);
 
+  const handleEnterObservatoryClassroom = useCallback(() => {
+    setActiveZone(null);
+    setActiveObservatoryStation(null);
+    lastCourtyardPosRef.current = OBSERVATORY_CLASSROOM.courtyardReturnPos;
+    lastObservatoryClassroomPosRef.current = OBSERVATORY_CLASSROOM.playerSpawn;
+    setCurrentScene('observatory_classroom');
+  }, []);
+
+  const handleExitObservatoryClassroom = useCallback(() => {
+    setActiveObservatoryStation(null);
+    lastCourtyardPosRef.current = OBSERVATORY_CLASSROOM.courtyardReturnPos;
+    setActiveZone(null);
+    setCurrentScene('courtyard');
+  }, []);
+
   const handleSelectCareerSlot = useCallback((slot: number) => {
     if (!CAREER_LIST[slot] || activeCareerSlotRef.current === slot) return;
     activeCareerSlotRef.current = slot;
@@ -1024,9 +1059,43 @@ export function WalkableCampusView({
         | 'classroom'
         | 'discovery_classroom'
         | 'discovery_moon'
+        | 'observatory_classroom'
         | 'sultanhani_square'
         | 'sultanhani_inner',
     ): WalkableSceneConfig => {
+      if (scene === 'observatory_classroom') {
+        const interactiveZones: InteractiveZone[] = [
+          {
+            id: OBSERVATORY_CLASSROOM.exitDoor.id,
+            name: OBSERVATORY_CLASSROOM.exitDoor.name,
+            prompt: OBSERVATORY_CLASSROOM.exitDoor.prompt,
+            x: OBSERVATORY_CLASSROOM.exitDoor.x,
+            y: OBSERVATORY_CLASSROOM.exitDoor.y,
+            radius: OBSERVATORY_CLASSROOM.exitDoor.radius,
+            action: handleExitObservatoryClassroom,
+          },
+          ...OBSERVATORY_STATIONS.map((station) => ({
+            id: station.id,
+            name: station.title,
+            prompt: station.prompt,
+            x: station.interaction.x,
+            y: station.interaction.y,
+            radius: station.interaction.radius,
+            action: () => {
+              engineRef.current?.stopMoving();
+              setActiveObservatoryStation(station);
+            },
+          })),
+        ];
+
+        return {
+          width: OBSERVATORY_CLASSROOM.width,
+          height: OBSERVATORY_CLASSROOM.height,
+          playerSpawn: lastObservatoryClassroomPosRef.current,
+          obstacles: [...OBSERVATORY_CLASSROOM_OBSTACLES],
+          interactiveZones,
+        };
+      }
       if (scene === 'discovery_classroom') {
         const interactiveZones: InteractiveZone[] = [
           {
@@ -1482,20 +1551,15 @@ export function WalkableCampusView({
             setTimeout(() => setUnreachableMessage(null), 3500);
           },
         },
-        // 4. Yerden Göklere gözlem evi
+        // 4. Yerden Göklere gözlem evi (ön ahşap kapı ve merdiven önü)
         {
           id: 'enter-journey',
           name: CAMPUS_BUILDING_NAMES.observatory,
-          prompt: 'Yakında Açılacak',
-          x: 315,
-          y: 545,
-          radius: 70,
-          action: () => {
-            setUnreachableMessage(
-              `${CAMPUS_BUILDING_NAMES.observatory} gözlem evi yakında açılacak. Şu an İngilizce Öğreniyorum sınıfı aktiftir.`,
-            );
-            setTimeout(() => setUnreachableMessage(null), 3500);
-          },
+          prompt: `${CAMPUS_BUILDING_NAMES.observatory} Gözlemevine Gir`,
+          x: 342,
+          y: 708,
+          radius: 80,
+          action: handleEnterObservatoryClassroom,
         },
         // 5. Keşif Görevleri Panosu (Görsel olarak durur - Yakında)
         {
@@ -1558,6 +1622,8 @@ export function WalkableCampusView({
       dispatchFlowEvent,
       handleEnterDiscoveryClassroom,
       handleExitDiscoveryClassroom,
+      handleEnterObservatoryClassroom,
+      handleExitObservatoryClassroom,
       handleExitInnerCourtyard,
       handleExitSultanhani,
       handlePutOnGlasses,
@@ -1619,13 +1685,15 @@ export function WalkableCampusView({
         ? SULTANHANI_INNER.playerSpawn
         : currentScene === 'sultanhani_square'
           ? lastSultanhaniPosRef.current
-          : currentScene === 'discovery_classroom'
-            ? lastDiscoveryClassroomPosRef.current
-            : currentScene === 'discovery_moon'
-              ? { x: 480, y: 320 }
-              : currentScene === 'classroom'
-                ? lastClassroomPosRef.current
-                : lastCourtyardPosRef.current;
+          : currentScene === 'observatory_classroom'
+            ? lastObservatoryClassroomPosRef.current
+            : currentScene === 'discovery_classroom'
+              ? lastDiscoveryClassroomPosRef.current
+              : currentScene === 'discovery_moon'
+                ? { x: 480, y: 320 }
+                : currentScene === 'classroom'
+                  ? lastClassroomPosRef.current
+                  : lastCourtyardPosRef.current;
 
     if (currentScene !== 'courtyard') {
       clearDiscoveryDoorTimers();
@@ -1675,6 +1743,8 @@ export function WalkableCampusView({
         onPositionChange: (pos) => {
           if (currentScene === 'sultanhani_square') {
             lastSultanhaniPosRef.current = pos;
+          } else if (currentScene === 'observatory_classroom') {
+            lastObservatoryClassroomPosRef.current = pos;
           } else if (currentScene === 'discovery_classroom') {
             lastDiscoveryClassroomPosRef.current = pos;
           } else if (currentScene === 'classroom') {
@@ -1692,6 +1762,19 @@ export function WalkableCampusView({
             renderSultanhaniInnerBackground(ctx);
           } else if (currentScene === 'sultanhani_square') {
             renderSultanhaniBackground(ctx);
+          } else if (currentScene === 'observatory_classroom') {
+            renderObservatoryClassroomLayeredBackground(ctx, config.width, config.height);
+            const layer = observatoryLayerRef.current;
+            const projection = ctx.getTransform?.();
+            if (layer && projection) {
+              const { a, d, e, f } = projection;
+              const sx = careerOverlayScaleX;
+              const sy = careerOverlayScaleY;
+              const values = [a * sx, 0, 0, d * sy, e * sx, f * sy];
+              const transform = 'matrix(' + values.map((value) => Number(value.toFixed(4))).join(', ') + ')';
+              if (layer.style.transform !== transform) layer.style.transform = transform;
+              if (layer.style.visibility !== 'visible') layer.style.visibility = 'visible';
+            }
           } else if (currentScene === 'discovery_classroom') {
             renderDiscoveryClassroomLayeredBackground(ctx, config.width, config.height);
             const layer = careerLayerRef.current;
@@ -1726,6 +1809,8 @@ export function WalkableCampusView({
             renderSultanhaniInnerEntities(ctx, player, npc);
           } else if (currentScene === 'sultanhani_square') {
             renderSultanhaniEntities(ctx, player, npc);
+          } else if (currentScene === 'observatory_classroom') {
+            renderObservatoryClassroomEntities(ctx, player);
           } else if (currentScene === 'discovery_classroom') {
             renderDiscoveryClassroomEntities(ctx, player, config.width, config.height);
           } else if (currentScene === 'discovery_moon') {
@@ -1847,6 +1932,8 @@ export function WalkableCampusView({
             renderSultanhaniInnerBackground(ctx);
           } else if (currentScene === 'sultanhani_square') {
             renderSultanhaniBackground(ctx);
+          } else if (currentScene === 'observatory_classroom') {
+            renderObservatoryClassroomLayeredBackground(ctx, config.width, config.height);
           } else if (currentScene === 'discovery_classroom') {
             renderDiscoveryClassroomBackground(ctx, config.width, config.height);
           } else if (currentScene === 'discovery_moon') {
@@ -1879,6 +1966,7 @@ export function WalkableCampusView({
     if (
       (currentScene === 'courtyard' && spawnPos === COURTYARD_GATE_ARRIVAL) ||
       currentScene === 'discovery_classroom' ||
+      currentScene === 'observatory_classroom' ||
       (currentScene === 'sultanhani_square' && sultanhaniSquareEntryRef.current !== 'courtyard-exit') ||
       currentScene === 'sultanhani_inner'
     ) {
@@ -2009,7 +2097,8 @@ export function WalkableCampusView({
       isGradeModalOpen ||
       isTableModalOpen ||
       isCareerModalOpen ||
-      isMissionCompletedModalOpen
+      isMissionCompletedModalOpen ||
+      activeObservatoryStation !== null
     ) {
       engineRef.current.pause();
     } else {
@@ -2021,6 +2110,7 @@ export function WalkableCampusView({
     isTableModalOpen,
     isCareerModalOpen,
     isMissionCompletedModalOpen,
+    activeObservatoryStation,
   ]);
 
   const handleVirtualDirection = (vx: number, vy: number) => {
@@ -2068,6 +2158,10 @@ export function WalkableCampusView({
         />
       )}
 
+      {currentScene === 'observatory_classroom' && (
+        <ObservatoryArchitecturalLabels layerRef={observatoryLayerRef} />
+      )}
+
       {/* Ekran Üstü Kontroller ve İpuçları */}
       <WalkableControlsOverlay
         activeZone={activeZone}
@@ -2084,14 +2178,24 @@ export function WalkableCampusView({
                 }
               : currentScene === 'discovery_classroom'
                 ? handleExitDiscoveryClassroom
-                : currentScene === 'sultanhani_square' || currentScene === 'sultanhani_inner'
-                  ? handleExitSultanhani
-                  : undefined
+                : currentScene === 'observatory_classroom'
+                  ? handleExitObservatoryClassroom
+                  : currentScene === 'sultanhani_square' || currentScene === 'sultanhani_inner'
+                    ? handleExitSultanhani
+                    : undefined
         }
         unreachableMessage={unreachableMessage}
         currentScene={currentScene}
         isEncounterLocked={isEncounterLocked}
       />
+
+      {/* Yerden Göklere Gözlemevi İstasyon Bilgi Kartı */}
+      {currentScene === 'observatory_classroom' && (
+        <ObservatoryStationCard
+          station={activeObservatoryStation}
+          onClose={() => setActiveObservatoryStation(null)}
+        />
+      )}
 
       {/* Sultanhanı Dış Meydan ve İç Mekân Konuşma Balonu ve Seçenek Paneli */}
       {(currentScene === 'sultanhani_square' || currentScene === 'sultanhani_inner') && (

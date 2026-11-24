@@ -63,6 +63,8 @@ export const CAREER_ASTRONAUT_CARD_ASSET_URL = '/assets/walkable/career_astronau
 export const MOON_SURFACE_PHOTO_ASSET_URL = '/assets/walkable/moon_surface_photo.jpg';
 export const ASTRONAUT_REAL_ASSET_URL = '/assets/walkable/astronaut_real.png';
 export const TURKEY_FLAG_ASSET_URL = '/assets/walkable/flag_turkey.png';
+export const OBSERVATORY_CLASSROOM_BG_ASSET_URL = '/assets/walkable/observatory_classroom_bg.jpg';
+export const OBSERVATORY_SOLAR_TABLE_ASSET_URL = '/assets/walkable/observatory_solar_table.png';
 
 /**
  * Varlık getter fonksiyonları
@@ -169,6 +171,14 @@ export function getTurkeyFlagAsset(): HTMLImageElement | null {
   return getLoadedAsset(TURKEY_FLAG_ASSET_URL);
 }
 
+export function getObservatoryClassroomBgAsset(): HTMLImageElement | null {
+  return getLoadedAsset(OBSERVATORY_CLASSROOM_BG_ASSET_URL);
+}
+
+export function getObservatorySolarTableAsset(): HTMLImageElement | null {
+  return getLoadedAsset(OBSERVATORY_SOLAR_TABLE_ASSET_URL);
+}
+
 /**
  * Test veya özel durumlar için önbelleğe doğrudan görsel nesnesi ekleme.
  */
@@ -225,6 +235,8 @@ export function preloadWalkableAssets() {
   getLoadedAsset(MOON_SURFACE_PHOTO_ASSET_URL);
   getLoadedAsset(ASTRONAUT_REAL_ASSET_URL);
   getLoadedAsset(TURKEY_FLAG_ASSET_URL);
+  getLoadedAsset(OBSERVATORY_CLASSROOM_BG_ASSET_URL);
+  getLoadedAsset(OBSERVATORY_SOLAR_TABLE_ASSET_URL);
 }
 
 // Modül yüklendiğinde otomatik ön yükleme başlat

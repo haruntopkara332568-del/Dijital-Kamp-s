@@ -32,6 +32,7 @@ interface WalkableControlsOverlayProps {
     | 'classroom'
     | 'discovery_classroom'
     | 'discovery_moon'
+    | 'observatory_classroom'
     | 'sultanhani_square'
     | 'sultanhani_inner';
   isEncounterLocked?: boolean;
@@ -92,9 +93,11 @@ export function WalkableControlsOverlay({
                   ? 'Hayalden Gerçeğe — VR Sınıfı'
                   : currentScene === 'discovery_moon'
                     ? 'Hayalden Gerçeğe — Ay Görevi'
-                    : currentScene === 'sultanhani_square'
-                      ? 'Aksaray Sultanhanı Kervansarayı — Dış Meydan'
-                      : 'Aksaray Sultanhanı Kervansarayı — İç Avlu'}
+                    : currentScene === 'observatory_classroom'
+                      ? `${CAMPUS_BUILDING_NAMES.observatory} — Gözlemevi Sınıfı`
+                      : currentScene === 'sultanhani_square'
+                        ? 'Aksaray Sultanhanı Kervansarayı — Dış Meydan'
+                        : 'Aksaray Sultanhanı Kervansarayı — İç Avlu'}
           </span>
         </div>
 
@@ -169,7 +172,9 @@ export function WalkableControlsOverlay({
           )}
 
           {/* Sınıf İçindeyken Hızlı Avluya Dönüş Düğmesi */}
-          {(currentScene === 'classroom' || currentScene === 'discovery_classroom') &&
+          {(currentScene === 'classroom' ||
+            currentScene === 'discovery_classroom' ||
+            currentScene === 'observatory_classroom') &&
             onExitClassroom && (
             <button
               type="button"
@@ -271,11 +276,18 @@ export function WalkableControlsOverlay({
               </div>
             </li>
             <li className="flex items-start gap-2 p-1.5 rounded-lg bg-[var(--stone-cream)]">
+              <span className="w-2 h-2 rounded-full bg-[var(--seljuk-teal)] mt-1 shrink-0" />
+              <div>
+                <strong className="text-[var(--seljuk-navy)]">{CAMPUS_BUILDING_NAMES.observatory} (Güneybatı — AÇIK):</strong>
+                <span className="text-[var(--campus-ink-muted)] block text-[11px]">Gözlemevi sınıfı, dört keşif alanı, Güneş Sistemi ve teleskop.</span>
+              </div>
+            </li>
+            <li className="flex items-start gap-2 p-1.5 rounded-lg bg-[var(--stone-cream)]">
               <span className="w-2 h-2 rounded-full bg-slate-400 mt-1 shrink-0" />
               <div>
                 <strong className="text-[var(--seljuk-navy)]">Diğer Binalar (Yakında):</strong>
                 <span className="text-[var(--campus-ink-muted)] block text-[11px]">
-                  Hikâyeden Hayata, {CAMPUS_BUILDING_NAMES.observatory} ve {CAMPUS_BUILDING_NAMES.missions}.
+                  Hikâyeden Hayata ve {CAMPUS_BUILDING_NAMES.missions}.
                 </span>
               </div>
             </li>
