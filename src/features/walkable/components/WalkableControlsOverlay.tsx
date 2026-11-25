@@ -35,6 +35,7 @@ interface WalkableControlsOverlayProps {
     | 'discovery_doctor'
     | 'discovery_vet'
     | 'discovery_pilot'
+    | 'discovery_architect'
     | 'observatory_classroom'
     | 'sultanhani_square'
     | 'sultanhani_inner';
@@ -88,7 +89,7 @@ export function WalkableControlsOverlay({
         <div className="pointer-events-auto flex items-center gap-2 bg-[var(--campus-surface)]/95 backdrop-blur-xs px-3.5 py-1.5 rounded-xl border border-[var(--campus-border)] shadow-xs">
           <Sparkles className="w-4 h-4 text-[var(--seljuk-teal)] shrink-0" aria-hidden="true" />
           <span className="text-xs sm:text-sm font-bold text-[var(--seljuk-navy)]">
-            {currentScene === 'discovery_pilot' ? 'Pilot · Gökyüzünde İlk Görevim' : currentScene === 'courtyard'
+            {currentScene === 'discovery_pilot' ? 'Pilot · Gökyüzünde İlk Görevim' : currentScene === 'discovery_architect' ? 'Mimar · Köşkü Tamamla' : currentScene === 'courtyard'
               ? 'Yürünebilir Kampüs Avlusu'
               : currentScene === 'classroom'
                 ? 'İngilizce Sınıfı'
@@ -303,7 +304,7 @@ export function WalkableControlsOverlay({
       )}
 
       {/* Ulaşılamayan nokta veya etkileşim bildirimi */}
-      <div className={currentScene === 'discovery_classroom' || currentScene === 'discovery_doctor' || currentScene === 'discovery_vet' || currentScene === 'discovery_pilot'
+      <div className={currentScene === 'discovery_classroom' || currentScene === 'discovery_doctor' || currentScene === 'discovery_vet' || currentScene === 'discovery_pilot' || currentScene === 'discovery_architect'
         ? 'absolute inset-x-3 bottom-[24dvh] flex flex-col items-center gap-2'
         : 'flex flex-col items-center gap-2'}>
         {unreachableMessage && (

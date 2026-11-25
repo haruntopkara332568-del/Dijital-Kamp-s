@@ -24,7 +24,8 @@ export type DiscoveryVrState =
   | 'CLASS_RETURN'
   | 'DOCTOR_VISIT'
   | 'VETERINARY_VISIT'
-  | 'PILOT_VISIT';
+  | 'PILOT_VISIT'
+  | 'ARCHITECT_VISIT';
 
 /**
  * Meslek Tanım Arayüzü
@@ -34,7 +35,7 @@ export interface CareerDefinition {
   id: string;
   title: string;
   portrait: number;
-  sceneId?: 'discovery_moon' | 'discovery_doctor' | 'discovery_vet' | 'discovery_pilot';
+  sceneId?: 'discovery_moon' | 'discovery_doctor' | 'discovery_vet' | 'discovery_pilot' | 'discovery_architect';
   buttonText?: string;
 }
 
@@ -200,7 +201,7 @@ export const CAREER_LIST: readonly CareerDefinition[] = [
   { id: 'doctor', title: 'Doktor', portrait: 1, sceneId: 'discovery_doctor' },
   { id: 'veterinarian', title: 'Veteriner Hekim', portrait: 2, sceneId: 'discovery_vet' },
   { id: 'pilot', title: 'Pilot', portrait: 3, sceneId: 'discovery_pilot' },
-  { id: 'architect', title: 'Mimar', portrait: 4 },
+  { id: 'architect', title: 'Mimar', portrait: 4, sceneId: 'discovery_architect' },
   { id: 'firefighter', title: 'İtfaiyeci', portrait: 5 },
   { id: 'traffic-officer', title: 'Trafik Polisi', portrait: 6 },
   { id: 'archaeologist', title: 'Arkeolog', portrait: 7 },

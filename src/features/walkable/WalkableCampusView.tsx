@@ -66,6 +66,8 @@ import {
   PILOT_APRON_OBSTACLES, PILOT_CAPTAIN_ATLAS, preloadPilotExperience,
   renderPilotApron, renderPilotApronActors,
 } from './engine/pilotApronSceneRenderer';
+import { ArchitectExperienceView } from './components/ArchitectExperienceView';
+import { preloadArchitectAssets } from './engine/architectPavilionRenderer';
 import { VeterinaryClinicOverlay } from './components/VeterinaryClinicOverlay';
 import {
   VETERINARY_ADULTS_ATLAS,
@@ -147,6 +149,7 @@ export interface WalkableCampusViewProps {
     | 'discovery_doctor'
     | 'discovery_vet'
     | 'discovery_pilot'
+    | 'discovery_architect'
     | 'observatory_classroom'
     | 'sultanhani_square'
     | 'sultanhani_inner';
@@ -227,6 +230,7 @@ export function WalkableCampusView({
     | 'discovery_doctor'
     | 'discovery_vet'
     | 'discovery_pilot'
+    | 'discovery_architect'
     | 'observatory_classroom'
     | 'sultanhani_square'
     | 'sultanhani_inner'
@@ -251,6 +255,7 @@ export function WalkableCampusView({
   const vetReducedMotionRef = useRef(false);
   const pilotBoardTimer = useRef<number | null>(null);
   const pilotReducedMotion = useRef(false);
+  const [architectSessionKey, setArchitectSessionKey] = useState(0);
   const doctorSpeechEnabled = campus?.state.speechEnabled ?? false;
 
   useEffect(() => () => {
@@ -925,7 +930,7 @@ export function WalkableCampusView({
     setVrState('CLASS_IDLE');
   }, []);
 
-  const transitionClinicVisit = useCallback((target: 'discovery_doctor' | 'discovery_vet' | 'discovery_pilot' | 'discovery_classroom') => {
+  const transitionClinicVisit = useCallback((target: 'discovery_doctor' | 'discovery_vet' | 'discovery_pilot' | 'discovery_architect' | 'discovery_classroom') => {
     if (vrTransitionLockRef.current) return;
     vrTransitionLockRef.current = true;
     const entering = target !== 'discovery_classroom';
@@ -938,9 +943,11 @@ export function WalkableCampusView({
       if (speechEnabledRef.current) prepareVetVoice();
     }
     if (target === 'discovery_pilot') preloadPilotExperience();
+    if (target === 'discovery_architect') preloadArchitectAssets();
     if (!entering) {
       cancelDoctorSpeech();
       cancelVetVoice();
+      stopSpeaking();
       if (pilotBoardTimer.current !== null) {
         window.clearTimeout(pilotBoardTimer.current);
         pilotBoardTimer.current = null;
@@ -958,11 +965,14 @@ export function WalkableCampusView({
           ? 'Veteriner kliniğine gidiyorsun…'
           : target === 'discovery_pilot'
             ? 'Kaptanla havaalanında buluşuyorsun…'
-            : 'Gözlüğünü çıkarıp sınıfa dönüyorsun…',
+            : target === 'discovery_architect'
+              ? 'Köşk tasarım alanına gidiyorsun…'
+              : 'Gözlüğünü çıkarıp sınıfa dönüyorsun…',
     );
     setVrState(target === 'discovery_doctor' ? 'DOCTOR_VISIT'
       : target === 'discovery_vet' ? 'VETERINARY_VISIT'
-        : target === 'discovery_pilot' ? 'PILOT_VISIT' : 'CLASS_RETURN');
+        : target === 'discovery_pilot' ? 'PILOT_VISIT'
+          : target === 'discovery_architect' ? 'ARCHITECT_VISIT' : 'CLASS_RETURN');
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (target === 'discovery_vet') vetReducedMotionRef.current = Boolean(reducedMotion);
     if (target === 'discovery_pilot') pilotReducedMotion.current = Boolean(reducedMotion);
@@ -975,6 +985,9 @@ export function WalkableCampusView({
       if (target === 'discovery_pilot') {
         const profile = campusRef.current?.activeProfile;
         beginPilot(profile?.id ?? null, profile?.selectedGrade ?? 3);
+      }
+      if (target === 'discovery_architect') {
+        setArchitectSessionKey((k) => k + 1);
       }
       if (!entering) lastDiscoveryClassroomPosRef.current = DISCOVERY_VR_CONFIG.returnClassroomSpawn;
       setCurrentScene(target);
@@ -1036,7 +1049,12 @@ export function WalkableCampusView({
   const handlePutOnGlasses = useCallback(() => {
     if (vrTransitionLockRef.current) return;
     const career = CAREER_LIST[activeCareerSlotRef.current];
-    if (career?.sceneId === 'discovery_doctor' || career?.sceneId === 'discovery_vet' || career?.sceneId === 'discovery_pilot') {
+    if (
+      career?.sceneId === 'discovery_doctor' ||
+      career?.sceneId === 'discovery_vet' ||
+      career?.sceneId === 'discovery_pilot' ||
+      career?.sceneId === 'discovery_architect'
+    ) {
       transitionClinicVisit(career.sceneId);
       return;
     }
@@ -1240,7 +1258,12 @@ export function WalkableCampusView({
   }, [currentScene, handleRemoveGlasses]);
 
   useEffect(() => {
-    if (currentScene !== 'discovery_doctor' && currentScene !== 'discovery_vet' && currentScene !== 'discovery_pilot') return;
+    if (
+      currentScene !== 'discovery_doctor' &&
+      currentScene !== 'discovery_vet' &&
+      currentScene !== 'discovery_pilot' &&
+      currentScene !== 'discovery_architect'
+    ) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -1262,10 +1285,20 @@ export function WalkableCampusView({
         | 'discovery_doctor'
         | 'discovery_vet'
         | 'discovery_pilot'
+        | 'discovery_architect'
         | 'observatory_classroom'
         | 'sultanhani_square'
         | 'sultanhani_inner',
     ): WalkableSceneConfig => {
+      if (scene === 'discovery_architect') {
+        return {
+          width: 960,
+          height: 640,
+          playerSpawn: { x: 480, y: 520 },
+          obstacles: [],
+          interactiveZones: [],
+        };
+      }
       if (scene === 'discovery_pilot') {
         return {
           width: PILOT_APRON.width, height: PILOT_APRON.height, playerSpawn: PILOT_APRON.spawn,
@@ -1970,7 +2003,9 @@ export function WalkableCampusView({
                     ? VETERINARY_CLINIC.playerSpawn
                     : currentScene === 'discovery_pilot'
                       ? PILOT_APRON.spawn
-                      : currentScene === 'classroom'
+                      : currentScene === 'discovery_architect'
+                        ? { x: 480, y: 520 }
+                        : currentScene === 'classroom'
                         ? lastClassroomPosRef.current
                         : lastCourtyardPosRef.current;
 
@@ -2071,6 +2106,9 @@ export function WalkableCampusView({
             }
           } else if (currentScene === 'discovery_pilot') {
             renderPilotApron(ctx);
+          } else if (currentScene === 'discovery_architect') {
+            ctx.fillStyle = '#a9d7f0';
+            ctx.fillRect(0, 0, config.width, config.height);
           } else if (currentScene === 'discovery_vet') {
             renderVeterinaryClinicBackground(ctx);
           } else if (currentScene === 'discovery_doctor') {
@@ -2102,6 +2140,8 @@ export function WalkableCampusView({
             renderDiscoveryClassroomEntities(ctx, player, config.width, config.height);
           } else if (currentScene === 'discovery_pilot') {
             renderPilotApronActors(ctx, player, npc, pilotReducedMotion.current);
+          } else if (currentScene === 'discovery_architect') {
+            // Parça 1 kendi tek requestAnimationFrame döngüsüyle ArchitectExperienceView içinde çizilir
           } else if (currentScene === 'discovery_vet') {
             renderVeterinaryClinicEntities(
               ctx, player, npc, readVetScene(), vetBubbleRef.current, vetCareLayerRef.current,
@@ -2195,7 +2235,7 @@ export function WalkableCampusView({
           }
         },
         onNpcProximityChange: ({ inRange, screenPos, studentScreenPos }) => {
-          if (currentScene === 'discovery_vet' || currentScene === 'discovery_pilot') return;
+          if (currentScene === 'discovery_vet' || currentScene === 'discovery_pilot' || currentScene === 'discovery_architect') return;
           setNpcAnchorPos(screenPos);
           if (studentScreenPos) {
             setStudentAnchorPos(studentScreenPos);
@@ -2241,6 +2281,9 @@ export function WalkableCampusView({
             renderDiscoveryClassroomBackground(ctx, config.width, config.height);
           } else if (currentScene === 'discovery_pilot') {
             renderPilotApron(ctx);
+          } else if (currentScene === 'discovery_architect') {
+            ctx.fillStyle = '#a9d7f0';
+            ctx.fillRect(0, 0, config.width, config.height);
           } else if (currentScene === 'discovery_vet') {
             renderVeterinaryClinicBackground(ctx);
           } else if (currentScene === 'discovery_doctor') {
@@ -2278,6 +2321,7 @@ export function WalkableCampusView({
       currentScene === 'discovery_doctor' ||
       currentScene === 'discovery_vet' ||
       currentScene === 'discovery_pilot' ||
+      currentScene === 'discovery_architect' ||
       currentScene === 'observatory_classroom' ||
       (currentScene === 'sultanhani_square' && sultanhaniSquareEntryRef.current !== 'courtyard-exit') ||
       currentScene === 'sultanhani_inner'
@@ -2433,6 +2477,13 @@ export function WalkableCampusView({
     }
   }, [campus?.isProfileModalOpen, currentScene, getSceneConfig, handlePilotBoard, isTeleporting, pilotSeated]);
 
+  // Mimar Parça 1: yalnızca tek rAF döngüsü çalışsın diye arka plan yürüyüş motorunu duraklat
+  useEffect(() => {
+    if (currentScene !== 'discovery_architect') return;
+    engineRef.current?.setInputDisabled(true);
+    engineRef.current?.pause();
+  }, [currentScene]);
+
   // Modallar açıldığında motoru duraklat
   useEffect(() => {
     if (!engineRef.current) return;
@@ -2479,7 +2530,8 @@ export function WalkableCampusView({
     (currentScene === 'sultanhani_inner' && innerFlowState.stepPhase !== 'DONE') ||
     (currentScene === 'discovery_doctor' && doctorVisit.isDialogOpen) ||
     (currentScene === 'discovery_vet' && isVetVisitLocked) ||
-    currentScene === 'discovery_pilot';
+    currentScene === 'discovery_pilot' ||
+    currentScene === 'discovery_architect';
 
   const activeBubbleAnchor =
     activeBubble?.speaker === 'student' ? studentAnchorPos : npcAnchorPos;
@@ -2518,7 +2570,10 @@ export function WalkableCampusView({
         onVirtualDirection={handleVirtualDirection}
         onBackToMap={handleBackToMap}
         onExitClassroom={
-          currentScene === 'discovery_doctor' || currentScene === 'discovery_vet' || currentScene === 'discovery_pilot'
+          currentScene === 'discovery_doctor' ||
+          currentScene === 'discovery_vet' ||
+          currentScene === 'discovery_pilot' ||
+          currentScene === 'discovery_architect'
             ? handleExitClinic
             : currentScene === 'discovery_moon'
               ? handleRemoveGlasses
@@ -2539,6 +2594,17 @@ export function WalkableCampusView({
         currentScene={currentScene}
         isEncounterLocked={isEncounterLocked}
       />
+
+      {currentScene === 'discovery_architect' && (
+        <ArchitectExperienceView
+          key={`architect-session-${architectSessionKey}`}
+          characterId={characterId ?? campus?.activeProfile?.characterId}
+          grade={selectedGrade ?? campus?.activeProfile?.selectedGrade ?? 3}
+          speechEnabled={campus?.state.speechEnabled ?? true}
+          suspended={isTeleporting || Boolean(campus?.isProfileModalOpen)}
+          onExit={handleExitClinic}
+        />
+      )}
 
       {currentScene === 'discovery_pilot' && (pilotSeated ? (
         <PilotCockpit
