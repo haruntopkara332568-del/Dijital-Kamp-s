@@ -21,3 +21,10 @@ Uygulama çalışma zamanında Google Fonts veya başka bir harici yazı tipi se
 - Yüzey, bulut ve gece dokuları sırasıyla [NASA SVS Blue Marble](https://svs.gsfc.nasa.gov/2915/), [NASA Earth Observatory Blue Marble bulut birleşimi](https://science.nasa.gov/earth/earth-observatory/the-blue-marble-true-color-global-imagery-at-1km-resolution/) ve [NASA Earth Observatory Black Marble 2016](https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/) verilerinden yerel WebP olarak hazırlanmıştır.
 - İşaretsiz Türkiye aramasında [Natural Earth 1:10m Admin 0 Countries](https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-admin-0-countries/) v5.1.2 verisindeki Türkiye geometrisi kullanılır. [Natural Earth verileri kamu malıdır.](https://www.naturalearthdata.com/about/terms-of-use/)
 - Konum işareti [BM Coğrafi Adlar Uzmanlar Grubu Ankara koordinatlarına](https://ungegn.un.org/dashboard/cities/details?id=76), katman kesiti [NASA'nın Dünya yapısı açıklamasına](https://science.nasa.gov/earth/facts/) ve [NASA eğitim kesitine](https://science.nasa.gov/wp-content/uploads/2024/01/lro-educator-resource-kit.pdf) dayanır.
+
+
+## 6. Ay Keşfi
+
+- Ay yüzey rengi (4096×2048) ve yükseltileri (2048×1024, 16 bit) [NASA Goddard SVS CGI Moon Kit](https://svs.gsfc.nasa.gov/4720/) içindeki LROC ve LOLA haritalarından yerel WebP olarak hazırlanmıştır. NASA Goddard Space Flight Center ve Lunar Reconnaissance Orbiter ekipleri kaynak gösterilir. [NASA medya kullanım kuralları](https://www.nasa.gov/nasa-brand-center/images-and-media/)
+- Yüzey konumları IAU/USGS kayıtlarından alınmıştır. [Tycho](https://planetarynames.wr.usgs.gov/Feature/6163), [Copernicus](https://planetarynames.wr.usgs.gov/Feature/1296) ve [Mare Imbrium](https://planetarynames.wr.usgs.gov/Feature/3678)
+- Evre gösterimi, Güneş’in aydınlattığı yarımküre ile Dünya’dan görülen kısmın kesişimini hesaplar. [NASA Moon Phases](https://science.nasa.gov/moon/moon-phases/)
