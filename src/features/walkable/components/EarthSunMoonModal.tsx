@@ -60,8 +60,6 @@ function EarthSunMoonModalInner({ onClose }: { onClose: () => void }) {
   const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>('learn');
   const [mode, setMode] = useState<ActivityMode>('explore');
   const [selectedBodyId, setSelectedBodyId] = useState<CelestialBodyId>('earth');
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [speechNotice, setSpeechNotice] = useState<string | null>(null);
 
   const [inspectedIds, setInspectedIds] = useState<CelestialBodyId[]>(() => {
     const saved = campus?.getMissionProgress(EARTH_SUN_MOON_ACTIVITY_ID, activeGrade);
@@ -76,7 +74,8 @@ function EarthSunMoonModalInner({ onClose }: { onClose: () => void }) {
     Partial<Record<CelestialBodyId, string>>
   >({});
 
-  const speechRunIdRef = useRef(0);
+  const experimentsTabRef = useRef<HTMLButtonElement>(null);
+  const returningFromExperimentsRef = useRef(false);
   const initialMountSyncedRef = useRef(false);
 
   const persistProgress = useCallback(
@@ -117,43 +116,10 @@ function EarthSunMoonModalInner({ onClose }: { onClose: () => void }) {
     [campus, activeGrade],
   );
 
-  const speakTurkishText = useCallback(
-    async (text: string) => {
-      const runId = ++speechRunIdRef.current;
-      stopSpeaking();
-      setSpeechNotice(null);
-
-      if (!speechEnabled) {
-        setIsSpeaking(false);
-        setSpeechNotice(EARTH_SUN_MOON_UI_COPY.speechFallbackNote);
-        return;
-      }
-
-      setIsSpeaking(true);
-      try {
-        const result = await speakSegments([{ text, lang: 'tr-TR' }]);
-        if (speechRunIdRef.current !== runId) return;
-        if (!result.spoken) {
-          setSpeechNotice(result.fallbackReason ?? EARTH_SUN_MOON_UI_COPY.speechFallbackNote);
-        }
-      } catch {
-        if (speechRunIdRef.current === runId) {
-          setSpeechNotice(EARTH_SUN_MOON_UI_COPY.speechFallbackNote);
-        }
-      } finally {
-        if (speechRunIdRef.current === runId) {
-          setIsSpeaking(false);
-        }
-      }
-    },
-    [speechEnabled],
-  );
-
-  const stopAllNarration = useCallback(() => {
-    speechRunIdRef.current += 1;
+  const speakTurkishText = useCallback((text: string) => {
     stopSpeaking();
-    setIsSpeaking(false);
-  }, []);
+    if (speechEnabled) void speakSegments([{ text, lang: 'tr-TR' }]).catch(() => undefined);
+  }, [speechEnabled]);
 
   useEffect(() => {
     if (initialMountSyncedRef.current) return;
@@ -166,22 +132,24 @@ function EarthSunMoonModalInner({ onClose }: { onClose: () => void }) {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        stopAllNarration();
+        stopSpeaking();
         onClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, stopAllNarration]);
+  }, [onClose]);
 
+  useEffect(() => stopSpeaking, []);
+
+  const showExperiments = workspaceTab === 'experiments';
   useEffect(() => {
-    return () => {
-      speechRunIdRef.current += 1;
-      stopSpeaking();
-    };
-  }, []);
+    if (showExperiments || !returningFromExperimentsRef.current) return;
+    returningFromExperimentsRef.current = false;
+    experimentsTabRef.current?.focus({ preventScroll: true });
+  }, [showExperiments]);
 
-  const isExploringBody = workspaceTab === 'learn' && mode === 'explore';
+  const isExploringBody = !showExperiments && mode === 'explore';
   const showEarth = isExploringBody && selectedBodyId === 'earth';
   const showSun = isExploringBody && selectedBodyId === 'sun';
   const showMoon = isExploringBody && selectedBodyId === 'moon';
@@ -191,10 +159,9 @@ function EarthSunMoonModalInner({ onClose }: { onClose: () => void }) {
   const isActivityCompleted = allBodiesInspected && allMatched;
 
   const handleSelectBody = (bodyId: CelestialBodyId) => {
-    stopAllNarration();
+    stopSpeaking();
     setMode('explore');
     setSelectedBodyId(bodyId);
-    setSpeechNotice(null);
 
     const nextInspected = inspectedIds.includes(bodyId)
       ? inspectedIds
@@ -204,7 +171,7 @@ function EarthSunMoonModalInner({ onClose }: { onClose: () => void }) {
   };
 
   const handleOpenReinforcement = () => {
-    stopAllNarration();
+    stopSpeaking();
     setMode('reinforce');
   };
 
@@ -233,15 +200,35 @@ function EarthSunMoonModalInner({ onClose }: { onClose: () => void }) {
   };
 
   const handleSwitchWorkspaceTab = (nextTab: WorkspaceTab) => {
-    stopAllNarration();
-    setSpeechNotice(null);
+    stopSpeaking();
     setWorkspaceTab(nextTab);
   };
 
   const handleCloseModal = () => {
-    stopAllNarration();
+    stopSpeaking();
     onClose();
   };
+
+  if (showExperiments) {
+    return (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="active-experiments-title"
+        data-testid="earth-sun-moon-modal"
+        className="fixed inset-0 z-50 h-dvh overflow-hidden bg-[#0b1834] text-[#f8f1dd]"
+      >
+        <EarthSunMoonExperimentsView
+          key={(campus?.activeProfile?.id ?? 'visitor') + '-' + activeGrade}
+          activeGrade={activeGrade}
+          onBack={() => {
+            returningFromExperimentsRef.current = true;
+            handleSwitchWorkspaceTab('learn');
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -313,14 +300,10 @@ function EarthSunMoonModalInner({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             role="tab"
-            aria-selected={workspaceTab === 'learn'}
+            aria-selected="true"
             data-testid="workspace-tab-learn"
             onClick={() => handleSwitchWorkspaceTab('learn')}
-            className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-extrabold transition-all sm:text-sm ${
-              workspaceTab === 'learn'
-                ? 'border-[#f6dc9b] bg-[#1a3469] text-[#fff8e6] shadow-md'
-                : 'border-[#d8a94c]/25 bg-[#0e1e40]/80 text-[#c5d5f2] hover:border-[#f3cc7a]/55 hover:bg-[#142b59]'
-            }`}
+            className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-extrabold transition-all sm:text-sm border-[#f6dc9b] bg-[#1a3469] text-[#fff8e6] shadow-md"
           >
             <Globe2 className="h-4 w-4 shrink-0 text-[#f6dc9b]" aria-hidden="true" />
             <span>{ACTIVE_DISCOVERY_UI_COPY.learnTabLabel}</span>
@@ -329,14 +312,11 @@ function EarthSunMoonModalInner({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             role="tab"
-            aria-selected={workspaceTab === 'experiments'}
+            aria-selected="false"
+            ref={experimentsTabRef}
             data-testid="workspace-tab-experiments"
             onClick={() => handleSwitchWorkspaceTab('experiments')}
-            className={`inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-extrabold transition-all sm:text-sm ${
-              workspaceTab === 'experiments'
-                ? 'border-amber-300 bg-amber-500/25 text-[#fff8e6] shadow-md ring-1 ring-amber-300/40'
-                : 'border-amber-400/45 bg-amber-500/10 text-[#ffe8ad] hover:border-amber-300 hover:bg-amber-500/20'
-            }`}
+            className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-extrabold transition-all sm:text-sm border-amber-400/45 bg-amber-500/10 text-[#ffe8ad] hover:border-amber-300 hover:bg-amber-500/20"
           >
             <FlaskConical className="h-4 w-4 shrink-0 text-amber-300" aria-hidden="true" />
             <span>{ACTIVE_DISCOVERY_UI_COPY.sectionTabLabel} (3 Deney)</span>
@@ -344,101 +324,89 @@ function EarthSunMoonModalInner({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Üç Gök Cismi Seçim Çubuğu ve Kısa Pekiştirme Sekmesi (yalnızca Gök Cisimlerini Tanı bölümünde) */}
-        {workspaceTab === 'learn' && (
-          <nav
-            aria-label="Gök cismi seçimi"
-            className={'grid gap-2 border-b border-[#d8a94c]/20 bg-[#0b1834]' + (showFullGlobe
-              ? (showSun || showMoon ? ' grid-cols-3 px-2 py-2 sm:px-4' : ' grid-cols-4 px-2 py-2 sm:px-4')
-              : ' grid-cols-2 px-4 py-2.5 sm:grid-cols-4 sm:px-6')}
-          >
-            {CELESTIAL_BODIES.map((body) => {
-              const isSelected = mode === 'explore' && selectedBodyId === body.id;
-              const isInspected = inspectedIds.includes(body.id);
+        <nav
+          aria-label="Gök cismi seçimi"
+          className={'grid gap-2 border-b border-[#d8a94c]/20 bg-[#0b1834]' + (showFullGlobe
+            ? (showSun || showMoon ? ' grid-cols-3 px-2 py-2 sm:px-4' : ' grid-cols-4 px-2 py-2 sm:px-4')
+            : ' grid-cols-2 px-4 py-2.5 sm:grid-cols-4 sm:px-6')}
+        >
+          {CELESTIAL_BODIES.map((body) => {
+            const isSelected = mode === 'explore' && selectedBodyId === body.id;
+            const isInspected = inspectedIds.includes(body.id);
 
-              return (
-                <button
-                  key={body.id}
-                  type="button"
-                  data-testid={`celestial-tab-${body.id}`}
-                  onClick={() => handleSelectBody(body.id)}
-                  className={`flex cursor-pointer items-center rounded-2xl border py-1.5 transition-all ${showFullGlobe
-                    ? 'min-h-11 justify-center px-1.5 text-center'
-                    : 'min-h-[56px] gap-2.5 px-3 text-left'} ${
-                    isSelected
-                      ? 'border-[#f6dc9b] bg-[#1a3469] shadow-lg ring-2 ring-[#f6dc9b]/35'
-                      : 'border-[#d8a94c]/25 bg-[#102247]/80 hover:border-[#f3cc7a]/60 hover:bg-[#152c5a]'
-                  }`}
-                >
-                  {!showFullGlobe && (
-                    <CelestialGlobeCanvas
-                      bodyId={body.id}
-                      size={44}
-                      rotY={DEFAULT_ROTATION[body.id].rotY}
-                      rotX={DEFAULT_ROTATION[body.id].rotX}
-                      showStarfield={false}
-                      className="shrink-0 rounded-full"
-                    />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className={'flex items-center gap-1.5' + (showFullGlobe ? ' justify-center' : '')}>
-                      <span className="truncate text-sm font-extrabold text-[#fff8e6]">
-                        {body.name}
-                      </span>
-                      {isInspected && !showFullGlobe && (
-                        <CheckCircle2
-                          className="h-4 w-4 shrink-0 text-emerald-400"
-                          aria-label="İncelendi"
-                        />
-                      )}
-                    </div>
-                    {!showFullGlobe && <span className="block truncate text-[11px] text-[#bfd0ee]">{body.categoryLabel}</span>}
-                  </div>
-                </button>
-              );
-            })}
-
-            {!showSun && !showMoon && <button
-              type="button"
-              data-testid="celestial-tab-reinforce"
-              onClick={handleOpenReinforcement}
-              className={`flex cursor-pointer items-center justify-center gap-2 rounded-2xl border py-1.5 text-center transition-all ${showFullGlobe
-                ? 'min-h-11 px-1'
-                : 'min-h-[56px] px-3'} ${
-                mode === 'reinforce'
-                  ? 'border-emerald-300 bg-emerald-900/70 text-emerald-100 shadow-lg ring-2 ring-emerald-400/35'
-                  : allBodiesInspected
-                    ? 'border-[#f6dc9b] bg-amber-500/20 text-[#fff4cf] hover:bg-amber-500/30'
-                    : 'border-[#d8a94c]/25 bg-[#102247]/80 text-[#d3e0f7] hover:border-[#f3cc7a]/60'
-              }`}
-            >
-              {!showFullGlobe && <Sparkles className="h-4 w-4 shrink-0 text-[#f6dc9b]" aria-hidden="true" />}
-              <div className={showFullGlobe ? 'text-center' : 'text-left'}>
-                <span className="block text-xs font-extrabold sm:text-sm">
-                  {EARTH_SUN_MOON_UI_COPY.reinforcementTabLabel}
-                </span>
+            return (
+              <button
+                key={body.id}
+                type="button"
+                data-testid={`celestial-tab-${body.id}`}
+                onClick={() => handleSelectBody(body.id)}
+                className={`flex cursor-pointer items-center rounded-2xl border py-1.5 transition-all ${showFullGlobe
+                  ? 'min-h-11 justify-center px-1.5 text-center'
+                  : 'min-h-[56px] gap-2.5 px-3 text-left'} ${
+                  isSelected
+                    ? 'border-[#f6dc9b] bg-[#1a3469] shadow-lg ring-2 ring-[#f6dc9b]/35'
+                    : 'border-[#d8a94c]/25 bg-[#102247]/80 hover:border-[#f3cc7a]/60 hover:bg-[#152c5a]'
+                }`}
+              >
                 {!showFullGlobe && (
-                  <span className="block text-[11px] opacity-85">
-                    {allMatched ? '3/3 Tamamlandı' : `${matchedIds.length}/3 Eşleştirme`}
-                  </span>
+                  <CelestialGlobeCanvas
+                    bodyId={body.id}
+                    size={44}
+                    rotY={DEFAULT_ROTATION[body.id].rotY}
+                    rotX={DEFAULT_ROTATION[body.id].rotX}
+                    showStarfield={false}
+                    className="shrink-0 rounded-full"
+                  />
                 )}
-              </div>
-            </button>}
-          </nav>
-        )}
+                <div className="min-w-0 flex-1">
+                  <div className={'flex items-center gap-1.5' + (showFullGlobe ? ' justify-center' : '')}>
+                    <span className="truncate text-sm font-extrabold text-[#fff8e6]">
+                      {body.name}
+                    </span>
+                    {isInspected && !showFullGlobe && (
+                      <CheckCircle2
+                        className="h-4 w-4 shrink-0 text-emerald-400"
+                        aria-label="İncelendi"
+                      />
+                    )}
+                  </div>
+                  {!showFullGlobe && <span className="block truncate text-[11px] text-[#bfd0ee]">{body.categoryLabel}</span>}
+                </div>
+              </button>
+            );
+          })}
+
+          {!showSun && !showMoon && <button
+            type="button"
+            data-testid="celestial-tab-reinforce"
+            onClick={handleOpenReinforcement}
+            className={`flex cursor-pointer items-center justify-center gap-2 rounded-2xl border py-1.5 text-center transition-all ${showFullGlobe
+              ? 'min-h-11 px-1'
+              : 'min-h-[56px] px-3'} ${
+              mode === 'reinforce'
+                ? 'border-emerald-300 bg-emerald-900/70 text-emerald-100 shadow-lg ring-2 ring-emerald-400/35'
+                : allBodiesInspected
+                  ? 'border-[#f6dc9b] bg-amber-500/20 text-[#fff4cf] hover:bg-amber-500/30'
+                  : 'border-[#d8a94c]/25 bg-[#102247]/80 text-[#d3e0f7] hover:border-[#f3cc7a]/60'
+            }`}
+          >
+            {!showFullGlobe && <Sparkles className="h-4 w-4 shrink-0 text-[#f6dc9b]" aria-hidden="true" />}
+            <div className={showFullGlobe ? 'text-center' : 'text-left'}>
+              <span className="block text-xs font-extrabold sm:text-sm">
+                {EARTH_SUN_MOON_UI_COPY.reinforcementTabLabel}
+              </span>
+              {!showFullGlobe && (
+                <span className="block text-[11px] opacity-85">
+                  {allMatched ? '3/3 Tamamlandı' : `${matchedIds.length}/3 Eşleştirme`}
+                </span>
+              )}
+            </div>
+          </button>}
+        </nav>
 
         {/* Ana İçerik Gövdesi */}
         <div className={'min-h-0 flex-1 overflow-y-auto' + (showFullGlobe ? ' p-2 sm:p-3' : ' p-4 sm:p-6')}>
-          {workspaceTab === 'experiments' ? (
-            <EarthSunMoonExperimentsView
-              activeGrade={activeGrade}
-              speechEnabled={speechEnabled}
-              isSpeaking={isSpeaking}
-              speechNotice={speechNotice}
-              onSpeak={(text) => void speakTurkishText(text)}
-              onStopSpeech={stopAllNarration}
-              onBackToObservatory={handleCloseModal}
-            />
-          ) : showEarth ? (
+          {showEarth ? (
             <EarthExplorerView />
           ) : showSun ? (
             <SunExplorerView />

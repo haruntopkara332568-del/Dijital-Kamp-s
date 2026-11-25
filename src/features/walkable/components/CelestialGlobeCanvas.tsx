@@ -435,6 +435,7 @@ function normalizeVec3(v: Vec3): Vec3 {
 export interface CelestialGlobeCanvasProps {
   bodyId: CelestialBodyId;
   size: number;
+  displaySize?: number;
   rotY?: number;
   rotX?: number;
   zoom?: number;
@@ -447,6 +448,7 @@ export interface CelestialGlobeCanvasProps {
   surfacePins?: readonly SurfacePin[];
   onRotate?: (deltaY: number, deltaX: number) => void;
   onZoomWheel?: (deltaZoom: number) => void;
+  onPinchZoom?: (scale: number) => void;
   onSurfaceClick?: (hit: SurfaceClickHit) => void;
   ariaLabel?: string;
   className?: string;
@@ -455,6 +457,7 @@ export interface CelestialGlobeCanvasProps {
 export function CelestialGlobeCanvas({
   bodyId,
   size,
+  displaySize,
   rotY = 0,
   rotX = 0.12,
   zoom = 1,
@@ -467,11 +470,13 @@ export function CelestialGlobeCanvas({
   surfacePins,
   onRotate,
   onZoomWheel,
+  onPinchZoom,
   onSurfaceClick,
   ariaLabel,
   className = '',
 }: CelestialGlobeCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pointersRef = useRef(new Map<number, { x: number; y: number }>());
   const dragRef = useRef<{
     active: boolean;
     startX: number;
@@ -798,23 +803,38 @@ export function CelestialGlobeCanvas({
   ]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!interactive && !onSurfaceClick) return;
-    dragRef.current = {
-      active: true,
-      startX: e.clientX,
-      startY: e.clientY,
-      lastX: e.clientX,
-      lastY: e.clientY,
-      moved: false,
-    };
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      // Tarayıcı emniyeti
+    if (!interactive && !onSurfaceClick && !onPinchZoom) return;
+    const pointers = pointersRef.current;
+    if (e.button !== 0 || pointers.size >= 2 || (pointers.size > 0 && (!onPinchZoom || e.pointerType !== 'touch'))) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 1) {
+      dragRef.current = {
+        active: true,
+        startX: e.clientX,
+        startY: e.clientY,
+        lastX: e.clientX,
+        lastY: e.clientY,
+        moved: false,
+      };
+    } else {
+      dragRef.current.active = false;
     }
+    e.currentTarget.setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const pointers = pointersRef.current;
+    const previous = pointers.get(e.pointerId);
+    if (!previous) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2 && onPinchZoom) {
+      const other = [...pointers].find(([id]) => id !== e.pointerId)?.[1];
+      if (!other) return;
+      const before = Math.hypot(previous.x - other.x, previous.y - other.y);
+      const after = Math.hypot(e.clientX - other.x, e.clientY - other.y);
+      if (before >= 4 && after >= 4) onPinchZoom(after / before);
+      return;
+    }
     if (!dragRef.current.active) return;
     const totalMove = Math.hypot(
       e.clientX - dragRef.current.startX,
@@ -832,16 +852,9 @@ export function CelestialGlobeCanvas({
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!dragRef.current.active) return;
-    const wasClick = !dragRef.current.moved;
+    if (!pointersRef.current.delete(e.pointerId)) return;
+    const wasClick = dragRef.current.active && !dragRef.current.moved;
     dragRef.current.active = false;
-    try {
-      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      }
-    } catch {
-      // Emniyet
-    }
 
     if (wasClick && onSurfaceClick && canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect();
@@ -884,11 +897,20 @@ export function CelestialGlobeCanvas({
     }
   };
 
-  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
-    if (!interactive || !onZoomWheel) return;
-    e.preventDefault();
-    onZoomWheel(e.deltaY < 0 ? 0.15 : -0.15);
+  const cancelPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (pointersRef.current.delete(e.pointerId)) dragRef.current.active = false;
   };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !onZoomWheel) return;
+    function handleWheel(event: WheelEvent) {
+      event.preventDefault();
+      if (event.deltaY !== 0) onZoomWheel?.(event.deltaY < 0 ? 0.15 : -0.15);
+    }
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', handleWheel);
+  }, [onZoomWheel]);
 
   const pointerClass = interactive
     ? onSurfaceClick
@@ -896,20 +918,21 @@ export function CelestialGlobeCanvas({
       : 'cursor-grab active:cursor-grabbing touch-none'
     : onSurfaceClick
       ? 'cursor-pointer'
-      : '';
+      : onPinchZoom ? 'touch-none' : '';
 
   return (
     <canvas
       ref={canvasRef}
       width={size}
       height={size}
+      style={displaySize === undefined ? undefined : { width: displaySize, height: displaySize }}
       role="img"
       aria-label={ariaLabel}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      onWheel={handleWheel}
+      onPointerCancel={cancelPointer}
+      onLostPointerCapture={cancelPointer}
       className={`${pointerClass} ${className}`}
     />
   );

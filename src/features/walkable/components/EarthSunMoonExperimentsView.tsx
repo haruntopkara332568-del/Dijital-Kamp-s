@@ -1,76 +1,32 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
-  Compass,
-  Lightbulb,
-  Moon,
-  Pause,
-  Play,
-  RotateCcw,
-  Sparkles,
-  Sun,
-  Volume2,
-  VolumeX,
-} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Lightbulb, Pause, Play, RotateCcw } from 'lucide-react';
 import { useOptionalCampus } from '@/src/app/CampusProviders';
+import { FullscreenButton } from '@/src/components/FullscreenButton';
 import {
   ACTIVE_DISCOVERY_MISSION_ID,
   ACTIVE_DISCOVERY_MISSION_VERSION,
   ACTIVE_DISCOVERY_UI_COPY,
   ACTIVE_EXPERIMENTS,
-  INQUIRY_STEPS,
   MOON_PHASES,
   TURKEY_COORDS,
   detectMoonPhaseAtAngle,
-  getActiveExperiment,
   projectSurfacePoint,
   type ActiveExperimentId,
-  type ExperimentChoiceOption,
-  type InquiryStageId,
   type MoonPhaseId,
 } from '@/src/data/earthSunMoonExperiments';
 import type { MissionProgress, MissionStageId, SupportedGrade } from '@/src/types/campus';
 import {
   CelestialGlobeCanvas,
+  type CelestialGlobeCanvasProps,
   type SurfaceClickHit,
   type SurfacePin,
 } from './CelestialGlobeCanvas';
 
-export interface EarthSunMoonExperimentsViewProps {
-  activeGrade: SupportedGrade;
-  speechEnabled: boolean;
-  isSpeaking: boolean;
-  speechNotice: string | null;
-  onSpeak: (text: string) => void;
-  onStopSpeech: () => void;
-  onBackToObservatory: () => void;
-}
-
 const EARTH_TILT_X = 0.22;
-const INITIAL_DAY_NIGHT_ROT_Y = 0.58; // Türkiye ön ortada alacakaranlık çizgisinde başlar
-
-function isValidExperimentId(id: string): id is ActiveExperimentId {
-  return id === 'exp-sunlight' || id === 'exp-day-night' || id === 'exp-moon-phases';
-}
-
-function isValidMoonPhaseId(id: string): id is MoonPhaseId {
-  return (
-    id === 'new-moon' ||
-    id === 'first-quarter' ||
-    id === 'full-moon' ||
-    id === 'last-quarter'
-  );
-}
+const INITIAL_DAY_NIGHT_ROT_Y = 0.58;
 
 function normalizeAngleDeg(deg: number): number {
   return ((deg % 360) + 360) % 360;
-}
-
-interface MarkedRegionPin {
-  lonDeg: number;
-  latDeg: number;
 }
 
 interface MoonOrbitCanvasProps {
@@ -80,20 +36,29 @@ interface MoonOrbitCanvasProps {
 
 function MoonOrbitCanvas({ phaseAngleDeg, onChangeAngle }: MoonOrbitCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const draggingRef = useRef(false);
+  const pointerRef = useRef<number | null>(null);
+  const { ref, width: availableWidth, height: availableHeight } = useModelSpace<HTMLDivElement>();
 
   const width = 320;
   const height = 252;
   const earthCx = 186;
   const earthCy = 126;
   const orbitR = 78;
+  const displayWidth = Math.min(availableWidth, availableHeight * width / height);
+  const displayHeight = displayWidth * height / width;
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || displayWidth <= 0) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const scale = Math.min(window.devicePixelRatio || 1, 1.5);
+    const backingWidth = Math.round(displayWidth * scale);
+    const backingHeight = Math.round(displayHeight * scale);
+    if (canvas.width !== backingWidth) canvas.width = backingWidth;
+    if (canvas.height !== backingHeight) canvas.height = backingHeight;
+    ctx.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
     ctx.clearRect(0, 0, width, height);
 
     // Uzay arka planı
@@ -266,9 +231,9 @@ function MoonOrbitCanvas({ phaseAngleDeg, onChangeAngle }: MoonOrbitCanvasProps)
     ctx.beginPath();
     ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
     ctx.stroke();
-  }, [phaseAngleDeg]);
+  }, [displayHeight, displayWidth, phaseAngleDeg]);
 
-  const updateAngleFromPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  const updateAngleFromPointer = (e: PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -281,1350 +246,474 @@ function MoonOrbitCanvas({ phaseAngleDeg, onChangeAngle }: MoonOrbitCanvasProps)
   };
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={width}
-      height={height}
-      role="slider"
-      aria-label="Ay yörünge konumu"
-      aria-valuemin={0}
-      aria-valuemax={360}
-      aria-valuenow={Math.round(phaseAngleDeg)}
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
-          e.preventDefault();
-          onChangeAngle(normalizeAngleDeg(phaseAngleDeg + 15));
-        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
-          e.preventDefault();
-          onChangeAngle(normalizeAngleDeg(phaseAngleDeg - 15));
-        }
-      }}
-      onPointerDown={(e) => {
-        draggingRef.current = true;
-        try {
-          e.currentTarget.setPointerCapture(e.pointerId);
-        } catch {
-          // Tarayıcı emniyeti
-        }
-        updateAngleFromPointer(e);
-      }}
-      onPointerMove={(e) => {
-        if (!draggingRef.current) return;
-        updateAngleFromPointer(e);
-      }}
-      onPointerUp={(e) => {
-        draggingRef.current = false;
-        try {
-          if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-            e.currentTarget.releasePointerCapture(e.pointerId);
+    <div ref={ref} className="flex min-h-0 w-full flex-1 items-center justify-center">
+      <canvas
+        ref={canvasRef}
+        style={{ width: displayWidth, height: displayHeight }}
+        role="slider"
+        aria-label="Ay yörünge konumu"
+        aria-valuemin={0}
+        aria-valuemax={360}
+        aria-valuenow={Math.round(phaseAngleDeg)}
+        aria-valuetext={detectMoonPhaseAtAngle(phaseAngleDeg)?.label ?? 'Ara evre'}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            onChangeAngle(normalizeAngleDeg(phaseAngleDeg + 15));
+          } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            onChangeAngle(normalizeAngleDeg(phaseAngleDeg - 15));
           }
-        } catch {
-          // Emniyet
-        }
-      }}
-      onPointerCancel={() => {
-        draggingRef.current = false;
-      }}
-      className="h-[220px] w-full max-w-[320px] cursor-grab rounded-2xl border border-[#f6dc9b]/25 shadow-inner active:cursor-grabbing touch-none sm:h-[252px]"
-    />
+        }}
+        onPointerDown={(event) => {
+          if (event.button !== 0 || pointerRef.current !== null) return;
+          pointerRef.current = event.pointerId;
+          event.currentTarget.setPointerCapture(event.pointerId);
+          updateAngleFromPointer(event);
+        }}
+        onPointerMove={(event) => {
+          if (pointerRef.current === event.pointerId) updateAngleFromPointer(event);
+        }}
+        onLostPointerCapture={(event) => {
+          if (pointerRef.current === event.pointerId) pointerRef.current = null;
+        }}
+        className="shrink-0 touch-none cursor-grab rounded-xl active:cursor-grabbing focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sky-300"
+      />
+    </div>
   );
 }
 
-export function EarthSunMoonExperimentsView({
-  activeGrade,
-  speechEnabled,
-  isSpeaking,
-  speechNotice,
-  onSpeak,
-  onStopSpeech,
-  onBackToObservatory,
-}: EarthSunMoonExperimentsViewProps) {
+const BUTTON_LAYOUT = 'inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-2.5 py-1 text-center text-xs font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 disabled:cursor-default disabled:opacity-50 sm:px-3 sm:text-sm';
+const BUTTON = BUTTON_LAYOUT + ' border-amber-100/25 bg-[#12264f] text-[#fff6df] hover:bg-[#1b366d]';
+const PRIMARY_BUTTON = BUTTON_LAYOUT + ' border-amber-300 bg-amber-300 text-[#09152e] hover:bg-amber-200';
+const MODEL_PANEL = 'min-h-0 overflow-hidden rounded-2xl border border-sky-200/15 bg-[#060e21]';
+
+interface EarthSunMoonExperimentsViewProps {
+  activeGrade: SupportedGrade;
+  onBack: () => void;
+}
+
+function readProgress(saved: MissionProgress | null | undefined) {
+  return {
+    completed: (saved?.selections.selectedDoorIds ?? []).filter(
+      (id): id is ActiveExperimentId => ACTIVE_EXPERIMENTS.some((experiment) => experiment.id === id),
+    ),
+    phases: (saved?.selections.matchedVocabularyIds ?? []).filter(
+      (id): id is MoonPhaseId => MOON_PHASES.some((phase) => phase.id === id),
+    ),
+  };
+}
+
+export function EarthSunMoonExperimentsView({ activeGrade, onBack }: EarthSunMoonExperimentsViewProps) {
   const campus = useOptionalCampus();
-
-  // Yerel öğrenci profilinden kayıtlı deney ilerlemesini yükle
-  const [completedExperiments, setCompletedExperiments] = useState<ActiveExperimentId[]>(() => {
-    const saved = campus?.getMissionProgress(ACTIVE_DISCOVERY_MISSION_ID, activeGrade);
-    return (saved?.selections.selectedDoorIds ?? []).filter(isValidExperimentId);
-  });
-
-  const [activeExpId, setActiveExpId] = useState<ActiveExperimentId>('exp-sunlight');
-
-  // --- DENEY 1 DURUMU (Güneş'in Işığı) ---
-  const [exp1Predicted, setExp1Predicted] = useState(false);
-  const [exp1PredictFeedback, setExp1PredictFeedback] = useState<{
-    text: string;
-    isCorrect: boolean;
-  } | null>(null);
-  const [exp1LightOn, setExp1LightOn] = useState(false);
-  const [exp1ViewAngle, setExp1ViewAngle] = useState(0); // 0 = Önden/Yandan
-  const [exp1LitPin, setExp1LitPin] = useState<MarkedRegionPin | null>(null);
-  const [exp1DarkPin, setExp1DarkPin] = useState<MarkedRegionPin | null>(null);
-  const [exp1MarkFeedback, setExp1MarkFeedback] = useState<string | null>(null);
-  const [exp1ExplainFeedback, setExp1ExplainFeedback] = useState<{
-    text: string;
-    isCorrect: boolean;
-  } | null>(null);
-  const [exp1Explained, setExp1Explained] = useState(false);
-
-  // --- DENEY 2 DURUMU (Gündüz ve Gece) ---
-  const [exp2Predicted, setExp2Predicted] = useState(false);
-  const [exp2PredictFeedback, setExp2PredictFeedback] = useState<{
-    text: string;
-    isCorrect: boolean;
-  } | null>(null);
-  const [exp2RotY, setExp2RotY] = useState(INITIAL_DAY_NIGHT_ROT_Y);
-  const [exp2Spinning, setExp2Spinning] = useState(false);
-  const [exp2CreatedDay, setExp2CreatedDay] = useState(false);
-  const [exp2CreatedNight, setExp2CreatedNight] = useState(false);
-  const [exp2ExplainFeedback, setExp2ExplainFeedback] = useState<{
-    text: string;
-    isCorrect: boolean;
-  } | null>(null);
-  const [exp2Explained, setExp2Explained] = useState(false);
-
-  // --- DENEY 3 DURUMU (Ay'ın Evreleri) ---
-  const [exp3Predicted, setExp3Predicted] = useState(false);
-  const [exp3PredictFeedback, setExp3PredictFeedback] = useState<{
-    text: string;
-    isCorrect: boolean;
-  } | null>(null);
-  const [exp3PhaseAngleDeg, setExp3PhaseAngleDeg] = useState(38); // Ara konumda başlar; öğrenci hareket ettirir
-  const [exp3HasMovedMoon, setExp3HasMovedMoon] = useState(false);
-  const [exp3ObservedPhases, setExp3ObservedPhases] = useState<MoonPhaseId[]>(() => {
-    const saved = campus?.getMissionProgress(ACTIVE_DISCOVERY_MISSION_ID, activeGrade);
-    return (saved?.selections.matchedVocabularyIds ?? []).filter(isValidMoonPhaseId);
-  });
-  const [exp3ExplainFeedback, setExp3ExplainFeedback] = useState<{
-    text: string;
-    isCorrect: boolean;
-  } | null>(null);
-  const [exp3Explained, setExp3Explained] = useState(false);
-
-  const persistProgress = useCallback(
-    (nextCompleted: ActiveExperimentId[], nextPhases: MoonPhaseId[]) => {
-      if (!campus) return;
-      const exp1Done = nextCompleted.includes('exp-sunlight');
-      const exp2Done = nextCompleted.includes('exp-day-night');
-      const exp3Done = nextCompleted.includes('exp-moon-phases');
-      const requiredDone =
-        activeGrade === 2 ? exp1Done && exp2Done : exp1Done && exp2Done && exp3Done;
-
-      const completedStages: MissionStageId[] = [];
-      if (nextCompleted.length > 0) completedStages.push('kesfet');
-      if (requiredDone) completedStages.push('ogren');
-
-      const existing = campus.getMissionProgress(ACTIVE_DISCOVERY_MISSION_ID, activeGrade);
-      const progress: MissionProgress = {
-        missionId: ACTIVE_DISCOVERY_MISSION_ID,
-        missionVersion: ACTIVE_DISCOVERY_MISSION_VERSION,
-        grade: activeGrade,
-        currentStage: requiredDone ? 'ogren' : 'kesfet',
-        completedStages,
-        selections: {
-          selectedDoorIds: nextCompleted,
-          inspectedCampusGate: requiredDone,
-          observationNotes: {},
-          matchedVocabularyIds: nextPhases,
-          matchedExampleSentence: requiredDone,
-          doorName: 'Dünya, Güneş ve Ay — Aktif Keşif',
-          writtenText: '',
-          usedEnglishWords: [],
-        },
-        draftArtifactId: null,
-        selfEvaluation: null,
-        completed: requiredDone,
-        completedAt: requiredDone ? (existing?.completedAt ?? new Date().toISOString()) : null,
-        updatedAt: new Date().toISOString(),
-      };
-      campus.saveMissionProgress(progress);
-    },
-    [campus, activeGrade],
+  const [progress, setProgress] = useState(() =>
+    readProgress(campus?.getMissionProgress(ACTIVE_DISCOVERY_MISSION_ID, activeGrade)),
   );
+  const progressRef = useRef(progress);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [replay, setReplay] = useState(0);
+  const active = ACTIVE_EXPERIMENTS[activeIndex];
+  const backRef = useRef<HTMLButtonElement>(null);
 
-  const markExperimentCompleted = useCallback(
-    (expId: ActiveExperimentId, phasesOverride?: MoonPhaseId[]) => {
-      setCompletedExperiments((prev) => {
-        const next = prev.includes(expId) ? prev : [...prev, expId];
-        persistProgress(next, phasesOverride ?? exp3ObservedPhases);
-        return next;
-      });
-    },
-    [exp3ObservedPhases, persistProgress],
-  );
-
-  // Deney 2 dönme güncellemesi (sürükleme, düğmeler ve sürekli dönme için tek fonksiyon)
-  const exp2RotRef = useRef(INITIAL_DAY_NIGHT_ROT_Y);
-
-  const applyExp2Rotation = useCallback((nextRotY: number) => {
-    exp2RotRef.current = nextRotY;
-    setExp2RotY(nextRotY);
-    const proj = projectSurfacePoint(
-      TURKEY_COORDS.lonDeg,
-      TURKEY_COORDS.latDeg,
-      nextRotY,
-      EARTH_TILT_X,
-    );
-    const dotLight = -proj.nx; // Güneş solda (-1, 0, 0)
-    if (dotLight > 0.28) {
-      setExp2CreatedDay(true);
-    } else if (dotLight < -0.28) {
-      setExp2CreatedNight(true);
-    }
+  useEffect(() => {
+    backRef.current?.focus({ preventScroll: true });
   }, []);
 
-  // Deney 2 sürekli eksen dönüşü (requestAnimationFrame)
-  useEffect(() => {
-    if (!exp2Spinning || activeExpId !== 'exp-day-night') return;
-    let rafId = 0;
-    let lastTime = performance.now();
-
-    const tick = (now: number) => {
-      const dt = Math.min(0.08, (now - lastTime) / 1000);
-      lastTime = now;
-      // Dünya batıdan doğuya döner (ön yüz soldan sağa doğru ilerler)
-      const nextRot = exp2RotRef.current - dt * 0.85;
-      applyExp2Rotation(nextRot);
-      rafId = window.requestAnimationFrame(tick);
-    };
-
-    rafId = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(rafId);
-  }, [activeExpId, applyExp2Rotation, exp2Spinning]);
-
-  const activeExperiment = getActiveExperiment(activeExpId);
-  const gradePack = activeExperiment.byGrade[activeGrade];
-
-  const handleSelectExperiment = (id: ActiveExperimentId) => {
-    onStopSpeech();
-    setExp2Spinning(false);
-    setActiveExpId(id);
-  };
-
-  const handleRetryCurrentExperiment = () => {
-    onStopSpeech();
-    if (activeExpId === 'exp-sunlight') {
-      setExp1Predicted(false);
-      setExp1PredictFeedback(null);
-      setExp1LightOn(false);
-      setExp1ViewAngle(0);
-      setExp1LitPin(null);
-      setExp1DarkPin(null);
-      setExp1MarkFeedback(null);
-      setExp1ExplainFeedback(null);
-      setExp1Explained(false);
-    } else if (activeExpId === 'exp-day-night') {
-      setExp2Predicted(false);
-      setExp2PredictFeedback(null);
-      setExp2Spinning(false);
-      exp2RotRef.current = INITIAL_DAY_NIGHT_ROT_Y;
-      setExp2RotY(INITIAL_DAY_NIGHT_ROT_Y);
-      setExp2CreatedDay(false);
-      setExp2CreatedNight(false);
-      setExp2ExplainFeedback(null);
-      setExp2Explained(false);
-    } else {
-      setExp3Predicted(false);
-      setExp3PredictFeedback(null);
-      setExp3PhaseAngleDeg(38);
-      setExp3HasMovedMoon(false);
-      setExp3ObservedPhases([]);
-      setExp3ExplainFeedback(null);
-      setExp3Explained(false);
+  const recordObservation = useCallback((experiment: ActiveExperimentId, phase?: MoonPhaseId) => {
+    const existing = campus?.getMissionProgress(ACTIVE_DISCOVERY_MISSION_ID, activeGrade);
+    const stored = readProgress(existing);
+    const current = progressRef.current;
+    const phases = [...new Set([...current.phases, ...stored.phases])];
+    const completed = [...new Set([...current.completed, ...stored.completed])];
+    if (phase && !phases.includes(phase)) phases.push(phase);
+    if ((experiment !== 'exp-moon-phases' || phases.length >= 2) && !completed.includes(experiment)) {
+      completed.push(experiment);
     }
-  };
+    if (phases.length === current.phases.length && completed.length === current.completed.length) return;
 
-  const speakIfEnabled = useCallback(
-    (text: string) => {
-      if (speechEnabled) {
-        onSpeak(text);
-      }
-    },
-    [onSpeak, speechEnabled],
-  );
+    const next = { completed, phases };
+    progressRef.current = next;
+    setProgress(next);
 
-  // Mevcut deneyin aktif aşamasını hesapla
-  const currentInquiryStage: InquiryStageId = useMemo(() => {
-    if (activeExpId === 'exp-sunlight') {
-      if (!exp1Predicted) return 'predict';
-      if (!exp1LightOn) return 'experiment';
-      if (!exp1LitPin || !exp1DarkPin) return 'observe';
-      return 'explain';
-    }
-    if (activeExpId === 'exp-day-night') {
-      if (!exp2Predicted) return 'predict';
-      if (!exp2CreatedDay || !exp2CreatedNight) return 'experiment';
-      return 'explain';
-    }
-    if (!exp3Predicted) return 'predict';
-    if (!exp3HasMovedMoon) return 'experiment';
-    if (exp3ObservedPhases.length < 2) return 'observe';
-    return 'explain';
-  }, [
-    activeExpId,
-    exp1DarkPin,
-    exp1LightOn,
-    exp1LitPin,
-    exp1Predicted,
-    exp2CreatedDay,
-    exp2CreatedNight,
-    exp2Predicted,
-    exp3HasMovedMoon,
-    exp3ObservedPhases.length,
-    exp3Predicted,
-  ]);
-
-  const currentStageIndex = INQUIRY_STEPS.findIndex((s) => s.id === currentInquiryStage);
-  const isCurrentExpDone =
-    (activeExpId === 'exp-sunlight' && exp1Explained) ||
-    (activeExpId === 'exp-day-night' && exp2Explained) ||
-    (activeExpId === 'exp-moon-phases' && exp3Explained) ||
-    completedExperiments.includes(activeExpId);
-
-  // --- DENEY 1 ETKİLEŞİMLERİ ---
-  const exp1LightDirection = useMemo(
-    () => ({
-      x: -Math.cos(exp1ViewAngle),
-      y: 0,
-      z: -Math.sin(exp1ViewAngle),
-    }),
-    [exp1ViewAngle],
-  );
-
-  const exp1SurfacePins = useMemo<SurfacePin[]>(() => {
-    const pins: SurfacePin[] = [];
-    if (exp1LitPin) {
-      pins.push({
-        id: 'lit',
-        lonDeg: exp1LitPin.lonDeg,
-        latDeg: exp1LitPin.latDeg,
-        label: 'Aydınlık',
-        color: '#facc15',
-      });
-    }
-    if (exp1DarkPin) {
-      pins.push({
-        id: 'dark',
-        lonDeg: exp1DarkPin.lonDeg,
-        latDeg: exp1DarkPin.latDeg,
-        label: 'Karanlık',
-        color: '#60a5fa',
-      });
-    }
-    return pins;
-  }, [exp1DarkPin, exp1LitPin]);
-
-  const handleExp1SurfaceClick = (hit: SurfaceClickHit) => {
-    if (!exp1Predicted) {
-      setExp1MarkFeedback('Önce 1. adımda tahminini seç.');
-      return;
-    }
-    if (!exp1LightOn) {
-      setExp1MarkFeedback("Önce 'Işığı Aç' düğmesine basarak Güneş ışığını aç.");
-      return;
-    }
-
-    if (!exp1LitPin) {
-      if (hit.dotLight > 0.08) {
-        setExp1LitPin({ lonDeg: hit.lonDeg, latDeg: hit.latDeg });
-        const msg = 'Harika! Aydınlık bölgeyi işaretledin. Şimdi karanlık (gölgeli) bölgeye dokun.';
-        setExp1MarkFeedback(msg);
-        speakIfEnabled(msg);
-      } else {
-        const msg =
-          'Dokunduğun yer karanlık bölgede kaldı. Güneş’e bakan parlak tarafa dokunmayı dene!';
-        setExp1MarkFeedback(msg);
-        speakIfEnabled(msg);
-      }
-      return;
-    }
-
-    if (!exp1DarkPin) {
-      if (hit.dotLight < -0.08) {
-        setExp1DarkPin({ lonDeg: hit.lonDeg, latDeg: hit.latDeg });
-        const msg =
-          'Süper! Hem aydınlık hem karanlık bölgeyi doğru işaretledin. Şimdi 4. adımda gözlemini açıkla.';
-        setExp1MarkFeedback(msg);
-        speakIfEnabled(msg);
-      } else {
-        const msg =
-          'Burası aydınlık tarafta. Güneş ışığı almayan koyu (karanlık) bölgeye dokunmayı dene!';
-        setExp1MarkFeedback(msg);
-        speakIfEnabled(msg);
-      }
-      return;
-    }
-
-    // Her ikisi de işaretlendiyse öğrenci tıkladığı bölgeyi güncelleyebilir
-    if (hit.dotLight > 0.08) {
-      setExp1LitPin({ lonDeg: hit.lonDeg, latDeg: hit.latDeg });
-      setExp1MarkFeedback('Aydınlık bölge işareti güncellendi.');
-    } else if (hit.dotLight < -0.08) {
-      setExp1DarkPin({ lonDeg: hit.lonDeg, latDeg: hit.latDeg });
-      setExp1MarkFeedback('Karanlık bölge işareti güncellendi.');
-    }
-  };
-
-  // --- DENEY 2 HESAPLAMALARI ---
-  const turkeyProj = projectSurfacePoint(
-    TURKEY_COORDS.lonDeg,
-    TURKEY_COORDS.latDeg,
-    exp2RotY,
-    EARTH_TILT_X,
-  );
-  const turkeyDotLight = -turkeyProj.nx;
-  const turkeyStatus: 'day' | 'night' | 'twilight' =
-    turkeyDotLight > 0.28 ? 'day' : turkeyDotLight < -0.28 ? 'night' : 'twilight';
-
-  const exp2SurfacePins = useMemo<SurfacePin[]>(
-    () => [
-      {
-        id: 'turkey',
-        lonDeg: TURKEY_COORDS.lonDeg,
-        latDeg: TURKEY_COORDS.latDeg,
-        label: TURKEY_COORDS.label,
-        color: '#ef4444',
-        showWhenBack: true,
+    const requiredDone = completed.includes('exp-sunlight') && completed.includes('exp-day-night') &&
+      (activeGrade === 2 || completed.includes('exp-moon-phases'));
+    const completedStages: MissionStageId[] = [];
+    if (completed.length) completedStages.push('kesfet');
+    if (requiredDone) completedStages.push('ogren');
+    campus?.saveMissionProgress({
+      missionId: ACTIVE_DISCOVERY_MISSION_ID,
+      missionVersion: ACTIVE_DISCOVERY_MISSION_VERSION,
+      grade: activeGrade,
+      currentStage: requiredDone ? 'ogren' : 'kesfet',
+      completedStages,
+      selections: {
+        selectedDoorIds: completed,
+        inspectedCampusGate: requiredDone,
+        observationNotes: existing?.selections.observationNotes ?? {},
+        matchedVocabularyIds: phases,
+        matchedExampleSentence: requiredDone,
+        doorName: 'Dünya, Güneş ve Ay — Aktif Keşif',
+        writtenText: existing?.selections.writtenText ?? '',
+        usedEnglishWords: existing?.selections.usedEnglishWords ?? [],
       },
-    ],
-    [],
-  );
-
-  // --- DENEY 3 HESAPLAMALARI ---
-  const detectedPhase = detectMoonPhaseAtAngle(exp3PhaseAngleDeg);
-  const moonPhaseAlpha = (exp3PhaseAngleDeg * Math.PI) / 180;
-  const moonEarthViewLightDir = useMemo(
-    () => ({
-      x: Math.sin(moonPhaseAlpha),
-      y: 0,
-      z: -Math.cos(moonPhaseAlpha),
-    }),
-    [moonPhaseAlpha],
-  );
-
-  const handleMoveMoonAngle = (nextDeg: number) => {
-    setExp3PhaseAngleDeg(normalizeAngleDeg(nextDeg));
-    setExp3HasMovedMoon(true);
-  };
-
-  const handleSaveDetectedPhase = () => {
-    if (!detectedPhase) return;
-    if (exp3ObservedPhases.includes(detectedPhase.id)) return;
-    const next = [...exp3ObservedPhases, detectedPhase.id];
-    setExp3ObservedPhases(next);
-    persistProgress(completedExperiments, next);
-    speakIfEnabled(`${detectedPhase.label} kaydedildi. ${detectedPhase.earthViewSummary}`);
-  };
-
-  const handlePredictOption = (option: ExperimentChoiceOption) => {
-    speakIfEnabled(option.feedback);
-    if (activeExpId === 'exp-sunlight') {
-      setExp1PredictFeedback({ text: option.feedback, isCorrect: option.isCorrect });
-      if (option.isCorrect) setExp1Predicted(true);
-    } else if (activeExpId === 'exp-day-night') {
-      setExp2PredictFeedback({ text: option.feedback, isCorrect: option.isCorrect });
-      if (option.isCorrect) setExp2Predicted(true);
-    } else {
-      setExp3PredictFeedback({ text: option.feedback, isCorrect: option.isCorrect });
-      if (option.isCorrect) setExp3Predicted(true);
-    }
-  };
-
-  const handleExplainOption = (option: ExperimentChoiceOption) => {
-    if (activeExpId === 'exp-sunlight') {
-      setExp1ExplainFeedback({ text: option.feedback, isCorrect: option.isCorrect });
-      if (option.isCorrect) {
-        setExp1Explained(true);
-        markExperimentCompleted('exp-sunlight');
-        speakIfEnabled(activeExperiment.completionFeedback);
-      } else {
-        speakIfEnabled(option.feedback);
-      }
-    } else if (activeExpId === 'exp-day-night') {
-      setExp2ExplainFeedback({ text: option.feedback, isCorrect: option.isCorrect });
-      if (option.isCorrect) {
-        setExp2Spinning(false);
-        setExp2Explained(true);
-        markExperimentCompleted('exp-day-night');
-        speakIfEnabled(activeExperiment.completionFeedback);
-      } else {
-        speakIfEnabled(option.feedback);
-      }
-    } else {
-      setExp3ExplainFeedback({ text: option.feedback, isCorrect: option.isCorrect });
-      if (option.isCorrect) {
-        setExp3Explained(true);
-        markExperimentCompleted('exp-moon-phases', exp3ObservedPhases);
-        speakIfEnabled(activeExperiment.completionFeedback);
-      } else {
-        speakIfEnabled(option.feedback);
-      }
-    }
-  };
-
-  const activePredictDone =
-    activeExpId === 'exp-sunlight'
-      ? exp1Predicted
-      : activeExpId === 'exp-day-night'
-        ? exp2Predicted
-        : exp3Predicted;
-
-  const activePredictFeedback =
-    activeExpId === 'exp-sunlight'
-      ? exp1PredictFeedback
-      : activeExpId === 'exp-day-night'
-        ? exp2PredictFeedback
-        : exp3PredictFeedback;
-
-  const activeExplainUnlocked =
-    activeExpId === 'exp-sunlight'
-      ? exp1Predicted && exp1LightOn && Boolean(exp1LitPin) && Boolean(exp1DarkPin)
-      : activeExpId === 'exp-day-night'
-        ? exp2Predicted && exp2CreatedDay && exp2CreatedNight
-        : exp3Predicted && exp3HasMovedMoon && exp3ObservedPhases.length >= 2;
-
-  const activeExplainDone =
-    activeExpId === 'exp-sunlight'
-      ? exp1Explained
-      : activeExpId === 'exp-day-night'
-        ? exp2Explained
-        : exp3Explained;
-
-  const activeExplainFeedback =
-    activeExpId === 'exp-sunlight'
-      ? exp1ExplainFeedback
-      : activeExpId === 'exp-day-night'
-        ? exp2ExplainFeedback
-        : exp3ExplainFeedback;
-
-  const allRequiredDone =
-    activeGrade === 2
-      ? completedExperiments.includes('exp-sunlight') &&
-        completedExperiments.includes('exp-day-night')
-      : ACTIVE_EXPERIMENTS.every((e) => completedExperiments.includes(e.id));
-
-  const nextExperimentId: ActiveExperimentId | null =
-    activeExpId === 'exp-sunlight'
-      ? 'exp-day-night'
-      : activeExpId === 'exp-day-night'
-        ? 'exp-moon-phases'
-        : null;
+      draftArtifactId: existing?.draftArtifactId ?? null,
+      selfEvaluation: existing?.selfEvaluation ?? null,
+      completed: requiredDone,
+      completedAt: requiredDone ? (existing?.completedAt ?? new Date().toISOString()) : null,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [activeGrade, campus]);
 
   return (
-    <div data-testid="active-discovery-experiments" className="space-y-4">
-      {/* Üç Aktif Deney Seçim Çubuğu */}
-      <nav
-        aria-label="Aktif keşif deneyleri"
-        className="grid grid-cols-1 gap-2 sm:grid-cols-3"
-      >
-        {ACTIVE_EXPERIMENTS.map((exp) => {
-          const isSelected = exp.id === activeExpId;
-          const isCompleted = completedExperiments.includes(exp.id);
-          const isOptional = Boolean(exp.byGrade[activeGrade].optionalForGrade);
+    <div
+      data-testid="active-discovery-experiments"
+      className="flex h-full min-h-0 flex-col gap-2 overflow-hidden bg-[#0b1834] pt-[max(0.375rem,env(safe-area-inset-top))] pr-[max(0.375rem,env(safe-area-inset-right))] pb-[max(0.375rem,env(safe-area-inset-bottom))] pl-[max(0.375rem,env(safe-area-inset-left))]"
+    >
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-1.5">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <button ref={backRef} type="button" onClick={onBack} className={BUTTON}>
+            <ArrowLeft className="size-4 shrink-0" aria-hidden="true" /> Geri Dön
+          </button>
+          <h2 id="active-experiments-title" className="sr-only md:not-sr-only md:text-sm md:font-extrabold md:text-amber-50">
+            {ACTIVE_DISCOVERY_UI_COPY.sectionTabLabel}
+          </h2>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <FullscreenButton showText={false} />
+          <button type="button" className={BUTTON} onClick={() => setReplay((value) => value + 1)}>
+            <RotateCcw className="size-4 shrink-0" aria-hidden="true" /> {ACTIVE_DISCOVERY_UI_COPY.resetLabel}
+          </button>
+        </div>
+      </header>
 
-          return (
-            <button
-              key={exp.id}
-              type="button"
-              data-testid={`experiment-tab-${exp.id}`}
-              onClick={() => handleSelectExperiment(exp.id)}
-              className={`flex min-h-[54px] cursor-pointer items-center justify-between gap-2 rounded-2xl border px-3.5 py-2 text-left transition-all ${
-                isSelected
-                  ? 'border-[#f6dc9b] bg-[#1a3469] shadow-lg ring-2 ring-[#f6dc9b]/35'
-                  : 'border-[#d8a94c]/30 bg-[#0d1d3f]/90 hover:border-[#f3cc7a]/60 hover:bg-[#142b59]'
-              }`}
-            >
-              <div className="min-w-0">
-                <span className="block truncate text-xs font-extrabold text-[#fff7e2] sm:text-sm">
-                  {exp.shortTitle}
-                </span>
-                <span className="block truncate text-[11px] text-[#bfd0ee]">
-                  {isOptional ? ACTIVE_DISCOVERY_UI_COPY.optionalGrade2Badge : exp.title}
-                </span>
-              </div>
-              {isCompleted ? (
-                <CheckCircle2
-                  className="h-5 w-5 shrink-0 text-emerald-400"
-                  aria-label="Tamamlandı"
-                />
-              ) : (
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#f3cc7a]/40 bg-[#0a1733] text-xs font-bold text-[#f7df9d]">
-                  {exp.order}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      <nav aria-label="Aktif keşif deneyleri" className="grid shrink-0 grid-cols-3 gap-1.5">
+        {ACTIVE_EXPERIMENTS.map((experiment, index) => (
+          <button
+            key={experiment.id}
+            type="button"
+            data-testid={'experiment-tab-' + experiment.id}
+            aria-pressed={activeIndex === index}
+            onClick={() => setActiveIndex(index)}
+            className={BUTTON_LAYOUT + ' leading-tight text-amber-50 ' + (activeIndex === index
+              ? 'border-amber-200 bg-[#233c71]'
+              : 'border-amber-100/25 bg-[#12264f] hover:bg-[#1b366d]')}
+          >
+            <span>{experiment.shortTitle}</span>
+            {progress.completed.includes(experiment.id) && (
+              <CheckCircle2 className="size-3.5 shrink-0 text-emerald-300" aria-label="Tamamlandı" />
+            )}
+          </button>
+        ))}
       </nav>
 
-      {/* Üst Rehber Çubuğu + Aşama İzleyici */}
-      <div className="rounded-2xl border border-[#d8a94c]/35 bg-[#102247]/95 p-3.5 sm:p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-extrabold text-[#fff8e6] sm:text-lg">
-                {activeExperiment.order}. {activeExperiment.title}
-              </h3>
-              {gradePack.optionalForGrade && (
-                <span className="rounded-full border border-sky-300/40 bg-sky-950/80 px-2.5 py-0.5 text-[11px] font-bold text-sky-200">
-                  İsteğe Bağlı
-                </span>
-              )}
-            </div>
-            <p className="text-xs font-semibold text-[#f7df9d] sm:text-sm">
-              Merak Sorusu: {activeExperiment.curiosityQuestion}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onSpeak(activeExperiment.voiceGuide)}
-              className="inline-flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-xl border border-[#f6dc9b]/50 bg-[#19356b] px-3 py-1.5 text-xs font-bold text-[#fff5d6] hover:bg-[#23488f]"
-            >
-              <Volume2
-                className={`h-4 w-4 text-[#f6dc9b] ${isSpeaking ? 'animate-pulse' : ''}`}
-                aria-hidden="true"
-              />
-              <span>{ACTIVE_DISCOVERY_UI_COPY.listenGuideLabel}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleRetryCurrentExperiment}
-              className="inline-flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-xl border border-[#d8a94c]/40 bg-[#0c1c3d] px-3 py-1.5 text-xs font-bold text-[#f7df9d] hover:bg-[#173063]"
-            >
-              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>{ACTIVE_DISCOVERY_UI_COPY.retryExperimentLabel}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Tahmin Et -> Deney Yap -> Gözlemle -> Açıkla Adım Çubuğu */}
-        <ol className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-          {INQUIRY_STEPS.map((step, idx) => {
-            const done = isCurrentExpDone || idx < currentStageIndex;
-            const current = !isCurrentExpDone && idx === currentStageIndex;
-            return (
-              <li
-                key={step.id}
-                className={`flex items-center justify-center gap-1.5 rounded-xl border px-2 py-1.5 text-center text-[11px] font-bold sm:text-xs ${
-                  done
-                    ? 'border-emerald-400/50 bg-emerald-950/60 text-emerald-200'
-                    : current
-                      ? 'border-[#f6dc9b] bg-[#1b3870] text-[#fff8e6]'
-                      : 'border-[#d8a94c]/20 bg-[#09152e]/80 text-[#9cb2da]'
-                }`}
-              >
-                {done && <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />}
-                <span>{step.label}</span>
-              </li>
-            );
-          })}
-        </ol>
-
-        {speechNotice && (
-          <div
-            role="status"
-            className="mt-2.5 flex items-center gap-2 rounded-xl border border-amber-400/35 bg-amber-950/50 px-3 py-1.5 text-xs text-amber-100"
-          >
-            <VolumeX className="h-4 w-4 shrink-0 text-amber-300" aria-hidden="true" />
-            <span>{speechNotice}</span>
-          </div>
+      <section
+        key={active.id + '-' + replay}
+        aria-label={active.title}
+        className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain"
+      >
+        {active.id === 'exp-sunlight' && <SunlightExperiment onObserved={() => recordObservation('exp-sunlight')} />}
+        {active.id === 'exp-day-night' && <DayNightExperiment onObserved={() => recordObservation('exp-day-night')} />}
+        {active.id === 'exp-moon-phases' && (
+          <MoonPhasesExperiment onObserved={(phase) => recordObservation('exp-moon-phases', phase)} />
         )}
-      </div>
+      </section>
+    </div>
+  );
+}
 
-      {/* Ana Deney Çalışma Alanı (Sol: Etkileşimli Bilimsel Model, Sağ: Yönergeler & Sorular) */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        {/* SOL PANEL: ETKİLEŞİMLİ DENEY MODELİ */}
-        <section
-          aria-label={`${activeExperiment.title} etkileşimli modeli`}
-          className="flex flex-col justify-between rounded-3xl border border-[#d8a94c]/30 bg-[#071229] p-4 lg:col-span-7"
-        >
-          {/* DENEY 1 MODELİ */}
-          {activeExpId === 'exp-sunlight' && (
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <span className="font-bold text-[#f7df9d]">
-                  {!exp1LightOn
-                    ? 'Güneş ışığı henüz kapalı — Işığı Aç düğmesini kullan'
-                    : !exp1LitPin
-                      ? 'Adım: Dünya üzerinde AYDINLIK (parlak) bölgeye dokun'
-                      : !exp1DarkPin
-                        ? 'Adım: Şimdi KARANLIK (gölgeli) bölgeye dokun'
-                        : 'Aydınlık ve karanlık bölgeler işaretlendi!'}
-                </span>
-                <span className="rounded-full border border-sky-300/30 bg-sky-950/75 px-2.5 py-0.5 text-[11px] font-semibold text-sky-200">
-                  {ACTIVE_DISCOVERY_UI_COPY.representativeBadge}
-                </span>
+function useModelSpace<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [space, setSpace] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    function updateSize(width: number, height: number) {
+      const w = Math.floor(width);
+      const h = Math.floor(height);
+      setSpace((previous) => previous.width === w && previous.height === h ? previous : { width: w, height: h });
+    }
+
+    if (typeof ResizeObserver === 'undefined') {
+      const measure = () => updateSize(element.clientWidth, element.clientHeight);
+      measure();
+      window.addEventListener('resize', measure);
+      return () => window.removeEventListener('resize', measure);
+    }
+
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) updateSize(entry.contentRect.width, entry.contentRect.height);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return { ref, ...space };
+}
+
+function clampZoom(value: number) {
+  return Math.max(0.76, Math.min(1.42, value));
+}
+
+function useExperimentZoom() {
+  const [zoom, setZoom] = useState(1);
+  const onPinchZoom = useCallback((scale: number) => setZoom((value) => clampZoom(value * scale)), []);
+  const onZoomWheel = useCallback((amount: number) => setZoom((value) => clampZoom(value + amount)), []);
+  return { zoom, onPinchZoom, onZoomWheel };
+}
+
+type EarthModelProps = Omit<CelestialGlobeCanvasProps, 'bodyId' | 'size' | 'className' | 'displaySize'>;
+
+function SunEarthModels({ isLightOn, sunRotation, ...earth }: EarthModelProps & { sunRotation: number }) {
+  const { ref, width, height } = useModelSpace<HTMLDivElement>();
+  const earthSize = Math.min(width * 0.69, height - 6);
+  const sunSize = Math.min(width * 0.18, earthSize * 0.42);
+  return (
+    <div ref={ref} className={MODEL_PANEL + ' flex min-h-36 flex-1 items-center justify-center gap-[2%] landscape:min-h-28'}>
+      {earthSize > 0 && (
+        <>
+          <CelestialGlobeCanvas
+            bodyId="sun"
+            size={Math.max(1, Math.round(Math.min(256, sunSize)))}
+            rotY={sunRotation}
+            rotX={0.08}
+            showStarfield={false}
+            ariaLabel="Sabit Güneş modeli"
+            className={'shrink-0 transition-opacity ' +
+              (isLightOn ? 'drop-shadow-[0_0_24px_rgba(251,191,36,0.65)]' : 'opacity-45 grayscale-[35%]')}
+            displaySize={sunSize}
+          />
+          <div aria-hidden="true" className={'flex w-[7%] shrink-0 flex-col justify-center gap-1.5 ' + (isLightOn ? '' : 'opacity-20')}>
+            {[0, 1, 2].map((ray) => (
+              <div key={ray} className="flex items-center">
+                <div className="h-px flex-1 bg-amber-300" />
+                <ArrowRight className="-ml-1 size-3 shrink-0 text-amber-300" />
               </div>
-
-              {/* Sabit Güneş + Işık Işınları + 3B Dünya */}
-              <div className="relative flex flex-col items-center justify-center gap-3 rounded-2xl border border-[#f6dc9b]/20 bg-[#050d20] p-3 sm:flex-row sm:gap-4">
-                {/* Sabit Güneş */}
-                <div className="flex flex-col items-center gap-1">
-                  <div
-                    className={`rounded-full transition-all duration-300 ${
-                      exp1LightOn
-                        ? 'opacity-100 drop-shadow-[0_0_24px_rgba(251,191,36,0.75)]'
-                        : 'opacity-45 grayscale-[35%]'
-                    }`}
-                  >
-                    <CelestialGlobeCanvas
-                      bodyId="sun"
-                      size={92}
-                      rotY={0.2}
-                      rotX={0.08}
-                      showStarfield={false}
-                      ariaLabel="Sabit Güneş modeli"
-                    />
-                  </div>
-                  <span className="text-xs font-extrabold text-amber-200">Güneş (Sabit)</span>
-                </div>
-
-                {/* Yönlü Işık Işınları */}
-                <div
-                  aria-hidden="true"
-                  className={`flex flex-row items-center gap-1 transition-opacity duration-300 sm:flex-col sm:gap-2 ${
-                    exp1LightOn ? 'opacity-100' : 'opacity-15'
-                  }`}
-                >
-                  {[0, 1, 2].map((ray) => (
-                    <div key={ray} className="flex items-center">
-                      <div className="h-0.5 w-8 bg-gradient-to-r from-amber-300 to-yellow-200 sm:w-10" />
-                      <ArrowRight className="-ml-1 h-4 w-4 text-amber-300" />
-                    </div>
-                  ))}
-                </div>
-
-                {/* Etkileşimli 3B Dünya (Yönlü Işık + Tıklayarak İşaretleme) */}
-                <div className="flex flex-col items-center">
-                  <CelestialGlobeCanvas
-                    bodyId="earth"
-                    size={240}
-                    rotY={-0.35 + exp1ViewAngle}
-                    rotX={0.14}
-                    interactive
-                    showStarfield
-                    lightingMode="directional"
-                    lightDirection={exp1LightDirection}
-                    isLightOn={exp1LightOn}
-                    surfacePins={exp1SurfacePins}
-                    onRotate={(dY) => setExp1ViewAngle((prev) => prev + dY)}
-                    onSurfaceClick={handleExp1SurfaceClick}
-                    ariaLabel="Güneş ışığını alan Dünya modeli — aydınlık veya karanlık bölgeye dokun"
-                    className="h-[220px] w-[220px] rounded-2xl border border-[#f6dc9b]/25 sm:h-[240px] sm:w-[240px]"
-                  />
-                  <span className="mt-1.5 text-[11px] text-[#bfd0ee]">
-                    Bakış açısını değiştirmek için sürükle; işaretlemek için Dünya’ya dokun
-                  </span>
-                </div>
-              </div>
-
-              {/* Işığı Aç ve Bakış Açısı Kontrolleri */}
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <button
-                  type="button"
-                  data-testid="exp1-turn-light-btn"
-                  disabled={!exp1Predicted || exp1LightOn}
-                  onClick={() => {
-                    setExp1LightOn(true);
-                    setExp1MarkFeedback(
-                      'Güneş ışığı açıldı! Şimdi Dünya üzerinde önce aydınlık, sonra karanlık bölgeye dokun.',
-                    );
-                    speakIfEnabled(activeExperiment.voiceGuide);
-                  }}
-                  className={`inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition-all sm:text-sm ${
-                    exp1LightOn
-                      ? 'border border-emerald-400/50 bg-emerald-900/60 text-emerald-200'
-                      : exp1Predicted
-                        ? 'bg-amber-400 text-[#09152e] shadow-lg hover:bg-amber-300'
-                        : 'cursor-not-allowed border border-[#d8a94c]/25 bg-[#12244a] text-[#8fa5cf] opacity-60'
-                  }`}
-                >
-                  <Lightbulb className="h-4 w-4" aria-hidden="true" />
-                  <span>
-                    {exp1LightOn ? 'Güneş Işığı Açık ✓' : ACTIVE_DISCOVERY_UI_COPY.turnOnLightLabel}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setExp1ViewAngle(0)}
-                  className="inline-flex min-h-[42px] cursor-pointer items-center gap-1.5 rounded-xl border border-[#d8a94c]/35 bg-[#12264f] px-3 text-xs font-bold text-[#f8f1dd] hover:bg-[#1b366d]"
-                >
-                  <Compass className="h-3.5 w-3.5 text-[#f6dc9b]" aria-hidden="true" />
-                  <span>Önden Bak</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setExp1ViewAngle(-1.25)}
-                  className="inline-flex min-h-[42px] cursor-pointer items-center gap-1.5 rounded-xl border border-[#d8a94c]/35 bg-[#12264f] px-3 text-xs font-bold text-[#f8f1dd] hover:bg-[#1b366d]"
-                >
-                  <Sun className="h-3.5 w-3.5 text-amber-300" aria-hidden="true" />
-                  <span>Güneş Tarafından</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setExp1ViewAngle(1.25)}
-                  className="inline-flex min-h-[42px] cursor-pointer items-center gap-1.5 rounded-xl border border-[#d8a94c]/35 bg-[#12264f] px-3 text-xs font-bold text-[#f8f1dd] hover:bg-[#1b366d]"
-                >
-                  <Moon className="h-3.5 w-3.5 text-sky-300" aria-hidden="true" />
-                  <span>Karanlık Taraftan</span>
-                </button>
-              </div>
-
-              {/* İşaretleme Durum Çubuğu */}
-              <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
-                <span
-                  className={`rounded-full border px-3 py-1 font-bold ${
-                    exp1LitPin
-                      ? 'border-amber-300/60 bg-amber-500/20 text-amber-100'
-                      : 'border-[#d8a94c]/25 bg-[#0e1e40] text-[#9fb5dc]'
-                  }`}
-                >
-                  {exp1LitPin ? '✓ Aydınlık Bölge İşaretlendi' : '○ Aydınlık Bölge Bekleniyor'}
-                </span>
-                <span
-                  className={`rounded-full border px-3 py-1 font-bold ${
-                    exp1DarkPin
-                      ? 'border-sky-300/60 bg-sky-500/20 text-sky-100'
-                      : 'border-[#d8a94c]/25 bg-[#0e1e40] text-[#9fb5dc]'
-                  }`}
-                >
-                  {exp1DarkPin ? '✓ Karanlık Bölge İşaretlendi' : '○ Karanlık Bölge Bekleniyor'}
-                </span>
-              </div>
-
-              {exp1MarkFeedback && (
-                <p
-                  role="status"
-                  className="rounded-xl border border-[#f6dc9b]/35 bg-[#11254d] px-3 py-2 text-center text-xs font-semibold text-[#fff4d4]"
-                >
-                  {exp1MarkFeedback}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* DENEY 2 MODELİ (Gündüz ve Gece) */}
-          {activeExpId === 'exp-day-night' && (
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <span
-                  data-testid="exp2-turkey-status"
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-extrabold ${
-                    turkeyStatus === 'day'
-                      ? 'border-amber-300/70 bg-amber-500/25 text-amber-100'
-                      : turkeyStatus === 'night'
-                        ? 'border-indigo-300/70 bg-indigo-900/70 text-indigo-100'
-                        : 'border-orange-300/60 bg-orange-950/70 text-orange-100'
-                  }`}
-                >
-                  {turkeyStatus === 'day' ? (
-                    <>
-                      <Sun className="h-4 w-4 text-amber-300" />
-                      <span>Türkiye’de Gündüz</span>
-                    </>
-                  ) : turkeyStatus === 'night' ? (
-                    <>
-                      <Moon className="h-4 w-4 text-sky-300" />
-                      <span>Türkiye’de Gece</span>
-                    </>
-                  ) : (
-                    <span>Türkiye: Alacakaranlık Sınırında (Dünya’yı döndür)</span>
-                  )}
-                </span>
-
-                <span className="rounded-full border border-sky-300/30 bg-sky-950/75 px-2.5 py-0.5 text-[11px] font-semibold text-sky-200">
-                  {ACTIVE_DISCOVERY_UI_COPY.representativeBadge}
-                </span>
-              </div>
-
-              {/* Sabit Güneş + Kendi Ekseni Etrafında Dönen 3B Dünya + Türkiye İşareti */}
-              <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-[#f6dc9b]/20 bg-[#050d20] p-3 sm:flex-row sm:gap-4">
-                <div className="flex flex-col items-center gap-1">
-                  <CelestialGlobeCanvas
-                    bodyId="sun"
-                    size={90}
-                    rotY={0.25}
-                    rotX={0.08}
-                    showStarfield={false}
-                    ariaLabel="Sabit Güneş modeli"
-                  />
-                  <span className="text-xs font-extrabold text-amber-200">Güneş (Sabit)</span>
-                </div>
-
-                <div aria-hidden="true" className="flex flex-row items-center gap-1 sm:flex-col sm:gap-2">
-                  {[0, 1, 2].map((ray) => (
-                    <div key={ray} className="flex items-center">
-                      <div className="h-0.5 w-8 bg-gradient-to-r from-amber-300 to-yellow-200 sm:w-10" />
-                      <ArrowRight className="-ml-1 h-4 w-4 text-amber-300" />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex flex-col items-center">
-                  <CelestialGlobeCanvas
-                    bodyId="earth"
-                    size={240}
-                    rotY={exp2RotY}
-                    rotX={EARTH_TILT_X}
-                    interactive={exp2Predicted}
-                    showStarfield
-                    lightingMode="directional"
-                    lightDirection={{ x: -1, y: 0, z: 0 }}
-                    isLightOn
-                    showAxisLine
-                    surfacePins={exp2SurfacePins}
-                    onRotate={(dY) => {
-                      if (!exp2Predicted) return;
-                      setExp2Spinning(false);
-                      applyExp2Rotation(exp2RotY + dY);
-                    }}
-                    ariaLabel="Kendi ekseni etrafında dönen Dünya modeli ve Türkiye işareti"
-                    className="h-[220px] w-[220px] rounded-2xl border border-[#f6dc9b]/25 sm:h-[240px] sm:w-[240px]"
-                  />
-                  <span className="mt-1.5 text-[11px] text-[#bfd0ee]">
-                    Dünya’yı sürükleyerek veya düğmelerle kendi ekseni etrafında döndür
-                  </span>
-                </div>
-              </div>
-
-              {/* Döndür / Durdur / Başa Dön Denetimleri */}
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <button
-                  type="button"
-                  data-testid="exp2-spin-btn"
-                  disabled={!exp2Predicted}
-                  onClick={() => {
-                    setExp2Spinning((prev) => !prev);
-                    if (!exp2Spinning) {
-                      speakIfEnabled(activeExperiment.voiceGuide);
-                    }
-                  }}
-                  className={`inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold sm:text-sm ${
-                    !exp2Predicted
-                      ? 'cursor-not-allowed border border-[#d8a94c]/25 bg-[#12244a] text-[#8fa5cf] opacity-60'
-                      : exp2Spinning
-                        ? 'bg-rose-500 text-white hover:bg-rose-400'
-                        : 'bg-amber-400 text-[#09152e] hover:bg-amber-300'
-                  }`}
-                >
-                  {exp2Spinning ? (
-                    <>
-                      <Pause className="h-4 w-4" aria-hidden="true" />
-                      <span>{ACTIVE_DISCOVERY_UI_COPY.pauseLabel}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-4 w-4" aria-hidden="true" />
-                      <span>{ACTIVE_DISCOVERY_UI_COPY.spinLabel}</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  disabled={!exp2Predicted}
-                  onClick={() => {
-                    setExp2Spinning(false);
-                    applyExp2Rotation(exp2RotY - 0.55);
-                  }}
-                  className="inline-flex min-h-[44px] cursor-pointer items-center gap-1 rounded-xl border border-[#d8a94c]/35 bg-[#12264f] px-3 text-xs font-bold text-[#f8f1dd] hover:bg-[#1b366d] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <span>Adım Döndür →</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setExp2Spinning(false);
-                    exp2RotRef.current = INITIAL_DAY_NIGHT_ROT_Y;
-                    setExp2RotY(INITIAL_DAY_NIGHT_ROT_Y);
-                  }}
-                  className="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-xl border border-[#d8a94c]/35 bg-[#12264f] px-3.5 text-xs font-bold text-[#f7df9d] hover:bg-[#1b366d]"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>{ACTIVE_DISCOVERY_UI_COPY.resetLabel}</span>
-                </button>
-              </div>
-
-              {/* Görev Kontrol Listesi: Gündüz + Gece */}
-              <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
-                <span
-                  className={`rounded-full border px-3 py-1 font-bold ${
-                    exp2CreatedDay
-                      ? 'border-emerald-400/60 bg-emerald-900/50 text-emerald-100'
-                      : 'border-[#d8a94c]/25 bg-[#0e1e40] text-[#9fb5dc]'
-                  }`}
-                >
-                  {exp2CreatedDay
-                    ? '✓ Türkiye’de Gündüz Oluşturuldu'
-                    : '○ Türkiye’de Gündüz Oluştur'}
-                </span>
-                <span
-                  className={`rounded-full border px-3 py-1 font-bold ${
-                    exp2CreatedNight
-                      ? 'border-emerald-400/60 bg-emerald-900/50 text-emerald-100'
-                      : 'border-[#d8a94c]/25 bg-[#0e1e40] text-[#9fb5dc]'
-                  }`}
-                >
-                  {exp2CreatedNight
-                    ? '✓ Türkiye’de Gece Oluşturuldu'
-                    : '○ Türkiye’de Gece Oluştur'}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* DENEY 3 MODELİ (Ay'ın Evreleri: Uzaydan + Dünya'dan Eş Zamanlı Görünüm) */}
-          {activeExpId === 'exp-moon-phases' && (
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <span className="font-bold text-[#f7df9d]">
-                  Ay’ı Dünya çevresinde sürükle veya kaydırıcıyla hareket ettir
-                </span>
-                <span className="rounded-full border border-sky-300/30 bg-sky-950/75 px-2.5 py-0.5 text-[11px] font-semibold text-sky-200">
-                  {ACTIVE_DISCOVERY_UI_COPY.representativeBadge}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
-                {/* Uzaydan Görünüm (Üstten yörünge modeli) */}
-                <div className="flex flex-col items-center rounded-2xl border border-[#f6dc9b]/20 bg-[#050d20] p-2.5 sm:col-span-7">
-                  <span className="mb-1.5 text-[11px] font-extrabold uppercase tracking-wide text-[#f6dc9b]">
-                    Uzaydan Görünüm
-                  </span>
-                  <MoonOrbitCanvas
-                    phaseAngleDeg={exp3PhaseAngleDeg}
-                    onChangeAngle={(deg) => {
-                      if (!exp3Predicted) return;
-                      handleMoveMoonAngle(deg);
-                    }}
-                  />
-                  <span className="mt-1.5 text-center text-[11px] text-[#bfd0ee]">
-                    Ay’ın Güneş’e bakan yarısı her konumda aydınlıktır.
-                  </span>
-                </div>
-
-                {/* Dünya'dan Görünüm (Ayrı eş zamanlı pencere) */}
-                <div className="flex flex-col items-center justify-between rounded-2xl border border-sky-300/35 bg-[#061229] p-2.5 sm:col-span-5">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wide text-sky-200">
-                    Dünya’dan Görünüm
-                  </span>
-
-                  <CelestialGlobeCanvas
-                    bodyId="moon"
-                    size={168}
-                    rotY={0.22}
-                    rotX={0.05}
-                    showStarfield
-                    lightingMode="directional"
-                    lightDirection={moonEarthViewLightDir}
-                    isLightOn
-                    ariaLabel={
-                      detectedPhase
-                        ? `Dünya'dan Ay görünümü: ${detectedPhase.label}`
-                        : "Dünya'dan Ay görünümü"
-                    }
-                    className="my-1.5 h-[156px] w-[156px] rounded-2xl border border-[#f6dc9b]/25"
-                  />
-
-                  <div className="w-full space-y-1.5 text-center">
-                    <p
-                      data-testid="exp3-detected-phase"
-                      className="text-sm font-extrabold text-[#fff6db]"
-                    >
-                      {detectedPhase ? detectedPhase.label : 'Ara Evre Konumu'}
-                    </p>
-                    <p className="text-[11px] leading-snug text-[#c7d6f2]">
-                      {detectedPhase
-                        ? detectedPhase.earthViewSummary
-                        : 'Ana evrelerden birini yakalamak için Ay’ı biraz daha ilerlet.'}
-                    </p>
-
-                    {detectedPhase && exp3Predicted && (
-                      <button
-                        type="button"
-                        data-testid={`save-phase-${detectedPhase.id}`}
-                        disabled={exp3ObservedPhases.includes(detectedPhase.id)}
-                        onClick={handleSaveDetectedPhase}
-                        className={`mt-1 min-h-[38px] w-full cursor-pointer rounded-xl px-3 py-1.5 text-xs font-extrabold transition-colors ${
-                          exp3ObservedPhases.includes(detectedPhase.id)
-                            ? 'border border-emerald-400/50 bg-emerald-900/60 text-emerald-200'
-                            : 'bg-amber-400 text-[#09152e] hover:bg-amber-300'
-                        }`}
-                      >
-                        {exp3ObservedPhases.includes(detectedPhase.id)
-                          ? `${detectedPhase.label} Kaydedildi ✓`
-                          : `Bu Evreyi Kaydet (${detectedPhase.label})`}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Yörünge Konum Kontrolleri */}
-              <div className="space-y-2 rounded-2xl border border-[#d8a94c]/25 bg-[#0b1936] p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <button
-                    type="button"
-                    disabled={!exp3Predicted}
-                    onClick={() => handleMoveMoonAngle(exp3PhaseAngleDeg - 30)}
-                    className="min-h-[38px] cursor-pointer rounded-xl border border-[#d8a94c]/35 bg-[#12264f] px-3 text-xs font-bold text-[#f8f1dd] hover:bg-[#1b366d] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    ◀ Geri Al
-                  </button>
-
-                  <input
-                    type="range"
-                    min={0}
-                    max={359}
-                    value={Math.round(exp3PhaseAngleDeg)}
-                    disabled={!exp3Predicted}
-                    aria-label="Ay yörünge açısı"
-                    onChange={(e) => handleMoveMoonAngle(Number(e.target.value))}
-                    className="h-2 flex-1 cursor-pointer accent-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-
-                  <button
-                    type="button"
-                    disabled={!exp3Predicted}
-                    onClick={() => handleMoveMoonAngle(exp3PhaseAngleDeg + 30)}
-                    className="min-h-[38px] cursor-pointer rounded-xl border border-[#d8a94c]/35 bg-[#12264f] px-3 text-xs font-bold text-[#f8f1dd] hover:bg-[#1b366d] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    İleri Al ▶
-                  </button>
-                </div>
-
-                {/* Gözlemlenen Evreler ve Karşılaştırma */}
-                <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
-                  {MOON_PHASES.map((phase) => {
-                    const recorded = exp3ObservedPhases.includes(phase.id);
-                    return (
-                      <span
-                        key={phase.id}
-                        className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
-                          recorded
-                            ? 'border-emerald-400/60 bg-emerald-900/55 text-emerald-100'
-                            : 'border-[#d8a94c]/25 bg-[#09152e] text-[#9eb4db]'
-                        }`}
-                      >
-                        {recorded ? `✓ ${phase.label}` : `○ ${phase.label}`}
-                      </span>
-                    );
-                  })}
-                </div>
-
-                {exp3ObservedPhases.length >= 2 && (
-                  <div className="rounded-xl border border-emerald-400/35 bg-emerald-950/40 p-2.5 text-xs text-emerald-100">
-                    <p className="font-extrabold text-emerald-200">
-                      Gözlem Karşılaştırması ({exp3ObservedPhases.length}/4 evre kaydedildi):
-                    </p>
-                    <ul className="mt-1 space-y-1 text-[11px]">
-                      {exp3ObservedPhases.slice(0, 2).map((pid) => {
-                        const def = MOON_PHASES.find((p) => p.id === pid);
-                        if (!def) return null;
-                        return (
-                          <li key={pid}>
-                            <strong>{def.label}:</strong> {def.earthViewSummary}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
-              </div>
-
-              {/* Bilimsel Doğruluk Notu (Dünya gölgesi kuralı) */}
-              <p className="rounded-xl border border-sky-300/30 bg-sky-950/50 px-3 py-2 text-[11px] leading-relaxed text-sky-100">
-                {ACTIVE_DISCOVERY_UI_COPY.moonShadowRuleNote}
-              </p>
-            </div>
-          )}
-
-          <p className="mt-3 text-center text-[11px] text-[#a9bce0]">
-            {ACTIVE_DISCOVERY_UI_COPY.representativeNote}
-          </p>
-        </section>
-
-        {/* SAĞ PANEL: TAHMİN ET -> DENEY YAP / GÖZLEMLE -> AÇIKLA */}
-        <section className="flex flex-col justify-between gap-3.5 rounded-3xl border border-[#d8a94c]/30 bg-[#102247]/90 p-4 lg:col-span-5">
-          <div className="space-y-3.5">
-            {/* 1. TAHMİN ET */}
-            <div
-              className={`rounded-2xl border p-3.5 ${
-                activePredictDone
-                  ? 'border-emerald-400/45 bg-emerald-950/30'
-                  : 'border-[#f6dc9b]/55 bg-[#162e60]'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <h4 className="text-xs font-extrabold uppercase tracking-wide text-[#f6dc9b]">
-                  1. Tahmin Et
-                </h4>
-                {activePredictDone && (
-                  <span className="text-[11px] font-bold text-emerald-300">✓ Tamam</span>
-                )}
-              </div>
-              <p className="mt-1.5 text-sm font-bold text-[#fff8e6]">{gradePack.predictPrompt}</p>
-
-              <div className="mt-2.5 space-y-2">
-                {gradePack.predictOptions.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    disabled={activePredictDone}
-                    onClick={() => handlePredictOption(option)}
-                    className={`min-h-[42px] w-full cursor-pointer rounded-xl border px-3 py-2 text-left text-xs font-bold transition-colors sm:text-sm ${
-                      activePredictDone && option.isCorrect
-                        ? 'border-emerald-400 bg-emerald-900/60 text-emerald-100'
-                        : activePredictDone
-                          ? 'cursor-default border-[#d8a94c]/15 bg-[#0b1936]/60 text-[#8ea5ce] opacity-60'
-                          : 'border-[#d8a94c]/40 bg-[#0e2046] text-[#fff5d6] hover:border-[#f6dc9b] hover:bg-[#1c3973]'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-
-              {activePredictFeedback && (
-                <p
-                  role="status"
-                  className={`mt-2 rounded-xl border px-3 py-2 text-xs leading-snug ${
-                    activePredictFeedback.isCorrect
-                      ? 'border-emerald-400/45 bg-emerald-950/60 text-emerald-100'
-                      : 'border-amber-400/45 bg-amber-950/65 text-amber-100'
-                  }`}
-                >
-                  {activePredictFeedback.text}
-                </p>
-              )}
-            </div>
-
-            {/* 2 & 3. DENEY YAP VE GÖZLEMLE YÖNERGESİ */}
-            <div
-              className={`rounded-2xl border p-3.5 ${
-                activeExplainUnlocked
-                  ? 'border-emerald-400/45 bg-emerald-950/30'
-                  : activePredictDone
-                    ? 'border-[#f6dc9b]/55 bg-[#162e60]'
-                    : 'border-[#d8a94c]/20 bg-[#0a1733]/75 opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <h4 className="text-xs font-extrabold uppercase tracking-wide text-[#f6dc9b]">
-                  2–3. Deney Yap ve Gözlemle
-                </h4>
-                {activeExplainUnlocked && (
-                  <span className="text-[11px] font-bold text-emerald-300">✓ Gözlem Tamam</span>
-                )}
-              </div>
-              <p className="mt-1.5 text-xs leading-relaxed text-[#e8effc] sm:text-sm">
-                {gradePack.experimentInstruction}
-              </p>
-            </div>
-
-            {/* 4. AÇIKLA */}
-            <div
-              className={`rounded-2xl border p-3.5 ${
-                activeExplainDone
-                  ? 'border-emerald-400/60 bg-emerald-950/45'
-                  : activeExplainUnlocked
-                    ? 'border-[#f6dc9b]/60 bg-[#162e60]'
-                    : 'border-[#d8a94c]/20 bg-[#0a1733]/70 opacity-65'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <h4 className="text-xs font-extrabold uppercase tracking-wide text-[#f6dc9b]">
-                  4. Sonucu Açıkla
-                </h4>
-                {activeExplainDone && (
-                  <span className="text-[11px] font-bold text-emerald-300">✓ Deney Tamamlandı</span>
-                )}
-              </div>
-
-              {!activeExplainUnlocked ? (
-                <p className="mt-1.5 text-xs text-[#b5c7e8]">
-                  Önce soldaki modelde deney adımlarını tamamla; ardından gözlemini burada açıkla.
-                </p>
-              ) : (
-                <>
-                  <p className="mt-1.5 text-sm font-bold text-[#fff8e6]">
-                    {gradePack.explainPrompt}
-                  </p>
-                  <div className="mt-2.5 space-y-2">
-                    {gradePack.explainOptions.map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        disabled={activeExplainDone}
-                        onClick={() => handleExplainOption(option)}
-                        className={`min-h-[42px] w-full cursor-pointer rounded-xl border px-3 py-2 text-left text-xs font-bold transition-colors sm:text-sm ${
-                          activeExplainDone && option.isCorrect
-                            ? 'border-emerald-400 bg-emerald-900/65 text-emerald-100'
-                            : activeExplainDone
-                              ? 'cursor-default border-[#d8a94c]/15 bg-[#0b1936]/60 text-[#8ea5ce] opacity-60'
-                              : 'border-[#d8a94c]/40 bg-[#0e2046] text-[#fff5d6] hover:border-[#f6dc9b] hover:bg-[#1c3973]'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {activeExplainFeedback && (
-                <p
-                  role="status"
-                  className={`mt-2 rounded-xl border px-3 py-2 text-xs leading-snug ${
-                    activeExplainFeedback.isCorrect
-                      ? 'border-emerald-400/50 bg-emerald-950/70 text-emerald-100'
-                      : 'border-amber-400/50 bg-amber-950/70 text-amber-100'
-                  }`}
-                >
-                  {activeExplainFeedback.text}
-                </p>
-              )}
-            </div>
+            ))}
           </div>
+          <CelestialGlobeCanvas
+            {...earth}
+            bodyId="earth"
+            size={Math.max(1, Math.round(Math.min(384, earthSize)))}
+            displaySize={earthSize}
+            isLightOn={isLightOn}
+            className="shrink-0 rounded-2xl"
+          />
+        </>
+      )}
+    </div>
+  );
+}
 
-          {/* Alt Geçiş ve Tamamlama Çubuğu */}
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#d8a94c]/25 pt-3">
-            {activeExplainDone && nextExperimentId ? (
-              <button
-                type="button"
-                onClick={() => handleSelectExperiment(nextExperimentId)}
-                className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#d8a94c] px-4 py-2 text-xs font-extrabold text-[#0b1834] hover:bg-[#e8be66] sm:text-sm"
-              >
-                <span>Sonraki Deneye Geç</span>
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </button>
-            ) : allRequiredDone ? (
-              <button
-                type="button"
-                onClick={onBackToObservatory}
-                className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-extrabold text-[#061c14] hover:bg-emerald-400 sm:text-sm"
-              >
-                <Sparkles className="h-4 w-4" aria-hidden="true" />
-                <span>Keşif Tamamlandı — Gözlemevine Dön</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={onBackToObservatory}
-                className="inline-flex min-h-[42px] cursor-pointer items-center gap-1.5 rounded-xl border border-[#d8a94c]/35 bg-[#0c1c3d] px-3.5 text-xs font-bold text-[#f7df9d] hover:bg-[#173063]"
-              >
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                <span>Gözlemevine Dön</span>
-              </button>
+function ExperimentDock({ hint, children }: { hint: string; children: ReactNode }) {
+  return (
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 px-0.5">
+      <div className="flex min-w-0 grow flex-wrap items-center gap-x-3 text-xs leading-tight text-[#d5e5fc] sm:text-sm">
+        <p role="status" className="font-semibold">{hint}</p>
+        <span className="text-[11px] text-sky-200/80">{ACTIVE_DISCOVERY_UI_COPY.representativeBadge}</span>
+      </div>
+      <div className="flex min-w-0 flex-wrap items-center gap-1.5">{children}</div>
+    </div>
+  );
+}
+
+function SunlightExperiment({ onObserved }: { onObserved: () => void }) {
+  const [lightOn, setLightOn] = useState(false);
+  const [viewAngle, setViewAngle] = useState(0);
+  const [litPin, setLitPin] = useState<SurfacePin | null>(null);
+  const [darkPin, setDarkPin] = useState<SurfacePin | null>(null);
+  const [hint, setHint] = useState('Güneş ışığını aç ve Dünya’yı gözlemle.');
+  const camera = useExperimentZoom();
+  const pins = useMemo(() => [litPin, darkPin].filter((pin): pin is SurfacePin => pin !== null), [litPin, darkPin]);
+
+  function handleSurfaceClick(hit: SurfaceClickHit) {
+    if (!lightOn) {
+      setHint('Önce Güneş ışığını aç.');
+      return;
+    }
+    if (hit.dotLight > 0.08 && (!litPin || darkPin)) {
+      setLitPin({ id: 'lit', lonDeg: hit.lonDeg, latDeg: hit.latDeg, label: 'Aydınlık', color: '#facc15' });
+      setHint(darkPin ? 'Aydınlık bölge güncellendi.' : 'Şimdi karanlık bölgeye dokun.');
+    } else if (hit.dotLight < -0.08 && litPin) {
+      setDarkPin({ id: 'dark', lonDeg: hit.lonDeg, latDeg: hit.latDeg, label: 'Karanlık', color: '#60a5fa' });
+      setHint(darkPin ? 'Karanlık bölge güncellendi.' : 'İki bölgeyi de işaretledin.');
+      if (!darkPin) onObserved();
+    } else if (!litPin) {
+      setHint('Güneş’e bakan aydınlık bölgeye dokun.');
+    } else if (!darkPin) {
+      setHint('Işık almayan karanlık bölgeye dokun.');
+    }
+  }
+
+  return (
+    <>
+      <SunEarthModels
+        {...camera}
+        sunRotation={0.2}
+        rotY={-0.35 + viewAngle}
+        rotX={0.14}
+        interactive
+        lightingMode="directional"
+        lightDirection={{ x: -Math.cos(viewAngle), y: 0, z: -Math.sin(viewAngle) }}
+        isLightOn={lightOn}
+        surfacePins={pins}
+        onRotate={(deltaY) => setViewAngle((value) => value + deltaY)}
+        onSurfaceClick={handleSurfaceClick}
+        ariaLabel="Dünya’da aydınlık ve karanlık bölgeler"
+      />
+      <ExperimentDock hint={hint}>
+        {!lightOn ? (
+          <button type="button" data-testid="exp1-turn-light-btn" className={PRIMARY_BUTTON} onClick={() => {
+            setLightOn(true);
+            setHint('Aydınlık bölgeye dokun.');
+          }}>
+            <Lightbulb className="size-4 shrink-0" aria-hidden="true" /> {ACTIVE_DISCOVERY_UI_COPY.turnOnLightLabel}
+          </button>
+        ) : (
+          <>
+            <button type="button" className={BUTTON} onClick={() => setViewAngle(-1.25)}>Güneş Yönü</button>
+            <button type="button" className={BUTTON} onClick={() => setViewAngle(0)}>Önden Bak</button>
+            <button type="button" className={BUTTON} onClick={() => setViewAngle(1.25)}>Karanlık Taraf</button>
+          </>
+        )}
+      </ExperimentDock>
+    </>
+  );
+}
+
+const EARTH_SUN_DIRECTION = { x: -1, y: 0, z: 0 };
+const TURKEY_PIN: readonly SurfacePin[] = [{
+  id: 'turkey', lonDeg: TURKEY_COORDS.lonDeg, latDeg: TURKEY_COORDS.latDeg,
+  label: TURKEY_COORDS.label, color: '#ef4444', showWhenBack: true,
+}];
+
+function getTurkeyLight(rotation: number) {
+  return -projectSurfacePoint(TURKEY_COORDS.lonDeg, TURKEY_COORDS.latDeg, rotation, EARTH_TILT_X).nx;
+}
+
+function DayNightExperiment({ onObserved }: { onObserved: () => void }) {
+  const [rotation, setRotation] = useState(INITIAL_DAY_NIGHT_ROT_Y);
+  const [spinning, setSpinning] = useState(false);
+  const rotationRef = useRef(INITIAL_DAY_NIGHT_ROT_Y);
+  const observations = useRef({ day: false, night: false });
+  const camera = useExperimentZoom();
+  const turkeyLight = getTurkeyLight(rotation);
+  const turkeyLabel = turkeyLight > 0.28 ? 'Türkiye’de gündüz' : turkeyLight < -0.28 ? 'Türkiye’de gece' : 'Türkiye’de alacakaranlık';
+
+  const applyRotation = useCallback((next: number) => {
+    rotationRef.current = next;
+    setRotation(next);
+    if (observations.current.day && observations.current.night) return;
+    const light = getTurkeyLight(next);
+    if (light > 0.28) observations.current.day = true;
+    if (light < -0.28) observations.current.night = true;
+    if (observations.current.day && observations.current.night) onObserved();
+  }, [onObserved]);
+
+  useEffect(() => {
+    if (!spinning) return;
+    let frameId = 0;
+    let lastTime = performance.now();
+    function tick(now: number) {
+      const dt = Math.min(0.08, (now - lastTime) / 1000);
+      lastTime = now;
+      applyRotation(rotationRef.current - dt * 0.85);
+      frameId = requestAnimationFrame(tick);
+    }
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
+  }, [applyRotation, spinning]);
+
+  function rotateManually(deltaY: number) {
+    setSpinning(false);
+    applyRotation(rotationRef.current + deltaY);
+  }
+
+  return (
+    <>
+      <SunEarthModels
+        {...camera}
+        sunRotation={0.25}
+        rotY={rotation}
+        rotX={EARTH_TILT_X}
+        interactive
+        lightingMode="directional"
+        lightDirection={EARTH_SUN_DIRECTION}
+        isLightOn
+        showAxisLine
+        surfacePins={TURKEY_PIN}
+        onRotate={rotateManually}
+        ariaLabel="Kendi ekseni etrafında dönen Dünya ve Türkiye işareti"
+      />
+      <ExperimentDock hint={turkeyLabel}>
+        <button type="button" data-testid="exp2-spin-btn" className={PRIMARY_BUTTON} onClick={() => setSpinning((value) => !value)}>
+          {spinning ? <Pause className="size-4 shrink-0" aria-hidden="true" /> : <Play className="size-4 shrink-0" aria-hidden="true" />}
+          {spinning ? ACTIVE_DISCOVERY_UI_COPY.pauseLabel : ACTIVE_DISCOVERY_UI_COPY.spinLabel}
+        </button>
+        <button type="button" className={BUTTON} onClick={() => rotateManually(-0.55)}>Adım Döndür</button>
+      </ExperimentDock>
+    </>
+  );
+}
+
+function MoonPhasesExperiment({ onObserved }: { onObserved: (phase: MoonPhaseId) => void }) {
+  const [angle, setAngle] = useState(38);
+  const [observedHere, setObservedHere] = useState<MoonPhaseId[]>([]);
+  const { ref, width, height } = useModelSpace<HTMLDivElement>();
+  const camera = useExperimentZoom();
+  const globeSize = Math.min(width, height);
+  const phase = detectMoonPhaseAtAngle(angle);
+  const alpha = angle * Math.PI / 180;
+  const angleLabel = phase?.label ?? 'Ara evre';
+  const saved = phase ? observedHere.includes(phase.id) : false;
+
+  return (
+    <>
+      <div className="grid min-h-[260px] flex-1 grid-rows-[minmax(0,1.2fr)_minmax(0,1fr)] gap-1.5 md:min-h-28 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] md:grid-rows-1 landscape:min-h-28 landscape:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] landscape:grid-rows-1">
+        <div className={MODEL_PANEL + ' flex flex-col items-center gap-1 p-1'}>
+          <h3 className="shrink-0 text-center text-sm font-bold text-amber-100">Uzaydan Görünüm</h3>
+          <MoonOrbitCanvas phaseAngleDeg={angle} onChangeAngle={(value) => setAngle(normalizeAngleDeg(value))} />
+        </div>
+        <div className={MODEL_PANEL + ' flex flex-col items-center gap-1 p-1'}>
+          <h3 className="shrink-0 text-center text-sm font-bold text-sky-100">Dünya’dan Görünüm</h3>
+          <div ref={ref} className="flex min-h-0 w-full flex-1 items-center justify-center">
+            {globeSize > 0 && (
+              <CelestialGlobeCanvas
+                {...camera}
+                bodyId="moon"
+                size={Math.max(1, Math.round(Math.min(384, globeSize)))}
+                displaySize={globeSize}
+                rotY={0.22}
+                rotX={0.05}
+                lightingMode="directional"
+                lightDirection={{ x: Math.sin(alpha), y: 0, z: -Math.cos(alpha) }}
+                ariaLabel={'Dünya’dan Ay görünümü · ' + angleLabel}
+                className="shrink-0 rounded-xl"
+              />
             )}
           </div>
-        </section>
+          <p data-testid="exp3-detected-phase" className="shrink-0 text-center text-sm font-extrabold leading-tight text-amber-50">{angleLabel}</p>
+        </div>
       </div>
-    </div>
+      <ExperimentDock hint="Ay’ı Dünya çevresinde sürükle.">
+        <input
+          type="range"
+          min={0}
+          max={359}
+          value={angle}
+          aria-label="Ay yörünge açısı"
+          aria-valuetext={angleLabel}
+          onChange={(event) => setAngle(Number(event.target.value))}
+          className="h-11 w-32 max-w-full cursor-pointer accent-amber-300 sm:w-48"
+        />
+        {phase && (
+          <button type="button" data-testid={'save-phase-' + phase.id} disabled={saved} onClick={() => {
+            setObservedHere((values) => [...values, phase.id]);
+            onObserved(phase.id);
+          }} className={BUTTON}>
+            {saved ? 'Evre kaydedildi' : 'Evreyi kaydet'}
+          </button>
+        )}
+      </ExperimentDock>
+    </>
   );
 }
